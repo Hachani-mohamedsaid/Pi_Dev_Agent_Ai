@@ -53,7 +53,11 @@ class _RegisterPageState extends State<RegisterPage> {
         _passwordController.text,
       );
       if (success && mounted) {
+<<<<<<< HEAD
         context.go('/home');
+=======
+        context.go('/login');
+>>>>>>> c3cf2c9 ( Flutter project v1)
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
