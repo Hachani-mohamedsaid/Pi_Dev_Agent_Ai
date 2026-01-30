@@ -8,19 +8,10 @@ class UserModel extends User {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-<<<<<<< HEAD
     return UserModel(
       id: json['id'] as String,
       name: json['name'] as String,
       email: json['email'] as String,
-=======
-    final idRaw = json['id'] ?? json['_id'];
-    final id = idRaw == null ? '' : idRaw.toString();
-    return UserModel(
-      id: id,
-      name: json['name'] as String? ?? '',
-      email: json['email'] as String? ?? '',
->>>>>>> c3cf2c9 ( Flutter project v1)
     );
   }
 
