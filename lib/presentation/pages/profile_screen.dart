@@ -24,22 +24,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // Load current user if not already loaded
+    widget.controller.addListener(_onControllerUpdate);
     if (widget.controller.currentUser == null) {
       widget.controller.loadCurrentUser();
     }
+    widget.controller.loadProfile();
   }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerUpdate);
+    super.dispose();
+  }
+
+  void _onControllerUpdate() => setState(() {});
 
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
     final padding = isMobile ? 24.0 : 32.0;
     final user = widget.controller.currentUser;
+    final profile = widget.controller.currentProfile;
 
     final stats = [
-      {'label': 'Conversations', 'value': '127'},
-      {'label': 'Days Active', 'value': '45'},
-      {'label': 'Hours Saved', 'value': '23'},
+      {'label': 'Conversations', 'value': '${profile?.conversationsCount ?? 0}'},
+      {'label': 'Days Active', 'value': '${profile?.daysActive ?? 0}'},
+      {'label': 'Hours Saved', 'value': '${profile?.hoursSaved ?? 0}'},
     ];
 
     final recentActivities = [
@@ -90,10 +100,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     SizedBox(height: isMobile ? 24 : 32),
 
-                    // Profile Card
+                    // Profile Card (données dynamiques GET /auth/me)
                     _ProfileCard(
                       user: user,
+                      profile: profile,
                       isMobile: isMobile,
+                      isLoading: widget.controller.isLoading,
                     )
                         .animate()
                         .fadeIn(duration: 500.ms)
@@ -196,17 +208,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
 class _ProfileCard extends StatelessWidget {
   final dynamic user;
+  final dynamic profile;
   final bool isMobile;
+  final bool isLoading;
 
   const _ProfileCard({
     required this.user,
+    this.profile,
     required this.isMobile,
+    this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final userName = user?.name ?? 'User';
-    final userEmail = user?.email ?? 'user@example.com';
+    // Données dynamiques : priorité au profil (GET /auth/me), sinon user (login)
+    final userName = profile?.name ?? user?.name ?? '—';
+    final userEmail = profile?.email ?? user?.email ?? '—';
+    final role = isLoading && profile == null
+        ? 'Chargement…'
+        : (profile?.role ?? '—');
     final initials = userName
         .split(' ')
         .map((n) => n.isNotEmpty ? n[0].toUpperCase() : '')
@@ -237,26 +257,44 @@ class _ProfileCard extends StatelessWidget {
             padding: EdgeInsets.all(isMobile ? 20 : 24),
             child: Column(
               children: [
-                // Avatar and Basic Info
+                // Avatar and Basic Info (photo de profil si avatarUrl, sinon initiales)
                 Row(
                   children: [
                     Container(
                       width: isMobile ? 80 : 96,
                       height: isMobile ? 80 : 96,
                       decoration: BoxDecoration(
-                        gradient: AppColors.logoGradient,
+                        gradient: (profile?.avatarUrl ?? '').isEmpty ? AppColors.logoGradient : null,
                         borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
                       ),
-                      child: Center(
-                        child: Text(
-                          initials,
-                          style: TextStyle(
-                            color: AppColors.textWhite,
-                            fontSize: isMobile ? 28 : 32,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: (profile?.avatarUrl ?? '').isEmpty
+                          ? Center(
+                              child: Text(
+                                initials,
+                                style: TextStyle(
+                                  color: AppColors.textWhite,
+                                  fontSize: isMobile ? 28 : 32,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                          : Image.network(
+                              profile!.avatarUrl!,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                              errorBuilder: (_, __, ___) => Center(
+                                child: Text(
+                                  initials,
+                                  style: TextStyle(
+                                    color: AppColors.textWhite,
+                                    fontSize: isMobile ? 28 : 32,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
                     ),
                     SizedBox(width: isMobile ? 16 : 20),
                     Expanded(
@@ -273,7 +311,7 @@ class _ProfileCard extends StatelessWidget {
                           ),
                           SizedBox(height: 4),
                           Text(
-                            'AI Enthusiast',
+                            role,
                             style: TextStyle(
                               fontSize: isMobile ? 13 : 14,
                               color: AppColors.textCyan200.withOpacity(0.7),
@@ -315,15 +353,41 @@ class _ProfileCard extends StatelessWidget {
                     SizedBox(height: isMobile ? 12 : 16),
                     _ContactInfoItem(
                       icon: Icons.calendar_today,
-                      text: 'Joined January 2024',
+                      text: profile?.joinedLabel.isNotEmpty == true
+                          ? profile!.joinedLabel
+                          : '—',
                       isMobile: isMobile,
                     ),
                     SizedBox(height: isMobile ? 12 : 16),
                     _ContactInfoItem(
                       icon: Icons.location_on,
-                      text: 'San Francisco, CA',
+                      text: profile?.location ?? '—',
                       isMobile: isMobile,
                     ),
+                    if ((profile?.phone ?? '').isNotEmpty) ...[
+                      SizedBox(height: isMobile ? 12 : 16),
+                      _ContactInfoItem(
+                        icon: Icons.phone_outlined,
+                        text: profile!.phone!,
+                        isMobile: isMobile,
+                      ),
+                    ],
+                    if ((profile?.birthDate ?? '').isNotEmpty) ...[
+                      SizedBox(height: isMobile ? 12 : 16),
+                      _ContactInfoItem(
+                        icon: Icons.calendar_today_outlined,
+                        text: profile!.birthDate!,
+                        isMobile: isMobile,
+                      ),
+                    ],
+                    if ((profile?.bio ?? '').isNotEmpty) ...[
+                      SizedBox(height: isMobile ? 12 : 16),
+                      _ContactInfoItem(
+                        icon: Icons.info_outline,
+                        text: profile!.bio!,
+                        isMobile: isMobile,
+                      ),
+                    ],
                   ],
                 ),
               ],

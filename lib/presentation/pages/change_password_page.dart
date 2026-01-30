@@ -4,12 +4,14 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
-import '../../core/utils/validators.dart';
+import '../state/auth_controller.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 
 class ChangePasswordPage extends StatefulWidget {
-  const ChangePasswordPage({super.key});
+  const ChangePasswordPage({super.key, required this.controller});
+
+  final AuthController controller;
 
   @override
   State<ChangePasswordPage> createState() => _ChangePasswordPageState();
@@ -81,27 +83,36 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     }
   }
 
-  void _handleSave() {
-    if (_formKey.currentState!.validate()) {
-      if (_newPasswordController.text != _confirmPasswordController.text) {
+  Future<void> _handleSave() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_newPasswordController.text != _confirmPasswordController.text) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Passwords do not match'),
             backgroundColor: Colors.red,
           ),
         );
-        return;
       }
-      if (_passwordStrength < 50) {
+      return;
+    }
+    if (_passwordStrength < 50) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Password is too weak'),
             backgroundColor: Colors.red,
           ),
         );
-        return;
       }
-      // Handle password change
+      return;
+    }
+    final success = await widget.controller.changePassword(
+      currentPassword: _currentPasswordController.text.trim(),
+      newPassword: _newPasswordController.text.trim(),
+    );
+    if (!mounted) return;
+    if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Password updated successfully'),
@@ -109,6 +120,13 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         ),
       );
       context.pop();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(widget.controller.error ?? 'Failed to change password'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -455,11 +473,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                           .slideY(begin: 0.2, end: 0, duration: 300.ms),
                       SizedBox(height: isMobile ? 32 : 40),
 
-                      // Save Button
+                      // Save Button (POST /auth/change-password)
                       CustomButton(
                         text: 'Update Password',
                         onPressed: _handleSave,
-                        isLoading: false,
+                        isLoading: widget.controller.isLoading,
                       )
                           .animate()
                           .fadeIn(delay: 400.ms, duration: 300.ms)

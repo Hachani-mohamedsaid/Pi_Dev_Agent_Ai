@@ -4,6 +4,7 @@ import '../../presentation/pages/splash_page.dart';
 import '../../presentation/pages/login_page.dart';
 import '../../presentation/pages/register_page.dart';
 import '../../presentation/pages/reset_password_page.dart';
+import '../../presentation/pages/reset_password_confirm_page.dart';
 import '../../presentation/pages/home_screen.dart';
 import '../../presentation/pages/profile_screen.dart';
 import '../../presentation/pages/edit_profile_page.dart';
@@ -85,6 +86,17 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/reset-password/confirm',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: ResetPasswordConfirmPage(
+          controller: InjectionContainer.instance.buildAuthController(),
+          token: state.uri.queryParameters['token'],
+        ),
+      ),
+    ),
+    GoRoute(
       path: '/home',
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
@@ -143,7 +155,9 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: const ChangePasswordPage(),
+        child: ChangePasswordPage(
+          controller: InjectionContainer.instance.buildAuthController(),
+        ),
       ),
     ),
     GoRoute(

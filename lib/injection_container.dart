@@ -7,13 +7,20 @@ import 'presentation/state/counter_controller.dart';
 
 import 'data/datasources/auth_local_data_source.dart';
 import 'data/datasources/auth_remote_data_source.dart';
+import 'data/datasources/api_auth_remote_data_source.dart';
+import 'data/datasources/social_auth_credentials_provider.dart';
 import 'data/repositories/auth_repository_impl.dart';
+import 'domain/services/social_auth_credentials_provider.dart' as domain;
 import 'domain/repositories/auth_repository.dart';
 import 'domain/usecases/login_usecase.dart';
 import 'domain/usecases/register_usecase.dart';
 import 'domain/usecases/reset_password_usecase.dart';
 import 'domain/usecases/get_current_user_usecase.dart';
 import 'domain/usecases/social_login_usecase.dart';
+import 'domain/usecases/get_profile_usecase.dart';
+import 'domain/usecases/update_profile_usecase.dart';
+import 'domain/usecases/reset_password_confirm_usecase.dart';
+import 'domain/usecases/change_password_usecase.dart';
 import 'presentation/state/auth_controller.dart';
 
 /// Very small manual DI container (no external packages).
@@ -40,12 +47,15 @@ class InjectionContainer {
     );
   }
 
-  // Auth dependencies
+  // Auth dependencies – SharedPreferences pour que token et user survivent au refresh / redémarrage
   late final AuthLocalDataSource _authLocalDataSource =
-      InMemoryAuthLocalDataSource();
+      SharedPreferencesAuthLocalDataSource();
 
   late final AuthRemoteDataSource _authRemoteDataSource =
-      MockAuthRemoteDataSource();
+      ApiAuthRemoteDataSource(); // ou MockAuthRemoteDataSource() pour tests sans backend
+
+  late final domain.SocialAuthCredentialsProvider _socialCredentialsProvider =
+      DefaultSocialAuthCredentialsProvider();
 
   late final AuthRepository _authRepository = AuthRepositoryImpl(
     remoteDataSource: _authRemoteDataSource,
@@ -56,19 +66,36 @@ class InjectionContainer {
   late final RegisterUseCase _registerUseCase = RegisterUseCase(_authRepository);
   late final ResetPasswordUseCase _resetPasswordUseCase =
       ResetPasswordUseCase(_authRepository);
+  late final ResetPasswordConfirmUseCase _resetPasswordConfirmUseCase =
+      ResetPasswordConfirmUseCase(_authRepository);
   late final GetCurrentUserUseCase _getCurrentUserUseCase =
       GetCurrentUserUseCase(_authRepository);
   late final SocialLoginUseCase _socialLoginUseCase =
-      SocialLoginUseCase(_authRepository);
+      SocialLoginUseCase(_authRepository, _socialCredentialsProvider);
+  late final GetProfileUseCase _getProfileUseCase =
+      GetProfileUseCase(_authRepository);
+  late final UpdateProfileUseCase _updateProfileUseCase =
+      UpdateProfileUseCase(_authRepository);
+  late final ChangePasswordUseCase _changePasswordUseCase =
+      ChangePasswordUseCase(_authRepository);
 
+  AuthController? _authController;
+
+  /// Une seule instance d'AuthController partagée par toutes les routes (login, profile, edit-profile, etc.)
+  /// pour que currentUser et currentProfile soient conservés à la navigation.
   AuthController buildAuthController() {
-    return AuthController(
+    _authController ??= AuthController(
       loginUseCase: _loginUseCase,
       registerUseCase: _registerUseCase,
       resetPasswordUseCase: _resetPasswordUseCase,
+      resetPasswordConfirmUseCase: _resetPasswordConfirmUseCase,
       getCurrentUserUseCase: _getCurrentUserUseCase,
       socialLoginUseCase: _socialLoginUseCase,
+      getProfileUseCase: _getProfileUseCase,
+      updateProfileUseCase: _updateProfileUseCase,
+      changePasswordUseCase: _changePasswordUseCase,
     );
+    return _authController!;
   }
 }
 
