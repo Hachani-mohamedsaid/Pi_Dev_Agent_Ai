@@ -1,19 +1,14 @@
-import 'dart:math';
+import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
-import '../state/auth_controller.dart';
 
 class VoiceAssistantPage extends StatefulWidget {
-  final AuthController controller;
-
-  const VoiceAssistantPage({
-    super.key,
-    required this.controller,
-  });
+  const VoiceAssistantPage({super.key});
 
   @override
   State<VoiceAssistantPage> createState() => _VoiceAssistantPageState();
@@ -21,191 +16,312 @@ class VoiceAssistantPage extends StatefulWidget {
 
 class _VoiceAssistantPageState extends State<VoiceAssistantPage>
     with TickerProviderStateMixin {
-  bool _isListening = false;
-  bool _isSpeaking = false;
-  bool _showChat = false;
-  final TextEditingController _inputController = TextEditingController();
-  final List<Message> _messages = [
-    Message(
+  // --- State Variables ---
+  bool isListening = false;
+  bool isSpeaking = false;
+  bool showChat = false;
+  String inputText = "";
+  String currentTranscript = "";
+  final TextEditingController _textController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+
+  List<ChatMessage> messages = [
+    ChatMessage(
       id: 1,
       text: "Hello! How can I assist you today?",
       sender: MessageSender.ai,
       timestamp: DateTime.now(),
     ),
   ];
-  String _currentTranscript = "";
+
+  // --- Animation Controllers ---
   late AnimationController _waveformController;
-  final Random _random = Random();
+  late AnimationController _pulseController;
 
   @override
   void initState() {
     super.initState();
+    // Continuous rotation for waveform
     _waveformController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2),
+      duration: const Duration(seconds: 15),
     )..repeat();
+
+    // Pulse for active state
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
   }
 
   @override
   void dispose() {
     _waveformController.dispose();
-    _inputController.dispose();
+    _pulseController.dispose();
+    _textController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  void _simulateAISpeaking(String text) {
-    setState(() {
-      _isSpeaking = true;
-    });
-    Future.delayed(const Duration(seconds: 3), () {
+  // --- Logic Functions ---
+
+  void simulateAISpeaking(String text) {
+    setState(() => isSpeaking = true);
+    
+    // Speed up waveform while speaking
+    _waveformController.duration = const Duration(seconds: 3);
+    _waveformController.repeat();
+    _pulseController.repeat(reverse: true);
+
+    Timer(const Duration(seconds: 3), () {
       if (mounted) {
-        setState(() {
-          _isSpeaking = false;
-        });
+        setState(() => isSpeaking = false);
+        // Slow down waveform
+        _waveformController.duration = const Duration(seconds: 15);
+        _waveformController.repeat();
+        _pulseController.stop();
+        _pulseController.reset();
       }
     });
   }
 
-  void _handleMicToggle() {
-    if (_isListening) {
-      setState(() {
-        _isListening = false;
-      });
-      if (_currentTranscript.isNotEmpty && _currentTranscript != "Go ahead, I'm listening...") {
-        final userMessage = Message(
-          id: _messages.length + 1,
-          text: _currentTranscript,
-          sender: MessageSender.user,
-          timestamp: DateTime.now(),
-        );
-        setState(() {
-          _messages.add(userMessage);
-        });
+  void handleMicToggle() {
+    if (isListening) {
+      // Stop Listening
+      setState(() => isListening = false);
+      _pulseController.stop();
+      _pulseController.reset();
+      _waveformController.duration = const Duration(seconds: 15);
+      _waveformController.repeat();
 
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            final aiResponse = Message(
-              id: _messages.length + 1,
-              text: "I understand. Let me help you with that.",
-              sender: MessageSender.ai,
-              timestamp: DateTime.now(),
-            );
-            setState(() {
-              _messages.add(aiResponse);
-            });
-            _simulateAISpeaking(aiResponse.text);
-          }
+      if (currentTranscript.isNotEmpty) {
+        _addMessage(currentTranscript, MessageSender.user);
+        
+        // Simulate AI Response
+        Timer(const Duration(seconds: 1), () {
+          const response = "I understand. Let me help you with that.";
+          _addMessage(response, MessageSender.ai);
+          simulateAISpeaking(response);
         });
-
-        setState(() {
-          _currentTranscript = "";
-        });
+        setState(() => currentTranscript = "");
       }
     } else {
+      // Start Listening
       setState(() {
-        _isListening = true;
-        _currentTranscript = "Go ahead, I'm listening...";
+        isListening = true;
+        currentTranscript = "Go ahead, I'm listening...";
+      });
+      _pulseController.repeat(reverse: true);
+      _waveformController.duration = const Duration(seconds: 3);
+      _waveformController.repeat();
+    }
+  }
+
+  void handleSendMessage() {
+    if (_textController.text.trim().isNotEmpty) {
+      _addMessage(_textController.text, MessageSender.user);
+      _textController.clear();
+
+      // Simulate AI Response
+      Timer(const Duration(seconds: 1), () {
+        const response = "I've received your message. How else can I assist you?";
+        _addMessage(response, MessageSender.ai);
+        simulateAISpeaking(response);
       });
     }
   }
 
-  void _handleSendMessage() {
-    if (_inputController.text.trim().isNotEmpty) {
-      final userMessage = Message(
-        id: _messages.length + 1,
-        text: _inputController.text.trim(),
-        sender: MessageSender.user,
+  void _addMessage(String text, MessageSender sender) {
+    setState(() {
+      messages.add(ChatMessage(
+        id: messages.length + 1,
+        text: text,
+        sender: sender,
         timestamp: DateTime.now(),
-      );
-      setState(() {
-        _messages.add(userMessage);
-        _inputController.clear();
-      });
-
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) {
-          final aiResponse = Message(
-            id: _messages.length + 1,
-            text: "I've received your message. How else can I assist you?",
-            sender: MessageSender.ai,
-            timestamp: DateTime.now(),
-          );
-          setState(() {
-            _messages.add(aiResponse);
-          });
-          _simulateAISpeaking(aiResponse.text);
-        }
+      ));
+    });
+    // Scroll to bottom
+    if (showChat) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = Responsive.isMobile(context);
-    final screenHeight = Responsive.screenHeight(context);
+    // Background Gradient Colors
+    const bgStart = Color(0xFF0f2940);
+    const bgMid = Color(0xFF1a3a52);
+    const bgEnd = Color(0xFF0f2940);
 
     return Scaffold(
+      resizeToAvoidBottomInset: false, // Handle keyboard manually if needed
       body: Container(
         decoration: const BoxDecoration(
-          gradient: AppColors.primaryGradient,
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [bgStart, bgMid, bgEnd],
+          ),
         ),
         child: Stack(
           children: [
-            // Background Glow Effects
+            // Background Glow Effects (Static Blobs) - Behind everything
             Positioned(
-              top: screenHeight * 0.33,
-              left: MediaQuery.of(context).size.width * 0.5,
-              child: Transform.translate(
-                offset: const Offset(-192, -192),
+              top: MediaQuery.of(context).size.height * 0.33,
+              left: MediaQuery.of(context).size.width / 2 - 192,
+              child: IgnorePointer(
                 child: Container(
                   width: 384,
                   height: 384,
                   decoration: BoxDecoration(
-                    color: AppColors.cyan500.withOpacity(0.1),
                     shape: BoxShape.circle,
+                    color: Colors.cyan.withOpacity(0.1),
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(192),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100),
-                      child: Container(),
-                    ),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100),
+                    child: Container(color: Colors.transparent),
                   ),
                 ),
               ),
             ),
             Positioned(
-              bottom: screenHeight * 0.25,
+              bottom: MediaQuery.of(context).size.height * 0.25,
               left: MediaQuery.of(context).size.width * 0.25,
-              child: Container(
-                width: 256,
-                height: 256,
-                decoration: BoxDecoration(
-                  color: AppColors.blue500.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(128),
+              child: IgnorePointer(
+                child: Container(
+                  width: 256,
+                  height: 256,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.blue.withOpacity(0.1),
+                  ),
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-                    child: Container(),
+                    child: Container(color: Colors.transparent),
                   ),
                 ),
               ),
             ),
 
-            // Main Content
+            // --- Main Content ---
             SafeArea(
               bottom: false,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final screenHeight = MediaQuery.of(context).size.height;
+                  final screenWidth = MediaQuery.of(context).size.width;
+                  
+                  // Responsive calculations - Reduced to move waveform up
+                  final topSectionHeight = Responsive.getResponsiveValue(
+                    context,
+                    mobile: screenHeight * 0.22,
+                    tablet: screenHeight * 0.20,
+                    desktop: screenHeight * 0.18,
+                  );
+                  
+                  // Responsive bottom section height
+                  final micButtonHeight = Responsive.getResponsiveValue(
+                    context,
+                    mobile: 100.0,
+                    tablet: 110.0,
+                    desktop: 120.0,
+                  );
+                  final spacingHeight = Responsive.getResponsiveValue(
+                    context,
+                    mobile: 32.0,
+                    tablet: 36.0,
+                    desktop: 40.0,
+                  );
+                  final inputFieldHeight = Responsive.getResponsiveValue(
+                    context,
+                    mobile: 70.0,
+                    tablet: 75.0,
+                    desktop: 80.0,
+                  );
+                  final bottomPadding = Responsive.getResponsiveValue(
+                    context,
+                    mobile: 24.0,
+                    tablet: 28.0,
+                    desktop: 32.0,
+                  );
+                  
+                  final bottomSectionHeight = micButtonHeight + spacingHeight + inputFieldHeight + bottomPadding;
+                  
+                  // Available height for waveform area (with safety margin)
+                  final availableHeight = (constraints.maxHeight - topSectionHeight - bottomSectionHeight).clamp(200.0, double.infinity);
+                  
+                  return Column(
+                    children: [
+                      // Spacer to account for top section
+                      SizedBox(height: topSectionHeight),
+                      
+                      // Waveform Area - Centered in available space
+                      Expanded(
+                        child: Center(
+                          child: _WaveformVisualizer(
+                            rotateController: _waveformController,
+                            pulseController: _pulseController,
+                            isActive: isListening || isSpeaking,
+                          ),
+                        ),
+                      ),
+
+                      // Mic Button - Fixed height to prevent layout shift
+                      SizedBox(
+                        height: micButtonHeight,
+                        child: ClipRect(
+                          child: Center(
+                            child: _MicButton(
+                              isListening: isListening,
+                              onTap: handleMicToggle,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: spacingHeight),
+
+                      // Bottom Input Field - Fixed height to prevent layout shift
+                      Padding(
+                        padding: EdgeInsets.only(
+                          bottom: bottomPadding + MediaQuery.of(context).padding.bottom,
+                          left: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 20.0,
+                            tablet: 24.0,
+                            desktop: 28.0,
+                          ),
+                          right: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 20.0,
+                            tablet: 24.0,
+                            desktop: 28.0,
+                          ),
+                        ),
+                        child: _buildInputArea(),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+
+            // Top Navigation & Controls - On front layer
+            SafeArea(
               child: Column(
                 children: [
-                  // Top Bar
                   Padding(
-                    padding: EdgeInsets.only(
-                      left: isMobile ? 24 : 32,
-                      right: isMobile ? 24 : 32,
-                      top: isMobile ? 16 : 20,
-                      bottom: isMobile ? 12 : 16,
+                    padding: Responsive.getResponsivePadding(
+                      context,
+                      mobile: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                      tablet: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                      desktop: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -214,311 +330,541 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                         GestureDetector(
                           onTap: () => context.go('/home'),
                           child: Row(
-                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                Icons.chevron_left,
-                                color: AppColors.cyan400,
-                                size: isMobile ? 24 : 28,
+                                LucideIcons.chevronLeft,
+                                color: const Color(0xFF22d3ee),
+                                size: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 22.0,
+                                  tablet: 24.0,
+                                  desktop: 26.0,
+                                ),
                               ),
-                              SizedBox(width: isMobile ? 4 : 6),
+                              SizedBox(
+                                width: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 4.0,
+                                  tablet: 6.0,
+                                  desktop: 8.0,
+                                ),
+                              ),
                               Text(
-                                'Home',
+                                "Home",
                                 style: TextStyle(
-                                  color: AppColors.cyan400,
-                                  fontSize: isMobile ? 16 : 18,
+                                  color: const Color(0xFF22d3ee),
+                                  fontSize: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 14.0,
+                                    tablet: 16.0,
+                                    desktop: 18.0,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        )
-                            .animate()
-                            .fadeIn(duration: 300.ms)
-                            .slideX(begin: -0.2, end: 0, duration: 300.ms),
-
-                        // Right Controls
+                        ),
+                        // Top Right Buttons
                         Row(
                           children: [
-                            // Chat Button
-                            GestureDetector(
-                              onTap: () => setState(() => _showChat = !_showChat),
-                              child: Container(
-                                padding: EdgeInsets.all(isMobile ? 12 : 14),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      AppColors.primaryLight.withOpacity(0.6),
-                                      AppColors.primaryDarker.withOpacity(0.6),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
-                                  border: Border.all(
-                                    color: AppColors.cyan500.withOpacity(0.2),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
-                                  child: BackdropFilter(
-                                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                                    child: Stack(
-                                      children: [
-                                        Icon(
-                                          Icons.message,
-                                          color: AppColors.cyan400,
-                                          size: isMobile ? 20 : 24,
-                                        ),
-                                        if (_messages.length > 1)
-                                          Positioned(
-                                            top: -4,
-                                            right: -4,
-                                            child: Container(
-                                              width: isMobile ? 18 : 20,
-                                              height: isMobile ? 18 : 20,
-                                              decoration: BoxDecoration(
-                                                gradient: const LinearGradient(
-                                                  colors: [
-                                                    Color(0xFFEC4899),
-                                                    Color(0xFFA855F7),
-                                                  ],
-                                                ),
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: Center(
-                                                child: Text(
-                                                  '${_messages.length}',
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: isMobile ? 10 : 11,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                            _buildGlassIconButton(
+                              icon: LucideIcons.messageSquare,
+                              onTap: () => setState(() => showChat = !showChat),
+                              badgeCount: messages.length > 1 ? messages.length : 0,
+                            ),
+                            SizedBox(
+                              width: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 10.0,
+                                tablet: 12.0,
+                                desktop: 14.0,
                               ),
                             ),
-                            SizedBox(width: isMobile ? 12 : 16),
-                            // Menu Button
-                            Container(
-                              padding: EdgeInsets.all(isMobile ? 12 : 14),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    AppColors.primaryLight.withOpacity(0.6),
-                                    AppColors.primaryDarker.withOpacity(0.6),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
-                                border: Border.all(
-                                  color: AppColors.cyan500.withOpacity(0.2),
-                                  width: 1,
-                                ),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
-                                child: BackdropFilter(
-                                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                                  child: Icon(
-                                    Icons.menu,
-                                    color: AppColors.cyan400,
-                                    size: isMobile ? 20 : 24,
-                                  ),
-                                ),
-                              ),
-                            ),
+                            _buildGlassIconButton(icon: LucideIcons.menu, onTap: () {}),
                           ],
                         )
-                            .animate()
-                            .fadeIn(duration: 500.ms)
-                            .slideY(begin: -0.2, end: 0, duration: 500.ms),
                       ],
                     ),
                   ),
 
-                  // Header
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 32),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Talk to buddy',
-                          style: TextStyle(
-                            color: AppColors.textCyan200.withOpacity(0.6),
-                            fontSize: isMobile ? 14 : 16,
+                  // Header Text
+                  Column(
+                    children: [
+                      Text(
+                        "Talk to buddy",
+                        style: TextStyle(
+                          color: Colors.cyan[200]!.withOpacity(0.6),
+                          fontSize: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 12.0,
+                            tablet: 14.0,
+                            desktop: 16.0,
                           ),
-                        )
-                            .animate()
-                            .fadeIn(duration: 500.ms)
-                            .slideY(begin: -0.2, end: 0, duration: 500.ms),
-                        SizedBox(height: isMobile ? 8 : 12),
-                        AnimatedSwitcher(
+                        ),
+                      ),
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 12.0,
+                          tablet: 16.0,
+                          desktop: 20.0,
+                        ),
+                      ),
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 70.0,
+                          tablet: 80.0,
+                          desktop: 90.0,
+                        ),
+                        child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 300),
-                          child: Text(
-                            _isListening
-                                ? "Go ahead, I'm listening..."
-                                : _isSpeaking
-                                    ? "Let me think about that..."
-                                    : "Ready to assist you with",
-                            key: ValueKey(_isListening ? "listening" : _isSpeaking ? "speaking" : "idle"),
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: AppColors.textWhite,
-                              fontSize: isMobile ? 18 : 20,
-                            ),
-                          )
-                              .animate()
-                              .fadeIn(duration: 300.ms)
-                              .slideY(begin: 0.1, end: 0, duration: 300.ms),
-                        ),
-                        if (!_isListening && !_isSpeaking)
-                          Text(
-                            'whatever you need today!',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: AppColors.textWhite,
-                              fontSize: isMobile ? 18 : 20,
-                            ),
-                          )
-                              .animate()
-                              .fadeIn(delay: 200.ms, duration: 300.ms),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(height: isMobile ? 32 : 40),
-
-                  // Waveform Visualization
-                  _WaveformWidget(
-                    isListening: _isListening,
-                    isSpeaking: _isSpeaking,
-                    isMobile: isMobile,
-                  )
-                      .animate()
-                      .fadeIn(delay: 300.ms, duration: 500.ms)
-                      .scale(
-                        begin: const Offset(0.8, 0.8),
-                        end: const Offset(1, 1),
-                        delay: 300.ms,
-                        duration: 500.ms,
-                      ),
-
-                  const Spacer(),
-
-                  // Central Microphone Button
-                  _MicrophoneButton(
-                    isListening: _isListening,
-                    onTap: _handleMicToggle,
-                    isMobile: isMobile,
-                  )
-                      .animate()
-                      .fadeIn(delay: 500.ms, duration: 500.ms)
-                      .scale(
-                        begin: const Offset(0, 0),
-                        end: const Offset(1, 1),
-                        delay: 500.ms,
-                        duration: 500.ms,
-                        curve: Curves.elasticOut,
-                      ),
-
-                  SizedBox(height: isMobile ? 32 : 40),
-
-                  // Bottom Text Input
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: isMobile ? 24 : 32,
-                      right: isMobile ? 24 : 32,
-                      bottom: isMobile ? 24 : 32 + MediaQuery.of(context).padding.bottom,
-                    ),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isMobile ? 24 : 28,
-                        vertical: isMobile ? 12 : 14,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.primaryLight.withOpacity(0.6),
-                            AppColors.primaryDarker.withOpacity(0.6),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(isMobile ? 30 : 35),
-                        border: Border.all(
-                          color: AppColors.cyan500.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(isMobile ? 30 : 35),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Row(
+                          child: Column(
+                            key: ValueKey(isListening ? "list" : isSpeaking ? "speak" : "idle"),
                             children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _inputController,
+                              Text(
+                                isListening
+                                    ? "Go ahead, I'm listening..."
+                                    : isSpeaking
+                                        ? "Let me think about that..."
+                                        : "Ready to assist you with",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 18.0,
+                                    tablet: 20.0,
+                                    desktop: 22.0,
+                                  ),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              if (!isListening && !isSpeaking)
+                                Text(
+                                  "whatever you need today!",
                                   style: TextStyle(
-                                    color: AppColors.textWhite,
-                                    fontSize: isMobile ? 14 : 16,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: 'Enter your prompt here...',
-                                    hintStyle: TextStyle(
-                                      color: AppColors.textCyan200.withOpacity(0.3),
-                                      fontSize: isMobile ? 14 : 16,
-                                    ),
-                                    border: InputBorder.none,
-                                    contentPadding: EdgeInsets.zero,
-                                  ),
-                                  onSubmitted: (_) => _handleSendMessage(),
-                                ),
-                              ),
-                              SizedBox(width: isMobile ? 8 : 12),
-                              GestureDetector(
-                                onTap: _handleSendMessage,
-                                child: Container(
-                                  padding: EdgeInsets.all(isMobile ? 8 : 10),
-                                  decoration: BoxDecoration(
-                                    gradient: AppColors.buttonGradient,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.send,
                                     color: Colors.white,
-                                    size: isMobile ? 16 : 18,
+                                    fontSize: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 18.0,
+                                      tablet: 20.0,
+                                      desktop: 22.0,
+                                    ),
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                              ),
                             ],
                           ),
                         ),
                       ),
-                    ),
-                  )
-                      .animate()
-                      .fadeIn(delay: 600.ms, duration: 500.ms)
-                      .slideY(begin: 0.2, end: 0, delay: 600.ms, duration: 500.ms),
+                    ],
+                  ),
                 ],
               ),
             ),
 
-            // Chat Overlay
-            if (_showChat)
-              _ChatOverlay(
-                messages: _messages,
-                onClose: () => setState(() => _showChat = false),
-                isMobile: isMobile,
+            // --- Chat Overlay ---
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeOutCubic,
+              left: 0,
+              right: 0,
+              bottom: showChat ? 0 : -MediaQuery.of(context).size.height,
+              height: MediaQuery.of(context).size.height,
+              child: _ChatOverlay(
+                messages: messages,
+                onClose: () => setState(() => showChat = false),
+                scrollController: _scrollController,
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassIconButton({required IconData icon, required VoidCallback onTap, int badgeCount = 0}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(50),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF1e4a66).withOpacity(0.6),
+              const Color(0xFF16384d).withOpacity(0.6),
+            ],
+          ),
+          border: Border.all(color: Colors.cyan.withOpacity(0.2)),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            Icon(icon, color: const Color(0xFF22d3ee), size: 20),
+            if (badgeCount > 0)
+              Positioned(
+                top: -2,
+                right: -2,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(colors: [Colors.pink, Colors.purple]),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    "$badgeCount",
+                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputArea() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 45.0,
+          tablet: 50.0,
+          desktop: 55.0,
+        ),
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: Responsive.getResponsiveValue(
+              context,
+              mobile: 20.0,
+              tablet: 24.0,
+              desktop: 28.0,
+            ),
+            vertical: Responsive.getResponsiveValue(
+              context,
+              mobile: 10.0,
+              tablet: 12.0,
+              desktop: 14.0,
+            ),
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 45.0,
+                tablet: 50.0,
+                desktop: 55.0,
+              ),
+            ),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF1e4a66).withOpacity(0.6),
+                const Color(0xFF16384d).withOpacity(0.6),
+              ],
+            ),
+            border: Border.all(color: Colors.cyan.withOpacity(0.2)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _textController,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 15.0,
+                      tablet: 17.0,
+                      desktop: 19.0,
+                    ),
+                  ),
+                  decoration: InputDecoration(
+                    hintText: "Enter your prompt here...",
+                    hintStyle: TextStyle(color: Colors.cyan[200]!.withOpacity(0.3)),
+                    border: InputBorder.none,
+                    isDense: true,
+                  ),
+                  onSubmitted: (_) => handleSendMessage(),
+                ),
+              ),
+              GestureDetector(
+                onTap: handleSendMessage,
+                child: Container(
+                  padding: EdgeInsets.all(
+                    Responsive.getResponsiveValue(
+                      context,
+                      mobile: 6.0,
+                      tablet: 8.0,
+                      desktop: 10.0,
+                    ),
+                  ),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(colors: [Color(0xFF06b6d4), Color(0xFF3b82f6)]),
+                  ),
+                  child: Icon(
+                    LucideIcons.send,
+                    color: Colors.white,
+                    size: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 14.0,
+                      tablet: 16.0,
+                      desktop: 18.0,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- Waveform Visualizer ---
+class _WaveformVisualizer extends StatelessWidget {
+  final AnimationController rotateController;
+  final AnimationController pulseController;
+  final bool isActive;
+
+  const _WaveformVisualizer({
+    required this.rotateController,
+    required this.pulseController,
+    required this.isActive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final waveformSize = Responsive.getResponsiveValue(
+      context,
+      mobile: 300.0,
+      tablet: 340.0,
+      desktop: 380.0,
+    );
+    
+    final layer1Size = waveformSize * 0.85;
+    final layer2Size = waveformSize * 0.75;
+    final layer3Size = waveformSize * 0.75;
+    
+    return SizedBox(
+      width: waveformSize,
+      height: waveformSize,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Static Background Glow
+          Container(
+            width: waveformSize,
+            height: waveformSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.blue.withOpacity(0.2),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+              child: Container(color: Colors.transparent),
+            ),
+          ),
+
+          // Layer 1: Cyan/Blue Swirl
+          AnimatedBuilder(
+            animation: Listenable.merge([rotateController, pulseController]),
+            builder: (context, child) {
+              return Transform.rotate(
+                angle: rotateController.value * 2 * math.pi,
+                  child: Transform.scale(
+                    scale: isActive ? 1.0 + (pulseController.value * 0.1) : 1.0,
+                    child: Container(
+                      width: layer1Size,
+                      height: layer1Size,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: SweepGradient(
+                        colors: [Color(0xFF0891b2), Color(0xFF3b82f6), Colors.transparent, Color(0xFF0891b2)],
+                      ),
+                    ),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: Container(color: Colors.transparent),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+
+          // Layer 2: Pink/Purple Swirl (Counter Rotation)
+          AnimatedBuilder(
+            animation: Listenable.merge([rotateController, pulseController]),
+            builder: (context, child) {
+              return Transform.rotate(
+                angle: -rotateController.value * 2 * math.pi,
+                  child: Transform.scale(
+                    scale: isActive ? 0.95 + (pulseController.value * 0.2) : 0.95,
+                    child: Container(
+                      width: layer2Size,
+                      height: layer2Size,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: SweepGradient(
+                        startAngle: math.pi,
+                        colors: [Color(0xFFdb2777), Color(0xFF9333ea), Colors.transparent, Color(0xFFdb2777)],
+                      ),
+                    ),
+                     child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: Container(color: Colors.transparent),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+
+          // Layer 3: Inner Liquid Glow
+          AnimatedBuilder(
+            animation: Listenable.merge([rotateController, pulseController]),
+            builder: (context, child) {
+               // A slightly distorted rotation to simulate liquid
+              return Transform.rotate(
+                angle: rotateController.value * math.pi,
+                child: Container(
+                  width: layer3Size,
+                  height: layer3Size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                       colors: [
+                        Colors.blue.withOpacity(0.3),
+                        Colors.purple.withOpacity(0.1),
+                        Colors.transparent
+                       ]
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFA7F3D0).withOpacity(0.1),
+                        blurRadius: 60,
+                        spreadRadius: 0,
+                      )
+                    ]
+                  ),
+                ),
+              );
+            },
+          ),
+          
+        ],
+      ),
+    );
+  }
+}
+
+// --- Microphone Button ---
+class _MicButton extends StatelessWidget {
+  final bool isListening;
+  final VoidCallback onTap;
+
+  const _MicButton({required this.isListening, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 84,
+      height: 84,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            // Outer Glow Ripple (when listening) - Positioned absolutely to not affect layout
+            if (isListening)
+              Positioned.fill(
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 1.0, end: 1.3),
+                  duration: const Duration(seconds: 1),
+                  curve: Curves.easeInOut,
+                  builder: (context, value, child) {
+                    return Center(
+                      child: Container(
+                        width: 120 * value,
+                        height: 120 * value,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [Colors.purple.withOpacity(0.4 * (1.3 - value)), Colors.transparent],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  onEnd: () {},
+                ),
+              ),
+
+            // Gradient Border Ring
+            Container(
+              width: 84,
+              height: 84,
+              padding: const EdgeInsets.all(2), // Border width
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: SweepGradient(
+                  colors: const [
+                    Color(0xFFA855F7), Color(0xFFEC4899), Color(0xFF06B6D4), Color(0xFF10B981), Color(0xFFA855F7)
+                  ],
+                  stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+                  transform: GradientRotation(isListening ? 0 : 0.5), // Animate this if you want rotation
+                ),
+                boxShadow: isListening ? [BoxShadow(color: Colors.purple.withOpacity(0.5), blurRadius: 10)] : [],
+              ),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0f2940),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+
+            // Inner Button
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: isListening
+                    ? const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF9333ea), Color(0xFFdb2777), Color(0xFF0891b2)],
+                      )
+                    : LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [const Color(0xFF1a3a52), const Color(0xFF0f2940)],
+                      ),
+                border: isListening ? null : Border.all(color: Colors.cyan.withOpacity(0.3)),
+              ),
+              child: Icon(
+                isListening ? LucideIcons.micOff : LucideIcons.mic,
+                color: isListening ? Colors.white : const Color(0xFF67e8f9),
+                size: 32,
+              ),
+            ),
           ],
         ),
       ),
@@ -526,480 +872,124 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
   }
 }
 
-class _WaveformWidget extends StatefulWidget {
-  final bool isListening;
-  final bool isSpeaking;
-  final bool isMobile;
-
-  const _WaveformWidget({
-    required this.isListening,
-    required this.isSpeaking,
-    required this.isMobile,
-  });
-
-  @override
-  State<_WaveformWidget> createState() => _WaveformWidgetState();
-}
-
-class _WaveformWidgetState extends State<_WaveformWidget>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  final Random _random = Random();
-  final List<double> _baseHeights = [];
-
-  @override
-  void initState() {
-    super.initState();
-    for (int i = 0; i < 40; i++) {
-      _baseHeights.add(20 + _random.nextDouble() * 30);
-    }
-    _controller = AnimationController(
-      vsync: this,
-      duration: Duration(
-        milliseconds: widget.isSpeaking ? 300 : widget.isListening ? 500 : 1500,
-      ),
-    )..repeat();
-  }
-
-  @override
-  void didUpdateWidget(_WaveformWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.isSpeaking != widget.isSpeaking ||
-        oldWidget.isListening != widget.isListening) {
-      _controller.duration = Duration(
-        milliseconds: widget.isSpeaking ? 300 : widget.isListening ? 500 : 1500,
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: widget.isMobile ? 160 : 180,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: List.generate(40, (index) {
-          return AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              final delay = index * 0.05;
-              final animationValue = (_controller.value + delay) % 1.0;
-              final heightMultiplier = widget.isListening || widget.isSpeaking
-                  ? 1.0 + (sin(animationValue * 2 * pi) * 0.5 + 0.5)
-                  : 0.3 + (sin(animationValue * 2 * pi) * 0.2);
-              final height = _baseHeights[index] * heightMultiplier;
-
-              return Container(
-                width: widget.isMobile ? 2 : 3,
-                margin: EdgeInsets.symmetric(horizontal: widget.isMobile ? 1 : 1.5),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Color.fromRGBO(
-                        100 + (index * 3).clamp(0, 155).toInt(),
-                        50 + (index * 4).clamp(0, 205).toInt(),
-                        200 + (index * 1).clamp(0, 55).toInt(),
-                        1.0,
-                      ),
-                      Color.fromRGBO(
-                        150 + (index * 2).clamp(0, 105).toInt(),
-                        100 + (index * 3).clamp(0, 155).toInt(),
-                        255,
-                        1.0,
-                      ),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(widget.isMobile ? 1 : 1.5),
-                ),
-                height: height.clamp(10, double.infinity),
-              );
-            },
-          );
-        }),
-      ),
-    );
-  }
-}
-
-class _MicrophoneButton extends StatefulWidget {
-  final bool isListening;
-  final VoidCallback onTap;
-  final bool isMobile;
-
-  const _MicrophoneButton({
-    required this.isListening,
-    required this.onTap,
-    required this.isMobile,
-  });
-
-  @override
-  State<_MicrophoneButton> createState() => _MicrophoneButtonState();
-}
-
-class _MicrophoneButtonState extends State<_MicrophoneButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    );
-    if (widget.isListening) {
-      _pulseController.repeat();
-    }
-  }
-
-  @override
-  void didUpdateWidget(_MicrophoneButton oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isListening && !oldWidget.isListening) {
-      _pulseController.repeat();
-    } else if (!widget.isListening && oldWidget.isListening) {
-      _pulseController.stop();
-      _pulseController.reset();
-    }
-  }
-
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Outer glow ring
-          if (widget.isListening)
-            AnimatedBuilder(
-              animation: _pulseController,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: 1.0 + (_pulseController.value * 0.3),
-                  child: Opacity(
-                    opacity: 0.5 - (_pulseController.value * 0.5),
-                    child: Container(
-                      width: widget.isMobile ? 120 : 140,
-                      height: widget.isMobile ? 120 : 140,
-                      decoration: BoxDecoration(
-                        color: AppColors.cyan500.withOpacity(0.3),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          // Main button
-          Container(
-            width: widget.isMobile ? 96 : 112,
-            height: widget.isMobile ? 96 : 112,
-            decoration: BoxDecoration(
-              gradient: widget.isListening
-                  ? LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.cyan400,
-                        AppColors.blue500,
-                      ],
-                    )
-                  : null,
-              color: widget.isListening
-                  ? null
-                  : AppColors.primaryLight.withOpacity(0.8),
-              shape: BoxShape.circle,
-              border: widget.isListening
-                  ? null
-                  : Border.all(
-                      color: AppColors.cyan500.withOpacity(0.3),
-                      width: 2,
-                    ),
-              boxShadow: widget.isListening
-                  ? [
-                      BoxShadow(
-                        color: AppColors.cyan500.withOpacity(0.5),
-                        blurRadius: 20,
-                        spreadRadius: 5,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Icon(
-              widget.isListening ? Icons.mic_off : Icons.mic,
-              color: widget.isListening ? Colors.white : AppColors.cyan400,
-              size: widget.isMobile ? 40 : 48,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
+// --- Chat Overlay ---
 class _ChatOverlay extends StatelessWidget {
-  final List<Message> messages;
+  final List<ChatMessage> messages;
   final VoidCallback onClose;
-  final bool isMobile;
+  final ScrollController scrollController;
 
-  const _ChatOverlay({
-    required this.messages,
-    required this.onClose,
-    required this.isMobile,
-  });
+  const _ChatOverlay({required this.messages, required this.onClose, required this.scrollController});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        gradient: AppColors.primaryGradient,
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+        ),
       ),
       child: SafeArea(
-        bottom: false,
         child: Column(
           children: [
             // Header
             Padding(
-              padding: EdgeInsets.only(
-                left: isMobile ? 24 : 32,
-                right: isMobile ? 24 : 32,
-                top: isMobile ? 16 : 20,
-                bottom: isMobile ? 12 : 16,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Conversation',
-                    style: TextStyle(
-                      color: AppColors.textWhite,
-                      fontSize: isMobile ? 20 : 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  const Text("Conversation", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                   GestureDetector(
                     onTap: onClose,
                     child: Container(
-                      padding: EdgeInsets.all(isMobile ? 8 : 10),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.primaryLight.withOpacity(0.6),
-                            AppColors.primaryDarker.withOpacity(0.6),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
-                        border: Border.all(
-                          color: AppColors.cyan500.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Icon(
-                            Icons.close,
-                            color: AppColors.cyan400,
-                            size: isMobile ? 20 : 24,
-                          ),
-                        ),
-                      ),
+                       padding: const EdgeInsets.all(8),
+                       decoration: BoxDecoration(
+                         color: const Color(0xFF1e4a66).withOpacity(0.6),
+                         borderRadius: BorderRadius.circular(12),
+                         border: Border.all(color: Colors.cyan.withOpacity(0.2)),
+                       ),
+                       child: const Icon(LucideIcons.x, color: Color(0xFF22d3ee), size: 20),
                     ),
-                  ),
+                  )
                 ],
               ),
             ),
-            // Messages
+
+            // Messages List
             Expanded(
               child: ListView.builder(
-                padding: EdgeInsets.only(
-                  left: isMobile ? 24 : 32,
-                  right: isMobile ? 24 : 32,
-                  bottom: isMobile ? 24 : 32 + MediaQuery.of(context).padding.bottom,
-                ),
+                controller: scrollController,
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
                 itemCount: messages.length,
                 itemBuilder: (context, index) {
-                  final message = messages[index];
-                  return _MessageBubble(
-                    message: message,
-                    isMobile: isMobile,
-                  )
-                      .animate()
-                      .fadeIn(duration: 300.ms)
-                      .slideX(
-                        begin: message.sender == MessageSender.user ? 0.2 : -0.2,
-                        end: 0,
-                        duration: 300.ms,
-                      );
+                  final msg = messages[index];
+                  final isUser = msg.sender == MessageSender.user;
+                  
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Row(
+                      mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+                      children: [
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              gradient: isUser
+                                  ? const LinearGradient(colors: [Color(0xFF06b6d4), Color(0xFF3b82f6)])
+                                  : LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        const Color(0xFF1e4a66).withOpacity(0.6),
+                                        const Color(0xFF16384d).withOpacity(0.6),
+                                      ],
+                                    ),
+                              border: isUser ? null : Border.all(color: Colors.cyan.withOpacity(0.2)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  msg.text,
+                                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "${msg.timestamp.hour.toString().padLeft(2, '0')}:${msg.timestamp.minute.toString().padLeft(2, '0')}",
+                                  style: TextStyle(
+                                    color: isUser ? Colors.white.withOpacity(0.7) : Colors.cyan[200]!.withOpacity(0.5),
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
                 },
               ),
             ),
           ],
         ),
       ),
-    )
-        .animate()
-        .fadeIn(duration: 300.ms)
-        .slideY(begin: 1.0, end: 0.0, duration: 400.ms, curve: Curves.easeOut);
-  }
-}
-
-class _MessageBubble extends StatelessWidget {
-  final Message message;
-  final bool isMobile;
-
-  const _MessageBubble({
-    required this.message,
-    required this.isMobile,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isUser = message.sender == MessageSender.user;
-    final timeString = '${message.timestamp.hour.toString().padLeft(2, '0')}:${message.timestamp.minute.toString().padLeft(2, '0')}';
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: isMobile ? 16 : 20),
-      child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!isUser) ...[
-            Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.8,
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 16 : 20,
-                vertical: isMobile ? 12 : 14,
-              ),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.primaryLight.withOpacity(0.6),
-                    AppColors.primaryDarker.withOpacity(0.6),
-                  ],
-                ),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(isMobile ? 20 : 24),
-                  topRight: Radius.circular(isMobile ? 20 : 24),
-                  bottomRight: Radius.circular(isMobile ? 20 : 24),
-                  bottomLeft: const Radius.circular(4),
-                ),
-                border: Border.all(
-                  color: AppColors.cyan500.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(isMobile ? 20 : 24),
-                  topRight: Radius.circular(isMobile ? 20 : 24),
-                  bottomRight: Radius.circular(isMobile ? 20 : 24),
-                  bottomLeft: const Radius.circular(4),
-                ),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        message.text,
-                        style: TextStyle(
-                          color: AppColors.textWhite,
-                          fontSize: isMobile ? 14 : 16,
-                        ),
-                      ),
-                      SizedBox(height: isMobile ? 4 : 6),
-                      Text(
-                        timeString,
-                        style: TextStyle(
-                          color: AppColors.textCyan200.withOpacity(0.5),
-                          fontSize: isMobile ? 11 : 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ] else ...[
-            Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.8,
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 16 : 20,
-                vertical: isMobile ? 12 : 14,
-              ),
-              decoration: BoxDecoration(
-                gradient: AppColors.buttonGradient,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(isMobile ? 20 : 24),
-                  topRight: Radius.circular(isMobile ? 20 : 24),
-                  bottomLeft: Radius.circular(isMobile ? 20 : 24),
-                  bottomRight: const Radius.circular(4),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    message.text,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isMobile ? 14 : 16,
-                    ),
-                  ),
-                  SizedBox(height: isMobile ? 4 : 6),
-                  Text(
-                    timeString,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: isMobile ? 11 : 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
     );
   }
 }
 
+// --- Data Models ---
 enum MessageSender { user, ai }
 
-class Message {
+class ChatMessage {
   final int id;
   final String text;
   final MessageSender sender;
   final DateTime timestamp;
 
-  Message({
+  ChatMessage({
     required this.id,
     required this.text,
     required this.sender,
