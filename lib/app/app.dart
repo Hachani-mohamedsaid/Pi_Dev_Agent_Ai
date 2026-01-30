@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 
-import '../presentation/pages/counter_page.dart';
-import '../injection_container.dart';
+import '../core/routing/app_router.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'pi_dev_agentia',
+    return MaterialApp.router(
+      title: 'Ava',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF06B6D4),
+          brightness: Brightness.dark,
+        ),
       ),
-      home: CounterPage(
-        title: 'Counter (Clean Architecture)',
-        controller: InjectionContainer.instance.buildCounterController(),
-      ),
+      routerConfig: appRouter,
     );
   }
 }

@@ -7,6 +7,12 @@ abstract class UseCase<Output, Params> {
   Output call(Params params);
 }
 
+/// Async use case contract for operations that return Futures.
+abstract class AsyncUseCase<Output, Params> {
+  const AsyncUseCase();
+  Future<Output> call(Params params);
+}
+
 class NoParams {
   const NoParams();
 }
