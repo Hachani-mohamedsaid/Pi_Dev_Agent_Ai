@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -53,11 +54,7 @@ class _RegisterPageState extends State<RegisterPage> {
         _passwordController.text,
       );
       if (success && mounted) {
-<<<<<<< HEAD
         context.go('/home');
-=======
-        context.go('/login');
->>>>>>> c3cf2c9 ( Flutter project v1)
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -393,22 +390,24 @@ class _RegisterPageState extends State<RegisterPage> {
                                                 duration: 500.ms,
                                               ),
                                         ),
-                                        SizedBox(width: isMobile ? 12 : 16),
-                                        Expanded(
-                                          child: SocialButton(
-                                            icon: AppleIcon(size: isMobile ? 24 : 26),
-                                            text: 'Apple Account',
-                                            onPressed: () => _handleSocialRegister(SocialProvider.apple),
-                                          )
-                                              .animate()
-                                              .fadeIn(delay: 1100.ms, duration: 500.ms)
-                                              .slideX(
-                                                begin: 0.1,
-                                                end: 0,
-                                                delay: 1100.ms,
-                                                duration: 500.ms,
-                                              ),
-                                        ),
+                                        if (!kIsWeb) ...[
+                                          SizedBox(width: isMobile ? 12 : 16),
+                                          Expanded(
+                                            child: SocialButton(
+                                              icon: AppleIcon(size: isMobile ? 24 : 26),
+                                              text: 'Apple Account',
+                                              onPressed: () => _handleSocialRegister(SocialProvider.apple),
+                                            )
+                                                .animate()
+                                                .fadeIn(delay: 1100.ms, duration: 500.ms)
+                                                .slideX(
+                                                  begin: 0.1,
+                                                  end: 0,
+                                                  delay: 1100.ms,
+                                                  duration: 500.ms,
+                                                ),
+                                          ),
+                                        ],
                                       ],
                                     ),
                                     SizedBox(height: isMobile ? 24 : 32),

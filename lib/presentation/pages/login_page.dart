@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -358,22 +359,24 @@ class _LoginPageState extends State<LoginPage> {
                                                 duration: 500.ms,
                                               ),
                                         ),
-                                        SizedBox(width: isMobile ? 12 : 16),
-                                        Expanded(
-                                          child: SocialButton(
-                                            icon: AppleIcon(size: isMobile ? 24 : 26),
-                                            text: 'Apple Account',
-                                            onPressed: () => _handleSocialLogin(SocialProvider.apple),
-                                          )
-                                              .animate()
-                                              .fadeIn(delay: 1000.ms, duration: 500.ms)
-                                              .slideX(
-                                                begin: 0.1,
-                                                end: 0,
-                                                delay: 1000.ms,
-                                                duration: 500.ms,
-                                              ),
-                                        ),
+                                        if (!kIsWeb) ...[
+                                          SizedBox(width: isMobile ? 12 : 16),
+                                          Expanded(
+                                            child: SocialButton(
+                                              icon: AppleIcon(size: isMobile ? 24 : 26),
+                                              text: 'Apple Account',
+                                              onPressed: () => _handleSocialLogin(SocialProvider.apple),
+                                            )
+                                                .animate()
+                                                .fadeIn(delay: 1000.ms, duration: 500.ms)
+                                                .slideX(
+                                                  begin: 0.1,
+                                                  end: 0,
+                                                  delay: 1000.ms,
+                                                  duration: 500.ms,
+                                                ),
+                                          ),
+                                        ],
                                       ],
                                     ),
                                     SizedBox(height: isMobile ? 24 : 32),
