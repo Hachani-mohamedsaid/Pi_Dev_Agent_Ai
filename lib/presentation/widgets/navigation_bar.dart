@@ -17,7 +17,10 @@ class NavigationBarWidget extends StatelessWidget {
     final isMobile = Responsive.isMobile(context);
     final isHomeActive = currentPath == '/home';
     final isProfileActive = currentPath == '/profile';
+<<<<<<< HEAD
     final isVoiceActive = currentPath == '/voice-assistant';
+=======
+>>>>>>> c3cf2c9 ( Flutter project v1)
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = isMobile ? 16.0 : 24.0;
 
@@ -34,8 +37,13 @@ class NavigationBarWidget extends StatelessWidget {
             maxWidth: isMobile ? screenWidth - (horizontalPadding * 2) : 400,
           ),
           padding: EdgeInsets.symmetric(
+<<<<<<< HEAD
             horizontal: isMobile ? 12 : 16,
             vertical: isMobile ? 8 : 10,
+=======
+            horizontal: isMobile ? 24 : 32,
+            vertical: isMobile ? 12 : 16,
+>>>>>>> c3cf2c9 ( Flutter project v1)
           ),
           decoration: BoxDecoration(
             color: AppColors.primaryDark.withOpacity(0.6),
@@ -69,6 +77,7 @@ class NavigationBarWidget extends StatelessWidget {
                       isMobile: isMobile,
                     ),
                   ),
+<<<<<<< HEAD
                   SizedBox(width: isMobile ? 8 : 12),
                   Flexible(
                     child: _NavButton(
@@ -80,6 +89,9 @@ class NavigationBarWidget extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: isMobile ? 8 : 12),
+=======
+                  SizedBox(width: isMobile ? 24 : 32),
+>>>>>>> c3cf2c9 ( Flutter project v1)
                   Flexible(
                     child: _NavButton(
                       icon: Icons.person,
@@ -140,8 +152,13 @@ class _NavButtonState extends State<_NavButton> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: EdgeInsets.symmetric(
+<<<<<<< HEAD
                   horizontal: widget.isMobile ? 12 : 16,
                   vertical: widget.isMobile ? 8 : 10,
+=======
+                  horizontal: widget.isMobile ? 20 : 24,
+                  vertical: widget.isMobile ? 10 : 12,
+>>>>>>> c3cf2c9 ( Flutter project v1)
                 ),
                 decoration: BoxDecoration(
                   gradient: widget.isActive
@@ -155,24 +172,42 @@ class _NavButtonState extends State<_NavButton> {
                         )
                       : null,
                   color: widget.isActive ? null : Colors.transparent,
+<<<<<<< HEAD
                   borderRadius: BorderRadius.circular(widget.isMobile ? 12 : 16),
                 ),
                 child: Column(
+=======
+                  borderRadius: BorderRadius.circular(widget.isMobile ? 16 : 20),
+                ),
+                child: Row(
+>>>>>>> c3cf2c9 ( Flutter project v1)
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       widget.icon,
+<<<<<<< HEAD
                       size: widget.isMobile ? 20 : 22,
+=======
+                      size: widget.isMobile ? 20 : 24,
+>>>>>>> c3cf2c9 ( Flutter project v1)
                       color: widget.isActive
                           ? AppColors.cyan400
                           : AppColors.textCyan200.withOpacity(0.5),
                     ),
                     if (widget.isActive) ...[
+<<<<<<< HEAD
                       SizedBox(height: widget.isMobile ? 4 : 6),
                       Text(
                         widget.label,
                         style: TextStyle(
                           fontSize: widget.isMobile ? 10 : 11,
+=======
+                      SizedBox(width: widget.isMobile ? 8 : 10),
+                      Text(
+                        widget.label,
+                        style: TextStyle(
+                          fontSize: widget.isMobile ? 14 : 16,
+>>>>>>> c3cf2c9 ( Flutter project v1)
                           fontWeight: FontWeight.w500,
                           color: AppColors.cyan400,
                         ),

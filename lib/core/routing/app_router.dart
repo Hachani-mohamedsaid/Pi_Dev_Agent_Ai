@@ -4,6 +4,10 @@ import '../../presentation/pages/splash_page.dart';
 import '../../presentation/pages/login_page.dart';
 import '../../presentation/pages/register_page.dart';
 import '../../presentation/pages/reset_password_page.dart';
+<<<<<<< HEAD
+=======
+import '../../presentation/pages/reset_password_confirm_page.dart';
+>>>>>>> c3cf2c9 ( Flutter project v1)
 import '../../presentation/pages/home_screen.dart';
 import '../../presentation/pages/profile_screen.dart';
 import '../../presentation/pages/edit_profile_page.dart';
@@ -11,7 +15,10 @@ import '../../presentation/pages/language_page.dart';
 import '../../presentation/pages/notifications_page.dart';
 import '../../presentation/pages/privacy_security_page.dart';
 import '../../presentation/pages/change_password_page.dart';
+<<<<<<< HEAD
 import '../../presentation/pages/voice_assistant_page.dart';
+=======
+>>>>>>> c3cf2c9 ( Flutter project v1)
 import '../../injection_container.dart';
 
 // Custom page transition - fade and scale from center
@@ -85,6 +92,20 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
+<<<<<<< HEAD
+=======
+      path: '/reset-password/confirm',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: ResetPasswordConfirmPage(
+          controller: InjectionContainer.instance.buildAuthController(),
+          token: state.uri.queryParameters['token'] ?? '',
+        ),
+      ),
+    ),
+    GoRoute(
+>>>>>>> c3cf2c9 ( Flutter project v1)
       path: '/home',
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
@@ -146,6 +167,7 @@ final appRouter = GoRouter(
         child: const ChangePasswordPage(),
       ),
     ),
+<<<<<<< HEAD
     GoRoute(
       path: '/voice-assistant',
       pageBuilder: (context, state) => _fadeScaleTransition(
@@ -156,5 +178,7 @@ final appRouter = GoRouter(
         ),
       ),
     ),
+=======
+>>>>>>> c3cf2c9 ( Flutter project v1)
   ],
 );

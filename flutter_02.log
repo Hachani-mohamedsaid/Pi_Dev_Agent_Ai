@@ -1,0 +1,85 @@
+Flutter crash report.
+Please report a bug at https://github.com/flutter/flutter/issues.
+
+## command
+
+flutter run -d chrome
+
+## exception
+
+FileSystemException: FileSystemException: readInto failed, path = 'build/.last_build_id' (OS Error: Operation timed out, errno = 60)
+
+```
+#0      _RandomAccessFile.readIntoSync (dart:io/file_impl.dart:948:7)
+#1      _File.readAsBytesSync (dart:io/file_impl.dart:683:35)
+#2      _File.readAsStringSync (dart:io/file_impl.dart:719:18)
+#3      ForwardingFile.readAsStringSync (package:file/src/forwarding/forwarding_file.dart:99:16)
+#4      ErrorHandlingFile.readAsStringSync.<anonymous closure> (package:flutter_tools/src/base/error_handling_io.dart:212:22)
+#5      _runSync (package:flutter_tools/src/base/error_handling_io.dart:552:14)
+#6      ErrorHandlingFile.readAsStringSync (package:flutter_tools/src/base/error_handling_io.dart:211:12)
+#7      FlutterBuildSystem.trackSharedBuildDirectory (package:flutter_tools/src/build_system/build_system.dart:754:48)
+#8      FlutterBuildSystem.build (package:flutter_tools/src/build_system/build_system.dart:660:5)
+<asynchronous suspension>
+#9      FlutterHookRunnerNative.runHooks (package:flutter_tools/src/build_system/targets/hook_runner_native.dart:30:35)
+<asynchronous suspension>
+#10     ResidentWebRunner._updateDevFS (package:flutter_tools/src/isolated/resident_web_runner.dart:760:28)
+<asynchronous suspension>
+#11     ResidentWebRunner.run.<anonymous closure> (package:flutter_tools/src/isolated/resident_web_runner.dart:324:41)
+<asynchronous suspension>
+#12     asyncGuard.<anonymous closure> (package:flutter_tools/src/base/async_guard.dart:108:24)
+<asynchronous suspension>
+```
+
+## flutter doctor
+
+```
+[32m[✓][39m Flutter (Channel stable, 3.38.1, on macOS 26.1 25B78 darwin-arm64, locale
+    fr-TN) [72ms]
+    [32m•[39m Flutter version 3.38.1 on channel stable at
+      /Users/mohamedsaidhachani/development/flutter
+    [32m•[39m Upstream repository https://github.com/flutter/flutter.git
+    [32m•[39m Framework revision b45fa18946 (3 months ago), 2025-11-12 22:09:06 -0600
+    [32m•[39m Engine revision b5990e5ccc
+    [32m•[39m Dart version 3.10.0
+    [32m•[39m DevTools version 2.51.1
+    [32m•[39m Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop,
+      enable-windows-desktop, enable-android, enable-ios, cli-animations,
+      enable-native-assets, omit-legacy-version-file, enable-lldb-debugging
+
+[33m[!][39m Android toolchain - develop for Android devices (Android SDK version
+    36.1.0) [304ms]
+    [32m•[39m Android SDK at /Users/mohamedsaidhachani/Library/Android/sdk
+    [32m•[39m Emulator version 36.2.12.0 (build_id 14214601) (CL:N/A)
+    [31m✗[39m cmdline-tools component is missing.
+      Try installing or updating Android Studio.
+      Alternatively, download the tools from
+      https://developer.android.com/studio#command-line-tools-only and make
+      sure to set the ANDROID_HOME environment variable.
+      See https://developer.android.com/studio/command-line for more details.
+    [31m✗[39m Android license status unknown.
+      Run `flutter doctor --android-licenses` to accept the SDK licenses.
+      See https://flutter.dev/to/macos-android-setup for more details.
+
+[33m[!][39m Xcode - develop for iOS and macOS [558ms]
+    [31m✗[39m Xcode installation is incomplete; a full installation is necessary for
+      iOS and macOS development.
+      Download at: https://developer.apple.com/xcode/
+      Or install Xcode via the App Store.
+      Once installed, run:
+        sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+        sudo xcodebuild -runFirstLaunch
+    [32m•[39m CocoaPods version 1.16.2
+
+[32m[✓][39m Chrome - develop for the web [24ms]
+    [32m•[39m Chrome at /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+
+[32m[✓][39m Connected device (2 available) [84ms]
+    [32m•[39m macOS (desktop) • macos  • darwin-arm64   • macOS 26.1 25B78
+      darwin-arm64
+    [32m•[39m Chrome (web)    • chrome • web-javascript • Google Chrome 144.0.7559.110
+
+[32m[✓][39m Network resources [554ms]
+    [32m•[39m All expected network resources are available.
+
+[33m![39m Doctor found issues in 2 categories.
+```
