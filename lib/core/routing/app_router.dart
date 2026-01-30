@@ -151,9 +151,7 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: VoiceAssistantPage(
-          controller: InjectionContainer.instance.buildAuthController(),
-        ),
+        child: const VoiceAssistantPage(),
       ),
     ),
   ],
