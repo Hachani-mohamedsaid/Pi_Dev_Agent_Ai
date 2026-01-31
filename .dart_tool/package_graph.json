@@ -15,7 +15,7 @@
         "google_sign_in",
         "google_sign_in_web",
         "http",
-        "image_picker",
+        "lucide_icons",
         "shared_preferences",
         "sign_in_with_apple"
       ],
@@ -94,6 +94,24 @@
         "meta",
         "sign_in_with_apple_platform_interface",
         "sign_in_with_apple_web"
+      ]
+    },
+    {
+      "name": "google_sign_in",
+      "version": "6.3.0",
+      "dependencies": [
+        "flutter",
+        "google_sign_in_android",
+        "google_sign_in_ios",
+        "google_sign_in_platform_interface",
+        "google_sign_in_web"
+      ]
+    },
+    {
+      "name": "lucide_icons",
+      "version": "0.257.0",
+      "dependencies": [
+        "flutter"
       ]
     },
     {

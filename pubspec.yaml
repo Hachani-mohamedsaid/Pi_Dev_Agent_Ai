@@ -43,6 +43,7 @@ dependencies:
   
   # Icons
   flutter_svg: ^2.0.10+1
+  lucide_icons: ^0.257.0
   
   # Authentication (7.x requis pour authenticationEvents + idToken fiable sur web)
   google_sign_in: ^7.0.0
