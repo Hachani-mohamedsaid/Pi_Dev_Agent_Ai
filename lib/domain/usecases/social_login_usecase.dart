@@ -1,19 +1,40 @@
 import '../../core/usecase/usecase.dart';
 import '../entities/user.dart';
 import '../repositories/auth_repository.dart';
+import '../services/social_auth_credentials_provider.dart';
 
 class SocialLoginUseCase implements AsyncUseCase<User, SocialLoginParams> {
-  const SocialLoginUseCase(this._repository);
+  SocialLoginUseCase(this._repository, this._credentialsProvider);
 
   final AuthRepository _repository;
+  final SocialAuthCredentialsProvider _credentialsProvider;
+
+  /// Connexion Google avec un idToken déjà obtenu (ex: web via renderButton + authenticationEvents).
+  Future<User> loginWithGoogleIdToken(String idToken) async {
+    if (idToken.isEmpty) {
+      throw Exception('Google sign-in: idToken is empty');
+    }
+    return await _repository.loginWithGoogle(idToken);
+  }
 
   @override
   Future<User> call(SocialLoginParams params) async {
     switch (params.provider) {
       case SocialProvider.google:
-        return await _repository.loginWithGoogle();
+        final idToken = await _credentialsProvider.getGoogleIdToken();
+        if (idToken == null || idToken.isEmpty) {
+          throw Exception('Google sign-in was cancelled or no idToken');
+        }
+        return await _repository.loginWithGoogle(idToken);
       case SocialProvider.apple:
-        return await _repository.loginWithApple();
+        final creds = await _credentialsProvider.getAppleCredentials();
+        if (creds == null) {
+          throw Exception('Apple sign-in was cancelled or no credentials');
+        }
+        return await _repository.loginWithApple(
+          creds.identityToken,
+          user: creds.user,
+        );
     }
   }
 }

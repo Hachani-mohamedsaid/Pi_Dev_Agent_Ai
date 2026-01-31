@@ -9,24 +9,28 @@ class CustomTextField extends StatefulWidget {
     required this.hint,
     required this.icon,
     this.obscureText = false,
+    this.readOnly = false,
     this.suffixIcon,
     this.onSuffixIconTap,
     this.controller,
     this.validator,
     this.keyboardType,
     this.onChanged,
+    this.focusNode,
   });
 
   final String label;
   final String hint;
   final IconData icon;
   final bool obscureText;
+  final bool readOnly;
   final Widget? suffixIcon;
   final VoidCallback? onSuffixIconTap;
   final TextEditingController? controller;
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
   final void Function(String)? onChanged;
+  final FocusNode? focusNode;
 
   @override
   State<CustomTextField> createState() => _CustomTextFieldState();
@@ -88,8 +92,10 @@ class _CustomTextFieldState extends State<CustomTextField> {
           height: isMobile ? 50 : 56,
           child: TextFormField(
             key: _fieldKey,
+            focusNode: widget.focusNode,
             controller: widget.controller,
             obscureText: widget.obscureText,
+            readOnly: widget.readOnly,
             keyboardType: widget.keyboardType,
             validator: _validateValue,
             onChanged: (value) {
