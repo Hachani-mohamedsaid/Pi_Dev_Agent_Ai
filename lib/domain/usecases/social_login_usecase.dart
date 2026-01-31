@@ -9,6 +9,14 @@ class SocialLoginUseCase implements AsyncUseCase<User, SocialLoginParams> {
   final AuthRepository _repository;
   final SocialAuthCredentialsProvider _credentialsProvider;
 
+  /// Connexion Google avec un idToken déjà obtenu (ex: web via renderButton + authenticationEvents).
+  Future<User> loginWithGoogleIdToken(String idToken) async {
+    if (idToken.isEmpty) {
+      throw Exception('Google sign-in: idToken is empty');
+    }
+    return await _repository.loginWithGoogle(idToken);
+  }
+
   @override
   Future<User> call(SocialLoginParams params) async {
     switch (params.provider) {

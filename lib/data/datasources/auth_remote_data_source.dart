@@ -44,10 +44,6 @@ abstract class AuthRemoteDataSource {
 }
 
 class MockAuthRemoteDataSource implements AuthRemoteDataSource {
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-  );
-
   @override
   Future<AuthResponse> login(String email, String password) async {
     await Future.delayed(const Duration(seconds: 1));
@@ -83,10 +79,7 @@ class MockAuthRemoteDataSource implements AuthRemoteDataSource {
   @override
   Future<AuthResponse> loginWithGoogle(String idToken) async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        throw Exception('Google sign-in was cancelled');
-      }
+      final googleUser = await GoogleSignIn.instance.authenticate();
       final user = UserModel(
         id: googleUser.id,
         name: googleUser.displayName ?? 'Google User',

@@ -177,7 +177,49 @@ class AuthController extends ChangeNotifier {
       _safeNotifyListeners();
       return true;
     } catch (e) {
-      _error = e.toString();
+      final msg = e.toString();
+      if (msg.contains('client_id') || msg.contains('invalid_client')) {
+        _error = 'Google Sign-In non configuré. Ajoute ton Web Client ID dans '
+            'lib/core/config/google_oauth_config.dart et web/index.html.';
+      } else if (msg.contains('People API') ||
+          (msg.contains('people.googleapis.com') && msg.contains('403'))) {
+        _error = 'Active l\'API People dans ton projet Google Cloud : '
+            'https://console.cloud.google.com/apis/library/people.googleapis.com';
+      } else if (msg.contains('cancelled') || msg.contains('no idToken')) {
+        _error = 'Connexion Google annulée ou échouée. Réessaie si tu veux te connecter.';
+      } else {
+        _error = msg;
+      }
+      _isLoading = false;
+      _safeNotifyListeners();
+      return false;
+    }
+  }
+
+  /// Connexion Google avec un idToken déjà obtenu (recommandé sur le web via renderButton + authenticationEvents).
+  Future<bool> loginWithGoogleIdToken(String idToken) async {
+    if (idToken.isEmpty) return false;
+    _isLoading = true;
+    _error = null;
+    _safeNotifyListeners();
+
+    try {
+      _currentUser = await _socialLoginUseCase.loginWithGoogleIdToken(idToken);
+      _isLoading = false;
+      _safeNotifyListeners();
+      return true;
+    } catch (e) {
+      final msg = e.toString();
+      if (msg.contains('client_id') || msg.contains('invalid_client')) {
+        _error = 'Google Sign-In non configuré. Ajoute ton Web Client ID dans '
+            'lib/core/config/google_oauth_config.dart et web/index.html.';
+      } else if (msg.contains('People API') ||
+          (msg.contains('people.googleapis.com') && msg.contains('403'))) {
+        _error = 'Active l\'API People dans ton projet Google Cloud : '
+            'https://console.cloud.google.com/apis/library/people.googleapis.com';
+      } else {
+        _error = msg;
+      }
       _isLoading = false;
       _safeNotifyListeners();
       return false;

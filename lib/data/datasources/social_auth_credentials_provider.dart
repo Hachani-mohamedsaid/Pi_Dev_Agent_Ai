@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -8,17 +9,28 @@ import '../../domain/services/social_auth_credentials_provider.dart' as domain;
 class DefaultSocialAuthCredentialsProvider
     implements domain.SocialAuthCredentialsProvider {
   DefaultSocialAuthCredentialsProvider({
-    GoogleSignIn? googleSignIn,
-  }) : _googleSignIn = googleSignIn ?? GoogleSignIn(scopes: ['email', 'profile']);
+    String? webClientId,
+  }) : _webClientId = webClientId;
 
-  final GoogleSignIn _googleSignIn;
+  final String? _webClientId;
 
   @override
   Future<String?> getGoogleIdToken() async {
-    final account = await _googleSignIn.signIn();
-    if (account == null) return null;
-    final auth = await account.authentication;
-    return auth.idToken;
+    if (kIsWeb && (_webClientId?.trim().isEmpty ?? true)) {
+      throw Exception(
+        'Google Sign-In non configuré. Ajoute ton Web Client ID dans '
+        'lib/core/config/google_oauth_config.dart et dans web/index.html '
+        '(meta google-signin-client_id). Voir la console Google Cloud.',
+      );
+    }
+    // 7.x : authenticate() au lieu de signIn() ; sur le web on utilise renderButton + authenticationEvents.
+    try {
+      final account = await GoogleSignIn.instance.authenticate();
+      final auth = account.authentication;
+      return auth.idToken;
+    } catch (_) {
+      return null; // annulation ou erreur
+    }
   }
 
   @override

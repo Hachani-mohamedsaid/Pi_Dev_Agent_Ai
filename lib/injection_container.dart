@@ -8,6 +8,7 @@ import 'presentation/state/counter_controller.dart';
 import 'data/datasources/auth_local_data_source.dart';
 import 'data/datasources/auth_remote_data_source.dart';
 import 'data/datasources/api_auth_remote_data_source.dart';
+import 'core/config/google_oauth_config.dart';
 import 'data/datasources/social_auth_credentials_provider.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'domain/services/social_auth_credentials_provider.dart' as domain;
@@ -55,7 +56,7 @@ class InjectionContainer {
       ApiAuthRemoteDataSource(); // ou MockAuthRemoteDataSource() pour tests sans backend
 
   late final domain.SocialAuthCredentialsProvider _socialCredentialsProvider =
-      DefaultSocialAuthCredentialsProvider();
+      DefaultSocialAuthCredentialsProvider(webClientId: googleOAuthWebClientId);
 
   late final AuthRepository _authRepository = AuthRepositoryImpl(
     remoteDataSource: _authRemoteDataSource,

@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pi_dev_agentia/presentation/widgets/google_sign_in_button_web.dart'
+    if (dart.library.io) 'package:pi_dev_agentia/presentation/widgets/google_sign_in_button_stub.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/utils/validators.dart';
@@ -12,7 +14,6 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/social_button.dart';
-import '../widgets/google_icon.dart';
 import '../widgets/apple_icon.dart';
 import '../state/auth_controller.dart';
 
@@ -69,7 +70,26 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _handleSocialRegister(SocialProvider provider) async {
     final success = await widget.controller.loginWithSocial(provider);
     if (success && mounted) {
-      context.go('/home');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.go('/home');
+      });
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(widget.controller.error ?? 'Registration failed'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Appelé sur le web quand le bouton Google (renderButton) fournit un idToken.
+  Future<void> _onGoogleIdToken(String idToken) async {
+    final success = await widget.controller.loginWithGoogleIdToken(idToken);
+    if (success && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.go('/home');
+      });
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -376,9 +396,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                     Row(
                                       children: [
                                         Expanded(
-                                          child: SocialButton(
-                                            icon: GoogleIcon(size: isMobile ? 20 : 22),
-                                            text: 'Google Account',
+                                          child: WebGoogleSignInButton(
+                                            onIdToken: _onGoogleIdToken,
                                             onPressed: () => _handleSocialRegister(SocialProvider.google),
                                           )
                                               .animate()
