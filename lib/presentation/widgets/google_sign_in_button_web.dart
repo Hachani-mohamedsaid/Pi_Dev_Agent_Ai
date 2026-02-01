@@ -29,6 +29,7 @@ class WebGoogleSignInButton extends StatefulWidget {
 
 class _WebGoogleSignInButtonState extends State<WebGoogleSignInButton> {
   StreamSubscription<GoogleSignInAuthenticationEvent>? _subscription;
+  bool _isPressed = false;
 
   @override
   void initState() {
@@ -41,10 +42,17 @@ class _WebGoogleSignInButtonState extends State<WebGoogleSignInButton> {
     );
     // Étendre le bouton Google dans le DOM pour que toute la zone soit cliquable
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future<void>.delayed(const Duration(milliseconds: 300), () {
+      // Multiple delays to ensure the button is rendered and expanded
+      Future<void>.delayed(const Duration(milliseconds: 100), () {
         dom_helper.expandGoogleSignInButtonInDom();
       });
-      Future<void>.delayed(const Duration(milliseconds: 1200), () {
+      Future<void>.delayed(const Duration(milliseconds: 500), () {
+        dom_helper.expandGoogleSignInButtonInDom();
+      });
+      Future<void>.delayed(const Duration(milliseconds: 1000), () {
+        dom_helper.expandGoogleSignInButtonInDom();
+      });
+      Future<void>.delayed(const Duration(milliseconds: 2000), () {
         dom_helper.expandGoogleSignInButtonInDom();
       });
     });
@@ -76,60 +84,78 @@ class _WebGoogleSignInButtonState extends State<WebGoogleSignInButton> {
       height: height,
       child: Stack(
         alignment: Alignment.center,
+        clipBehavior: Clip.none,
         children: [
-          // Design aligné sur SocialButton : bordure cyan, fond sombre, "Google Account" (ignoré au clic)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.backgroundDark,
-                borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
-                border: Border.all(
-                  color: AppColors.borderCyan,
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: isMobile ? 20 : 22,
-                    height: isMobile ? 20 : 22,
-                    child: GoogleIcon(size: isMobile ? 20 : 22),
-                  ),
-                  SizedBox(width: isMobile ? 6 : 10),
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        'Google Account',
-                        style: TextStyle(
-                          color: AppColors.textWhite,
-                          fontSize: isMobile ? 13 : 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                ],
+          // Visual design matching SocialButton exactly: cyan border, dark background, "Google Account"
+          // This provides the visual appearance with press state
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 100),
+            width: double.infinity,
+            height: height,
+            decoration: BoxDecoration(
+              color: _isPressed 
+                  ? AppColors.backgroundDark.withOpacity(0.8)
+                  : AppColors.backgroundDark,
+              borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
+              border: Border.all(
+                color: _isPressed
+                    ? AppColors.cyan400
+                    : AppColors.borderCyan,
+                width: 1,
               ),
             ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: isMobile ? 20 : 22,
+                  height: isMobile ? 20 : 22,
+                  child: GoogleIcon(size: isMobile ? 20 : 22),
+                ),
+                SizedBox(width: isMobile ? 6 : 10),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Google Account',
+                      style: TextStyle(
+                        color: AppColors.textWhite,
+                        fontSize: isMobile ? 13 : 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-          // Bouton natif invisible en pleine largeur/hauteur ; expandGoogleSignInButtonInDom() étend le conteneur dans le DOM
+          // Native Google button invisible overlay - expandGoogleSignInButtonInDom() makes it fill the container
+          // This handles the actual Google Sign-In and must be on top to receive clicks
           Positioned.fill(
-            child: Opacity(
-              opacity: 0,
-              child: SizedBox.expand(
-                child: renderButton(
-                  configuration: GSIButtonConfiguration(
-                    size: GSIButtonSize.medium,
-                    theme: GSIButtonTheme.filledBlack,
-                    type: GSIButtonType.standard,
-                    text: GSIButtonText.signinWith,
+            child: Listener(
+              onPointerDown: (_) {
+                setState(() => _isPressed = true);
+              },
+              onPointerUp: (_) {
+                setState(() => _isPressed = false);
+              },
+              onPointerCancel: (_) {
+                setState(() => _isPressed = false);
+              },
+              behavior: HitTestBehavior.translucent,
+              child: Opacity(
+                opacity: 0,
+                child: SizedBox.expand(
+                  child: renderButton(
+                    configuration: GSIButtonConfiguration(
+                      size: GSIButtonSize.medium,
+                      theme: GSIButtonTheme.filledBlack,
+                      type: GSIButtonType.standard,
+                      text: GSIButtonText.signinWith,
+                    ),
                   ),
                 ),
               ),

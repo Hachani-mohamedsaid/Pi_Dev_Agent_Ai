@@ -68,10 +68,15 @@ class CustomButton extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: isLoading ? null : onPressed,
+          onTap: isLoading ? null : () {
+            if (!isLoading) {
+              onPressed();
+            }
+          },
           borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
           child: Container(
             alignment: Alignment.center,
+            padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 20),
             child: isLoading
                 ? const SizedBox(
                     height: 20,
