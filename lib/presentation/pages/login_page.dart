@@ -15,6 +15,7 @@ import '../widgets/custom_button.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/social_button.dart';
 import '../widgets/apple_icon.dart';
+import '../widgets/google_icon.dart';
 import '../state/auth_controller.dart';
 
 class LoginPage extends StatefulWidget {
@@ -43,17 +44,37 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _handleLogin() async {
-    if (_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    
+    try {
       final success = await widget.controller.login(
         _emailController.text.trim(),
         _passwordController.text,
       );
-      if (success && mounted) {
-        context.go('/home');
-      } else if (mounted) {
+      
+      if (!mounted) return;
+      
+      if (success) {
+        // Small delay to ensure state is updated
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (mounted) {
+          context.go('/home');
+        }
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(widget.controller.error ?? 'Login failed'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -361,22 +382,36 @@ class _LoginPageState extends State<LoginPage> {
                                         .animate()
                                         .fadeIn(delay: 800.ms, duration: 500.ms),
                                     SizedBox(height: isMobile ? 24 : 32),
-                                    // Social Login Buttons (web: renderButton + idToken, mobile: SocialButton + signIn)
+                                    // Social Login Buttons
                                     Row(
                                       children: [
                                         Expanded(
-                                          child: WebGoogleSignInButton(
-                                            onIdToken: _onGoogleIdToken,
-                                            onPressed: () => _handleSocialLogin(SocialProvider.google),
-                                          )
-                                              .animate()
-                                              .fadeIn(delay: 900.ms, duration: 500.ms)
-                                              .slideX(
-                                                begin: -0.1,
-                                                end: 0,
-                                                delay: 900.ms,
-                                                duration: 500.ms,
-                                              ),
+                                          child: kIsWeb
+                                              ? WebGoogleSignInButton(
+                                                  onIdToken: _onGoogleIdToken,
+                                                  onPressed: () => _handleSocialLogin(SocialProvider.google),
+                                                )
+                                                  .animate()
+                                                  .fadeIn(delay: 900.ms, duration: 500.ms)
+                                                  .slideX(
+                                                    begin: -0.1,
+                                                    end: 0,
+                                                    delay: 900.ms,
+                                                    duration: 500.ms,
+                                                  )
+                                              : SocialButton(
+                                                  icon: GoogleIcon(size: isMobile ? 20 : 22),
+                                                  text: 'Google Account',
+                                                  onPressed: () => _handleSocialLogin(SocialProvider.google),
+                                                )
+                                                  .animate()
+                                                  .fadeIn(delay: 900.ms, duration: 500.ms)
+                                                  .slideX(
+                                                    begin: -0.1,
+                                                    end: 0,
+                                                    delay: 900.ms,
+                                                    duration: 500.ms,
+                                                  ),
                                         ),
                                         if (!kIsWeb) ...[
                                           SizedBox(width: isMobile ? 12 : 16),

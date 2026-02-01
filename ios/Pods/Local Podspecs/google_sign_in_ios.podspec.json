@@ -16,16 +16,12 @@
   },
   "source_files": "google_sign_in_ios/Sources/google_sign_in_ios/**/*.{h,m}",
   "public_header_files": "google_sign_in_ios/Sources/google_sign_in_ios/include/**/*.h",
-  "module_map": "google_sign_in_ios/Sources/google_sign_in_ios/include/FLTGoogleSignInPlugin.modulemap",
   "dependencies": {
-    "AppAuth": [
-      ">= 1.7.4"
-    ],
     "GTMSessionFetcher": [
       ">= 3.4.0"
     ],
     "GoogleSignIn": [
-      "~> 8.0"
+      "~> 9.0"
     ]
   },
   "static_framework": true,
@@ -40,7 +36,7 @@
     }
   },
   "platforms": {
-    "ios": "12.0",
+    "ios": "13.0",
     "osx": "10.15"
   },
   "pod_target_xcconfig": {
