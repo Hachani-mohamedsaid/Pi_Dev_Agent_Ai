@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../config/api_config.dart';
 import '../../presentation/pages/splash_page.dart';
 import '../../presentation/pages/login_page.dart';
 import '../../presentation/pages/register_page.dart';
@@ -28,9 +29,10 @@ Page<T> _fadeScaleTransition<T extends Object?>({
       return FadeTransition(
         opacity: CurveTween(curve: Curves.easeInOut).animate(animation),
         child: ScaleTransition(
-          scale: Tween<double>(begin: 0.95, end: 1.0).animate(
-            CurveTween(curve: Curves.easeOutCubic).animate(animation),
-          ),
+          scale: Tween<double>(
+            begin: 0.95,
+            end: 1.0,
+          ).animate(CurveTween(curve: Curves.easeOutCubic).animate(animation)),
           child: child,
         ),
       );
@@ -86,7 +88,7 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/reset-password/confirm',
+      path: resetPasswordConfirmPath,
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,

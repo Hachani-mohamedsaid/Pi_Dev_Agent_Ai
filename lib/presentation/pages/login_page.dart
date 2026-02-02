@@ -21,10 +21,7 @@ import '../state/auth_controller.dart';
 class LoginPage extends StatefulWidget {
   final AuthController controller;
 
-  const LoginPage({
-    super.key,
-    required this.controller,
-  });
+  const LoginPage({super.key, required this.controller});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -47,15 +44,15 @@ class _LoginPageState extends State<LoginPage> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
     try {
       final success = await widget.controller.login(
         _emailController.text.trim(),
         _passwordController.text,
       );
-      
+
       if (!mounted) return;
-      
+
       if (success) {
         // Small delay to ensure state is updated
         await Future.delayed(const Duration(milliseconds: 100));
@@ -124,9 +121,7 @@ class _LoginPageState extends State<LoginPage> {
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.primaryGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
         child: Stack(
           children: [
             // Background decorative elements
@@ -198,7 +193,9 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       child: Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
+                          borderRadius: BorderRadius.circular(
+                            isMobile ? 24 : 28,
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.3),
@@ -208,7 +205,9 @@ class _LoginPageState extends State<LoginPage> {
                           ],
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
+                          borderRadius: BorderRadius.circular(
+                            isMobile ? 24 : 28,
+                          ),
                           child: BackdropFilter(
                             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                             child: Padding(
@@ -217,7 +216,8 @@ class _LoginPageState extends State<LoginPage> {
                                 key: _formKey,
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
                                     // Logo
                                     Center(
@@ -233,14 +233,14 @@ class _LoginPageState extends State<LoginPage> {
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Title
                                     Text(
-                                      'Welcome Back',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: isMobile ? 28 : 32,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textWhite,
-                                      ),
-                                    )
+                                          'Welcome Back',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: isMobile ? 28 : 32,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.textWhite,
+                                          ),
+                                        )
                                         .animate()
                                         .fadeIn(delay: 200.ms, duration: 500.ms)
                                         .slideY(
@@ -256,25 +256,28 @@ class _LoginPageState extends State<LoginPage> {
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: isMobile ? 14 : 16,
-                                        color: AppColors.textCyan200.withOpacity(0.7),
+                                        color: AppColors.textCyan200
+                                            .withOpacity(0.7),
                                       ),
-                                    )
-                                        .animate()
-                                        .fadeIn(delay: 300.ms, duration: 500.ms),
+                                    ).animate().fadeIn(
+                                      delay: 300.ms,
+                                      duration: 500.ms,
+                                    ),
                                     SizedBox(height: isMobile ? 32 : 40),
                                     // Email Input
                                     Builder(
-                                      builder: (context) {
-                                        return CustomTextField(
-                                          label: 'Email',
-                                          hint: 'Enter your email',
-                                          icon: Icons.mail_outline,
-                                          controller: _emailController,
-                                          keyboardType: TextInputType.emailAddress,
-                                          validator: Validators.email,
-                                        );
-                                      },
-                                    )
+                                          builder: (context) {
+                                            return CustomTextField(
+                                              label: 'Email',
+                                              hint: 'Enter your email',
+                                              icon: Icons.mail_outline,
+                                              controller: _emailController,
+                                              keyboardType:
+                                                  TextInputType.emailAddress,
+                                              validator: Validators.email,
+                                            );
+                                          },
+                                        )
                                         .animate()
                                         .fadeIn(delay: 400.ms, duration: 500.ms)
                                         .slideX(
@@ -286,29 +289,32 @@ class _LoginPageState extends State<LoginPage> {
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Password Input
                                     Builder(
-                                      builder: (context) {
-                                        return CustomTextField(
-                                          label: 'Password',
-                                          hint: 'Enter your password',
-                                          icon: Icons.lock_outline,
-                                          controller: _passwordController,
-                                          obscureText: _obscurePassword,
-                                          suffixIcon: Icon(
-                                            _obscurePassword
-                                                ? Icons.visibility_off_outlined
-                                                : Icons.visibility_outlined,
-                                            color: AppColors.cyan400.withOpacity(0.6),
-                                            size: isMobile ? 20 : 22,
-                                          ),
-                                          onSuffixIconTap: () {
-                                            setState(() {
-                                              _obscurePassword = !_obscurePassword;
-                                            });
+                                          builder: (context) {
+                                            return CustomTextField(
+                                              label: 'Password',
+                                              hint: 'Enter your password',
+                                              icon: Icons.lock_outline,
+                                              controller: _passwordController,
+                                              obscureText: _obscurePassword,
+                                              suffixIcon: Icon(
+                                                _obscurePassword
+                                                    ? Icons
+                                                          .visibility_off_outlined
+                                                    : Icons.visibility_outlined,
+                                                color: AppColors.cyan400
+                                                    .withOpacity(0.6),
+                                                size: isMobile ? 20 : 22,
+                                              ),
+                                              onSuffixIconTap: () {
+                                                setState(() {
+                                                  _obscurePassword =
+                                                      !_obscurePassword;
+                                                });
+                                              },
+                                              validator: Validators.password,
+                                            );
                                           },
-                                          validator: Validators.password,
-                                        );
-                                      },
-                                    )
+                                        )
                                         .animate()
                                         .fadeIn(delay: 500.ms, duration: 500.ms)
                                         .slideX(
@@ -322,7 +328,8 @@ class _LoginPageState extends State<LoginPage> {
                                     Align(
                                       alignment: Alignment.centerRight,
                                       child: TextButton(
-                                        onPressed: () => context.push('/reset-password'),
+                                        onPressed: () =>
+                                            context.push('/reset-password'),
                                         child: Text(
                                           'Forgot Password?',
                                           style: TextStyle(
@@ -331,16 +338,18 @@ class _LoginPageState extends State<LoginPage> {
                                           ),
                                         ),
                                       ),
-                                    )
-                                        .animate()
-                                        .fadeIn(delay: 600.ms, duration: 500.ms),
+                                    ).animate().fadeIn(
+                                      delay: 600.ms,
+                                      duration: 500.ms,
+                                    ),
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Login Button
                                     CustomButton(
-                                      text: 'Sign In',
-                                      onPressed: _handleLogin,
-                                      isLoading: widget.controller.isLoading,
-                                    )
+                                          text: 'Sign In',
+                                          onPressed: _handleLogin,
+                                          isLoading:
+                                              widget.controller.isLoading,
+                                        )
                                         .animate()
                                         .fadeIn(delay: 700.ms, duration: 500.ms)
                                         .slideY(
@@ -366,7 +375,8 @@ class _LoginPageState extends State<LoginPage> {
                                           child: Text(
                                             'Or continue with',
                                             style: TextStyle(
-                                              color: AppColors.textCyan200.withOpacity(0.6),
+                                              color: AppColors.textCyan200
+                                                  .withOpacity(0.6),
                                               fontSize: isMobile ? 12 : 14,
                                             ),
                                           ),
@@ -378,75 +388,161 @@ class _LoginPageState extends State<LoginPage> {
                                           ),
                                         ),
                                       ],
-                                    )
-                                        .animate()
-                                        .fadeIn(delay: 800.ms, duration: 500.ms),
+                                    ).animate().fadeIn(
+                                      delay: 800.ms,
+                                      duration: 500.ms,
+                                    ),
                                     SizedBox(height: isMobile ? 24 : 32),
-                                    // Social Login Buttons
-                                    Row(
+                                    // Social Login Buttons (Google Account + Apple)
+                                    Stack(
+                                      alignment: Alignment.center,
                                       children: [
-                                        Expanded(
-                                          child: kIsWeb
-                                              ? WebGoogleSignInButton(
-                                                  onIdToken: _onGoogleIdToken,
-                                                  onPressed: () => _handleSocialLogin(SocialProvider.google),
-                                                )
-                                                  .animate()
-                                                  .fadeIn(delay: 900.ms, duration: 500.ms)
-                                                  .slideX(
-                                                    begin: -0.1,
-                                                    end: 0,
-                                                    delay: 900.ms,
-                                                    duration: 500.ms,
-                                                  )
-                                              : SocialButton(
-                                                  icon: GoogleIcon(size: isMobile ? 20 : 22),
-                                                  text: 'Google Account',
-                                                  onPressed: () => _handleSocialLogin(SocialProvider.google),
-                                                )
-                                                  .animate()
-                                                  .fadeIn(delay: 900.ms, duration: 500.ms)
-                                                  .slideX(
-                                                    begin: -0.1,
-                                                    end: 0,
-                                                    delay: 900.ms,
-                                                    duration: 500.ms,
-                                                  ),
-                                        ),
-                                        if (!kIsWeb) ...[
-                                          SizedBox(width: isMobile ? 12 : 16),
-                                          Expanded(
-                                            child: SocialButton(
-                                              icon: AppleIcon(size: isMobile ? 24 : 26),
-                                              text: 'Apple Account',
-                                              onPressed: () => _handleSocialLogin(SocialProvider.apple),
-                                            )
-                                                .animate()
-                                                .fadeIn(delay: 1000.ms, duration: 500.ms)
-                                                .slideX(
-                                                  begin: 0.1,
-                                                  end: 0,
-                                                  delay: 1000.ms,
-                                                  duration: 500.ms,
+                                        IgnorePointer(
+                                          ignoring: widget.controller.isLoading,
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                child: kIsWeb
+                                                    ? WebGoogleSignInButton(
+                                                            onIdToken:
+                                                                _onGoogleIdToken,
+                                                            onPressed: () =>
+                                                                _handleSocialLogin(
+                                                                  SocialProvider
+                                                                      .google,
+                                                                ),
+                                                          )
+                                                          .animate()
+                                                          .fadeIn(
+                                                            delay: 900.ms,
+                                                            duration: 500.ms,
+                                                          )
+                                                          .slideX(
+                                                            begin: -0.1,
+                                                            end: 0,
+                                                            delay: 900.ms,
+                                                            duration: 500.ms,
+                                                          )
+                                                    : SocialButton(
+                                                            icon: GoogleIcon(
+                                                              size: isMobile
+                                                                  ? 20
+                                                                  : 22,
+                                                            ),
+                                                            text:
+                                                                'Google Account',
+                                                            onPressed: () =>
+                                                                _handleSocialLogin(
+                                                                  SocialProvider
+                                                                      .google,
+                                                                ),
+                                                          )
+                                                          .animate()
+                                                          .fadeIn(
+                                                            delay: 900.ms,
+                                                            duration: 500.ms,
+                                                          )
+                                                          .slideX(
+                                                            begin: -0.1,
+                                                            end: 0,
+                                                            delay: 900.ms,
+                                                            duration: 500.ms,
+                                                          ),
+                                              ),
+                                              if (!kIsWeb) ...[
+                                                SizedBox(
+                                                  width: isMobile ? 12 : 16,
                                                 ),
+                                                Expanded(
+                                                  child:
+                                                      SocialButton(
+                                                            icon: AppleIcon(
+                                                              size: isMobile
+                                                                  ? 24
+                                                                  : 26,
+                                                            ),
+                                                            text:
+                                                                'Apple Account',
+                                                            onPressed: () =>
+                                                                _handleSocialLogin(
+                                                                  SocialProvider
+                                                                      .apple,
+                                                                ),
+                                                          )
+                                                          .animate()
+                                                          .fadeIn(
+                                                            delay: 1000.ms,
+                                                            duration: 500.ms,
+                                                          )
+                                                          .slideX(
+                                                            begin: 0.1,
+                                                            end: 0,
+                                                            delay: 1000.ms,
+                                                            duration: 500.ms,
+                                                          ),
+                                                ),
+                                              ],
+                                            ],
                                           ),
-                                        ],
+                                        ),
+                                        if (widget.controller.isLoading)
+                                          Positioned.fill(
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: AppColors.backgroundDark
+                                                    .withOpacity(0.6),
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      isMobile ? 12 : 14,
+                                                    ),
+                                              ),
+                                              child: Center(
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    const CircularProgressIndicator(
+                                                      color: AppColors.cyan400,
+                                                    ),
+                                                    SizedBox(
+                                                      height: isMobile
+                                                          ? 12
+                                                          : 16,
+                                                    ),
+                                                    Text(
+                                                      'Connexion en cours...',
+                                                      style: TextStyle(
+                                                        color:
+                                                            AppColors.textWhite,
+                                                        fontSize: isMobile
+                                                            ? 12
+                                                            : 14,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
                                       ],
                                     ),
                                     SizedBox(height: isMobile ? 24 : 32),
                                     // Sign Up Link
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Text(
                                           "Don't have an account? ",
                                           style: TextStyle(
-                                            color: AppColors.textCyan200.withOpacity(0.6),
+                                            color: AppColors.textCyan200
+                                                .withOpacity(0.6),
                                             fontSize: isMobile ? 13 : 14,
                                           ),
                                         ),
                                         TextButton(
-                                          onPressed: () => context.push('/register'),
+                                          onPressed: () =>
+                                              context.push('/register'),
                                           child: Text(
                                             'Sign Up',
                                             style: TextStyle(
@@ -457,9 +553,10 @@ class _LoginPageState extends State<LoginPage> {
                                           ),
                                         ),
                                       ],
-                                    )
-                                        .animate()
-                                        .fadeIn(delay: 1100.ms, duration: 500.ms),
+                                    ).animate().fadeIn(
+                                      delay: 1100.ms,
+                                      duration: 500.ms,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -478,4 +575,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-

@@ -9,4 +9,4 @@
 ///    https://console.cloud.google.com/apis/library/people.googleapis.com
 ///
 /// Si vide → erreur 401 invalid_client / "The OAuth client was not found".
-const String googleOAuthWebClientId = '1089118476895-i9cgjpn49347f6rrtgi1t27ehttb3oh6.apps.googleusercontent.com';
+const String googleOAuthWebClientId = '1089118476895-a3snhfrv0lhbinp5409ikibpvdp1ke3j.apps.googleusercontent.com';

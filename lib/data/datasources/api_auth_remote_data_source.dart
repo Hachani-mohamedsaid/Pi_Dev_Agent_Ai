@@ -51,6 +51,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
     throw _parseError(res);
   }
 
+  /// Demande reset mot de passe : le backend envoie l’email (Resend, etc.) avec le lien contenant le token.
   @override
   Future<void> resetPassword(String email) async {
     final res = await http.post(
@@ -61,6 +62,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
     if (res.statusCode != 200) throw _parseError(res);
   }
 
+  /// Définit le nouveau mot de passe avec le token reçu par email (lien « Reset Password »).
   @override
   Future<void> setNewPassword({
     required String token,
@@ -90,6 +92,8 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
     if (res.statusCode != 200) throw _parseError(res);
   }
 
+  /// Connexion Google : envoie l'idToken obtenu côté Flutter (web/mobile) au backend NestJS.
+  /// Backend attend POST /auth/google avec body { "idToken": "..." } et renvoie { user, accessToken }.
   @override
   Future<AuthResponse> loginWithGoogle(String idToken) async {
     final res = await http.post(
