@@ -392,41 +392,74 @@ class _RegisterPageState extends State<RegisterPage> {
                                         .animate()
                                         .fadeIn(delay: 900.ms, duration: 500.ms),
                                     SizedBox(height: isMobile ? 24 : 32),
-                                    // Social Register Buttons
-                                    Row(
+                                    // Social Register Buttons (Google Account + Apple)
+                                    Stack(
+                                      alignment: Alignment.center,
                                       children: [
-                                        Expanded(
-                                          child: WebGoogleSignInButton(
-                                            onIdToken: _onGoogleIdToken,
-                                            onPressed: () => _handleSocialRegister(SocialProvider.google),
-                                          )
-                                              .animate()
-                                              .fadeIn(delay: 1000.ms, duration: 500.ms)
-                                              .slideX(
-                                                begin: -0.1,
-                                                end: 0,
-                                                delay: 1000.ms,
-                                                duration: 500.ms,
+                                        IgnorePointer(
+                                          ignoring: widget.controller.isLoading,
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                child: WebGoogleSignInButton(
+                                                  onIdToken: _onGoogleIdToken,
+                                                  onPressed: () => _handleSocialRegister(SocialProvider.google),
+                                                )
+                                                    .animate()
+                                                    .fadeIn(delay: 1000.ms, duration: 500.ms)
+                                                    .slideX(
+                                                      begin: -0.1,
+                                                      end: 0,
+                                                      delay: 1000.ms,
+                                                      duration: 500.ms,
+                                                    ),
                                               ),
-                                        ),
-                                        if (!kIsWeb) ...[
-                                          SizedBox(width: isMobile ? 12 : 16),
-                                          Expanded(
-                                            child: SocialButton(
-                                              icon: AppleIcon(size: isMobile ? 24 : 26),
-                                              text: 'Apple Account',
-                                              onPressed: () => _handleSocialRegister(SocialProvider.apple),
-                                            )
-                                                .animate()
-                                                .fadeIn(delay: 1100.ms, duration: 500.ms)
-                                                .slideX(
-                                                  begin: 0.1,
-                                                  end: 0,
-                                                  delay: 1100.ms,
-                                                  duration: 500.ms,
+                                              if (!kIsWeb) ...[
+                                                SizedBox(width: isMobile ? 12 : 16),
+                                                Expanded(
+                                                  child: SocialButton(
+                                                    icon: AppleIcon(size: isMobile ? 24 : 26),
+                                                    text: 'Apple Account',
+                                                    onPressed: () => _handleSocialRegister(SocialProvider.apple),
+                                                  )
+                                                      .animate()
+                                                      .fadeIn(delay: 1100.ms, duration: 500.ms)
+                                                      .slideX(
+                                                        begin: 0.1,
+                                                        end: 0,
+                                                        delay: 1100.ms,
+                                                        duration: 500.ms,
+                                                      ),
                                                 ),
+                                              ],
+                                            ],
                                           ),
-                                        ],
+                                        ),
+                                        if (widget.controller.isLoading)
+                                          Positioned.fill(
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: AppColors.backgroundDark.withOpacity(0.6),
+                                                borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
+                                              ),
+                                              child: Center(
+                                                child: Column(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    const CircularProgressIndicator(color: AppColors.cyan400),
+                                                    SizedBox(height: isMobile ? 12 : 16),
+                                                    Text(
+                                                      'Inscription en cours...',
+                                                      style: TextStyle(
+                                                        color: AppColors.textWhite,
+                                                        fontSize: isMobile ? 12 : 14,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
                                       ],
                                     ),
                                     SizedBox(height: isMobile ? 24 : 32),
