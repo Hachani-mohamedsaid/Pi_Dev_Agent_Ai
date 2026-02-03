@@ -10,3 +10,21 @@ const String apiBaseUrl = baseUrl;
 /// Le backend (Resend, etc.) doit mettre dans l'email : (URL de l'app) + ce chemin + ?token=...
 /// Ex. backend FRONTEND_RESET_PASSWORD_URL = https://ton-app.web.app/reset-password/confirm
 const String resetPasswordConfirmPath = '/reset-password/confirm';
+
+/// Chemin de l'endpoint chat IA (Talk to buddy). Backend attend POST avec { "messages": [ { "role": "user"|"assistant", "content": "..." } ] } et renvoie { "message": "..." } ou { "content": "..." }.
+const String chatPath = '/ai/chat';
+
+/// Clé API OpenAI (optionnel). Si non vide, la voix de l'assistant utilise OpenAI TTS (voix type ChatGPT). Sinon : TTS de l'appareil.
+const String openaiApiKey = '';
+
+/// Instruction système pour le chat : l'IA comprend et répond dans la langue de l'utilisateur (multilingue).
+/// Le backend doit transmettre le rôle "system" au LLM.
+const String chatSystemInstructionMultilingual =
+    'You are a helpful assistant. Always respond in the SAME language the user writes or speaks. '
+    'If the user writes in Arabic, respond in Arabic. If in English, respond in English. If in French, respond in French. '
+    'Support any language: understand it and reply in that language naturally.';
+
+/// URL WebSocket pour la voix ChatGPT originale (OpenAI Realtime API via proxy NestJS).
+/// Si non vide, l'assistant vocal peut utiliser le mode Realtime (micro → backend → OpenAI Realtime → audio).
+/// Ex. dev : ws://localhost:3000/realtime-voice ; prod : wss://ton-backend.up.railway.app/realtime-voice
+const String realtimeVoiceWsUrl = '';
