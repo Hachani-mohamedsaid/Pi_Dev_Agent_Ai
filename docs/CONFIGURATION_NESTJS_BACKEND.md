@@ -90,6 +90,25 @@ Le frontend appelle les endpoints suivants. Ils doivent exister et utiliser les 
 | POST | `/auth/reset-password/confirm` | `{ "token": "...", "newPassword": "..." }` | 200 OK (mot de passe mis à jour, token invalidé) |
 | GET | `/auth/me` | Header `Authorization: Bearer <accessToken>` | `{ "user" }` |
 | POST | `/auth/change-password` | Header + `{ "currentPassword", "newPassword" }` | 200 OK |
+| POST | `/ai/chat` | `{ "messages": [ { "role": "system"\|"user"\|"assistant", "content": "..." } ] }` | `{ "message": "..." }` ou `{ "content": "..." }` (réponse IA pour Talk to buddy) |
+
+**Talk to buddy (assistant vocal / chat)** : le frontend envoie **POST /ai/chat** avec la liste des messages (user + assistant) et peut envoyer un premier message **system** (ex. « Répondre uniquement en français »). Si l'utilisateur est connecté, le frontend envoie le header **`Authorization: Bearer <accessToken>`** pour que le backend puisse identifier l'utilisateur et avoir accès aux données de son compte (profil, etc.). Le backend doit transmettre tous les messages (y compris **system**) au LLM et renvoyer `{ "message": "..." }` ou `{ "content": "..." }`.
+
+### POST /ai/chat – Faire connaître à l’IA « qui est l’utilisateur » (données du compte)
+
+Pour que l’assistant puisse répondre à des questions comme « donne mon nom » ou « qui suis-je », le backend **doit** :
+
+1. **Lire le header** `Authorization: Bearer <accessToken>` sur chaque requête POST /ai/chat.
+2. **Valider le JWT** et extraire l’identifiant utilisateur (ex. `userId` ou `sub` dans le payload).
+3. **Récupérer les données du compte** : soit depuis le payload du JWT (si tu y mets `name`, `email`), soit en appelant ton service utilisateur / GET /auth/me (ou équivalent) avec ce `userId` pour obtenir au minimum **nom** et **email**.
+4. **Injecter ces infos dans le message system** envoyé au LLM (OpenAI, etc.), **avant** ou **en plus** du message system envoyé par le frontend. Exemple de contenu à ajouter au system :
+   ```text
+   L'utilisateur connecté est : prénom/nom = [name], email = [email].
+   Quand l'utilisateur demande son nom, son identité ou « qui je suis », utilise ces informations pour répondre (ex. « Tu t’appelles [name]. »).
+   ```
+5. Envoyer au LLM la liste des messages : **system** (instruction langue + contexte utilisateur ci‑dessus) puis les messages **user** / **assistant** reçus du frontend.
+
+Sans cette étape, le LLM n’a pas accès aux données du compte et ne peut pas savoir « qui est l’utilisateur », d’où des réponses du type « Je ne connais pas ton nom ».
 
 ---
 
@@ -130,5 +149,6 @@ Après modification des variables, Railway redéploie automatiquement. Vérifier
 | 7 | ValidationPipe global (whitelist: true) | |
 | 8 | Schéma User (googleId, etc.) + UsersService (findByGoogleId, findByEmail, createFromGoogle, updatePassword) | |
 | 9 | Schéma PasswordResetToken + stockage token avec TTL 1h | |
+| 10 | POST /ai/chat : lire JWT (Authorization: Bearer), récupérer nom/email utilisateur, injecter dans le message **system** envoyé au LLM pour que l’assistant connaisse « qui est l’utilisateur » | |
 
-Une fois cette configuration en place, le backend NestJS (y compris sur Railway) est prêt pour le Flutter (login, register, Google Sign-In, reset password avec Resend).
+Une fois cette configuration en place, le backend NestJS (y compris sur Railway) est prêt pour le Flutter (login, register, Google Sign-In, reset password avec Resend, et assistant vocal avec accès aux données du compte).

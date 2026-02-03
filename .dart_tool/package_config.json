@@ -44,6 +44,12 @@
       "languageVersion": "3.8"
     },
     {
+      "name": "crypto",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/crypto-3.0.7",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "cupertino_icons",
       "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/cupertino_icons-1.0.8",
       "packageUri": "lib/",
@@ -122,6 +128,24 @@
       "languageVersion": "2.19"
     },
     {
+      "name": "flutter_sound",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/flutter_sound-9.30.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "flutter_sound_platform_interface",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/flutter_sound_platform_interface-9.30.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "flutter_sound_web",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/flutter_sound_web-9.30.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
       "name": "flutter_svg",
       "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/flutter_svg-2.2.3",
       "packageUri": "lib/",
@@ -132,6 +156,12 @@
       "rootUri": "file:///Users/mohamedsaidhachani/development/flutter/packages/flutter_test",
       "packageUri": "lib/",
       "languageVersion": "3.8"
+    },
+    {
+      "name": "flutter_tts",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/flutter_tts-4.2.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
     },
     {
       "name": "flutter_web_plugins",
@@ -242,6 +272,12 @@
       "languageVersion": "3.6"
     },
     {
+      "name": "json_annotation",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/json_annotation-4.10.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
       "name": "leak_tracker",
       "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/leak_tracker-11.0.2",
       "packageUri": "lib/",
@@ -264,6 +300,12 @@
       "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/lints-6.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.8"
+    },
+    {
+      "name": "logger",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/logger-2.6.2",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
     },
     {
       "name": "logging",
@@ -302,6 +344,12 @@
       "languageVersion": "3.2"
     },
     {
+      "name": "openai_tts",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/openai_tts-0.0.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "path",
       "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/path-1.9.1",
       "packageUri": "lib/",
@@ -312,6 +360,24 @@
       "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/path_parsing-1.1.0",
       "packageUri": "lib/",
       "languageVersion": "3.3"
+    },
+    {
+      "name": "path_provider",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/path_provider-2.1.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "path_provider_android",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/path_provider_android-2.2.22",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "path_provider_foundation",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/path_provider_foundation-2.5.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
     },
     {
       "name": "path_provider_linux",
@@ -330,6 +396,12 @@
       "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0",
       "packageUri": "lib/",
       "languageVersion": "3.2"
+    },
+    {
+      "name": "pedantic",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/pedantic-1.11.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
     },
     {
       "name": "petitparser",
@@ -422,6 +494,24 @@
       "languageVersion": "3.1"
     },
     {
+      "name": "speech_to_text",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/speech_to_text-7.3.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "speech_to_text_platform_interface",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/speech_to_text_platform_interface-2.3.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "speech_to_text_windows",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/speech_to_text_windows-1.0.0+beta.8",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "stack_trace",
       "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/stack_trace-1.12.1",
       "packageUri": "lib/",
@@ -438,6 +528,12 @@
       "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/string_scanner-1.4.1",
       "packageUri": "lib/",
       "languageVersion": "3.1"
+    },
+    {
+      "name": "synchronized",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/synchronized-3.4.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
     },
     {
       "name": "term_glyph",
@@ -492,6 +588,18 @@
       "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/web-1.1.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
+    },
+    {
+      "name": "web_socket",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/web_socket-1.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "web_socket_channel",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/web_socket_channel-3.0.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
     },
     {
       "name": "xdg_directories",

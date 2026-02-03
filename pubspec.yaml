@@ -57,6 +57,15 @@ dependencies:
   # Photo de profil (ImgBB)
   image_picker: ^1.0.7
 
+  # Talk to buddy – voix : reconnaissance vocale (STT) + synthèse vocale (TTS)
+  speech_to_text: ^7.0.0
+  flutter_tts: ^4.2.5
+  # Voix type ChatGPT (OpenAI TTS) – optionnel : définir openaiApiKey dans api_config
+  openai_tts: ^0.0.3
+  flutter_sound: ^9.2.13
+  # WebSocket pour Realtime Voice (voix ChatGPT originale via NestJS proxy)
+  web_socket_channel: ^3.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

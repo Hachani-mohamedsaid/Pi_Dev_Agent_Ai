@@ -6,6 +6,18 @@
 
 #import "GeneratedPluginRegistrant.h"
 
+#if __has_include(<flutter_sound/FlutterSound.h>)
+#import <flutter_sound/FlutterSound.h>
+#else
+@import flutter_sound;
+#endif
+
+#if __has_include(<flutter_tts/FlutterTtsPlugin.h>)
+#import <flutter_tts/FlutterTtsPlugin.h>
+#else
+@import flutter_tts;
+#endif
+
 #if __has_include(<google_sign_in_ios/FLTGoogleSignInPlugin.h>)
 #import <google_sign_in_ios/FLTGoogleSignInPlugin.h>
 #else
@@ -16,6 +28,12 @@
 #import <image_picker_ios/FLTImagePickerPlugin.h>
 #else
 @import image_picker_ios;
+#endif
+
+#if __has_include(<path_provider_foundation/PathProviderPlugin.h>)
+#import <path_provider_foundation/PathProviderPlugin.h>
+#else
+@import path_provider_foundation;
 #endif
 
 #if __has_include(<shared_preferences_foundation/SharedPreferencesPlugin.h>)
@@ -30,13 +48,23 @@
 @import sign_in_with_apple;
 #endif
 
+#if __has_include(<speech_to_text/SpeechToTextPlugin.h>)
+#import <speech_to_text/SpeechToTextPlugin.h>
+#else
+@import speech_to_text;
+#endif
+
 @implementation GeneratedPluginRegistrant
 
 + (void)registerWithRegistry:(NSObject<FlutterPluginRegistry>*)registry {
+  [FlutterSound registerWithRegistrar:[registry registrarForPlugin:@"FlutterSound"]];
+  [FlutterTtsPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterTtsPlugin"]];
   [FLTGoogleSignInPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTGoogleSignInPlugin"]];
   [FLTImagePickerPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTImagePickerPlugin"]];
+  [PathProviderPlugin registerWithRegistrar:[registry registrarForPlugin:@"PathProviderPlugin"]];
   [SharedPreferencesPlugin registerWithRegistrar:[registry registrarForPlugin:@"SharedPreferencesPlugin"]];
   [SignInWithApplePlugin registerWithRegistrar:[registry registrarForPlugin:@"SignInWithApplePlugin"]];
+  [SpeechToTextPlugin registerWithRegistrar:[registry registrarForPlugin:@"SpeechToTextPlugin"]];
 }
 
 @end

@@ -3,12 +3,22 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:speech_to_text/speech_to_text.dart';
+import 'package:openai_tts/openai_tts.dart';
+
+import '../../core/config/api_config.dart' show openaiApiKey, chatSystemInstructionMultilingual, realtimeVoiceWsUrl;
 import '../../core/utils/responsive.dart';
+import '../../data/datasources/chat_remote_data_source.dart';
+import '../../data/datasources/realtime_voice_client.dart';
 
 class VoiceAssistantPage extends StatefulWidget {
-  const VoiceAssistantPage({super.key});
+  VoiceAssistantPage({super.key, ChatRemoteDataSource? chatDataSource})
+      : chatDataSource = chatDataSource ?? ApiChatRemoteDataSource();
+
+  final ChatRemoteDataSource chatDataSource;
 
   @override
   State<VoiceAssistantPage> createState() => _VoiceAssistantPageState();
@@ -20,15 +30,23 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
   bool isListening = false;
   bool isSpeaking = false;
   bool showChat = false;
+  bool isLoadingAI = false;
   String inputText = "";
   String currentTranscript = "";
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final SpeechToText _speech = SpeechToText();
+  final FlutterTts _flutterTts = FlutterTts();
+  bool _speechAvailable = false;
+  OpenaiTTS? _openaiTts;
+  StreamSubscription<OpenaiTTSStatus>? _openaiTtsStatusSub;
+  RealtimeVoiceClient? _realtimeClient;
+  StreamSubscription<List<int>>? _realtimeAudioSub;
 
   List<ChatMessage> messages = [
     ChatMessage(
       id: 1,
-      text: "Hello! How can I assist you today?",
+      text: "Bonjour ! Comment puis-je vous aider aujourd'hui ?",
       sender: MessageSender.ai,
       timestamp: DateTime.now(),
     ),
@@ -52,10 +70,70 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
+
+    _initSpeech();
+    _initTts();
+    if (openaiApiKey.isNotEmpty) {
+      _openaiTts = OpenaiTTS(apiKey: openaiApiKey);
+      _openaiTtsStatusSub = _openaiTts!.ttsStatusStream.listen((status) {
+        if (!mounted) return;
+        setState(() {
+          isSpeaking = status == OpenaiTTSStatus.fetching ||
+              status == OpenaiTTSStatus.playing;
+        });
+        if (status == OpenaiTTSStatus.completed || status == OpenaiTTSStatus.stopped) {
+          _waveformController.duration = const Duration(seconds: 15);
+          _waveformController.repeat();
+          _pulseController.stop();
+          _pulseController.reset();
+        }
+      });
+    }
+    if (realtimeVoiceWsUrl.isNotEmpty) {
+      _realtimeClient = RealtimeVoiceClientImpl(wsUrl: realtimeVoiceWsUrl);
+      _realtimeClient!.connect().then((_) {
+        _realtimeAudioSub = _realtimeClient!.audioDeltaStream.listen((bytes) {
+          if (!mounted) return;
+          setState(() => isSpeaking = true);
+          // TODO: jouer bytes PCM avec flutter_sound (startPlayerFromStream)
+          // Pour l'instant le client Realtime est prêt ; brancher record PCM → sendAudioChunk + play ici.
+        });
+      }).catchError((_) {});
+    }
+  }
+
+  /// Initialise le TTS : débit lent et volume max pour un son clair (FR, EN, AR).
+  Future<void> _initTts() async {
+    await _flutterTts.setSpeechRate(0.48); // Vitesse équilibrée (voix type ChatGPT)
+    await _flutterTts.setVolume(1.0);
+    await _flutterTts.setPitch(1.0);
+  }
+
+  /// Langue TTS par défaut quand on ne détecte pas (anglais = langue neutre courante).
+  static const String _defaultTtsLocale = 'en-US';
+
+  /// Détecte la langue du texte pour choisir la voix TTS (ar, fr, en, etc.).
+  /// Arabe → ar-SA, Français (accents) → fr-FR, sinon → en-US (multilingue).
+  String _detectLanguage(String text) {
+    if (text.isEmpty) return _defaultTtsLocale;
+    final trimmed = text.trim();
+    if (RegExp(r'[\u0600-\u06FF]').hasMatch(trimmed)) return 'ar-SA';
+    if (RegExp(r'[àâäéèêëïîôùûüçœæ]', caseSensitive: false).hasMatch(trimmed)) return 'fr-FR';
+    return _defaultTtsLocale;
+  }
+
+  Future<void> _initSpeech() async {
+    _speechAvailable = await _speech.initialize();
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _realtimeAudioSub?.cancel();
+    _realtimeClient?.close();
+    _openaiTtsStatusSub?.cancel();
+    _openaiTts?.stopPlayer();
+    _openaiTts?.dispose();
     _waveformController.dispose();
     _pulseController.dispose();
     _textController.dispose();
@@ -65,80 +143,172 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
 
   // --- Logic Functions ---
 
-  void simulateAISpeaking(String text) {
+  /// Parole IA : TTS claire en FR, EN, AR. L’utilisateur entend la réponse.
+  Future<void> simulateAISpeaking(String text) async {
+    if (text.isEmpty) return;
     setState(() => isSpeaking = true);
-    
-    // Speed up waveform while speaking
     _waveformController.duration = const Duration(seconds: 3);
     _waveformController.repeat();
     _pulseController.repeat(reverse: true);
 
-    Timer(const Duration(seconds: 3), () {
+    if (_openaiTts != null) {
+      await _openaiTts!.stopPlayer();
+      try {
+        await _openaiTts!.streamSpeak(
+          text,
+          voice: OpenaiTTSVoice.alloy,
+          model: OpenaiTTSModel.tts1hd, // HD = son plus clair
+        );
+      } catch (_) {
+        if (mounted) _fallbackFlutterTts(text);
+      }
+      return;
+    }
+
+    _flutterTts.setCompletionHandler(() {
       if (mounted) {
         setState(() => isSpeaking = false);
-        // Slow down waveform
         _waveformController.duration = const Duration(seconds: 15);
         _waveformController.repeat();
         _pulseController.stop();
         _pulseController.reset();
       }
     });
+    await _flutterTts.stop();
+    final locale = _detectLanguage(text);
+    final available = await _flutterTts.isLanguageAvailable(locale);
+    if (available == true) {
+      await _flutterTts.setLanguage(locale);
+    } else {
+      await _flutterTts.setLanguage(_defaultTtsLocale);
+    }
+    await _flutterTts.setSpeechRate(0.48);
+    await _flutterTts.setVolume(1.0);
+    if (mounted) await _flutterTts.speak(text);
   }
 
-  void handleMicToggle() {
+  void _fallbackFlutterTts(String text) async {
+    setState(() => isSpeaking = true);
+    _flutterTts.setCompletionHandler(() {
+      if (mounted) {
+        setState(() => isSpeaking = false);
+        _waveformController.duration = const Duration(seconds: 15);
+        _waveformController.repeat();
+        _pulseController.stop();
+        _pulseController.reset();
+      }
+    });
+    await _flutterTts.stop();
+    final locale = _detectLanguage(text);
+    final available = await _flutterTts.isLanguageAvailable(locale);
+    if (available == true) {
+      await _flutterTts.setLanguage(locale);
+    } else {
+      await _flutterTts.setLanguage(_defaultTtsLocale);
+    }
+    await _flutterTts.setSpeechRate(0.48);
+    await _flutterTts.setVolume(1.0);
+    if (mounted) await _flutterTts.speak(text);
+  }
+
+  void handleMicToggle() async {
     if (isListening) {
-      // Stop Listening
+      await _speech.stop();
       setState(() => isListening = false);
       _pulseController.stop();
       _pulseController.reset();
       _waveformController.duration = const Duration(seconds: 15);
       _waveformController.repeat();
 
-      if (currentTranscript.isNotEmpty) {
-        _addMessage(currentTranscript, MessageSender.user);
-        
-        // Simulate AI Response
-        Timer(const Duration(seconds: 1), () {
-          const response = "I understand. Let me help you with that.";
-          _addMessage(response, MessageSender.ai);
-          simulateAISpeaking(response);
-        });
+      final transcript = currentTranscript.trim();
+      final isPlaceholder = transcript.isEmpty ||
+          transcript == "Go ahead, I'm listening..." ||
+          transcript == "Parle, j'écoute...";
+      if (!isPlaceholder && transcript.isNotEmpty) {
+        _addMessage(transcript, MessageSender.user);
         setState(() => currentTranscript = "");
+        _requestAIResponse(transcript);
       }
+      setState(() => currentTranscript = "");
     } else {
-      // Start Listening
+      if (!_speechAvailable) {
+        _speechAvailable = await _speech.initialize();
+        if (!_speechAvailable && mounted) {
+          setState(() => currentTranscript = "Micro non disponible");
+          return;
+        }
+      }
       setState(() {
         isListening = true;
-        currentTranscript = "Go ahead, I'm listening...";
+        currentTranscript = "Parle, j'écoute...";
       });
       _pulseController.repeat(reverse: true);
       _waveformController.duration = const Duration(seconds: 3);
       _waveformController.repeat();
+
+      await _speech.listen(
+        onResult: (result) {
+          if (mounted && result.recognizedWords.isNotEmpty) {
+            setState(() => currentTranscript = result.recognizedWords);
+          }
+        },
+        listenFor: const Duration(seconds: 30),
+        pauseFor: const Duration(seconds: 3),
+        partialResults: true,
+        // Pas de localeId fixe : utilise la langue par défaut de l'appareil (multilingue).
+      );
     }
   }
 
   void handleSendMessage() {
-    if (_textController.text.trim().isNotEmpty) {
-      _addMessage(_textController.text, MessageSender.user);
+    final text = _textController.text.trim();
+    if (text.isNotEmpty) {
+      _addMessage(text, MessageSender.user);
       _textController.clear();
+      _requestAIResponse(text);
+    }
+  }
 
-      // Simulate AI Response
-      Timer(const Duration(seconds: 1), () {
-        const response = "I've received your message. How else can I assist you?";
-        _addMessage(response, MessageSender.ai);
-        simulateAISpeaking(response);
-      });
+  /// Appelle l'API chat (backend) pour une réponse dynamique ; en cas d'erreur, affiche un message de repli.
+  Future<void> _requestAIResponse(String _) async {
+    if (!mounted) return;
+    setState(() => isLoadingAI = true);
+
+    try {
+      final apiMessages = messages
+          .map((m) => {
+                'role': m.sender == MessageSender.user ? 'user' : 'assistant',
+                'content': m.text,
+              })
+          .toList();
+
+      final response = await widget.chatDataSource.sendMessages(
+        apiMessages,
+        systemInstruction: chatSystemInstructionMultilingual,
+      );
+      if (!mounted) return;
+      setState(() => isLoadingAI = false);
+      _addMessage(response, MessageSender.ai);
+      simulateAISpeaking(response);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => isLoadingAI = false);
+      const fallback = "J'ai bien reçu votre message. Comment puis-je vous aider ?";
+      _addMessage(fallback, MessageSender.ai);
+      simulateAISpeaking(fallback);
     }
   }
 
   void _addMessage(String text, MessageSender sender) {
     setState(() {
-      messages.add(ChatMessage(
-        id: messages.length + 1,
-        text: text,
-        sender: sender,
-        timestamp: DateTime.now(),
-      ));
+      messages.add(
+        ChatMessage(
+          id: messages.length + 1,
+          text: text,
+          sender: sender,
+          timestamp: DateTime.now(),
+        ),
+      );
     });
     // Scroll to bottom
     if (showChat) {
@@ -216,7 +386,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                 builder: (context, constraints) {
                   final screenHeight = MediaQuery.of(context).size.height;
                   final screenWidth = MediaQuery.of(context).size.width;
-                  
+
                   // Responsive calculations - Reduced to move waveform up
                   final topSectionHeight = Responsive.getResponsiveValue(
                     context,
@@ -224,7 +394,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                     tablet: screenHeight * 0.20,
                     desktop: screenHeight * 0.18,
                   );
-                  
+
                   // Responsive bottom section height
                   final micButtonHeight = Responsive.getResponsiveValue(
                     context,
@@ -250,17 +420,25 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                     tablet: 28.0,
                     desktop: 32.0,
                   );
-                  
-                  final bottomSectionHeight = micButtonHeight + spacingHeight + inputFieldHeight + bottomPadding;
-                  
+
+                  final bottomSectionHeight =
+                      micButtonHeight +
+                      spacingHeight +
+                      inputFieldHeight +
+                      bottomPadding;
+
                   // Available height for waveform area (with safety margin)
-                  final availableHeight = (constraints.maxHeight - topSectionHeight - bottomSectionHeight).clamp(200.0, double.infinity);
-                  
+                  final availableHeight =
+                      (constraints.maxHeight -
+                              topSectionHeight -
+                              bottomSectionHeight)
+                          .clamp(200.0, double.infinity);
+
                   return Column(
                     children: [
                       // Spacer to account for top section
                       SizedBox(height: topSectionHeight),
-                      
+
                       // Waveform Area - Centered in available space
                       Expanded(
                         child: Center(
@@ -290,7 +468,9 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                       // Bottom Input Field - Fixed height to prevent layout shift
                       Padding(
                         padding: EdgeInsets.only(
-                          bottom: bottomPadding + MediaQuery.of(context).padding.bottom,
+                          bottom:
+                              bottomPadding +
+                              MediaQuery.of(context).padding.bottom,
                           left: Responsive.getResponsiveValue(
                             context,
                             mobile: 20.0,
@@ -319,9 +499,18 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                   Padding(
                     padding: Responsive.getResponsivePadding(
                       context,
-                      mobile: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                      tablet: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                      desktop: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
+                      mobile: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 20,
+                      ),
+                      tablet: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 24,
+                      ),
+                      desktop: const EdgeInsets.symmetric(
+                        horizontal: 28,
+                        vertical: 28,
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -370,7 +559,9 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                             _buildGlassIconButton(
                               icon: LucideIcons.messageSquare,
                               onTap: () => setState(() => showChat = !showChat),
-                              badgeCount: messages.length > 1 ? messages.length : 0,
+                              badgeCount: messages.length > 1
+                                  ? messages.length
+                                  : 0,
                             ),
                             SizedBox(
                               width: Responsive.getResponsiveValue(
@@ -380,9 +571,12 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                                 desktop: 14.0,
                               ),
                             ),
-                            _buildGlassIconButton(icon: LucideIcons.menu, onTap: () {}),
+                            _buildGlassIconButton(
+                              icon: LucideIcons.menu,
+                              onTap: () {},
+                            ),
                           ],
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -420,14 +614,20 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                         child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 300),
                           child: Column(
-                            key: ValueKey(isListening ? "list" : isSpeaking ? "speak" : "idle"),
+                            key: ValueKey(
+                              isListening
+                                  ? "list"
+                                  : isSpeaking
+                                  ? "speak"
+                                  : "idle",
+                            ),
                             children: [
                               Text(
                                 isListening
-                                    ? "Go ahead, I'm listening..."
+                                    ? "Parle, j'écoute..."
                                     : isSpeaking
-                                        ? "Let me think about that..."
-                                        : "Ready to assist you with",
+                                    ? "Je réfléchis..."
+                                    : "Prêt à vous aider pour",
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: Responsive.getResponsiveValue(
@@ -441,7 +641,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                               ),
                               if (!isListening && !isSpeaking)
                                 Text(
-                                  "whatever you need today!",
+                                  "tout ce dont vous avez besoin aujourd'hui !",
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: Responsive.getResponsiveValue(
@@ -473,6 +673,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
               height: MediaQuery.of(context).size.height,
               child: _ChatOverlay(
                 messages: messages,
+                isLoadingAI: isLoadingAI,
                 onClose: () => setState(() => showChat = false),
                 scrollController: _scrollController,
               ),
@@ -483,7 +684,11 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
     );
   }
 
-  Widget _buildGlassIconButton({required IconData icon, required VoidCallback onTap, int badgeCount = 0}) {
+  Widget _buildGlassIconButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    int badgeCount = 0,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -515,15 +720,21 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                   height: 18,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(colors: [Colors.pink, Colors.purple]),
+                    gradient: LinearGradient(
+                      colors: [Colors.pink, Colors.purple],
+                    ),
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     "$badgeCount",
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              )
+              ),
           ],
         ),
       ),
@@ -592,7 +803,9 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                   ),
                   decoration: InputDecoration(
                     hintText: "Enter your prompt here...",
-                    hintStyle: TextStyle(color: Colors.cyan[200]!.withOpacity(0.3)),
+                    hintStyle: TextStyle(
+                      color: Colors.cyan[200]!.withOpacity(0.3),
+                    ),
                     border: InputBorder.none,
                     isDense: true,
                   ),
@@ -612,7 +825,9 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                   ),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(colors: [Color(0xFF06b6d4), Color(0xFF3b82f6)]),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF06b6d4), Color(0xFF3b82f6)],
+                    ),
                   ),
                   child: Icon(
                     LucideIcons.send,
@@ -654,11 +869,11 @@ class _WaveformVisualizer extends StatelessWidget {
       tablet: 340.0,
       desktop: 380.0,
     );
-    
+
     final layer1Size = waveformSize * 0.85;
     final layer2Size = waveformSize * 0.75;
     final layer3Size = waveformSize * 0.75;
-    
+
     return SizedBox(
       width: waveformSize,
       height: waveformSize,
@@ -685,15 +900,20 @@ class _WaveformVisualizer extends StatelessWidget {
             builder: (context, child) {
               return Transform.rotate(
                 angle: rotateController.value * 2 * math.pi,
-                  child: Transform.scale(
-                    scale: isActive ? 1.0 + (pulseController.value * 0.1) : 1.0,
-                    child: Container(
-                      width: layer1Size,
-                      height: layer1Size,
+                child: Transform.scale(
+                  scale: isActive ? 1.0 + (pulseController.value * 0.1) : 1.0,
+                  child: Container(
+                    width: layer1Size,
+                    height: layer1Size,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: SweepGradient(
-                        colors: [Color(0xFF0891b2), Color(0xFF3b82f6), Colors.transparent, Color(0xFF0891b2)],
+                        colors: [
+                          Color(0xFF0891b2),
+                          Color(0xFF3b82f6),
+                          Colors.transparent,
+                          Color(0xFF0891b2),
+                        ],
                       ),
                     ),
                     child: BackdropFilter(
@@ -712,19 +932,24 @@ class _WaveformVisualizer extends StatelessWidget {
             builder: (context, child) {
               return Transform.rotate(
                 angle: -rotateController.value * 2 * math.pi,
-                  child: Transform.scale(
-                    scale: isActive ? 0.95 + (pulseController.value * 0.2) : 0.95,
-                    child: Container(
-                      width: layer2Size,
-                      height: layer2Size,
+                child: Transform.scale(
+                  scale: isActive ? 0.95 + (pulseController.value * 0.2) : 0.95,
+                  child: Container(
+                    width: layer2Size,
+                    height: layer2Size,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: SweepGradient(
                         startAngle: math.pi,
-                        colors: [Color(0xFFdb2777), Color(0xFF9333ea), Colors.transparent, Color(0xFFdb2777)],
+                        colors: [
+                          Color(0xFFdb2777),
+                          Color(0xFF9333ea),
+                          Colors.transparent,
+                          Color(0xFFdb2777),
+                        ],
                       ),
                     ),
-                     child: BackdropFilter(
+                    child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                       child: Container(color: Colors.transparent),
                     ),
@@ -738,7 +963,7 @@ class _WaveformVisualizer extends StatelessWidget {
           AnimatedBuilder(
             animation: Listenable.merge([rotateController, pulseController]),
             builder: (context, child) {
-               // A slightly distorted rotation to simulate liquid
+              // A slightly distorted rotation to simulate liquid
               return Transform.rotate(
                 angle: rotateController.value * math.pi,
                 child: Container(
@@ -747,25 +972,24 @@ class _WaveformVisualizer extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
-                       colors: [
+                      colors: [
                         Colors.blue.withOpacity(0.3),
                         Colors.purple.withOpacity(0.1),
-                        Colors.transparent
-                       ]
+                        Colors.transparent,
+                      ],
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: const Color(0xFFA7F3D0).withOpacity(0.1),
                         blurRadius: 60,
                         spreadRadius: 0,
-                      )
-                    ]
+                      ),
+                    ],
                   ),
                 ),
               );
             },
           ),
-          
         ],
       ),
     );
@@ -805,7 +1029,10 @@ class _MicButton extends StatelessWidget {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: RadialGradient(
-                            colors: [Colors.purple.withOpacity(0.4 * (1.3 - value)), Colors.transparent],
+                            colors: [
+                              Colors.purple.withOpacity(0.4 * (1.3 - value)),
+                              Colors.transparent,
+                            ],
                           ),
                         ),
                       ),
@@ -824,12 +1051,25 @@ class _MicButton extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: SweepGradient(
                   colors: const [
-                    Color(0xFFA855F7), Color(0xFFEC4899), Color(0xFF06B6D4), Color(0xFF10B981), Color(0xFFA855F7)
+                    Color(0xFFA855F7),
+                    Color(0xFFEC4899),
+                    Color(0xFF06B6D4),
+                    Color(0xFF10B981),
+                    Color(0xFFA855F7),
                   ],
                   stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
-                  transform: GradientRotation(isListening ? 0 : 0.5), // Animate this if you want rotation
+                  transform: GradientRotation(
+                    isListening ? 0 : 0.5,
+                  ), // Animate this if you want rotation
                 ),
-                boxShadow: isListening ? [BoxShadow(color: Colors.purple.withOpacity(0.5), blurRadius: 10)] : [],
+                boxShadow: isListening
+                    ? [
+                        BoxShadow(
+                          color: Colors.purple.withOpacity(0.5),
+                          blurRadius: 10,
+                        ),
+                      ]
+                    : [],
               ),
               child: Container(
                 decoration: const BoxDecoration(
@@ -850,14 +1090,23 @@ class _MicButton extends StatelessWidget {
                     ? const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [Color(0xFF9333ea), Color(0xFFdb2777), Color(0xFF0891b2)],
+                        colors: [
+                          Color(0xFF9333ea),
+                          Color(0xFFdb2777),
+                          Color(0xFF0891b2),
+                        ],
                       )
                     : LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [const Color(0xFF1a3a52), const Color(0xFF0f2940)],
+                        colors: [
+                          const Color(0xFF1a3a52),
+                          const Color(0xFF0f2940),
+                        ],
                       ),
-                border: isListening ? null : Border.all(color: Colors.cyan.withOpacity(0.3)),
+                border: isListening
+                    ? null
+                    : Border.all(color: Colors.cyan.withOpacity(0.3)),
               ),
               child: Icon(
                 isListening ? LucideIcons.micOff : LucideIcons.mic,
@@ -875,10 +1124,16 @@ class _MicButton extends StatelessWidget {
 // --- Chat Overlay ---
 class _ChatOverlay extends StatelessWidget {
   final List<ChatMessage> messages;
+  final bool isLoadingAI;
   final VoidCallback onClose;
   final ScrollController scrollController;
 
-  const _ChatOverlay({required this.messages, required this.onClose, required this.scrollController});
+  const _ChatOverlay({
+    required this.messages,
+    required this.isLoadingAI,
+    required this.onClose,
+    required this.scrollController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -899,19 +1154,30 @@ class _ChatOverlay extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Conversation", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Text(
+                    "Conversation",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   GestureDetector(
                     onTap: onClose,
                     child: Container(
-                       padding: const EdgeInsets.all(8),
-                       decoration: BoxDecoration(
-                         color: const Color(0xFF1e4a66).withOpacity(0.6),
-                         borderRadius: BorderRadius.circular(12),
-                         border: Border.all(color: Colors.cyan.withOpacity(0.2)),
-                       ),
-                       child: const Icon(LucideIcons.x, color: Color(0xFF22d3ee), size: 20),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1e4a66).withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.cyan.withOpacity(0.2)),
+                      ),
+                      child: const Icon(
+                        LucideIcons.x,
+                        color: Color(0xFF22d3ee),
+                        size: 20,
+                      ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -921,45 +1187,92 @@ class _ChatOverlay extends StatelessWidget {
               child: ListView.builder(
                 controller: scrollController,
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
-                itemCount: messages.length,
+                itemCount: messages.length + (isLoadingAI ? 1 : 0),
                 itemBuilder: (context, index) {
+                  if (isLoadingAI && index == messages.length) {
+                    return const Padding(
+                      padding: EdgeInsets.only(bottom: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Flexible(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              child: Text(
+                                "Buddy is typing...",
+                                style: TextStyle(
+                                  color: Color(0xFF94a3b8),
+                                  fontSize: 14,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
                   final msg = messages[index];
                   final isUser = msg.sender == MessageSender.user;
-                  
+
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: Row(
-                      mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+                      mainAxisAlignment: isUser
+                          ? MainAxisAlignment.end
+                          : MainAxisAlignment.start,
                       children: [
                         Flexible(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                               gradient: isUser
-                                  ? const LinearGradient(colors: [Color(0xFF06b6d4), Color(0xFF3b82f6)])
+                                  ? const LinearGradient(
+                                      colors: [
+                                        Color(0xFF06b6d4),
+                                        Color(0xFF3b82f6),
+                                      ],
+                                    )
                                   : LinearGradient(
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
-                                        const Color(0xFF1e4a66).withOpacity(0.6),
-                                        const Color(0xFF16384d).withOpacity(0.6),
+                                        const Color(
+                                          0xFF1e4a66,
+                                        ).withOpacity(0.6),
+                                        const Color(
+                                          0xFF16384d,
+                                        ).withOpacity(0.6),
                                       ],
                                     ),
-                              border: isUser ? null : Border.all(color: Colors.cyan.withOpacity(0.2)),
+                              border: isUser
+                                  ? null
+                                  : Border.all(
+                                      color: Colors.cyan.withOpacity(0.2),
+                                    ),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   msg.text,
-                                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   "${msg.timestamp.hour.toString().padLeft(2, '0')}:${msg.timestamp.minute.toString().padLeft(2, '0')}",
                                   style: TextStyle(
-                                    color: isUser ? Colors.white.withOpacity(0.7) : Colors.cyan[200]!.withOpacity(0.5),
+                                    color: isUser
+                                        ? Colors.white.withOpacity(0.7)
+                                        : Colors.cyan[200]!.withOpacity(0.5),
                                     fontSize: 10,
                                   ),
                                 ),
