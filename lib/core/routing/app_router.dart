@@ -13,9 +13,22 @@ import '../../presentation/pages/profile_screen.dart';
 import '../../presentation/pages/edit_profile_page.dart';
 import '../../presentation/pages/language_page.dart';
 import '../../presentation/pages/notifications_page.dart';
+import '../../presentation/pages/notifications_center_page.dart';
 import '../../presentation/pages/privacy_security_page.dart';
 import '../../presentation/pages/change_password_page.dart';
 import '../../presentation/pages/voice_assistant_page.dart';
+import '../../presentation/pages/suggestions_feed_page.dart';
+import '../../presentation/pages/agenda_page.dart';
+import '../../presentation/pages/emails_page.dart';
+import '../../presentation/pages/history_page.dart';
+import '../../presentation/pages/travel_page.dart';
+import '../../presentation/pages/actions_hub_page.dart';
+import '../../presentation/pages/automation_rules_page.dart';
+import '../../presentation/pages/onboarding_page.dart';
+import '../../presentation/pages/insights_page.dart';
+import '../../presentation/pages/connected_services_page.dart';
+import '../../presentation/pages/decision_support_page.dart';
+import '../../presentation/pages/goals_page.dart';
 import '../../injection_container.dart';
 
 // Custom page transition - fade and scale from center
@@ -69,6 +82,14 @@ final appRouter = GoRouter(
         context: context,
         state: state,
         child: const SplashPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/onboarding',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const OnboardingPage(),
       ),
     ),
     GoRoute(
@@ -204,5 +225,153 @@ final appRouter = GoRouter(
         ),
       ),
     ),
+    // Notifications Center (from home screen bell)
+    GoRoute(
+      path: '/notifications-center',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const NotificationsCenterPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/suggestions',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const SuggestionsFeedPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/agenda',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const AgendaPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/emails',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const EmailsPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/history',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const HistoryPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/travel',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const TravelPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/actions',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const ActionsHubPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/automation',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const AutomationRulesPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/insights',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const InsightsPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/services',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const ConnectedServicesPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/decisions',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const DecisionSupportPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/goals',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const GoalsPage(),
+      ),
+    ),
   ],
 );
+
+// Placeholder page for routes that will be implemented later
+class _PlaceholderPage extends StatelessWidget {
+  final String title;
+
+  const _PlaceholderPage({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF0f2940),
+              Color(0xFF1a3a52),
+              Color(0xFF0f2940),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Coming soon...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFFA5F3FC),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
