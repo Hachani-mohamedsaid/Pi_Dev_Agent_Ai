@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../config/api_config.dart';
+import '../config/api_config.dart'
+    show resetPasswordConfirmPath, verifyEmailConfirmPath;
 import '../../presentation/pages/splash_page.dart';
 import '../../presentation/pages/login_page.dart';
 import '../../presentation/pages/register_page.dart';
 import '../../presentation/pages/reset_password_page.dart';
 import '../../presentation/pages/reset_password_confirm_page.dart';
+import '../../presentation/pages/verify_email_confirm_page.dart';
 import '../../presentation/pages/home_screen.dart';
 import '../../presentation/pages/profile_screen.dart';
 import '../../presentation/pages/edit_profile_page.dart';
@@ -54,8 +56,25 @@ Page<T> _fadeScaleTransition<T extends Object?>({
   );
 }
 
+/// Redirige les URLs avec espace encodé (%20) vers la route correcte (ex. lien email mal formé).
+String? _redirectTrailingSpace(BuildContext context, GoRouterState state) {
+  final path = state.uri.path.replaceAll('%20', '').trim();
+  if (path == verifyEmailConfirmPath &&
+      state.uri.path != verifyEmailConfirmPath) {
+    final q = state.uri.hasQuery ? '?${state.uri.query}' : '';
+    return '$verifyEmailConfirmPath$q';
+  }
+  if (path == resetPasswordConfirmPath &&
+      state.uri.path != resetPasswordConfirmPath) {
+    final q = state.uri.hasQuery ? '?${state.uri.query}' : '';
+    return '$resetPasswordConfirmPath$q';
+  }
+  return null;
+}
+
 final appRouter = GoRouter(
   initialLocation: '/splash',
+  redirect: _redirectTrailingSpace,
   routes: [
     GoRoute(
       path: '/splash',
@@ -120,6 +139,17 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: verifyEmailConfirmPath,
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: VerifyEmailConfirmPage(
+          controller: InjectionContainer.instance.buildAuthController(),
+          token: state.uri.queryParameters['token'],
+        ),
+      ),
+    ),
+    GoRoute(
       path: '/home',
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
@@ -170,7 +200,9 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: const PrivacySecurityPage(),
+        child: PrivacySecurityPage(
+          controller: InjectionContainer.instance.buildAuthController(),
+        ),
       ),
     ),
     GoRoute(

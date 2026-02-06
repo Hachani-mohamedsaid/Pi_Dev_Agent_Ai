@@ -8,8 +8,8 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl({
     required AuthRemoteDataSource remoteDataSource,
     required AuthLocalDataSource localDataSource,
-  })  : _remoteDataSource = remoteDataSource,
-        _localDataSource = localDataSource;
+  }) : _remoteDataSource = remoteDataSource,
+       _localDataSource = localDataSource;
 
   final AuthRemoteDataSource _remoteDataSource;
   final AuthLocalDataSource _localDataSource;
@@ -40,12 +40,21 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> setNewPassword({required String token, required String newPassword}) async {
-    await _remoteDataSource.setNewPassword(token: token, newPassword: newPassword);
+  Future<void> setNewPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    await _remoteDataSource.setNewPassword(
+      token: token,
+      newPassword: newPassword,
+    );
   }
 
   @override
-  Future<void> changePassword({required String currentPassword, required String newPassword}) async {
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
     final token = await _localDataSource.getAccessToken();
     if (token == null || token.isEmpty) throw Exception('Not authenticated');
     await _remoteDataSource.changePassword(
@@ -78,7 +87,10 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<User> loginWithApple(String identityToken, {String? user}) async {
-    final res = await _remoteDataSource.loginWithApple(identityToken, user: user);
+    final res = await _remoteDataSource.loginWithApple(
+      identityToken,
+      user: user,
+    );
     await _localDataSource.cacheUser(res.user);
     if (res.accessToken.isNotEmpty) {
       await _localDataSource.saveAccessToken(res.accessToken);
@@ -96,11 +108,7 @@ class AuthRepositoryImpl implements AuthRepository {
     if (user == null) {
       throw Exception('Not authenticated');
     }
-    return ProfileModel(
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    );
+    return ProfileModel(id: user.id, name: user.name, email: user.email);
   }
 
   @override
@@ -129,5 +137,17 @@ class AuthRepositoryImpl implements AuthRepository {
       conversationsCount: conversationsCount,
       hoursSaved: hoursSaved,
     );
+  }
+
+  @override
+  Future<void> requestEmailVerification() async {
+    final token = await _localDataSource.getAccessToken();
+    if (token == null || token.isEmpty) throw Exception('Not authenticated');
+    await _remoteDataSource.requestEmailVerification(token);
+  }
+
+  @override
+  Future<void> confirmEmailVerification(String token) async {
+    await _remoteDataSource.confirmEmailVerification(token);
   }
 }

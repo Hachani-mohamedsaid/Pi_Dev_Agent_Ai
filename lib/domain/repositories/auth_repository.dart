@@ -6,16 +6,24 @@ abstract class AuthRepository {
   Future<void> resetPassword(String email);
   Future<User?> getCurrentUser();
   Future<void> logout();
+
   /// idToken fourni par Google Sign-In.
   Future<User> loginWithGoogle(String idToken);
+
   /// identityToken + user optionnel fournis par Sign in with Apple.
   Future<User> loginWithApple(String identityToken, {String? user});
 
   /// POST /auth/reset-password/confirm – nouveau MDP avec token du lien email.
-  Future<void> setNewPassword({required String token, required String newPassword});
+  Future<void> setNewPassword({
+    required String token,
+    required String newPassword,
+  });
 
   /// POST /auth/change-password – changer le MDP (utilisateur connecté).
-  Future<void> changePassword({required String currentPassword, required String newPassword});
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  });
 
   /// GET /auth/me – profil avec stats (role, location, etc.).
   Future<dynamic> getProfile();
@@ -32,4 +40,10 @@ abstract class AuthRepository {
     int? conversationsCount,
     int? hoursSaved,
   });
+
+  /// POST /auth/verify-email – envoi email avec lien (Resend). Utilisateur connecté (Bearer).
+  Future<void> requestEmailVerification();
+
+  /// POST /auth/verify-email/confirm – confirmation avec token du lien email.
+  Future<void> confirmEmailVerification(String token);
 }

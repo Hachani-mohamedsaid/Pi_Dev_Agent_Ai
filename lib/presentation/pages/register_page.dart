@@ -20,10 +20,7 @@ import '../state/auth_controller.dart';
 class RegisterPage extends StatefulWidget {
   final AuthController controller;
 
-  const RegisterPage({
-    super.key,
-    required this.controller,
-  });
+  const RegisterPage({super.key, required this.controller});
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
@@ -109,9 +106,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.primaryGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
         child: Stack(
           children: [
             // Background decorative elements
@@ -183,7 +178,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       child: Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
+                          borderRadius: BorderRadius.circular(
+                            isMobile ? 24 : 28,
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.3),
@@ -193,7 +190,9 @@ class _RegisterPageState extends State<RegisterPage> {
                           ],
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
+                          borderRadius: BorderRadius.circular(
+                            isMobile ? 24 : 28,
+                          ),
                           child: BackdropFilter(
                             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                             child: Padding(
@@ -202,7 +201,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 key: _formKey,
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
                                     // Logo
                                     Center(
@@ -218,14 +218,14 @@ class _RegisterPageState extends State<RegisterPage> {
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Title
                                     Text(
-                                      'Create Account',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: isMobile ? 28 : 32,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textWhite,
-                                      ),
-                                    )
+                                          'Create Account',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: isMobile ? 28 : 32,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.textWhite,
+                                          ),
+                                        )
                                         .animate()
                                         .fadeIn(delay: 200.ms, duration: 500.ms)
                                         .slideY(
@@ -241,20 +241,22 @@ class _RegisterPageState extends State<RegisterPage> {
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: isMobile ? 14 : 16,
-                                        color: AppColors.textCyan200.withOpacity(0.7),
+                                        color: AppColors.textCyan200
+                                            .withOpacity(0.7),
                                       ),
-                                    )
-                                        .animate()
-                                        .fadeIn(delay: 300.ms, duration: 500.ms),
+                                    ).animate().fadeIn(
+                                      delay: 300.ms,
+                                      duration: 500.ms,
+                                    ),
                                     SizedBox(height: isMobile ? 32 : 40),
                                     // Name Input
                                     CustomTextField(
-                                      label: 'Full Name',
-                                      hint: 'Enter your name',
-                                      icon: Icons.person_outline,
-                                      controller: _nameController,
-                                      validator: Validators.nonEmpty,
-                                    )
+                                          label: 'Full Name',
+                                          hint: 'Enter your name',
+                                          icon: Icons.person_outline,
+                                          controller: _nameController,
+                                          validator: Validators.nonEmpty,
+                                        )
                                         .animate()
                                         .fadeIn(delay: 400.ms, duration: 500.ms)
                                         .slideX(
@@ -266,13 +268,14 @@ class _RegisterPageState extends State<RegisterPage> {
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Email Input
                                     CustomTextField(
-                                      label: 'Email',
-                                      hint: 'Enter your email',
-                                      icon: Icons.mail_outline,
-                                      controller: _emailController,
-                                      keyboardType: TextInputType.emailAddress,
-                                      validator: Validators.email,
-                                    )
+                                          label: 'Email',
+                                          hint: 'Enter your email',
+                                          icon: Icons.mail_outline,
+                                          controller: _emailController,
+                                          keyboardType:
+                                              TextInputType.emailAddress,
+                                          validator: Validators.email,
+                                        )
                                         .animate()
                                         .fadeIn(delay: 500.ms, duration: 500.ms)
                                         .slideX(
@@ -284,25 +287,27 @@ class _RegisterPageState extends State<RegisterPage> {
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Password Input
                                     CustomTextField(
-                                      label: 'Password',
-                                      hint: 'Create a password',
-                                      icon: Icons.lock_outline,
-                                      controller: _passwordController,
-                                      obscureText: _obscurePassword,
-                                      suffixIcon: Icon(
-                                        _obscurePassword
-                                            ? Icons.visibility_off_outlined
-                                            : Icons.visibility_outlined,
-                                        color: AppColors.cyan400.withOpacity(0.6),
-                                        size: isMobile ? 20 : 22,
-                                      ),
-                                      onSuffixIconTap: () {
-                                        setState(() {
-                                          _obscurePassword = !_obscurePassword;
-                                        });
-                                      },
-                                      validator: Validators.password,
-                                    )
+                                          label: 'Password',
+                                          hint: 'Create a password',
+                                          icon: Icons.lock_outline,
+                                          controller: _passwordController,
+                                          obscureText: _obscurePassword,
+                                          suffixIcon: Icon(
+                                            _obscurePassword
+                                                ? Icons.visibility_off_outlined
+                                                : Icons.visibility_outlined,
+                                            color: AppColors.cyan400
+                                                .withOpacity(0.6),
+                                            size: isMobile ? 20 : 22,
+                                          ),
+                                          onSuffixIconTap: () {
+                                            setState(() {
+                                              _obscurePassword =
+                                                  !_obscurePassword;
+                                            });
+                                          },
+                                          validator: Validators.password,
+                                        )
                                         .animate()
                                         .fadeIn(delay: 600.ms, duration: 500.ms)
                                         .slideX(
@@ -314,28 +319,32 @@ class _RegisterPageState extends State<RegisterPage> {
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Confirm Password Input
                                     CustomTextField(
-                                      label: 'Confirm Password',
-                                      hint: 'Confirm your password',
-                                      icon: Icons.lock_outline,
-                                      controller: _confirmPasswordController,
-                                      obscureText: _obscureConfirmPassword,
-                                      suffixIcon: Icon(
-                                        _obscureConfirmPassword
-                                            ? Icons.visibility_off_outlined
-                                            : Icons.visibility_outlined,
-                                        color: AppColors.cyan400.withOpacity(0.6),
-                                        size: isMobile ? 20 : 22,
-                                      ),
-                                      onSuffixIconTap: () {
-                                        setState(() {
-                                          _obscureConfirmPassword = !_obscureConfirmPassword;
-                                        });
-                                      },
-                                      validator: (value) => Validators.confirmPassword(
-                                        value,
-                                        _passwordController.text,
-                                      ),
-                                    )
+                                          label: 'Confirm Password',
+                                          hint: 'Confirm your password',
+                                          icon: Icons.lock_outline,
+                                          controller:
+                                              _confirmPasswordController,
+                                          obscureText: _obscureConfirmPassword,
+                                          suffixIcon: Icon(
+                                            _obscureConfirmPassword
+                                                ? Icons.visibility_off_outlined
+                                                : Icons.visibility_outlined,
+                                            color: AppColors.cyan400
+                                                .withOpacity(0.6),
+                                            size: isMobile ? 20 : 22,
+                                          ),
+                                          onSuffixIconTap: () {
+                                            setState(() {
+                                              _obscureConfirmPassword =
+                                                  !_obscureConfirmPassword;
+                                            });
+                                          },
+                                          validator: (value) =>
+                                              Validators.confirmPassword(
+                                                value,
+                                                _passwordController.text,
+                                              ),
+                                        )
                                         .animate()
                                         .fadeIn(delay: 700.ms, duration: 500.ms)
                                         .slideX(
@@ -347,10 +356,11 @@ class _RegisterPageState extends State<RegisterPage> {
                                     SizedBox(height: isMobile ? 24 : 32),
                                     // Register Button
                                     CustomButton(
-                                      text: 'Sign Up',
-                                      onPressed: _handleRegister,
-                                      isLoading: widget.controller.isLoading,
-                                    )
+                                          text: 'Sign Up',
+                                          onPressed: _handleRegister,
+                                          isLoading:
+                                              widget.controller.isLoading,
+                                        )
                                         .animate()
                                         .fadeIn(delay: 800.ms, duration: 500.ms)
                                         .slideY(
@@ -376,7 +386,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                           child: Text(
                                             'Or sign up with',
                                             style: TextStyle(
-                                              color: AppColors.textCyan200.withOpacity(0.6),
+                                              color: AppColors.textCyan200
+                                                  .withOpacity(0.6),
                                               fontSize: isMobile ? 12 : 14,
                                             ),
                                           ),
@@ -388,9 +399,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                           ),
                                         ),
                                       ],
-                                    )
-                                        .animate()
-                                        .fadeIn(delay: 900.ms, duration: 500.ms),
+                                    ).animate().fadeIn(
+                                      delay: 900.ms,
+                                      duration: 500.ms,
+                                    ),
                                     SizedBox(height: isMobile ? 24 : 32),
                                     // Social Register Buttons (Google Account + Apple)
                                     Stack(
@@ -401,35 +413,59 @@ class _RegisterPageState extends State<RegisterPage> {
                                           child: Row(
                                             children: [
                                               Expanded(
-                                                child: WebGoogleSignInButton(
-                                                  onIdToken: _onGoogleIdToken,
-                                                  onPressed: () => _handleSocialRegister(SocialProvider.google),
-                                                )
-                                                    .animate()
-                                                    .fadeIn(delay: 1000.ms, duration: 500.ms)
-                                                    .slideX(
-                                                      begin: -0.1,
-                                                      end: 0,
-                                                      delay: 1000.ms,
-                                                      duration: 500.ms,
-                                                    ),
+                                                child:
+                                                    WebGoogleSignInButton(
+                                                          onIdToken:
+                                                              _onGoogleIdToken,
+                                                          onPressed: () =>
+                                                              _handleSocialRegister(
+                                                                SocialProvider
+                                                                    .google,
+                                                              ),
+                                                        )
+                                                        .animate()
+                                                        .fadeIn(
+                                                          delay: 1000.ms,
+                                                          duration: 500.ms,
+                                                        )
+                                                        .slideX(
+                                                          begin: -0.1,
+                                                          end: 0,
+                                                          delay: 1000.ms,
+                                                          duration: 500.ms,
+                                                        ),
                                               ),
                                               if (!kIsWeb) ...[
-                                                SizedBox(width: isMobile ? 12 : 16),
+                                                SizedBox(
+                                                  width: isMobile ? 12 : 16,
+                                                ),
                                                 Expanded(
-                                                  child: SocialButton(
-                                                    icon: AppleIcon(size: isMobile ? 24 : 26),
-                                                    text: 'Apple Account',
-                                                    onPressed: () => _handleSocialRegister(SocialProvider.apple),
-                                                  )
-                                                      .animate()
-                                                      .fadeIn(delay: 1100.ms, duration: 500.ms)
-                                                      .slideX(
-                                                        begin: 0.1,
-                                                        end: 0,
-                                                        delay: 1100.ms,
-                                                        duration: 500.ms,
-                                                      ),
+                                                  child:
+                                                      SocialButton(
+                                                            icon: AppleIcon(
+                                                              size: isMobile
+                                                                  ? 24
+                                                                  : 26,
+                                                            ),
+                                                            text:
+                                                                'Apple Account',
+                                                            onPressed: () =>
+                                                                _handleSocialRegister(
+                                                                  SocialProvider
+                                                                      .apple,
+                                                                ),
+                                                          )
+                                                          .animate()
+                                                          .fadeIn(
+                                                            delay: 1100.ms,
+                                                            duration: 500.ms,
+                                                          )
+                                                          .slideX(
+                                                            begin: 0.1,
+                                                            end: 0,
+                                                            delay: 1100.ms,
+                                                            duration: 500.ms,
+                                                          ),
                                                 ),
                                               ],
                                             ],
@@ -439,20 +475,34 @@ class _RegisterPageState extends State<RegisterPage> {
                                           Positioned.fill(
                                             child: Container(
                                               decoration: BoxDecoration(
-                                                color: AppColors.backgroundDark.withOpacity(0.6),
-                                                borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
+                                                color: AppColors.backgroundDark
+                                                    .withOpacity(0.6),
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      isMobile ? 12 : 14,
+                                                    ),
                                               ),
                                               child: Center(
                                                 child: Column(
-                                                  mainAxisSize: MainAxisSize.min,
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
                                                   children: [
-                                                    const CircularProgressIndicator(color: AppColors.cyan400),
-                                                    SizedBox(height: isMobile ? 12 : 16),
+                                                    const CircularProgressIndicator(
+                                                      color: AppColors.cyan400,
+                                                    ),
+                                                    SizedBox(
+                                                      height: isMobile
+                                                          ? 12
+                                                          : 16,
+                                                    ),
                                                     Text(
                                                       'Inscription en cours...',
                                                       style: TextStyle(
-                                                        color: AppColors.textWhite,
-                                                        fontSize: isMobile ? 12 : 14,
+                                                        color:
+                                                            AppColors.textWhite,
+                                                        fontSize: isMobile
+                                                            ? 12
+                                                            : 14,
                                                       ),
                                                     ),
                                                   ],
@@ -465,17 +515,20 @@ class _RegisterPageState extends State<RegisterPage> {
                                     SizedBox(height: isMobile ? 24 : 32),
                                     // Sign In Link
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Text(
                                           'Already have an account? ',
                                           style: TextStyle(
-                                            color: AppColors.textCyan200.withOpacity(0.6),
+                                            color: AppColors.textCyan200
+                                                .withOpacity(0.6),
                                             fontSize: isMobile ? 13 : 14,
                                           ),
                                         ),
                                         TextButton(
-                                          onPressed: () => context.push('/login'),
+                                          onPressed: () =>
+                                              context.push('/login'),
                                           child: Text(
                                             'Sign In',
                                             style: TextStyle(
@@ -486,9 +539,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                           ),
                                         ),
                                       ],
-                                    )
-                                        .animate()
-                                        .fadeIn(delay: 1200.ms, duration: 500.ms),
+                                    ).animate().fadeIn(
+                                      delay: 1200.ms,
+                                      duration: 500.ms,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -507,4 +561,3 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 }
-

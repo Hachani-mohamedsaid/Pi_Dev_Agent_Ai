@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -448,9 +449,6 @@ class _LoginPageState extends State<LoginPage> {
                                               ),
                                             ],
                                           ),
-                                        ).animate().fadeIn(
-                                          delay: 550.ms,
-                                          duration: 500.ms,
                                         ),
                                         // Forgot Password
                                         TextButton(
@@ -473,6 +471,9 @@ class _LoginPageState extends State<LoginPage> {
                                           duration: 500.ms,
                                         ),
                                       ],
+                                    ).animate().fadeIn(
+                                      delay: 550.ms,
+                                      duration: 500.ms,
                                     ),
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Login Button
