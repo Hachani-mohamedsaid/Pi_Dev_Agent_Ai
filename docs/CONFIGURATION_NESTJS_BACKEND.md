@@ -1,6 +1,6 @@
 # Configuration nécessaire – Backend NestJS
 
-Ce document récapitule **toute la configuration** à mettre en place dans le backend NestJS pour que l’app Flutter (login, register, Google Sign-In, reset password) fonctionne. Backend hébergé sur **Railway**.
+Ce document récapitule **toute la configuration** à mettre en place dans le backend NestJS pour que l’app Flutter (login, register, Google Sign-In, reset password, vérification email, Talk to buddy) fonctionne. Backend hébergé sur **Railway**.
 
 ---
 
@@ -14,9 +14,14 @@ Ce document récapitule **toute la configuration** à mettre en place dans le ba
 | **JWT_SECRET** | Oui | Secret pour signer les JWT (long, aléatoire). | `ton_secret_jwt_fort_et_long` |
 | **JWT_EXPIRES_IN** | Non | Durée de vie du JWT. | `7d` |
 | **MONGODB_URI** | Oui (si MongoDB) | Chaîne de connexion MongoDB. | `mongodb+srv://...` ou `mongodb://localhost:27017/...` |
-| **RESEND_API_KEY** | Oui (si reset password) | Clé API Resend (pas SendGrid). | `re_xxxxxxxxxxxx` |
-| **EMAIL_FROM** | Oui (si reset password) | Expéditeur des emails. | `onboarding@resend.dev` ou `noreply@tondomaine.com` |
+| **RESEND_API_KEY** | Oui (si reset password ou vérif. email) | Clé API Resend (pas SendGrid). | `re_xxxxxxxxxxxx` |
+| **EMAIL_FROM** | Oui (si reset password ou vérif. email) | Expéditeur des emails. | `onboarding@resend.dev` ou `noreply@tondomaine.com` |
 | **FRONTEND_RESET_PASSWORD_URL** | Oui (si reset password) | URL de la page « définir nouveau mot de passe » dans l’app Flutter. Le backend met dans l’email : cette URL + `?token=...` | En prod : `https://ton-app.web.app/reset-password/confirm` ; en dev : `http://localhost:8080/reset-password/confirm` |
+| **FRONTEND_VERIFY_EMAIL_URL** | Oui (si vérification email) | URL de la page « confirmer mon email » (lien envoyé par email : cette URL + `?token=...`). L’app Flutter ouvre cette route puis appelle POST /auth/verify-email/confirm avec le token. | En prod : `https://ton-app.web.app/verify-email/confirm` ; en dev : `http://localhost:8080/verify-email/confirm` ou `myapp://verify-email/confirm` |
+| **OPENAI_API_KEY** | Oui (si Talk to buddy) | Clé API OpenAI pour POST /ai/chat. | `sk-proj-...` |
+| **OPENAI_MODEL** | Non | Modèle OpenAI (défaut : `gpt-4o-mini`). | `gpt-4o-mini` ou `gpt-4o` |
+
+**Note :** Le backend peut accepter **MONGO_URI** (prioritaire sur MONGODB_URI) pour la connexion MongoDB.
 
 **Exemple `.env` complet :**
 
@@ -29,10 +34,15 @@ JWT_EXPIRES_IN=7d
 # Base de données
 MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/dbname
 
-# Email – Reset Password (Resend, pas SendGrid)
+# Email – Reset Password + Vérification email (Resend, pas SendGrid)
 RESEND_API_KEY=re_xxxxxxxxxxxx
 EMAIL_FROM=onboarding@resend.dev
 FRONTEND_RESET_PASSWORD_URL=https://ton-app.web.app/reset-password/confirm
+FRONTEND_VERIFY_EMAIL_URL=https://ton-app.web.app/verify-email/confirm
+
+# Talk to buddy (optionnel)
+OPENAI_API_KEY=sk-proj-...
+OPENAI_MODEL=gpt-4o-mini
 ```
 
 ---
@@ -65,15 +75,15 @@ import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     // AuthModule, UsersModule, etc.
   ],
 })
 export class AppModule {}
 ```
 
-- **AuthModule** : importer `JwtModule` (avec `JWT_SECRET`, `JWT_EXPIRES_IN` depuis `ConfigService`), `UsersModule`, et éventuellement le schéma `PasswordResetToken` pour le reset password.
-- **ValidationPipe** global : pour valider les DTO (body) avec `whitelist: true`.
+- **AuthModule** : importer `JwtModule` (avec `JWT_SECRET`, `JWT_EXPIRES_IN` depuis `ConfigService`), `UsersModule`. Le token de reset peut être stocké sur le schéma **User** (`resetPasswordToken`, `resetPasswordExpires`) ou dans un schéma séparé `PasswordResetToken`.
+- **ValidationPipe** global : pour valider les DTO (body) avec `whitelist: true` (dans `main.ts`).
 
 ---
 
@@ -86,9 +96,11 @@ Le frontend appelle les endpoints suivants. Ils doivent exister et utiliser les 
 | POST | `/auth/login` | `{ "email", "password" }` | `{ "user", "accessToken" }` |
 | POST | `/auth/register` | `{ "name", "email", "password" }` | `{ "user", "accessToken" }` |
 | POST | `/auth/google` | `{ "idToken": "..." }` | `{ "user": { "id", "name", "email" }, "accessToken" }` |
-| POST | `/auth/reset-password` | `{ "email": "..." }` | 200 OK (email envoyé via Resend, pas SendGrid) |
+| POST | `/auth/reset-password` | `{ "email": "..." }` | 200 OK (email envoyé via Resend) |
 | POST | `/auth/reset-password/confirm` | `{ "token": "...", "newPassword": "..." }` | 200 OK (mot de passe mis à jour, token invalidé) |
-| GET | `/auth/me` | Header `Authorization: Bearer <accessToken>` | `{ "user" }` |
+| POST | `/auth/verify-email` | — | Header `Authorization: Bearer <accessToken>`. 200 OK : envoi de l’email avec lien (Resend). |
+| POST | `/auth/verify-email/confirm` | `{ "token": "..." }` | 200 OK : email marqué vérifié, token invalidé. |
+| GET | `/auth/me` | Header `Authorization: Bearer <accessToken>` | `{ "user" }` (inclut `emailVerified`) |
 | POST | `/auth/change-password` | Header + `{ "currentPassword", "newPassword" }` | 200 OK |
 | POST | `/ai/chat` | `{ "messages": [ { "role": "system"\|"user"\|"assistant", "content": "..." } ] }` | `{ "message": "..." }` ou `{ "content": "..." }` (réponse IA pour Talk to buddy) |
 
@@ -118,13 +130,23 @@ Sans cette étape, le LLM n’a pas accès aux données du compte et ne peut pas
 - **Variables** : `GOOGLE_CLIENT_ID`, `JWT_SECRET`, `JWT_EXPIRES_IN`.
 - **Code** : voir `docs/NESTJS_GOOGLE_AUTH_CODE.md` (DTO, AuthService.googleLogin, AuthController, schéma User avec `googleId`).
 
-### Reset Password (sans SendGrid)
+### Reset Password (Resend)
 - **Variables** : `RESEND_API_KEY`, `EMAIL_FROM`, `FRONTEND_RESET_PASSWORD_URL`.
-- **Code** : voir `docs/NESTJS_EMAIL_RESET_PASSWORD_CODE.md` (schéma PasswordResetToken, AuthService.requestPasswordReset + confirmResetPassword, envoi email via Resend).
+- **Code** : voir `docs/NESTJS_EMAIL_RESET_PASSWORD_CODE.md` (schéma User avec `resetPasswordToken` / `resetPasswordExpires`, AuthService.resetPassword + setNewPassword, envoi email via Resend).
+
+### Vérification d’email (Resend)
+- **Variables** : `RESEND_API_KEY`, `EMAIL_FROM`, `FRONTEND_VERIFY_EMAIL_URL`.
+- **Comportement** : l’utilisateur connecté demande l’envoi du lien depuis l’app (Privacy & Security → Verify). Le backend reçoit **POST /auth/verify-email** avec le header `Authorization: Bearer <accessToken>`, envoie un email avec un lien vers `FRONTEND_VERIFY_EMAIL_URL?token=...`. Au clic, l’app ouvre cette URL puis appelle **POST /auth/verify-email/confirm** avec `{ "token": "..." }` ; le backend met `emailVerified: true` et invalide le token.
+- **Code** : voir `docs/NESTJS_EMAIL_VERIFICATION_CODE.md` (schéma User : `emailVerified`, `emailVerificationToken`, `emailVerificationExpires` ; AuthService.sendVerificationEmail + confirmEmailVerification).
 
 ### Login / Register / JWT
-- **Variables** : `JWT_SECRET`, `JWT_EXPIRES_IN`, `MONGODB_URI`.
+- **Variables** : `JWT_SECRET`, `JWT_EXPIRES_IN`, `MONGODB_URI` (ou MONGO_URI).
 - **Config** : `ConfigModule.forRoot()`, `JwtModule.registerAsync(...)` avec `ConfigService`.
+
+### Talk to buddy (POST /ai/chat)
+- **Variables** : `OPENAI_API_KEY` (obligatoire pour les réponses IA), `OPENAI_MODEL` (optionnel, défaut : `gpt-4o-mini`).
+- **Route** : `POST /ai/chat` avec body `{ "messages": [ { "role", "content" } ] }`, réponse `{ "message": "..." }`.
+- **Implémentation** : module `AiModule`, `AiService` qui appelle l’API OpenAI si `OPENAI_API_KEY` est défini ; sinon réponse factice.
 
 ---
 
@@ -146,9 +168,10 @@ Après modification des variables, Railway redéploie automatiquement. Vérifier
 | 4 | JwtModule avec JWT_SECRET, JWT_EXPIRES_IN | |
 | 5 | POST /auth/google (voir NESTJS_GOOGLE_AUTH_CODE.md) | |
 | 6 | POST /auth/reset-password et /auth/reset-password/confirm (voir NESTJS_EMAIL_RESET_PASSWORD_CODE.md) | |
-| 7 | ValidationPipe global (whitelist: true) | |
-| 8 | Schéma User (googleId, etc.) + UsersService (findByGoogleId, findByEmail, createFromGoogle, updatePassword) | |
-| 9 | Schéma PasswordResetToken + stockage token avec TTL 1h | |
-| 10 | POST /ai/chat : lire JWT (Authorization: Bearer), récupérer nom/email utilisateur, injecter dans le message **system** envoyé au LLM pour que l’assistant connaisse « qui est l’utilisateur » | |
+| 7 | POST /auth/verify-email (Bearer) et POST /auth/verify-email/confirm (voir NESTJS_EMAIL_VERIFICATION_CODE.md) | |
+| 8 | ValidationPipe global (whitelist: true) | |
+| 9 | Schéma User (googleId, resetPasswordToken, resetPasswordExpires, emailVerified, emailVerificationToken, emailVerificationExpires) + UsersService (findByGoogleId, findByEmail, createFromGoogle, findByResetToken, etc.) | |
+| 10 | Stockage token reset : sur User (resetPasswordToken, resetPasswordExpires) ou schéma PasswordResetToken avec TTL 1h | |
+| 11 | POST /ai/chat : lire JWT (Authorization: Bearer), récupérer nom/email utilisateur, injecter dans le message **system** envoyé au LLM pour que l’assistant connaisse « qui est l’utilisateur » | |
 
-Une fois cette configuration en place, le backend NestJS (y compris sur Railway) est prêt pour le Flutter (login, register, Google Sign-In, reset password avec Resend, et assistant vocal avec accès aux données du compte).
+Une fois cette configuration en place, le backend NestJS (y compris sur Railway) est prêt pour le Flutter (login, register, Google Sign-In, reset password avec Resend, vérification email avec Resend, et assistant vocal avec accès aux données du compte).

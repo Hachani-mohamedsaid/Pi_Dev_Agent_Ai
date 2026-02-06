@@ -23,6 +23,8 @@ import 'domain/usecases/get_profile_usecase.dart';
 import 'domain/usecases/update_profile_usecase.dart';
 import 'domain/usecases/reset_password_confirm_usecase.dart';
 import 'domain/usecases/change_password_usecase.dart';
+import 'domain/usecases/request_email_verification_usecase.dart';
+import 'domain/usecases/confirm_email_verification_usecase.dart';
 import 'presentation/state/auth_controller.dart';
 
 /// Very small manual DI container (no external packages).
@@ -35,12 +37,14 @@ class InjectionContainer {
   late final CounterLocalDataSource _counterLocalDataSource =
       InMemoryCounterLocalDataSource();
 
-  late final CounterRepository _counterRepository =
-      CounterRepositoryImpl(_counterLocalDataSource);
+  late final CounterRepository _counterRepository = CounterRepositoryImpl(
+    _counterLocalDataSource,
+  );
 
   late final GetCounter _getCounter = GetCounter(_counterRepository);
-  late final IncrementCounter _incrementCounter =
-      IncrementCounter(_counterRepository);
+  late final IncrementCounter _incrementCounter = IncrementCounter(
+    _counterRepository,
+  );
 
   CounterController buildCounterController() {
     return CounterController(
@@ -65,25 +69,35 @@ class InjectionContainer {
   );
 
   late final LoginUseCase _loginUseCase = LoginUseCase(_authRepository);
-  late final RegisterUseCase _registerUseCase = RegisterUseCase(_authRepository);
-  late final ResetPasswordUseCase _resetPasswordUseCase =
-      ResetPasswordUseCase(_authRepository);
+  late final RegisterUseCase _registerUseCase = RegisterUseCase(
+    _authRepository,
+  );
+  late final ResetPasswordUseCase _resetPasswordUseCase = ResetPasswordUseCase(
+    _authRepository,
+  );
   late final ResetPasswordConfirmUseCase _resetPasswordConfirmUseCase =
       ResetPasswordConfirmUseCase(_authRepository);
   late final GetCurrentUserUseCase _getCurrentUserUseCase =
       GetCurrentUserUseCase(_authRepository);
-  late final SocialLoginUseCase _socialLoginUseCase =
-      SocialLoginUseCase(_authRepository, _socialCredentialsProvider);
-  late final GetProfileUseCase _getProfileUseCase =
-      GetProfileUseCase(_authRepository);
-  late final UpdateProfileUseCase _updateProfileUseCase =
-      UpdateProfileUseCase(_authRepository);
+  late final SocialLoginUseCase _socialLoginUseCase = SocialLoginUseCase(
+    _authRepository,
+    _socialCredentialsProvider,
+  );
+  late final GetProfileUseCase _getProfileUseCase = GetProfileUseCase(
+    _authRepository,
+  );
+  late final UpdateProfileUseCase _updateProfileUseCase = UpdateProfileUseCase(
+    _authRepository,
+  );
   late final ChangePasswordUseCase _changePasswordUseCase =
       ChangePasswordUseCase(_authRepository);
+  late final RequestEmailVerificationUseCase _requestEmailVerificationUseCase =
+      RequestEmailVerificationUseCase(_authRepository);
+  late final ConfirmEmailVerificationUseCase _confirmEmailVerificationUseCase =
+      ConfirmEmailVerificationUseCase(_authRepository);
 
-  ChatRemoteDataSource buildChatDataSource() => ApiChatRemoteDataSource(
-        authLocalDataSource: _authLocalDataSource,
-      );
+  ChatRemoteDataSource buildChatDataSource() =>
+      ApiChatRemoteDataSource(authLocalDataSource: _authLocalDataSource);
 
   AuthController? _authController;
 
@@ -100,9 +114,9 @@ class InjectionContainer {
       getProfileUseCase: _getProfileUseCase,
       updateProfileUseCase: _updateProfileUseCase,
       changePasswordUseCase: _changePasswordUseCase,
+      requestEmailVerificationUseCase: _requestEmailVerificationUseCase,
+      confirmEmailVerificationUseCase: _confirmEmailVerificationUseCase,
     );
     return _authController!;
   }
 }
-
-

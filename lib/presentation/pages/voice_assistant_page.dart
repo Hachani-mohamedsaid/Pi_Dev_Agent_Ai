@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -9,14 +10,15 @@ import 'package:go_router/go_router.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:openai_tts/openai_tts.dart';
 
-import '../../core/config/api_config.dart' show openaiApiKey, chatSystemInstructionMultilingual, realtimeVoiceWsUrl;
+import '../../core/config/api_config.dart'
+    show openaiApiKey, chatSystemInstructionMultilingual, realtimeVoiceWsUrl;
 import '../../core/utils/responsive.dart';
 import '../../data/datasources/chat_remote_data_source.dart';
 import '../../data/datasources/realtime_voice_client.dart';
 
 class VoiceAssistantPage extends StatefulWidget {
   VoiceAssistantPage({super.key, ChatRemoteDataSource? chatDataSource})
-      : chatDataSource = chatDataSource ?? ApiChatRemoteDataSource();
+    : chatDataSource = chatDataSource ?? ApiChatRemoteDataSource();
 
   final ChatRemoteDataSource chatDataSource;
 
@@ -78,10 +80,12 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
       _openaiTtsStatusSub = _openaiTts!.ttsStatusStream.listen((status) {
         if (!mounted) return;
         setState(() {
-          isSpeaking = status == OpenaiTTSStatus.fetching ||
+          isSpeaking =
+              status == OpenaiTTSStatus.fetching ||
               status == OpenaiTTSStatus.playing;
         });
-        if (status == OpenaiTTSStatus.completed || status == OpenaiTTSStatus.stopped) {
+        if (status == OpenaiTTSStatus.completed ||
+            status == OpenaiTTSStatus.stopped) {
           _waveformController.duration = const Duration(seconds: 15);
           _waveformController.repeat();
           _pulseController.stop();
@@ -91,39 +95,182 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
     }
     if (realtimeVoiceWsUrl.isNotEmpty) {
       _realtimeClient = RealtimeVoiceClientImpl(wsUrl: realtimeVoiceWsUrl);
-      _realtimeClient!.connect().then((_) {
-        _realtimeAudioSub = _realtimeClient!.audioDeltaStream.listen((bytes) {
-          if (!mounted) return;
-          setState(() => isSpeaking = true);
-          // TODO: jouer bytes PCM avec flutter_sound (startPlayerFromStream)
-          // Pour l'instant le client Realtime est prêt ; brancher record PCM → sendAudioChunk + play ici.
-        });
-      }).catchError((_) {});
+      _realtimeClient!
+          .connect()
+          .then((_) {
+            _realtimeAudioSub = _realtimeClient!.audioDeltaStream.listen((
+              bytes,
+            ) {
+              if (!mounted) return;
+              setState(() => isSpeaking = true);
+              // TODO: jouer bytes PCM avec flutter_sound (startPlayerFromStream)
+              // Pour l'instant le client Realtime est prêt ; brancher record PCM → sendAudioChunk + play ici.
+            });
+          })
+          .catchError((_) {});
     }
   }
 
   /// Initialise le TTS : débit lent et volume max pour un son clair (FR, EN, AR).
   Future<void> _initTts() async {
-    await _flutterTts.setSpeechRate(0.48); // Vitesse équilibrée (voix type ChatGPT)
-    await _flutterTts.setVolume(1.0);
-    await _flutterTts.setPitch(1.0);
+    try {
+      await _flutterTts.setSpeechRate(0.48);
+      await _flutterTts.setVolume(1.0);
+      await _flutterTts.setPitch(1.0);
+    } catch (_) {
+      // TTS engine pas encore lié (Android) ou erreur native : ignoré
+    }
+  }
+
+  /// Appels TTS sécurisés (évite DeadObjectException / "not bound to TTS engine" sur Android).
+  Future<void> _ttsSafeStop() async {
+    try {
+      await _flutterTts.stop();
+    } catch (_) {}
+  }
+
+  Future<bool> _ttsSafeSetLanguage(String locale) async {
+    try {
+      if (kDebugMode) print('TTS: Attempting to set language: $locale');
+
+      final ok = await _flutterTts.isLanguageAvailable(locale);
+      if (ok == true) {
+        await _flutterTts.setLanguage(locale);
+        if (kDebugMode) print('TTS: Language set successfully: $locale');
+        return true;
+      }
+
+      if (kDebugMode)
+        print('TTS: Language $locale not available, trying alternatives...');
+
+      // Pour l'arabe, essaye d'autres variantes si ar-SA n'est pas dispo
+      if (locale == 'ar-SA') {
+        final variants = ['ar', 'ar_SA', 'ar-AE', 'ar_AE', 'ar-EG', 'ar_EG'];
+        for (final variant in variants) {
+          final available = await _flutterTts.isLanguageAvailable(variant);
+          if (available == true) {
+            if (kDebugMode)
+              print('TTS: Using alternative Arabic locale: $variant');
+            await _flutterTts.setLanguage(variant);
+            return true;
+          }
+        }
+      }
+
+      // Pour le francais, essaye d'autres variantes
+      if (locale == 'fr-FR') {
+        final variants = ['fr', 'fr-CA', 'fr_CA', 'fr-BE', 'fr_BE'];
+        for (final variant in variants) {
+          final available = await _flutterTts.isLanguageAvailable(variant);
+          if (available == true) {
+            if (kDebugMode)
+              print('TTS: Using alternative French locale: $variant');
+            await _flutterTts.setLanguage(variant);
+            return true;
+          }
+        }
+      }
+
+      if (kDebugMode)
+        print(
+          'TTS: No suitable language found, using default: $_defaultTtsLocale',
+        );
+      // Fallback a la langue par defaut
+      await _flutterTts.setLanguage(_defaultTtsLocale);
+      return false;
+    } catch (e) {
+      if (kDebugMode) print('TTS: Error setting language: $e');
+      return false;
+    }
+  }
+
+  Future<void> _ttsSafeSpeak(String text) async {
+    try {
+      // Detecte la langue pour ajuster le debit
+      final detectectedLang = _detectLanguage(text);
+
+      // Arabe: debit moyen (0.42) pour une bonne comprehension et fluidite
+      // Francais/Anglais: debit normal (0.48)
+      final speechRate = detectectedLang == 'ar-SA' ? 0.42 : 0.48;
+
+      if (kDebugMode)
+        print(
+          'TTS: Setting speech rate: $speechRate for language: $detectectedLang',
+        );
+
+      // Configuration TTS optimisee
+      await _flutterTts.setSpeechRate(speechRate);
+      await _flutterTts.setVolume(1.0); // Volume max
+      await _flutterTts.setPitch(1.0); // Pitch normal
+
+      // Ajoute un delai minimal pour s'assurer que la langue est bien configuree
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      await _flutterTts.speak(text);
+    } catch (_) {
+      if (mounted) {
+        setState(() => isSpeaking = false);
+        _waveformController.duration = const Duration(seconds: 15);
+        _waveformController.repeat();
+        _pulseController.stop();
+        _pulseController.reset();
+      }
+    }
   }
 
   /// Langue TTS par défaut quand on ne détecte pas (anglais = langue neutre courante).
   static const String _defaultTtsLocale = 'en-US';
+  static const String _defaultSttLocale = 'en_US';
 
-  /// Détecte la langue du texte pour choisir la voix TTS (ar, fr, en, etc.).
-  /// Arabe → ar-SA, Français (accents) → fr-FR, sinon → en-US (multilingue).
+  /// Detecte la langue du texte pour choisir la voix TTS (ar, fr, en, etc.).
+  /// Arabe → ar-SA, Francais (accents) → fr-FR, sinon → en-US (multilingue).
   String _detectLanguage(String text) {
     if (text.isEmpty) return _defaultTtsLocale;
     final trimmed = text.trim();
-    if (RegExp(r'[\u0600-\u06FF]').hasMatch(trimmed)) return 'ar-SA';
-    if (RegExp(r'[àâäéèêëïîôùûüçœæ]', caseSensitive: false).hasMatch(trimmed)) return 'fr-FR';
+    // Detection arabe amelioree : caracteres arabes (Basic + Extended + Supplement)
+    final arabicRegex = RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]');
+    if (arabicRegex.hasMatch(trimmed)) {
+      if (kDebugMode) print('Language detection: ARABIC detected');
+      return 'ar-SA';
+    }
+    // Detection francais : accents francais courants
+    if (RegExp(r'[àâäéèêëïîôùûüçœæ]', caseSensitive: false).hasMatch(trimmed)) {
+      if (kDebugMode) print('Language detection: FRENCH detected');
+      return 'fr-FR';
+    }
+    if (kDebugMode) print('Language detection: DEFAULT (en-US)');
     return _defaultTtsLocale;
   }
 
+  /// Detecte la langue STT pour configurer le localeId (ar_SA, fr_FR, en_US, etc.).
+  String _detectSttLocale(String text) {
+    if (text.isEmpty) return _defaultSttLocale;
+    final trimmed = text.trim();
+    // Detection arabe pour STT (includes extended Arabic)
+    final arabicRegex = RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]');
+    if (arabicRegex.hasMatch(trimmed)) {
+      if (kDebugMode) print('STT Language detection: ARABIC detected');
+      return 'ar_SA';
+    }
+    // Detection francais pour STT
+    if (RegExp(r'[àâäéèêëïîôùûüçœæ]', caseSensitive: false).hasMatch(trimmed)) {
+      if (kDebugMode) print('STT Language detection: FRENCH detected');
+      return 'fr_FR';
+    }
+    if (kDebugMode) print('STT Language detection: DEFAULT (en_US)');
+    return _defaultSttLocale;
+  }
+
   Future<void> _initSpeech() async {
-    _speechAvailable = await _speech.initialize();
+    // Initialiser STT avec support multilingue (ar, fr, en)
+    _speechAvailable = await _speech.initialize(
+      onError: (error) {
+        if (kDebugMode) print('Speech initialization error: $error');
+      },
+      onStatus: (status) {
+        if (kDebugMode) print('Speech status: $status');
+      },
+    );
     if (mounted) setState(() {});
   }
 
@@ -151,6 +298,15 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
     _waveformController.repeat();
     _pulseController.repeat(reverse: true);
 
+    // Detecte si le texte est en arabe
+    final isArabic = RegExp(r'[\u0600-\u06FF]').hasMatch(text);
+
+    // Force FlutterTts pour l'arabe car OpenAI TTS ne le supporte pas bien
+    if (isArabic) {
+      _fallbackFlutterTts(text);
+      return;
+    }
+
     if (_openaiTts != null) {
       await _openaiTts!.stopPlayer();
       try {
@@ -174,21 +330,19 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
         _pulseController.reset();
       }
     });
-    await _flutterTts.stop();
+    await _ttsSafeStop();
     final locale = _detectLanguage(text);
-    final available = await _flutterTts.isLanguageAvailable(locale);
-    if (available == true) {
-      await _flutterTts.setLanguage(locale);
-    } else {
-      await _flutterTts.setLanguage(_defaultTtsLocale);
-    }
-    await _flutterTts.setSpeechRate(0.48);
-    await _flutterTts.setVolume(1.0);
-    if (mounted) await _flutterTts.speak(text);
+    if (kDebugMode) print('TTS simulateAISpeaking: Detected locale= $locale');
+    await _ttsSafeSetLanguage(locale);
+    // Delai pour laisser la langue s'appliquer
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (mounted) await _ttsSafeSpeak(text);
   }
 
   void _fallbackFlutterTts(String text) async {
+    if (text.isEmpty) return;
     setState(() => isSpeaking = true);
+
     _flutterTts.setCompletionHandler(() {
       if (mounted) {
         setState(() => isSpeaking = false);
@@ -198,17 +352,21 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
         _pulseController.reset();
       }
     });
-    await _flutterTts.stop();
+
+    await _ttsSafeStop();
+
+    // Detecte et configure la langue
     final locale = _detectLanguage(text);
-    final available = await _flutterTts.isLanguageAvailable(locale);
-    if (available == true) {
-      await _flutterTts.setLanguage(locale);
-    } else {
-      await _flutterTts.setLanguage(_defaultTtsLocale);
-    }
-    await _flutterTts.setSpeechRate(0.48);
-    await _flutterTts.setVolume(1.0);
-    if (mounted) await _flutterTts.speak(text);
+    if (kDebugMode) print('TTS Fallback: Detected locale= $locale');
+
+    // Configure la langue
+    final langSet = await _ttsSafeSetLanguage(locale);
+    if (kDebugMode) print('TTS Language set: $langSet (locale: $locale)');
+
+    // Attend un peu plus longtemps pour s'assurer que la langue est appliquee
+    await Future.delayed(const Duration(milliseconds: 200));
+
+    if (mounted) await _ttsSafeSpeak(text);
   }
 
   void handleMicToggle() async {
@@ -221,7 +379,8 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
       _waveformController.repeat();
 
       final transcript = currentTranscript.trim();
-      final isPlaceholder = transcript.isEmpty ||
+      final isPlaceholder =
+          transcript.isEmpty ||
           transcript == "Go ahead, I'm listening..." ||
           transcript == "Parle, j'écoute...";
       if (!isPlaceholder && transcript.isNotEmpty) {
@@ -246,6 +405,17 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
       _waveformController.duration = const Duration(seconds: 3);
       _waveformController.repeat();
 
+      // Détermine la langue STT en fonction du dernier message (si disponible)
+      // ou utilise l'arabe comme langue par défaut si le contexte suggère l'arabe
+      String sttLocale = _defaultSttLocale;
+      if (messages.isNotEmpty) {
+        final lastUserMessage = messages.lastWhere(
+          (m) => m.sender == MessageSender.user,
+          orElse: () => messages.last,
+        );
+        sttLocale = _detectSttLocale(lastUserMessage.text);
+      }
+
       await _speech.listen(
         onResult: (result) {
           if (mounted && result.recognizedWords.isNotEmpty) {
@@ -255,7 +425,8 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
         listenFor: const Duration(seconds: 30),
         pauseFor: const Duration(seconds: 3),
         partialResults: true,
-        // Pas de localeId fixe : utilise la langue par défaut de l'appareil (multilingue).
+        localeId:
+            sttLocale, // Configure la langue pour STT (ar_SA, fr_FR, en_US)
       );
     }
   }
@@ -276,10 +447,12 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
 
     try {
       final apiMessages = messages
-          .map((m) => {
-                'role': m.sender == MessageSender.user ? 'user' : 'assistant',
-                'content': m.text,
-              })
+          .map(
+            (m) => {
+              'role': m.sender == MessageSender.user ? 'user' : 'assistant',
+              'content': m.text,
+            },
+          )
           .toList();
 
       final response = await widget.chatDataSource.sendMessages(
@@ -293,7 +466,8 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
     } catch (_) {
       if (!mounted) return;
       setState(() => isLoadingAI = false);
-      const fallback = "J'ai bien reçu votre message. Comment puis-je vous aider ?";
+      const fallback =
+          "J'ai bien reçu votre message. Comment puis-je vous aider ?";
       _addMessage(fallback, MessageSender.ai);
       simulateAISpeaking(fallback);
     }
@@ -1198,7 +1372,9 @@ class _ChatOverlay extends StatelessWidget {
                           Flexible(
                             child: Padding(
                               padding: EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
                               child: Text(
                                 "Buddy is typing...",
                                 style: TextStyle(

@@ -12,18 +12,32 @@ abstract class AuthRemoteDataSource {
   Future<void> resetPassword(String email);
 
   /// POST /auth/reset-password/confirm – nouveau MDP avec token du lien email.
-  Future<void> setNewPassword({required String token, required String newPassword});
+  Future<void> setNewPassword({
+    required String token,
+    required String newPassword,
+  });
 
   /// POST /auth/change-password – changer le MDP (utilisateur connecté).
-  Future<void> changePassword(String accessToken, {required String currentPassword, required String newPassword});
+  Future<void> changePassword(
+    String accessToken, {
+    required String currentPassword,
+    required String newPassword,
+  });
 
   /// idToken fourni par Google Sign-In, envoyé au backend.
   Future<AuthResponse> loginWithGoogle(String idToken);
+
   /// identityToken + user optionnel fournis par Sign in with Apple.
   Future<AuthResponse> loginWithApple(String identityToken, {String? user});
 
   /// GET /auth/me – profil avec stats (role, location, conversationsCount, etc.).
   Future<ProfileModel> getProfile(String accessToken);
+
+  /// POST /auth/verify-email – envoi email avec lien (Resend). Utilisateur connecté (Bearer).
+  Future<void> requestEmailVerification(String accessToken);
+
+  /// POST /auth/verify-email/confirm – confirmation avec token du lien email.
+  Future<void> confirmEmailVerification(String token);
 
   /// PATCH /auth/me – mise à jour du profil.
   Future<void> updateProfile(
@@ -56,7 +70,11 @@ class MockAuthRemoteDataSource implements AuthRemoteDataSource {
   }
 
   @override
-  Future<AuthResponse> register(String name, String email, String password) async {
+  Future<AuthResponse> register(
+    String name,
+    String email,
+    String password,
+  ) async {
     await Future.delayed(const Duration(seconds: 1));
     final user = UserModel(
       id: 'user_${DateTime.now().millisecondsSinceEpoch}',
@@ -72,7 +90,10 @@ class MockAuthRemoteDataSource implements AuthRemoteDataSource {
   }
 
   @override
-  Future<void> setNewPassword({required String token, required String newPassword}) async {
+  Future<void> setNewPassword({
+    required String token,
+    required String newPassword,
+  }) async {
     await Future.delayed(const Duration(seconds: 1));
   }
 
@@ -92,9 +113,14 @@ class MockAuthRemoteDataSource implements AuthRemoteDataSource {
   }
 
   @override
-  Future<AuthResponse> loginWithApple(String identityToken, {String? user}) async {
+  Future<AuthResponse> loginWithApple(
+    String identityToken, {
+    String? user,
+  }) async {
     if (kIsWeb) {
-      throw Exception('Sign in with Apple is not available on web. Please use Google Sign-In or email/password.');
+      throw Exception(
+        'Sign in with Apple is not available on web. Please use Google Sign-In or email/password.',
+      );
     }
     try {
       final credential = await SignInWithApple.getAppleIDCredential(
@@ -103,7 +129,9 @@ class MockAuthRemoteDataSource implements AuthRemoteDataSource {
           AppleIDAuthorizationScopes.fullName,
         ],
       );
-      final userId = credential.userIdentifier ?? 'apple_user_${DateTime.now().millisecondsSinceEpoch}';
+      final userId =
+          credential.userIdentifier ??
+          'apple_user_${DateTime.now().millisecondsSinceEpoch}';
       final profileUser = UserModel(
         id: userId,
         name: credential.givenName != null && credential.familyName != null
@@ -123,6 +151,16 @@ class MockAuthRemoteDataSource implements AuthRemoteDataSource {
   }
 
   @override
+  Future<void> requestEmailVerification(String accessToken) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
+
+  @override
+  Future<void> confirmEmailVerification(String token) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
+
+  @override
   Future<void> updateProfile(
     String accessToken, {
     String? name,
@@ -137,7 +175,11 @@ class MockAuthRemoteDataSource implements AuthRemoteDataSource {
   }) async {}
 
   @override
-  Future<void> changePassword(String accessToken, {required String currentPassword, required String newPassword}) async {
+  Future<void> changePassword(
+    String accessToken, {
+    required String currentPassword,
+    required String newPassword,
+  }) async {
     await Future.delayed(const Duration(seconds: 1));
   }
 
