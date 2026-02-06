@@ -14,6 +14,7 @@ class ProfileModel {
     this.conversationsCount = 0,
     this.daysActive = 0,
     this.hoursSaved = 0,
+    this.emailVerified,
   });
 
   final String id;
@@ -30,6 +31,9 @@ class ProfileModel {
   final int daysActive;
   final int hoursSaved;
 
+  /// Si le backend envoie ce champ (GET /auth/me), on l'utilise pour afficher "Verified" / "Not Verified".
+  final bool? emailVerified;
+
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
     return ProfileModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
@@ -45,6 +49,7 @@ class ProfileModel {
       conversationsCount: (json['conversationsCount'] as num?)?.toInt() ?? 0,
       daysActive: (json['daysActive'] as num?)?.toInt() ?? 0,
       hoursSaved: (json['hoursSaved'] as num?)?.toInt() ?? 0,
+      emailVerified: json['emailVerified'] as bool?,
     );
   }
 
@@ -54,8 +59,18 @@ class ProfileModel {
     final date = DateTime.tryParse(createdAt!);
     if (date == null) return '';
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return 'Joined ${months[date.month - 1]} ${date.year}';
   }

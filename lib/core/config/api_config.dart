@@ -11,10 +11,25 @@ const String apiBaseUrl = baseUrl;
 /// Ex. backend FRONTEND_RESET_PASSWORD_URL = https://ton-app.web.app/reset-password/confirm
 const String resetPasswordConfirmPath = '/reset-password/confirm';
 
+/// Chemin de la page « confirmer email » (après clic sur le lien dans l’email). Backend met dans l’email : (URL app) + ce chemin + ?token=...
+const String verifyEmailConfirmPath = '/verify-email/confirm';
+
 /// Chemin de l'endpoint chat IA (Talk to buddy). Backend attend POST avec { "messages": [ { "role": "user"|"assistant", "content": "..." } ] } et renvoie { "message": "..." } ou { "content": "..." }.
 const String chatPath = '/ai/chat';
 
-/// Clé API OpenAI (optionnel). Si non vide, la voix de l'assistant utilise OpenAI TTS (voix type ChatGPT). Sinon : TTS de l'appareil.
+/// Clé API OpenAI utilisée côté Flutter pour OpenAI TTS (voix type ChatGPT)
+/// via le package `openai_tts`.
+///
+/// Tant que cette valeur n'est **pas vide**, la voix utilisera **OpenAI TTS**
+/// et ne tombera sur `flutter_tts` qu'en cas d'erreur OpenAI.
+///
+/// ⚠️ IMPORTANT: Ne jamais commiter la vraie clé en clair!
+/// Utilise une variable d'environnement ou un fichier .env local (gitignore).
+/// Exemple avec flutter_dotenv:
+///   - Crée .env à la racine du projet avec: OPENAI_API_KEY=sk-...
+///   - Dans pubspec.yaml: flutter: assets: - .env
+///   - Dans main.dart: await dotenv.load();
+///   - Ici: const String openaiApiKey = String.fromEnvironment('OPENAI_API_KEY', defaultValue: '');
 const String openaiApiKey = '';
 
 /// Instruction système pour le chat : l'IA comprend et répond dans la langue de l'utilisateur (multilingue).

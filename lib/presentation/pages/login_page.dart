@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pi_dev_agentia/presentation/widgets/google_sign_in_button_web.dart'
@@ -34,6 +35,11 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -54,7 +60,6 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       if (success) {
-        // Small delay to ensure state is updated
         await Future.delayed(const Duration(milliseconds: 100));
         if (mounted) {
           context.go('/home');
@@ -325,19 +330,21 @@ class _LoginPageState extends State<LoginPage> {
                                         ),
                                     SizedBox(height: isMobile ? 12 : 16),
                                     // Forgot Password
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: TextButton(
-                                        onPressed: () =>
-                                            context.push('/reset-password'),
-                                        child: Text(
-                                          'Forgot Password?',
-                                          style: TextStyle(
-                                            color: AppColors.cyan400,
-                                            fontSize: isMobile ? 13 : 14,
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              context.push('/reset-password'),
+                                          child: Text(
+                                            'Forgot Password?',
+                                            style: TextStyle(
+                                              color: AppColors.cyan400,
+                                              fontSize: isMobile ? 13 : 14,
+                                            ),
                                           ),
                                         ),
-                                      ),
+                                      ],
                                     ).animate().fadeIn(
                                       delay: 600.ms,
                                       duration: 500.ms,
