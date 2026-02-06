@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pi_dev_agentia/presentation/widgets/google_sign_in_button_web.dart'
     if (dart.library.io) 'package:pi_dev_agentia/presentation/widgets/google_sign_in_button_stub.dart';
 import '../../core/theme/app_colors.dart';
@@ -32,12 +33,55 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberedCredentials();
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadRememberedCredentials() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final rememberedEmail = prefs.getString('remembered_email');
+      final rememberedPassword = prefs.getString('remembered_password');
+      final rememberMe = prefs.getBool('remember_me') ?? false;
+
+      if (rememberMe && rememberedEmail != null && rememberedPassword != null) {
+        setState(() {
+          _rememberMe = true;
+          _emailController.text = rememberedEmail;
+          _passwordController.text = rememberedPassword;
+        });
+      }
+    } catch (e) {
+      // Handle error silently
+    }
+  }
+
+  Future<void> _saveRememberedCredentials() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_rememberMe) {
+        await prefs.setString('remembered_email', _emailController.text.trim());
+        await prefs.setString('remembered_password', _passwordController.text);
+        await prefs.setBool('remember_me', true);
+      } else {
+        await prefs.remove('remembered_email');
+        await prefs.remove('remembered_password');
+        await prefs.setBool('remember_me', false);
+      }
+    } catch (e) {
+      // Handle error silently
+    }
   }
 
   Future<void> _handleLogin() async {
@@ -54,6 +98,8 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       if (success) {
+        // Save credentials if remember me is checked
+        await _saveRememberedCredentials();
         // Small delay to ensure state is updated
         await Future.delayed(const Duration(milliseconds: 100));
         if (mounted) {
@@ -324,23 +370,109 @@ class _LoginPageState extends State<LoginPage> {
                                           duration: 500.ms,
                                         ),
                                     SizedBox(height: isMobile ? 12 : 16),
-                                    // Forgot Password
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: TextButton(
-                                        onPressed: () =>
-                                            context.push('/reset-password'),
-                                        child: Text(
-                                          'Forgot Password?',
-                                          style: TextStyle(
-                                            color: AppColors.cyan400,
-                                            fontSize: isMobile ? 13 : 14,
+                                    // Remember Me and Forgot Password Row
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        // Remember Me Checkbox
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _rememberMe = !_rememberMe;
+                                            });
+                                            // Save state immediately
+                                            _saveRememberedCredentials();
+                                          },
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                width: Responsive.getResponsiveValue(
+                                                  context,
+                                                  mobile: 18.0,
+                                                  tablet: 20.0,
+                                                  desktop: 22.0,
+                                                ),
+                                                height: Responsive.getResponsiveValue(
+                                                  context,
+                                                  mobile: 18.0,
+                                                  tablet: 20.0,
+                                                  desktop: 22.0,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: _rememberMe
+                                                      ? AppColors.cyan500
+                                                      : Colors.transparent,
+                                                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                                                    context,
+                                                    mobile: 4.0,
+                                                    tablet: 5.0,
+                                                    desktop: 6.0,
+                                                  )),
+                                                  border: Border.all(
+                                                    color: _rememberMe
+                                                        ? AppColors.cyan500
+                                                        : AppColors.cyan400.withOpacity(0.5),
+                                                    width: 2,
+                                                  ),
+                                                ),
+                                                child: _rememberMe
+                                                    ? Icon(
+                                                        Icons.check,
+                                                        size: Responsive.getResponsiveValue(
+                                                          context,
+                                                          mobile: 14.0,
+                                                          tablet: 16.0,
+                                                          desktop: 18.0,
+                                                        ),
+                                                        color: AppColors.textWhite,
+                                                      )
+                                                    : null,
+                                              ),
+                                              SizedBox(width: Responsive.getResponsiveValue(
+                                                context,
+                                                mobile: 6.0,
+                                                tablet: 8.0,
+                                                desktop: 10.0,
+                                              )),
+                                              Text(
+                                                'Remember me',
+                                                style: TextStyle(
+                                                  color: AppColors.textCyan200,
+                                                  fontSize: Responsive.getResponsiveValue(
+                                                    context,
+                                                    mobile: 13.0,
+                                                    tablet: 14.0,
+                                                    desktop: 15.0,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           ),
+                                        ).animate().fadeIn(
+                                          delay: 550.ms,
+                                          duration: 500.ms,
                                         ),
-                                      ),
-                                    ).animate().fadeIn(
-                                      delay: 600.ms,
-                                      duration: 500.ms,
+                                        // Forgot Password
+                                        TextButton(
+                                          onPressed: () =>
+                                              context.push('/reset-password'),
+                                          child: Text(
+                                            'Forgot Password?',
+                                            style: TextStyle(
+                                              color: AppColors.cyan400,
+                                              fontSize: Responsive.getResponsiveValue(
+                                                context,
+                                                mobile: 13.0,
+                                                tablet: 14.0,
+                                                desktop: 15.0,
+                                              ),
+                                            ),
+                                          ),
+                                        ).animate().fadeIn(
+                                          delay: 600.ms,
+                                          duration: 500.ms,
+                                        ),
+                                      ],
                                     ),
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Login Button

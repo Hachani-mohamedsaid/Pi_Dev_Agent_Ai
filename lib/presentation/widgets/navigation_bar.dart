@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
@@ -18,6 +19,7 @@ class NavigationBarWidget extends StatelessWidget {
     final isHomeActive = currentPath == '/home';
     final isProfileActive = currentPath == '/profile';
     final isVoiceActive = currentPath == '/voice-assistant';
+    final isAutomationActive = currentPath == '/automation';
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = isMobile ? 16.0 : 24.0;
 
@@ -77,6 +79,32 @@ class NavigationBarWidget extends StatelessWidget {
                       isActive: isVoiceActive,
                       onTap: () => context.go('/voice-assistant'),
                       isMobile: isMobile,
+                      activeGradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFF9333EA).withOpacity(0.3),
+                          const Color(0xFFEC4899).withOpacity(0.3),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: isMobile ? 8 : 12),
+                  Flexible(
+                    child: _NavButton(
+                      icon: LucideIcons.zap,
+                      label: 'Rules',
+                      isActive: isAutomationActive,
+                      onTap: () => context.go('/automation'),
+                      isMobile: isMobile,
+                      activeGradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFFFFB800).withOpacity(0.3),
+                          const Color(0xFFFF9800).withOpacity(0.3),
+                        ],
+                      ),
                     ),
                   ),
                   SizedBox(width: isMobile ? 8 : 12),
@@ -105,6 +133,7 @@ class _NavButton extends StatefulWidget {
   final bool isActive;
   final VoidCallback onTap;
   final bool isMobile;
+  final LinearGradient? activeGradient;
 
   const _NavButton({
     required this.icon,
@@ -112,6 +141,7 @@ class _NavButton extends StatefulWidget {
     required this.isActive,
     required this.onTap,
     required this.isMobile,
+    this.activeGradient,
   });
 
   @override
@@ -145,14 +175,15 @@ class _NavButtonState extends State<_NavButton> {
                 ),
                 decoration: BoxDecoration(
                   gradient: widget.isActive
-                      ? LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.cyan500.withOpacity(0.3),
-                            AppColors.blue500.withOpacity(0.3),
-                          ],
-                        )
+                      ? (widget.activeGradient ??
+                          LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.cyan500.withOpacity(0.3),
+                              AppColors.blue500.withOpacity(0.3),
+                            ],
+                          ))
                       : null,
                   color: widget.isActive ? null : Colors.transparent,
                   borderRadius: BorderRadius.circular(widget.isMobile ? 12 : 16),

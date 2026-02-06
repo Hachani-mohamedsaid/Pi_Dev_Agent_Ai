@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../state/auth_controller.dart';
@@ -158,35 +159,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     }),
                     SizedBox(height: isMobile ? 24 : 32),
 
-                    // Achievements Section
+                    // AI Features Section
                     Text(
-                      'Achievements',
+                      'AI Features',
                       style: TextStyle(
-                        fontSize: isMobile ? 18 : 20,
+                        fontSize: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 18.0,
+                          tablet: 20.0,
+                          desktop: 22.0,
+                        ),
                         fontWeight: FontWeight.w600,
                         color: AppColors.textWhite,
                       ),
                     )
                         .animate()
-                        .fadeIn(delay: 700.ms, duration: 500.ms),
-                    SizedBox(height: isMobile ? 12 : 16),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 4,
-                        crossAxisSpacing: isMobile ? 12 : 16,
-                        mainAxisSpacing: isMobile ? 12 : 16,
-                        childAspectRatio: 1.0,
-                      ),
-                      itemCount: 4,
-                      itemBuilder: (context, index) {
-                        return _AchievementBadge(isMobile: isMobile)
-                            .animate()
-                            .fadeIn(delay: Duration(milliseconds: 800 + (index * 100)), duration: 500.ms);
-                      },
-                    ),
-                    SizedBox(height: isMobile ? 24 : 32),
+                        .fadeIn(delay: 400.ms, duration: 500.ms),
+                    SizedBox(height: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 12.0,
+                      tablet: 14.0,
+                      desktop: 16.0,
+                    )),
+                    ..._buildAIFeatures(context, isMobile),
+                    SizedBox(height: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 24.0,
+                      tablet: 28.0,
+                      desktop: 32.0,
+                    )),
                   ],
                 ),
               ),
@@ -203,6 +204,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildAIFeatures(BuildContext context, bool isMobile) {
+    final features = [
+      {
+        'icon': LucideIcons.brain,
+        'label': 'Learning Insights',
+        'route': '/insights',
+        'gradient': [
+          const Color(0xFF9333EA).withOpacity(0.2),
+          const Color(0xFFEC4899).withOpacity(0.2),
+        ],
+        'iconColor': const Color(0xFFC084FC),
+        'description': 'What AVA learned about you',
+      },
+      {
+        'icon': LucideIcons.plug,
+        'label': 'Connected Services',
+        'route': '/services',
+        'gradient': [
+          const Color(0xFF10B981).withOpacity(0.2),
+          AppColors.cyan500.withOpacity(0.2),
+        ],
+        'iconColor': const Color(0xFF10B981),
+        'description': 'Manage app integrations',
+      },
+      {
+        'icon': LucideIcons.scale,
+        'label': 'Decision Support',
+        'route': '/decisions',
+        'gradient': [
+          const Color(0xFF6366F1).withOpacity(0.2),
+          const Color(0xFF9333EA).withOpacity(0.2),
+        ],
+        'iconColor': const Color(0xFF818CF8),
+        'description': 'AI-powered analysis',
+      },
+      {
+        'icon': LucideIcons.trophy,
+        'label': 'Goals & Growth',
+        'route': '/goals',
+        'gradient': [
+          const Color(0xFFF59E0B).withOpacity(0.2),
+          const Color(0xFFEAB308).withOpacity(0.2),
+        ],
+        'iconColor': const Color(0xFFFCD34D),
+        'description': 'Track your progress',
+      },
+    ];
+
+    return features.asMap().entries.map((entry) {
+      final index = entry.key;
+      final feature = entry.value;
+      return _AIFeatureCard(
+        icon: feature['icon'] as IconData,
+        label: feature['label'] as String,
+        route: feature['route'] as String,
+        gradient: feature['gradient'] as List<Color>,
+        iconColor: feature['iconColor'] as Color,
+        description: feature['description'] as String,
+        isMobile: isMobile,
+      )
+          .animate()
+          .fadeIn(delay: Duration(milliseconds: 500 + (index * 50)), duration: 500.ms)
+          .slideX(begin: -0.2, end: 0, delay: Duration(milliseconds: 500 + (index * 50)), duration: 500.ms);
+    }).toList();
   }
 }
 
@@ -261,20 +328,49 @@ class _ProfileCard extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      width: isMobile ? 80 : 96,
-                      height: isMobile ? 80 : 96,
+                      width: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 80.0,
+                        tablet: 88.0,
+                        desktop: 96.0,
+                      ),
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 80.0,
+                        tablet: 88.0,
+                        desktop: 96.0,
+                      ),
                       decoration: BoxDecoration(
-                        gradient: (profile?.avatarUrl ?? '').isEmpty ? AppColors.logoGradient : null,
-                        borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
+                        gradient: (profile?.avatarUrl ?? '').isEmpty
+                            ? LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  AppColors.cyan500,
+                                  AppColors.blue500,
+                                ],
+                              )
+                            : null,
+                        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                          context,
+                          mobile: 16.0,
+                          tablet: 18.0,
+                          desktop: 20.0,
+                        )),
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: (profile?.avatarUrl ?? '').isEmpty
                           ? Center(
                               child: Text(
-                                initials,
+                                initials.isNotEmpty ? initials : 'JD',
                                 style: TextStyle(
                                   color: AppColors.textWhite,
-                                  fontSize: isMobile ? 28 : 32,
+                                  fontSize: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 28.0,
+                                    tablet: 30.0,
+                                    desktop: 32.0,
+                                  ),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -286,10 +382,15 @@ class _ProfileCard extends StatelessWidget {
                               height: double.infinity,
                               errorBuilder: (_, __, ___) => Center(
                                 child: Text(
-                                  initials,
+                                  initials.isNotEmpty ? initials : 'JD',
                                   style: TextStyle(
                                     color: AppColors.textWhite,
-                                    fontSize: isMobile ? 28 : 32,
+                                    fontSize: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 28.0,
+                                      tablet: 30.0,
+                                      desktop: 32.0,
+                                    ),
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -311,9 +412,14 @@ class _ProfileCard extends StatelessWidget {
                           ),
                           SizedBox(height: 4),
                           Text(
-                            role,
+                            'AI Enthusiast',
                             style: TextStyle(
-                              fontSize: isMobile ? 13 : 14,
+                              fontSize: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 13.0,
+                                tablet: 14.0,
+                                desktop: 15.0,
+                              ),
                               color: AppColors.textCyan200.withOpacity(0.7),
                             ),
                           ),
@@ -558,55 +664,208 @@ class _ProfileActivityItem extends StatelessWidget {
   }
 }
 
-class _AchievementBadge extends StatelessWidget {
+class _AIFeatureCard extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final String route;
+  final List<Color> gradient;
+  final Color iconColor;
+  final String description;
   final bool isMobile;
 
-  const _AchievementBadge({required this.isMobile});
+  const _AIFeatureCard({
+    required this.icon,
+    required this.label,
+    required this.route,
+    required this.gradient,
+    required this.iconColor,
+    required this.description,
+    required this.isMobile,
+  });
+
+  @override
+  State<_AIFeatureCard> createState() => _AIFeatureCardState();
+}
+
+class _AIFeatureCardState extends State<_AIFeatureCard> {
+  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primaryLight.withOpacity(0.4),
-            AppColors.primaryDarker.withOpacity(0.4),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Padding(
-            padding: EdgeInsets.all(isMobile ? 12 : 16),
-            child: Center(
-              child: Container(
-                width: isMobile ? 40 : 48,
-                height: isMobile ? 40 : 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.cyan500.withOpacity(0.3),
-                      AppColors.blue500.withOpacity(0.3),
-                    ],
+    return GestureDetector(
+      onTap: () => context.push(widget.route),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          transform: Matrix4.identity()..scale(_isHovered ? 1.02 : 1.0),
+          margin: EdgeInsets.only(
+            bottom: Responsive.getResponsiveValue(
+              context,
+              mobile: 10.0,
+              tablet: 12.0,
+              desktop: 14.0,
+            ),
+          ),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF1e4a66).withOpacity(0.4),
+                const Color(0xFF16384d).withOpacity(0.4),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+              context,
+              mobile: 12.0,
+              tablet: 13.0,
+              desktop: 14.0,
+            )),
+            border: Border.all(
+              color: _isHovered
+                  ? AppColors.cyan500.withOpacity(0.3)
+                  : AppColors.cyan500.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+              context,
+              mobile: 12.0,
+              tablet: 13.0,
+              desktop: 14.0,
+            )),
+            child: Stack(
+              children: [
+                // Hover glow effect
+                if (_isHovered)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment.center,
+                          radius: 1.0,
+                          colors: [
+                            AppColors.cyan400.withOpacity(0.08),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    '🏆',
-                    style: TextStyle(fontSize: isMobile ? 20 : 24),
+                BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Padding(
+                    padding: EdgeInsets.all(Responsive.getResponsiveValue(
+                      context,
+                      mobile: 14.0,
+                      tablet: 16.0,
+                      desktop: 20.0,
+                    )),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 44.0,
+                            tablet: 48.0,
+                            desktop: 52.0,
+                          ),
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 44.0,
+                            tablet: 48.0,
+                            desktop: 52.0,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: widget.gradient,
+                            ),
+                            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                              context,
+                              mobile: 10.0,
+                              tablet: 11.0,
+                              desktop: 12.0,
+                            )),
+                            border: Border.all(
+                              color: AppColors.cyan500.withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            widget.icon,
+                            size: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 22.0,
+                              tablet: 24.0,
+                              desktop: 26.0,
+                            ),
+                            color: widget.iconColor,
+                          ),
+                        ),
+                        SizedBox(width: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 12.0,
+                          tablet: 14.0,
+                          desktop: 16.0,
+                        )),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.label,
+                                style: TextStyle(
+                                  fontSize: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 14.0,
+                                    tablet: 15.0,
+                                    desktop: 16.0,
+                                  ),
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textWhite,
+                                ),
+                              ),
+                              SizedBox(height: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 3.0,
+                                tablet: 4.0,
+                                desktop: 5.0,
+                              )),
+                              Text(
+                                widget.description,
+                                style: TextStyle(
+                                  fontSize: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 11.0,
+                                    tablet: 12.0,
+                                    desktop: 13.0,
+                                  ),
+                                  color: AppColors.textCyan200.withOpacity(0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          LucideIcons.chevronRight,
+                          size: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 18.0,
+                            tablet: 20.0,
+                            desktop: 22.0,
+                          ),
+                          color: AppColors.cyan400,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ),

@@ -59,54 +59,86 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
   @override
   void initState() {
     super.initState();
-    // Continuous rotation for waveform
-    _waveformController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 15),
-    )..repeat();
+    try {
+      // Continuous rotation for waveform
+      _waveformController = AnimationController(
+        vsync: this,
+        duration: const Duration(seconds: 15),
+      )..repeat();
 
-    // Pulse for active state
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
+      // Pulse for active state
+      _pulseController = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 1500),
+      );
 
-    _initSpeech();
-    _initTts();
-    if (openaiApiKey.isNotEmpty) {
-      _openaiTts = OpenaiTTS(apiKey: openaiApiKey);
-      _openaiTtsStatusSub = _openaiTts!.ttsStatusStream.listen((status) {
-        if (!mounted) return;
-        setState(() {
-          isSpeaking = status == OpenaiTTSStatus.fetching ||
-              status == OpenaiTTSStatus.playing;
-        });
-        if (status == OpenaiTTSStatus.completed || status == OpenaiTTSStatus.stopped) {
-          _waveformController.duration = const Duration(seconds: 15);
-          _waveformController.repeat();
-          _pulseController.stop();
-          _pulseController.reset();
-        }
+      // Initialize speech and TTS with error handling
+      _initSpeech().catchError((error) {
+        debugPrint('Error initializing speech: $error');
       });
-    }
-    if (realtimeVoiceWsUrl.isNotEmpty) {
-      _realtimeClient = RealtimeVoiceClientImpl(wsUrl: realtimeVoiceWsUrl);
-      _realtimeClient!.connect().then((_) {
-        _realtimeAudioSub = _realtimeClient!.audioDeltaStream.listen((bytes) {
-          if (!mounted) return;
-          setState(() => isSpeaking = true);
-          // TODO: jouer bytes PCM avec flutter_sound (startPlayerFromStream)
-          // Pour l'instant le client Realtime est prêt ; brancher record PCM → sendAudioChunk + play ici.
-        });
-      }).catchError((_) {});
+      _initTts().catchError((error) {
+        debugPrint('Error initializing TTS: $error');
+      });
+      
+      if (openaiApiKey.isNotEmpty) {
+        try {
+          _openaiTts = OpenaiTTS(apiKey: openaiApiKey);
+          _openaiTtsStatusSub = _openaiTts!.ttsStatusStream.listen((status) {
+            if (!mounted) return;
+            setState(() {
+              isSpeaking = status == OpenaiTTSStatus.fetching ||
+                  status == OpenaiTTSStatus.playing;
+            });
+            if (status == OpenaiTTSStatus.completed || status == OpenaiTTSStatus.stopped) {
+              _waveformController.duration = const Duration(seconds: 15);
+              _waveformController.repeat();
+              _pulseController.stop();
+              _pulseController.reset();
+            }
+          }, onError: (error) {
+            debugPrint('OpenAI TTS stream error: $error');
+          });
+        } catch (e) {
+          debugPrint('Error initializing OpenAI TTS: $e');
+        }
+      }
+      
+      if (realtimeVoiceWsUrl.isNotEmpty) {
+        try {
+          _realtimeClient = RealtimeVoiceClientImpl(wsUrl: realtimeVoiceWsUrl);
+          _realtimeClient!.connect().then((_) {
+            _realtimeAudioSub = _realtimeClient!.audioDeltaStream.listen((bytes) {
+              if (!mounted) return;
+              setState(() => isSpeaking = true);
+              // TODO: jouer bytes PCM avec flutter_sound (startPlayerFromStream)
+              // Pour l'instant le client Realtime est prêt ; brancher record PCM → sendAudioChunk + play ici.
+            }, onError: (error) {
+              debugPrint('Realtime audio stream error: $error');
+            });
+          }).catchError((error) {
+            debugPrint('Error connecting to realtime voice client: $error');
+          });
+        } catch (e) {
+          debugPrint('Error initializing realtime voice client: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error in VoiceAssistantPage initState: $e');
     }
   }
 
   /// Initialise le TTS : débit lent et volume max pour un son clair (FR, EN, AR).
   Future<void> _initTts() async {
-    await _flutterTts.setSpeechRate(0.48); // Vitesse équilibrée (voix type ChatGPT)
-    await _flutterTts.setVolume(1.0);
-    await _flutterTts.setPitch(1.0);
+    try {
+      await _flutterTts.setSpeechRate(0.48); // Vitesse équilibrée (voix type ChatGPT)
+      await _flutterTts.setVolume(1.0);
+      await _flutterTts.setPitch(1.0);
+      _flutterTts.setErrorHandler((msg) {
+        debugPrint('TTS error: $msg');
+      });
+    } catch (e) {
+      debugPrint('Error initializing TTS: $e');
+    }
   }
 
   /// Langue TTS par défaut quand on ne détecte pas (anglais = langue neutre courante).
@@ -123,8 +155,21 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
   }
 
   Future<void> _initSpeech() async {
-    _speechAvailable = await _speech.initialize();
-    if (mounted) setState(() {});
+    try {
+      _speechAvailable = await _speech.initialize(
+        onError: (error) {
+          debugPrint('Speech recognition error: $error');
+        },
+        onStatus: (status) {
+          debugPrint('Speech recognition status: $status');
+        },
+      );
+      if (mounted) setState(() {});
+    } catch (e) {
+      debugPrint('Error initializing speech recognition: $e');
+      _speechAvailable = false;
+      if (mounted) setState(() {});
+    }
   }
 
   @override
