@@ -13,10 +13,7 @@ import '../widgets/navigation_bar.dart';
 class HomeScreen extends StatefulWidget {
   final AuthController controller;
 
-  const HomeScreen({
-    super.key,
-    required this.controller,
-  });
+  const HomeScreen({super.key, required this.controller});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -107,8 +104,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   String _getCurrentDate() {
     final now = DateTime.now();
-    final weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    final months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    final weekdays = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    final months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
     return 'Today is ${weekdays[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
   }
 
@@ -138,11 +156,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
+            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
           ),
         ),
         child: SafeArea(
@@ -154,80 +168,108 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 children: [
                   // Main Content
                   SingleChildScrollView(
-                padding: EdgeInsets.only(
-                  left: padding,
-                  right: padding,
-                  top: padding,
-                  bottom: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 100.0,
-                    tablet: 120.0,
-                    desktop: 140.0,
+                    padding: EdgeInsets.only(
+                      left: padding,
+                      right: padding,
+                      top: padding,
+                      bottom: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 100.0,
+                        tablet: 120.0,
+                        desktop: 140.0,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header Section
+                        _buildHeader(context, isMobile, userName, padding)
+                            .animate()
+                            .fadeIn(duration: 500.ms)
+                            .slideY(begin: -0.2, end: 0, duration: 500.ms),
+
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 20.0,
+                            tablet: 24.0,
+                            desktop: 32.0,
+                          ),
+                        ),
+
+                        // Daily Summary Card
+                        _buildDailySummaryCard(context, isMobile)
+                            .animate()
+                            .fadeIn(delay: 200.ms, duration: 500.ms)
+                            .slideY(
+                              begin: 0.2,
+                              end: 0,
+                              delay: 200.ms,
+                              duration: 500.ms,
+                            ),
+
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 20.0,
+                            tablet: 24.0,
+                            desktop: 32.0,
+                          ),
+                        ),
+
+                        // Smart Suggestions Button
+                        _buildSmartSuggestionsButton(context, isMobile)
+                            .animate()
+                            .fadeIn(delay: 350.ms, duration: 500.ms)
+                            .slideY(
+                              begin: 0.2,
+                              end: 0,
+                              delay: 350.ms,
+                              duration: 500.ms,
+                            ),
+
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 20.0,
+                            tablet: 24.0,
+                            desktop: 32.0,
+                          ),
+                        ),
+
+                        // Suggested Action Card
+                        _buildSuggestedActionCard(context, isMobile)
+                            .animate()
+                            .fadeIn(delay: 400.ms, duration: 500.ms)
+                            .slideY(
+                              begin: 0.2,
+                              end: 0,
+                              delay: 400.ms,
+                              duration: 500.ms,
+                            ),
+
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 20.0,
+                            tablet: 24.0,
+                            desktop: 32.0,
+                          ),
+                        ),
+
+                        // Quick Actions Section
+                        _buildQuickActionsSection(context, isMobile)
+                            .animate()
+                            .fadeIn(delay: 800.ms, duration: 500.ms)
+                            .slideY(
+                              begin: 0.2,
+                              end: 0,
+                              delay: 800.ms,
+                              duration: 500.ms,
+                            ),
+                      ],
+                    ),
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header Section
-                    _buildHeader(context, isMobile, userName, padding)
-                        .animate()
-                        .fadeIn(duration: 500.ms)
-                        .slideY(begin: -0.2, end: 0, duration: 500.ms),
-
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 20.0,
-                      tablet: 24.0,
-                      desktop: 32.0,
-                    )),
-
-                    // Daily Summary Card
-                    _buildDailySummaryCard(context, isMobile)
-                        .animate()
-                        .fadeIn(delay: 200.ms, duration: 500.ms)
-                        .slideY(begin: 0.2, end: 0, delay: 200.ms, duration: 500.ms),
-
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 20.0,
-                      tablet: 24.0,
-                      desktop: 32.0,
-                    )),
-
-                    // Smart Suggestions Button
-                    _buildSmartSuggestionsButton(context, isMobile)
-                        .animate()
-                        .fadeIn(delay: 350.ms, duration: 500.ms)
-                        .slideY(begin: 0.2, end: 0, delay: 350.ms, duration: 500.ms),
-
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 20.0,
-                      tablet: 24.0,
-                      desktop: 32.0,
-                    )),
-
-                    // Suggested Action Card
-                    _buildSuggestedActionCard(context, isMobile)
-                        .animate()
-                        .fadeIn(delay: 400.ms, duration: 500.ms)
-                        .slideY(begin: 0.2, end: 0, delay: 400.ms, duration: 500.ms),
-
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 20.0,
-                      tablet: 24.0,
-                      desktop: 32.0,
-                    )),
-
-                    // Quick Actions Section
-                    _buildQuickActionsSection(context, isMobile)
-                        .animate()
-                        .fadeIn(delay: 800.ms, duration: 500.ms)
-                        .slideY(begin: 0.2, end: 0, delay: 800.ms, duration: 500.ms),
-                  ],
-                ),
-              ),
 
                   // Navigation Bar
                   Positioned(
@@ -245,7 +287,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isMobile, String userName, double padding) {
+  Widget _buildHeader(
+    BuildContext context,
+    bool isMobile,
+    String userName,
+    double padding,
+  ) {
     return Padding(
       padding: EdgeInsets.only(
         top: Responsive.getResponsiveValue(
@@ -269,82 +316,91 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             right: 0,
             child: GestureDetector(
               onTap: () => context.push('/notifications-center'),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFF1e4a66).withOpacity(0.6),
-                      const Color(0xFF16384d).withOpacity(0.6),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(50),
-                  border: Border.all(
-                    color: AppColors.cyan500.withOpacity(0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Icon(
-                      LucideIcons.bell,
-                      color: AppColors.cyan400,
-                      size: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 18.0,
-                        tablet: 20.0,
-                        desktop: 22.0,
-                      ),
-                    ),
-                    // Notification Badge
-                    Positioned(
-                      top: -4,
-                      right: -4,
-                      child: Container(
-                        width: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 18.0,
-                          tablet: 20.0,
-                          desktop: 22.0,
-                        ),
-                        height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 18.0,
-                          tablet: 20.0,
-                          desktop: 22.0,
-                        ),
+              child:
+                  Container(
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFEC4899), Color(0xFFEF4444)],
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              const Color(0xFF1e4a66).withOpacity(0.6),
+                              const Color(0xFF16384d).withOpacity(0.6),
+                            ],
                           ),
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(50),
+                          border: Border.all(
+                            color: AppColors.cyan500.withOpacity(0.2),
+                            width: 1,
+                          ),
                         ),
-                        child: Center(
-                          child: Text(
-                            '3',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: Responsive.getResponsiveValue(
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Icon(
+                              LucideIcons.bell,
+                              color: AppColors.cyan400,
+                              size: Responsive.getResponsiveValue(
                                 context,
-                                mobile: 9.0,
-                                tablet: 10.0,
-                                desktop: 11.0,
+                                mobile: 18.0,
+                                tablet: 20.0,
+                                desktop: 22.0,
                               ),
-                              fontWeight: FontWeight.bold,
                             ),
-                          ),
+                            // Notification Badge
+                            Positioned(
+                              top: -4,
+                              right: -4,
+                              child: Container(
+                                width: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 18.0,
+                                  tablet: 20.0,
+                                  desktop: 22.0,
+                                ),
+                                height: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 18.0,
+                                  tablet: 20.0,
+                                  desktop: 22.0,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFFEC4899),
+                                      Color(0xFFEF4444),
+                                    ],
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '3',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 9.0,
+                                        tablet: 10.0,
+                                        desktop: 11.0,
+                                      ),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                      )
+                      .animate()
+                      .fadeIn(delay: 400.ms, duration: 500.ms)
+                      .scale(
+                        begin: const Offset(0.8, 0.8),
+                        end: const Offset(1, 1),
+                        delay: 400.ms,
+                        duration: 500.ms,
                       ),
-                    ),
-                  ],
-                ),
-              )
-                  .animate()
-                  .fadeIn(delay: 400.ms, duration: 500.ms)
-                  .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1), delay: 400.ms, duration: 500.ms),
             ),
           ),
 
@@ -367,12 +423,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              SizedBox(height: Responsive.getResponsiveValue(
-                context,
-                mobile: 6.0,
-                tablet: 8.0,
-                desktop: 12.0,
-              )),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 6.0,
+                  tablet: 8.0,
+                  desktop: 12.0,
+                ),
+              ),
               Text(
                 _getCurrentDate(),
                 style: TextStyle(
@@ -385,12 +443,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   color: AppColors.textCyan200.withOpacity(0.7),
                 ),
               ),
-              SizedBox(height: Responsive.getResponsiveValue(
-                context,
-                mobile: 10.0,
-                tablet: 12.0,
-                desktop: 16.0,
-              )),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 10.0,
+                  tablet: 12.0,
+                  desktop: 16.0,
+                ),
+              ),
               // AI Status Indicator
               Row(
                 children: [
@@ -419,12 +479,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       );
                     },
                   ),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 6.0,
-                    tablet: 7.0,
-                    desktop: 8.0,
-                  )),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 6.0,
+                      tablet: 7.0,
+                      desktop: 8.0,
+                    ),
+                  ),
                   Text(
                     'Up to date',
                     style: TextStyle(
@@ -455,24 +517,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       tablet: math.min(360.0, screenHeight * 0.35),
       desktop: math.min(400.0, screenHeight * 0.3),
     );
-    
+
     return Container(
       constraints: BoxConstraints(
-        minHeight: Responsive.getResponsiveValue(
-          context,
-          mobile: 280.0,
-          tablet: 320.0,
-          desktop: 360.0,
+        minHeight: math.min(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 280.0,
+            tablet: 320.0,
+            desktop: 360.0,
+          ),
+          cardHeight,
         ),
         maxHeight: cardHeight,
       ),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 22.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 22.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.5),
@@ -488,12 +555,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 22.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 22.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
         child: Stack(
           children: [
             // Base gradient background
@@ -553,7 +622,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         center: const Alignment(0.3, -0.8),
                         radius: 0.6.clamp(0.1, 1.0),
                         colors: [
-                          const Color(0xFF00D4FF).withOpacity((0.4 * (0.5 + _glowController1.value * 0.4)).clamp(0.0, 1.0)),
+                          const Color(0xFF00D4FF).withOpacity(
+                            (0.4 * (0.5 + _glowController1.value * 0.4)).clamp(
+                              0.0,
+                              1.0,
+                            ),
+                          ),
                           Colors.transparent,
                         ],
                       ),
@@ -574,7 +648,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         center: const Alignment(0.7, 0.8),
                         radius: 0.5.clamp(0.1, 1.0),
                         colors: [
-                          const Color(0xFF3B82F6).withOpacity((0.5 * (0.4 + _glowController2.value * 0.4)).clamp(0.0, 1.0)),
+                          const Color(0xFF3B82F6).withOpacity(
+                            (0.5 * (0.4 + _glowController2.value * 0.4)).clamp(
+                              0.0,
+                              1.0,
+                            ),
+                          ),
                           Colors.transparent,
                         ],
                       ),
@@ -605,7 +684,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     decoration: BoxDecoration(
                       gradient: RadialGradient(
                         colors: [
-                          const Color(0xFF00D4FF).withOpacity((0.3 * (0.3 + _pulseController.value * 0.3)).clamp(0.0, 1.0)),
+                          const Color(0xFF00D4FF).withOpacity(
+                            (0.3 * (0.3 + _pulseController.value * 0.3)).clamp(
+                              0.0,
+                              1.0,
+                            ),
+                          ),
                           Colors.transparent,
                         ],
                       ),
@@ -626,7 +710,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     return Positioned.fill(
                       child: Transform.translate(
                         offset: Offset(
-                          -constraints.maxWidth + (_shimmerController.value * constraints.maxWidth * 2),
+                          -constraints.maxWidth +
+                              (_shimmerController.value *
+                                  constraints.maxWidth *
+                                  2),
                           0,
                         ),
                         child: Container(
@@ -678,10 +765,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           left: constraints.maxWidth / 2 + x - particleSize,
                           top: constraints.maxHeight / 2 + y - particleSize,
                           child: AnimatedBuilder(
-                            animation: _particleControllers[i % _particleControllers.length],
+                            animation:
+                                _particleControllers[i %
+                                    _particleControllers.length],
                             builder: (context, child) {
-                              final scale = (1.0 + (_particleControllers[i % _particleControllers.length].value * 0.5)).clamp(0.5, 2.0);
-                              final opacity = (0.4 + (_particleControllers[i % _particleControllers.length].value * 0.4)).clamp(0.0, 1.0);
+                              final scale =
+                                  (1.0 +
+                                          (_particleControllers[i %
+                                                      _particleControllers
+                                                          .length]
+                                                  .value *
+                                              0.5))
+                                      .clamp(0.5, 2.0);
+                              final opacity =
+                                  (0.4 +
+                                          (_particleControllers[i %
+                                                      _particleControllers
+                                                          .length]
+                                                  .value *
+                                              0.4))
+                                      .clamp(0.0, 1.0);
                               return Transform.scale(
                                 scale: scale,
                                 child: Container(
@@ -698,17 +801,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     desktop: 4.0,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF00D4FF).withOpacity(opacity),
+                                    color: const Color(
+                                      0xFF00D4FF,
+                                    ).withOpacity(opacity),
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF00D4FF).withOpacity(0.8),
-                                        blurRadius: Responsive.getResponsiveValue(
-                                          context,
-                                          mobile: 6.0,
-                                          tablet: 7.0,
-                                          desktop: 8.0,
-                                        ),
+                                        color: const Color(
+                                          0xFF00D4FF,
+                                        ).withOpacity(0.8),
+                                        blurRadius:
+                                            Responsive.getResponsiveValue(
+                                              context,
+                                              mobile: 6.0,
+                                              tablet: 7.0,
+                                              desktop: 8.0,
+                                            ),
                                       ),
                                     ],
                                   ),
@@ -730,16 +838,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 return Stack(
                   children: List.generate(10, (i) {
                     return AnimatedBuilder(
-                      animation: _particleControllers[i % _particleControllers.length],
+                      animation:
+                          _particleControllers[i % _particleControllers.length],
                       builder: (context, child) {
-                        final progress = _particleControllers[i % _particleControllers.length].value;
+                        final progress =
+                            _particleControllers[i %
+                                    _particleControllers.length]
+                                .value;
                         final random = math.Random(i);
-                        final startX = random.nextDouble() * constraints.maxWidth;
-                        final startY = random.nextDouble() * constraints.maxHeight * 0.5;
-                        final offsetX = (random.nextDouble() * 15 - 7.5) * progress;
+                        final startX =
+                            random.nextDouble() * constraints.maxWidth;
+                        final startY =
+                            random.nextDouble() * constraints.maxHeight * 0.5;
+                        final offsetX =
+                            (random.nextDouble() * 15 - 7.5) * progress;
                         final offsetY = -20 * progress;
-                        final opacity = 0.2 + (math.sin(progress * math.pi * 2) * 0.4);
-                        final scale = 1.0 + (math.sin(progress * math.pi * 2) * 0.3);
+                        final opacity =
+                            0.2 + (math.sin(progress * math.pi * 2) * 0.4);
+                        final scale =
+                            1.0 + (math.sin(progress * math.pi * 2) * 0.3);
 
                         return Positioned(
                           left: startX + offsetX,
@@ -747,37 +864,48 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           child: Transform.scale(
                             scale: scale.clamp(0.5, 2.0),
                             child: Container(
-                              width: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 2.0,
-                                tablet: 2.5,
-                                desktop: 3.0,
-                              ) + (random.nextDouble() * Responsive.getResponsiveValue(
-                                context,
-                                mobile: 4.0,
-                                tablet: 5.0,
-                                desktop: 6.0,
-                              )),
-                              height: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 2.0,
-                                tablet: 2.5,
-                                desktop: 3.0,
-                              ) + (random.nextDouble() * Responsive.getResponsiveValue(
-                                context,
-                                mobile: 4.0,
-                                tablet: 5.0,
-                                desktop: 6.0,
-                              )),
+                              width:
+                                  Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 2.0,
+                                    tablet: 2.5,
+                                    desktop: 3.0,
+                                  ) +
+                                  (random.nextDouble() *
+                                      Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 4.0,
+                                        tablet: 5.0,
+                                        desktop: 6.0,
+                                      )),
+                              height:
+                                  Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 2.0,
+                                    tablet: 2.5,
+                                    desktop: 3.0,
+                                  ) +
+                                  (random.nextDouble() *
+                                      Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 4.0,
+                                        tablet: 5.0,
+                                        desktop: 6.0,
+                                      )),
                               decoration: BoxDecoration(
-                                color: (i % 2 == 0
-                                        ? const Color(0xFF00D4FF)
-                                        : const Color(0xFF3B82F6))
-                                    .withOpacity((opacity * 0.4).clamp(0.0, 1.0)),
+                                color:
+                                    (i % 2 == 0
+                                            ? const Color(0xFF00D4FF)
+                                            : const Color(0xFF3B82F6))
+                                        .withOpacity(
+                                          (opacity * 0.4).clamp(0.0, 1.0),
+                                        ),
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF00D4FF).withOpacity(0.6),
+                                    color: const Color(
+                                      0xFF00D4FF,
+                                    ).withOpacity(0.6),
                                     blurRadius: Responsive.getResponsiveValue(
                                       context,
                                       mobile: 4.0,
@@ -802,8 +930,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               return AnimatedBuilder(
                 animation: _ringControllers[i],
                 builder: (context, child) {
-                  final scale = (1.0 + (_ringControllers[i].value * 1.5)).clamp(1.0, 3.0);
-                  final opacity = (0.5 * (1 - _ringControllers[i].value)).clamp(0.0, 1.0);
+                  final scale = (1.0 + (_ringControllers[i].value * 1.5)).clamp(
+                    1.0,
+                    3.0,
+                  );
+                  final opacity = (0.5 * (1 - _ringControllers[i].value)).clamp(
+                    0.0,
+                    1.0,
+                  );
                   return Center(
                     child: Transform.scale(
                       scale: scale,
@@ -823,7 +957,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: const Color(0xFF00D4FF).withOpacity((opacity * 0.3).clamp(0.0, 1.0)),
+                            color: const Color(
+                              0xFF00D4FF,
+                            ).withOpacity((opacity * 0.3).clamp(0.0, 1.0)),
                             width: Responsive.getResponsiveValue(
                               context,
                               mobile: 0.8,
@@ -862,7 +998,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     decoration: BoxDecoration(
                       gradient: RadialGradient(
                         colors: [
-                          const Color(0xFF080F19).withOpacity((0.8 * (0.6 + _glowController1.value * 0.3)).clamp(0.0, 1.0)),
+                          const Color(0xFF080F19).withOpacity(
+                            (0.8 * (0.6 + _glowController1.value * 0.3)).clamp(
+                              0.0,
+                              1.0,
+                            ),
+                          ),
                           Colors.transparent,
                         ],
                       ),
@@ -895,7 +1036,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     decoration: BoxDecoration(
                       gradient: RadialGradient(
                         colors: [
-                          const Color(0xFF0A141E).withOpacity((0.7 * (0.5 + _glowController2.value * 0.3)).clamp(0.0, 1.0)),
+                          const Color(0xFF0A141E).withOpacity(
+                            (0.7 * (0.5 + _glowController2.value * 0.3)).clamp(
+                              0.0,
+                              1.0,
+                            ),
+                          ),
                           Colors.transparent,
                         ],
                       ),
@@ -930,7 +1076,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         decoration: BoxDecoration(
                           gradient: RadialGradient(
                             colors: [
-                              const Color(0xFF060C14).withOpacity((0.6 * (0.4 + _pulseController.value * 0.3)).clamp(0.0, 1.0)),
+                              const Color(0xFF060C14).withOpacity(
+                                (0.6 * (0.4 + _pulseController.value * 0.3))
+                                    .clamp(0.0, 1.0),
+                              ),
                               Colors.transparent,
                             ],
                           ),
@@ -946,12 +1095,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             // Content
             Positioned.fill(
               child: Padding(
-                padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
+                padding: EdgeInsets.all(
+                  Responsive.getResponsiveValue(
+                    context,
+                    mobile: 20.0,
+                    tablet: 24.0,
+                    desktop: 28.0,
+                  ),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -968,54 +1119,60 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             desktop: 22.0,
                           ),
                         ),
-                        SizedBox(width: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 6.0,
-                          tablet: 7.0,
-                          desktop: 8.0,
-                        )),
+                        SizedBox(
+                          width: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 6.0,
+                            tablet: 7.0,
+                            desktop: 8.0,
+                          ),
+                        ),
+                        Text(
+                          "Today's Overview",
+                          style: TextStyle(
+                            fontSize: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 17.0,
+                              tablet: 19.0,
+                              desktop: 20.0,
+                            ),
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textWhite,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 12.0,
+                        tablet: 14.0,
+                        desktop: 16.0,
+                      ),
+                    ),
                     Text(
-                      "Today's Overview",
+                      "You have one important meeting, two emails that need attention, and a time gap this afternoon that could be optimized.",
                       style: TextStyle(
                         fontSize: Responsive.getResponsiveValue(
                           context,
-                          mobile: 17.0,
-                          tablet: 19.0,
-                          desktop: 20.0,
+                          mobile: 12.0,
+                          tablet: 13.0,
+                          desktop: 14.0,
                         ),
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textWhite,
+                        color: AppColors.textCyan200.withOpacity(0.8),
+                        height: 1.4,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 10.0,
+                        tablet: 12.0,
+                        desktop: 16.0,
                       ),
                     ),
-                  ],
-                ),
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 12.0,
-                  tablet: 14.0,
-                  desktop: 16.0,
-                )),
-                Text(
-                  "You have one important meeting, two emails that need attention, and a time gap this afternoon that could be optimized.",
-                  style: TextStyle(
-                    fontSize: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 12.0,
-                      tablet: 13.0,
-                      desktop: 14.0,
-                    ),
-                    color: AppColors.textCyan200.withOpacity(0.8),
-                    height: 1.4,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 10.0,
-                      tablet: 12.0,
-                      desktop: 16.0,
-                    )),
                     // Key Items - Use Flexible instead of Expanded to prevent overflow
                     Flexible(
                       child: Column(
@@ -1028,12 +1185,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             "Team meeting at 10:00",
                             0,
                           ),
-                          SizedBox(height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 6.0,
-                            tablet: 8.0,
-                            desktop: 8.0,
-                          )),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 6.0,
+                              tablet: 8.0,
+                              desktop: 8.0,
+                            ),
+                          ),
                           _buildKeyItem(
                             context,
                             isMobile,
@@ -1041,12 +1200,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             "Urgent email from HR",
                             1,
                           ),
-                          SizedBox(height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 6.0,
-                            tablet: 8.0,
-                            desktop: 8.0,
-                          )),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 6.0,
+                              tablet: 8.0,
+                              desktop: 8.0,
+                            ),
+                          ),
                           _buildKeyItem(
                             context,
                             isMobile,
@@ -1067,102 +1228,126 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildKeyItem(BuildContext context, bool isMobile, IconData icon, String text, int index) {
+  Widget _buildKeyItem(
+    BuildContext context,
+    bool isMobile,
+    IconData icon,
+    String text,
+    int index,
+  ) {
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 10.0,
-        tablet: 12.0,
-        desktop: 14.0,
-      )),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 11.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 11.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Row(
-            children: [
-              Container(
-                width: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 30.0,
-                  tablet: 32.0,
-                  desktop: 36.0,
-                ),
-                height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 30.0,
-                  tablet: 32.0,
-                  desktop: 36.0,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.cyan500.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                    context,
-                    mobile: 8.0,
-                    tablet: 9.0,
-                    desktop: 10.0,
-                  )),
-                ),
-                child: Icon(
-                  icon,
-                  color: AppColors.cyan400,
-                  size: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 14.0,
-                    tablet: 16.0,
-                    desktop: 18.0,
-                  ),
-                ),
-              ),
-              SizedBox(width: Responsive.getResponsiveValue(
-                context,
-                mobile: 10.0,
-                tablet: 11.0,
-                desktop: 12.0,
-              )),
-              Flexible(
-                child: Text(
-                  text,
-                  style: TextStyle(
-                    fontSize: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 12.0,
-                      tablet: 13.0,
-                      desktop: 14.0,
-                    ),
-                    color: AppColors.textWhite,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+          padding: EdgeInsets.all(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 10.0,
+              tablet: 12.0,
+              desktop: 14.0,
+            ),
           ),
-        ),
-      ),
-    )
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 11.0,
+                tablet: 12.0,
+                desktop: 14.0,
+              ),
+            ),
+            border: Border.all(
+              color: AppColors.cyan500.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 11.0,
+                tablet: 12.0,
+                desktop: 14.0,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 30.0,
+                      tablet: 32.0,
+                      desktop: 36.0,
+                    ),
+                    height: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 30.0,
+                      tablet: 32.0,
+                      desktop: 36.0,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.cyan500.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(
+                        Responsive.getResponsiveValue(
+                          context,
+                          mobile: 8.0,
+                          tablet: 9.0,
+                          desktop: 10.0,
+                        ),
+                      ),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: AppColors.cyan400,
+                      size: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 14.0,
+                        tablet: 16.0,
+                        desktop: 18.0,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 10.0,
+                      tablet: 11.0,
+                      desktop: 12.0,
+                    ),
+                  ),
+                  Flexible(
+                    child: Text(
+                      text,
+                      style: TextStyle(
+                        fontSize: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 12.0,
+                          tablet: 13.0,
+                          desktop: 14.0,
+                        ),
+                        color: AppColors.textWhite,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        )
         .animate()
-        .fadeIn(delay: Duration(milliseconds: 200 + (index * 100)), duration: 500.ms)
-        .slideX(begin: -0.2, end: 0, delay: Duration(milliseconds: 200 + (index * 100)), duration: 500.ms);
+        .fadeIn(
+          delay: Duration(milliseconds: 200 + (index * 100)),
+          duration: 500.ms,
+        )
+        .slideX(
+          begin: -0.2,
+          end: 0,
+          delay: Duration(milliseconds: 200 + (index * 100)),
+          duration: 500.ms,
+        );
   }
 
   Widget _buildSmartSuggestionsButton(BuildContext context, bool isMobile) {
@@ -1185,12 +1370,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               const Color(0xFFFFC107).withOpacity(0.2),
             ],
           ),
-          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 11.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
+          borderRadius: BorderRadius.circular(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 11.0,
+              tablet: 12.0,
+              desktop: 14.0,
+            ),
+          ),
           border: Border.all(
             color: const Color(0xFFFFD700).withOpacity(0.3),
             width: 1,
@@ -1209,12 +1396,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 desktop: 22.0,
               ),
             ),
-            SizedBox(width: Responsive.getResponsiveValue(
-              context,
-              mobile: 6.0,
-              tablet: 7.0,
-              desktop: 8.0,
-            )),
+            SizedBox(
+              width: Responsive.getResponsiveValue(
+                context,
+                mobile: 6.0,
+                tablet: 7.0,
+                desktop: 8.0,
+              ),
+            ),
             Flexible(
               child: Text(
                 'View Smart Suggestions',
@@ -1241,12 +1430,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildSuggestedActionCard(BuildContext context, bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 16.0,
-        tablet: 20.0,
-        desktop: 24.0,
-      )),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 16.0,
+          tablet: 20.0,
+          desktop: 24.0,
+        ),
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -1254,24 +1445,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const Color(0xFF16384d).withOpacity(0.4),
           ],
         ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 14.0,
-          tablet: 16.0,
-          desktop: 20.0,
-        )),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 14.0,
+            tablet: 16.0,
+            desktop: 20.0,
+          ),
         ),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.1), width: 1),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 14.0,
-          tablet: 16.0,
-          desktop: 20.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 14.0,
+            tablet: 16.0,
+            desktop: 20.0,
+          ),
+        ),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Column(
@@ -1295,12 +1487,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.cyan500.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 11.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
+                      borderRadius: BorderRadius.circular(
+                        Responsive.getResponsiveValue(
+                          context,
+                          mobile: 11.0,
+                          tablet: 12.0,
+                          desktop: 14.0,
+                        ),
+                      ),
                     ),
                     child: Icon(
                       LucideIcons.brain,
@@ -1313,12 +1507,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                   ),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 10.0,
-                    tablet: 11.0,
-                    desktop: 12.0,
-                  )),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 10.0,
+                      tablet: 11.0,
+                      desktop: 12.0,
+                    ),
+                  ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1336,12 +1532,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             color: AppColors.textWhite,
                           ),
                         ),
-                        SizedBox(height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 3.0,
-                          tablet: 3.5,
-                          desktop: 4.0,
-                        )),
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 3.0,
+                            tablet: 3.5,
+                            desktop: 4.0,
+                          ),
+                        ),
                         Text(
                           "I can reorganize your afternoon to reduce context switching.",
                           style: TextStyle(
@@ -1359,12 +1557,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ],
               ),
-              SizedBox(height: Responsive.getResponsiveValue(
-                context,
-                mobile: 14.0,
-                tablet: 16.0,
-                desktop: 20.0,
-              )),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 14.0,
+                  tablet: 16.0,
+                  desktop: 20.0,
+                ),
+              ),
               // Action Buttons
               Row(
                 children: [
@@ -1376,12 +1576,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           end: Alignment.bottomRight,
                           colors: [Color(0xFF0ea5e9), Color(0xFF06b6d4)],
                         ),
-                        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 11.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 11.0,
+                            tablet: 12.0,
+                            desktop: 14.0,
+                          ),
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: const Color(0xFF00D4FF).withOpacity(0.3),
@@ -1394,19 +1596,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () {},
-                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 11.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(vertical: Responsive.getResponsiveValue(
+                          borderRadius: BorderRadius.circular(
+                            Responsive.getResponsiveValue(
                               context,
-                              mobile: 9.0,
-                              tablet: 10.0,
-                              desktop: 12.0,
-                            )),
+                              mobile: 11.0,
+                              tablet: 12.0,
+                              desktop: 14.0,
+                            ),
+                          ),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              vertical: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 9.0,
+                                tablet: 10.0,
+                                desktop: 12.0,
+                              ),
+                            ),
                             alignment: Alignment.center,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -1421,22 +1627,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     desktop: 18.0,
                                   ),
                                 ),
-                                SizedBox(width: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 5.0,
-                                  tablet: 5.5,
-                                  desktop: 6.0,
-                                )),
+                                SizedBox(
+                                  width: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 5.0,
+                                    tablet: 5.5,
+                                    desktop: 6.0,
+                                  ),
+                                ),
                                 Text(
                                   'Confirm',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 12.0,
-                              tablet: 13.0,
-                              desktop: 14.0,
-                            ),
+                                      context,
+                                      mobile: 12.0,
+                                      tablet: 13.0,
+                                      desktop: 14.0,
+                                    ),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -1447,22 +1655,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                   ),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 6.0,
-                    tablet: 7.0,
-                    desktop: 8.0,
-                  )),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 6.0,
+                      tablet: 7.0,
+                      desktop: 8.0,
+                    ),
+                  ),
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
                         color: AppColors.cyan500.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 11.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 11.0,
+                            tablet: 12.0,
+                            desktop: 14.0,
+                          ),
+                        ),
                         border: Border.all(
                           color: AppColors.cyan500.withOpacity(0.2),
                           width: 1,
@@ -1472,19 +1684,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () {},
-                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 11.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(vertical: Responsive.getResponsiveValue(
+                          borderRadius: BorderRadius.circular(
+                            Responsive.getResponsiveValue(
                               context,
-                              mobile: 9.0,
-                              tablet: 10.0,
-                              desktop: 12.0,
-                            )),
+                              mobile: 11.0,
+                              tablet: 12.0,
+                              desktop: 14.0,
+                            ),
+                          ),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              vertical: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 9.0,
+                                tablet: 10.0,
+                                desktop: 12.0,
+                              ),
+                            ),
                             alignment: Alignment.center,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -1499,22 +1715,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     desktop: 18.0,
                                   ),
                                 ),
-                                SizedBox(width: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 5.0,
-                                  tablet: 5.5,
-                                  desktop: 6.0,
-                                )),
+                                SizedBox(
+                                  width: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 5.0,
+                                    tablet: 5.5,
+                                    desktop: 6.0,
+                                  ),
+                                ),
                                 Text(
                                   'Modify',
                                   style: TextStyle(
                                     color: AppColors.textCyan300,
                                     fontSize: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 12.0,
-                              tablet: 13.0,
-                              desktop: 14.0,
-                            ),
+                                      context,
+                                      mobile: 12.0,
+                                      tablet: 13.0,
+                                      desktop: 14.0,
+                                    ),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -1525,21 +1743,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                   ),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 6.0,
-                    tablet: 7.0,
-                    desktop: 8.0,
-                  )),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 6.0,
+                      tablet: 7.0,
+                      desktop: 8.0,
+                    ),
+                  ),
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 11.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
+                      borderRadius: BorderRadius.circular(
+                        Responsive.getResponsiveValue(
+                          context,
+                          mobile: 11.0,
+                          tablet: 12.0,
+                          desktop: 14.0,
+                        ),
+                      ),
                       border: Border.all(
                         color: Colors.white.withOpacity(0.1),
                         width: 1,
@@ -1549,19 +1771,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: () {},
-                        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 11.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
-                        child: Container(
-                          padding: EdgeInsets.all(Responsive.getResponsiveValue(
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
                             context,
-                            mobile: 9.0,
-                            tablet: 10.0,
-                            desktop: 12.0,
-                          )),
+                            mobile: 11.0,
+                            tablet: 12.0,
+                            desktop: 14.0,
+                          ),
+                        ),
+                        child: Container(
+                          padding: EdgeInsets.all(
+                            Responsive.getResponsiveValue(
+                              context,
+                              mobile: 9.0,
+                              tablet: 10.0,
+                              desktop: 12.0,
+                            ),
+                          ),
                           child: Icon(
                             LucideIcons.x,
                             color: AppColors.cyan400.withOpacity(0.7),
@@ -1640,22 +1866,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             color: AppColors.textWhite,
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 10.0,
-          tablet: 12.0,
-          desktop: 16.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 10.0,
+            tablet: 12.0,
+            desktop: 16.0,
+          ),
+        ),
         ...actions.asMap().entries.map((entry) {
           final index = entry.key;
           final action = entry.value;
           return Padding(
-            padding: EdgeInsets.only(bottom: Responsive.getResponsiveValue(
-              context,
-              mobile: 10.0,
-              tablet: 12.0,
-              desktop: 16.0,
-            )),
+            padding: EdgeInsets.only(
+              bottom: Responsive.getResponsiveValue(
+                context,
+                mobile: 10.0,
+                tablet: 12.0,
+                desktop: 16.0,
+              ),
+            ),
             child: _buildQuickActionItem(
               context,
               isMobile,
@@ -1683,126 +1913,144 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     int index,
   ) {
     return GestureDetector(
-      onTap: () => context.push(route),
-      child: Container(
-        padding: EdgeInsets.all(Responsive.getResponsiveValue(
-          context,
-          mobile: 14.0,
-          tablet: 16.0,
-          desktop: 20.0,
-        )),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              const Color(0xFF1e4a66).withOpacity(0.4),
-              const Color(0xFF16384d).withOpacity(0.4),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 11.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
-          border: Border.all(
-            color: AppColors.cyan500.withOpacity(0.1),
-            width: 1,
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 11.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Row(
-              children: [
-                Container(
-                  width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 44.0,
-                    tablet: 48.0,
-                    desktop: 52.0,
-                  ),
-                  height: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 44.0,
-                    tablet: 48.0,
-                    desktop: 52.0,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        color.withOpacity(0.2),
-                        colorLight.withOpacity(0.2),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 11.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
-                    border: Border.all(
-                      color: AppColors.cyan500.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: color,
-                            size: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 22.0,
-                              tablet: 24.0,
-                              desktop: 26.0,
-                            ),
-                  ),
-                ),
-                SizedBox(width: Responsive.getResponsiveValue(
+          onTap: () => context.push(route),
+          child: Container(
+            padding: EdgeInsets.all(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 14.0,
+                tablet: 16.0,
+                desktop: 20.0,
+              ),
+            ),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF1e4a66).withOpacity(0.4),
+                  const Color(0xFF16384d).withOpacity(0.4),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(
+                Responsive.getResponsiveValue(
                   context,
-                  mobile: 12.0,
-                  tablet: 14.0,
-                  desktop: 16.0,
-                )),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: Responsive.getResponsiveValue(
+                  mobile: 11.0,
+                  tablet: 12.0,
+                  desktop: 14.0,
+                ),
+              ),
+              border: Border.all(
+                color: AppColors.cyan500.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(
+                Responsive.getResponsiveValue(
+                  context,
+                  mobile: 11.0,
+                  tablet: 12.0,
+                  desktop: 14.0,
+                ),
+              ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Row(
+                  children: [
+                    Container(
+                      width: Responsive.getResponsiveValue(
                         context,
-                        mobile: 14.0,
-                        tablet: 15.0,
+                        mobile: 44.0,
+                        tablet: 48.0,
+                        desktop: 52.0,
+                      ),
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 44.0,
+                        tablet: 48.0,
+                        desktop: 52.0,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            color.withOpacity(0.2),
+                            colorLight.withOpacity(0.2),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 11.0,
+                            tablet: 12.0,
+                            desktop: 14.0,
+                          ),
+                        ),
+                        border: Border.all(
+                          color: AppColors.cyan500.withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(
+                        icon,
+                        color: color,
+                        size: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 22.0,
+                          tablet: 24.0,
+                          desktop: 26.0,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 12.0,
+                        tablet: 14.0,
                         desktop: 16.0,
                       ),
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textWhite,
                     ),
-                  ),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 14.0,
+                            tablet: 15.0,
+                            desktop: 16.0,
+                          ),
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textWhite,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      LucideIcons.chevronRight,
+                      color: AppColors.cyan400,
+                      size: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 18.0,
+                        tablet: 20.0,
+                        desktop: 22.0,
+                      ),
+                    ),
+                  ],
                 ),
-                Icon(
-                  LucideIcons.chevronRight,
-                  color: AppColors.cyan400,
-                  size: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 18.0,
-                    tablet: 20.0,
-                    desktop: 22.0,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-    )
+        )
         .animate()
-        .fadeIn(delay: Duration(milliseconds: 500 + (index * 100)), duration: 500.ms)
-        .slideY(begin: 0.2, end: 0, delay: Duration(milliseconds: 500 + (index * 100)), duration: 500.ms);
+        .fadeIn(
+          delay: Duration(milliseconds: 500 + (index * 100)),
+          duration: 500.ms,
+        )
+        .slideY(
+          begin: 0.2,
+          end: 0,
+          delay: Duration(milliseconds: 500 + (index * 100)),
+          duration: 500.ms,
+        );
   }
 }

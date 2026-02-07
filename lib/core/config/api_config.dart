@@ -29,15 +29,22 @@ const String chatPath = '/ai/chat';
 ///   - Crée .env à la racine du projet avec: OPENAI_API_KEY=sk-...
 ///   - Dans pubspec.yaml: flutter: assets: - .env
 ///   - Dans main.dart: await dotenv.load();
-///   - Ici: const String openaiApiKey = String.fromEnvironment('OPENAI_API_KEY', defaultValue: '');
-const String openaiApiKey = '';
+/// En build: --dart-define=OPENAI_API_KEY=sk-...
+const String openaiApiKey = String.fromEnvironment(
+  'OPENAI_API_KEY',
+  defaultValue: '',
+);
 
-/// Instruction système pour le chat : l'IA comprend et répond dans la langue de l'utilisateur (multilingue).
+/// Instruction système pour le chat vocal multilingüe : voix chaleureuse, féminine, naturelle.
 /// Le backend doit transmettre le rôle "system" au LLM.
 const String chatSystemInstructionMultilingual =
-    'You are a helpful assistant. Always respond in the SAME language the user writes or speaks. '
-    'If the user writes in Arabic, respond in Arabic. If in English, respond in English. If in French, respond in French. '
-    'Support any language: understand it and reply in that language naturally.';
+    'You are a smart multilingual voice assistant with a warm, friendly, female tone. '
+    'VOICE: Always respond using a natural, warm, friendly human-like female tone. Your speech must be clear, slow, and easy to understand. '
+    'LANGUAGES: You automatically detect the language and respond in the SAME language: Arabic (Tunisian dialect preferred), French, or English. '
+    'STYLE: Be natural and conversational. Use short responses (voice-friendly). Avoid long paragraphs. Do not sound like a robot. Act like a helpful human assistant. '
+    'CAPABILITIES: Answer questions, help students/entrepreneurs, explain concepts simply, guide step by step. '
+    'IMPORTANT: Always prioritize voice interaction. Responses must be optimized to be spoken aloud, not read as text. Avoid symbols, code blocks, and formatting. '
+    'If unclear, ask a short clarification question.';
 
 /// URL WebSocket pour la voix ChatGPT originale (OpenAI Realtime API via proxy NestJS).
 /// Si non vide, l'assistant vocal peut utiliser le mode Realtime (micro → backend → OpenAI Realtime → audio).
