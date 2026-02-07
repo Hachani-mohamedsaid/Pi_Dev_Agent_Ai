@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../widgets/logo_widget.dart';
@@ -17,17 +16,10 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    // Check onboarding status and navigate accordingly
-    Future.delayed(const Duration(seconds: 3), () async {
+    // Always go to login; onboarding appears after login on first open
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
-        final prefs = await SharedPreferences.getInstance();
-        final onboardingComplete = prefs.getBool('ava_onboarding_complete') ?? false;
-        
-        if (onboardingComplete) {
-          context.go('/login');
-        } else {
-          context.go('/onboarding');
-        }
+        context.go('/login');
       }
     });
   }

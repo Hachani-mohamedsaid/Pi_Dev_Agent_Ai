@@ -115,11 +115,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final screenWidth = Responsive.screenWidth(context);
     final padding = Responsive.getResponsiveValue(
       context,
       mobile: 24.0,
       tablet: 28.0,
       desktop: 32.0,
+    );
+    // Max content width for large screens (tablet/desktop) to keep layout readable
+    final maxContentWidth = Responsive.getResponsiveValue(
+      context,
+      mobile: screenWidth,
+      tablet: 600.0,
+      desktop: 700.0,
     );
 
     final userName = widget.controller.currentUser?.name ?? 'User';
@@ -139,10 +147,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
         child: SafeArea(
           bottom: false,
-          child: Stack(
-            children: [
-              // Main Content
-              SingleChildScrollView(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxContentWidth),
+              child: Stack(
+                children: [
+                  // Main Content
+                  SingleChildScrollView(
                 padding: EdgeInsets.only(
                   left: padding,
                   right: padding,
@@ -218,14 +229,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
 
-              // Navigation Bar
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: NavigationBarWidget(currentPath: '/home'),
+                  // Navigation Bar
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: NavigationBarWidget(currentPath: '/home'),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
