@@ -15,11 +15,9 @@ class App extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF06B6D4),
           brightness: Brightness.dark,
-      ),
+        ),
       ),
       routerConfig: appRouter,
     );
   }
 }
-
-

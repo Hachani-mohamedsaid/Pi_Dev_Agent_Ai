@@ -3,7 +3,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/services/pre_onboarding_storage.dart';
 import '../widgets/logo_widget.dart';
+import '../../injection_container.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -16,12 +18,28 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    // Always go to login; onboarding appears after login on first open
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        context.go('/login');
-      }
-    });
+    _navigateAfterDelay();
+  }
+
+  Future<void> _navigateAfterDelay() async {
+    await Future.delayed(const Duration(seconds: 3));
+    if (!mounted) return;
+
+    final authCtrl = InjectionContainer.instance.buildAuthController();
+    await authCtrl.loadCurrentUser();
+    if (!mounted) return;
+
+    final seen = await PreOnboardingStorage.hasSeenPreOnboarding;
+    final isAuth = authCtrl.isAuthenticated;
+
+    if (!mounted) return;
+    if (isAuth) {
+      context.go('/home');
+    } else if (!seen) {
+      context.go('/intro');
+    } else {
+      context.go('/login');
+    }
   }
 
   @override

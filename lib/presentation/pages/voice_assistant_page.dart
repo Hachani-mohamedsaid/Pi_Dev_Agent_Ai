@@ -81,45 +81,64 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
       _initTts().catchError((error) {
         debugPrint('Error initializing TTS: $error');
       });
-      
+
       if (openaiApiKey.isNotEmpty) {
         try {
+          debugPrint(
+            '✅ OpenAI API Key detected (${openaiApiKey.length} chars)',
+          );
           _openaiTts = OpenaiTTS(apiKey: openaiApiKey);
-          _openaiTtsStatusSub = _openaiTts!.ttsStatusStream.listen((status) {
-            if (!mounted) return;
-            setState(() {
-              isSpeaking = status == OpenaiTTSStatus.fetching ||
-                  status == OpenaiTTSStatus.playing;
-            });
-            if (status == OpenaiTTSStatus.completed || status == OpenaiTTSStatus.stopped) {
-              _waveformController.duration = const Duration(seconds: 15);
-              _waveformController.repeat();
-              _pulseController.stop();
-              _pulseController.reset();
-            }
-          }, onError: (error) {
-            debugPrint('OpenAI TTS stream error: $error');
-          });
+          debugPrint('✅ OpenaiTTS initialized successfully');
+          _openaiTtsStatusSub = _openaiTts!.ttsStatusStream.listen(
+            (status) {
+              if (!mounted) return;
+              setState(() {
+                isSpeaking =
+                    status == OpenaiTTSStatus.fetching ||
+                    status == OpenaiTTSStatus.playing;
+              });
+              if (status == OpenaiTTSStatus.completed ||
+                  status == OpenaiTTSStatus.stopped) {
+                _waveformController.duration = const Duration(seconds: 15);
+                _waveformController.repeat();
+                _pulseController.stop();
+                _pulseController.reset();
+              }
+            },
+            onError: (error) {
+              debugPrint('OpenAI TTS stream error: $error');
+            },
+          );
         } catch (e) {
-          debugPrint('Error initializing OpenAI TTS: $e');
+          debugPrint('❌ Error initializing OpenAI TTS: $e');
         }
+      } else {
+        debugPrint(
+          '⚠️ OpenAI API Key is EMPTY - TTS will use FlutterTts fallback only',
+        );
       }
-      
+
       if (realtimeVoiceWsUrl.isNotEmpty) {
         try {
           _realtimeClient = RealtimeVoiceClientImpl(wsUrl: realtimeVoiceWsUrl);
-          _realtimeClient!.connect().then((_) {
-            _realtimeAudioSub = _realtimeClient!.audioDeltaStream.listen((bytes) {
-              if (!mounted) return;
-              setState(() => isSpeaking = true);
-              // TODO: jouer bytes PCM avec flutter_sound (startPlayerFromStream)
-              // Pour l'instant le client Realtime est prêt ; brancher record PCM → sendAudioChunk + play ici.
-            }, onError: (error) {
-              debugPrint('Realtime audio stream error: $error');
-            });
-          }).catchError((error) {
-            debugPrint('Error connecting to realtime voice client: $error');
-          });
+          _realtimeClient!
+              .connect()
+              .then((_) {
+                _realtimeAudioSub = _realtimeClient!.audioDeltaStream.listen(
+                  (bytes) {
+                    if (!mounted) return;
+                    setState(() => isSpeaking = true);
+                    // TODO: jouer bytes PCM avec flutter_sound (startPlayerFromStream)
+                    // Pour l'instant le client Realtime est prêt ; brancher record PCM → sendAudioChunk + play ici.
+                  },
+                  onError: (error) {
+                    debugPrint('Realtime audio stream error: $error');
+                  },
+                );
+              })
+              .catchError((error) {
+                debugPrint('Error connecting to realtime voice client: $error');
+              });
         } catch (e) {
           debugPrint('Error initializing realtime voice client: $e');
         }
@@ -129,10 +148,12 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
     }
   }
 
-  /// Initialise le TTS : débit lent et volume max pour un son clair (FR, EN, AR).
+  /// Initialise le TTS : débit lent et clair (0.85) et volume max pour excellente compréhension (FR, EN, AR).
   Future<void> _initTts() async {
     try {
-      await _flutterTts.setSpeechRate(0.48); // Vitesse équilibrée (voix type ChatGPT)
+      await _flutterTts.setSpeechRate(
+        0.85,
+      ); // Vitesse lente mais claire (voix-friendly)
       await _flutterTts.setVolume(1.0);
       await _flutterTts.setPitch(1.0);
       _flutterTts.setErrorHandler((msg) {
@@ -210,9 +231,10 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
       // Detecte la langue pour ajuster le debit
       final detectectedLang = _detectLanguage(text);
 
-      // Arabe: debit moyen (0.42) pour une bonne comprehension et fluidite
-      // Francais/Anglais: debit normal (0.48)
-      final speechRate = detectectedLang == 'ar-SA' ? 0.42 : 0.48;
+      // Tous les langues: débit lent et clair (0.85) pour compréhension optimale
+      // Arabe, Français, Anglais - même vitesse lente mais claire
+      final speechRate =
+          0.85; // Vitesse lente et claire pour toutes les langues
 
       if (kDebugMode)
         print(
@@ -319,34 +341,37 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
   /// Parole IA : TTS claire en FR, EN, AR. L’utilisateur entend la réponse.
   Future<void> simulateAISpeaking(String text) async {
     if (text.isEmpty) return;
+
+    debugPrint(
+      '🎤 simulateAISpeaking called with text: "${text.substring(0, math.min(50, text.length))}..."',
+    );
+    debugPrint('🎤 OpenaiTts available: ${_openaiTts != null}');
+
     setState(() => isSpeaking = true);
     _waveformController.duration = const Duration(seconds: 3);
     _waveformController.repeat();
     _pulseController.repeat(reverse: true);
-
-    // Detecte si le texte est en arabe
-    final isArabic = RegExp(r'[\u0600-\u06FF]').hasMatch(text);
-
-    // Force FlutterTts pour l'arabe car OpenAI TTS ne le supporte pas bien
-    if (isArabic) {
-      _fallbackFlutterTts(text);
-      return;
-    }
-
+    // OpenAI TTS en priorité absolue - pas de fallback sur détection langue
     if (_openaiTts != null) {
       await _openaiTts!.stopPlayer();
       try {
+        debugPrint(
+          '🎤🔊 USING OPENAI TTS (nova - warm female voice, 0.85 speed - slow & clear)',
+        );
         await _openaiTts!.streamSpeak(
           text,
-          voice: OpenaiTTSVoice.alloy,
-          model: OpenaiTTSModel.tts1hd, // HD = son plus clair
+          voice: OpenaiTTSVoice.nova, // Voix féminine chaleureuse et naturelle
+          model: OpenaiTTSModel.tts1hd, // HD = son plus clair et naturel
         );
-      } catch (_) {
+        debugPrint('✅ OpenAI TTS speech completed successfully');
+      } catch (e) {
+        debugPrint('❌ OpenAI TTS error: $e - falling back to FlutterTts');
         if (mounted) _fallbackFlutterTts(text);
       }
       return;
     }
 
+    debugPrint('⚠️ OpenaiTts is NULL - using FlutterTts fallback');
     _flutterTts.setCompletionHandler(() {
       if (mounted) {
         setState(() => isSpeaking = false);

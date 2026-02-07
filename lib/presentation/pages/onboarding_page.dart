@@ -48,7 +48,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
   bool _canProceed() {
     switch (_step) {
       case 2:
-        return _workStyle.isNotEmpty && _communicationStyle != null && _decisionStyle != null;
+        return _workStyle.isNotEmpty &&
+            _communicationStyle != null &&
+            _decisionStyle != null;
       case 3:
         return _morningPerson != null && _peakHours.isNotEmpty;
       case 4:
@@ -84,11 +86,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
+            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
           ),
         ),
         child: SafeArea(
@@ -109,12 +107,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       ),
                       decoration: BoxDecoration(
                         color: AppColors.textWhite.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                          context,
-                          mobile: 3.0,
-                          tablet: 3.5,
-                          desktop: 4.0,
-                        )),
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 3.0,
+                            tablet: 3.5,
+                            desktop: 4.0,
+                          ),
+                        ),
                       ),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
@@ -127,26 +127,27 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         width: MediaQuery.of(context).size.width * (_step / 6),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [
-                              AppColors.cyan500,
-                              AppColors.blue500,
-                            ],
+                            colors: [AppColors.cyan500, AppColors.blue500],
                           ),
-                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                            context,
-                            mobile: 3.0,
-                            tablet: 3.5,
-                            desktop: 4.0,
-                          )),
+                          borderRadius: BorderRadius.circular(
+                            Responsive.getResponsiveValue(
+                              context,
+                              mobile: 3.0,
+                              tablet: 3.5,
+                              desktop: 4.0,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 6.0,
-                      tablet: 8.0,
-                      desktop: 10.0,
-                    )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 6.0,
+                        tablet: 8.0,
+                        desktop: 10.0,
+                      ),
+                    ),
                     Text(
                       'Step $_step of 6',
                       style: TextStyle(
@@ -201,20 +202,24 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       GestureDetector(
                         onTap: () => setState(() => _step--),
                         child: Container(
-                          padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                            context,
-                            mobile: 14.0,
-                            tablet: 16.0,
-                            desktop: 18.0,
-                          )),
+                          padding: EdgeInsets.all(
+                            Responsive.getResponsiveValue(
+                              context,
+                              mobile: 14.0,
+                              tablet: 16.0,
+                              desktop: 18.0,
+                            ),
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.textWhite.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                              context,
-                              mobile: 12.0,
-                              tablet: 13.0,
-                              desktop: 14.0,
-                            )),
+                            borderRadius: BorderRadius.circular(
+                              Responsive.getResponsiveValue(
+                                context,
+                                mobile: 12.0,
+                                tablet: 13.0,
+                                desktop: 14.0,
+                              ),
+                            ),
                             border: Border.all(
                               color: AppColors.textWhite.withOpacity(0.1),
                               width: 1,
@@ -233,12 +238,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         ),
                       ),
                     if (_step > 1)
-                      SizedBox(width: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 10.0,
-                        tablet: 12.0,
-                        desktop: 14.0,
-                      )),
+                      SizedBox(
+                        width: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 10.0,
+                          tablet: 12.0,
+                          desktop: 14.0,
+                        ),
+                      ),
                     Expanded(
                       child: GestureDetector(
                         onTap: _canProceed()
@@ -270,13 +277,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                     ],
                                   )
                                 : null,
-                            color: _canProceed() ? null : AppColors.textWhite.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                              context,
-                              mobile: 12.0,
-                              tablet: 13.0,
-                              desktop: 14.0,
-                            )),
+                            color: _canProceed()
+                                ? null
+                                : AppColors.textWhite.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(
+                              Responsive.getResponsiveValue(
+                                context,
+                                mobile: 12.0,
+                                tablet: 13.0,
+                                desktop: 14.0,
+                              ),
+                            ),
                             border: Border.all(
                               color: _canProceed()
                                   ? AppColors.cyan500.withOpacity(0.3)
@@ -311,15 +322,19 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                     desktop: 16.0,
                                   ),
                                   fontWeight: FontWeight.w600,
-                                  color: _canProceed() ? AppColors.textWhite : AppColors.cyan400.withOpacity(0.5),
+                                  color: _canProceed()
+                                      ? AppColors.textWhite
+                                      : AppColors.cyan400.withOpacity(0.5),
                                 ),
                               ),
-                              SizedBox(width: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 6.0,
-                                tablet: 8.0,
-                                desktop: 10.0,
-                              )),
+                              SizedBox(
+                                width: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 6.0,
+                                  tablet: 8.0,
+                                  desktop: 10.0,
+                                ),
+                              ),
                               Icon(
                                 LucideIcons.chevronRight,
                                 size: Responsive.getResponsiveValue(
@@ -328,7 +343,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                   tablet: 20.0,
                                   desktop: 22.0,
                                 ),
-                                color: _canProceed() ? AppColors.textWhite : AppColors.cyan400.withOpacity(0.5),
+                                color: _canProceed()
+                                    ? AppColors.textWhite
+                                    : AppColors.cyan400.withOpacity(0.5),
                               ),
                             ],
                           ),
@@ -374,61 +391,63 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
     return Column(
       children: [
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 20.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
         Column(
           children: [
             Container(
-              width: Responsive.getResponsiveValue(
-                context,
-                mobile: 90.0,
-                tablet: 100.0,
-                desktop: 110.0,
-              ),
-              height: Responsive.getResponsiveValue(
-                context,
-                mobile: 90.0,
-                tablet: 100.0,
-                desktop: 110.0,
-              ),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.cyan500.withOpacity(0.3),
-                    AppColors.blue500.withOpacity(0.3),
-                  ],
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.cyan400.withOpacity(0.3),
-                    blurRadius: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 20.0,
-                      tablet: 30.0,
-                      desktop: 40.0,
-                    ),
-                    spreadRadius: 0,
+                  width: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 90.0,
+                    tablet: 100.0,
+                    desktop: 110.0,
                   ),
-                ],
-              ),
-              child: Icon(
-                LucideIcons.sparkles,
-                size: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 48.0,
-                  tablet: 52.0,
-                  desktop: 56.0,
-                ),
-                color: AppColors.cyan400,
-              ),
-            )
+                  height: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 90.0,
+                    tablet: 100.0,
+                    desktop: 110.0,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.cyan500.withOpacity(0.3),
+                        AppColors.blue500.withOpacity(0.3),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.cyan400.withOpacity(0.3),
+                        blurRadius: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 20.0,
+                          tablet: 30.0,
+                          desktop: 40.0,
+                        ),
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    LucideIcons.sparkles,
+                    size: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 48.0,
+                      tablet: 52.0,
+                      desktop: 56.0,
+                    ),
+                    color: AppColors.cyan400,
+                  ),
+                )
                 .animate(onPlay: (controller) => controller.repeat())
                 .scale(
                   begin: const Offset(1, 1),
@@ -443,12 +462,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   duration: 2000.ms,
                   curve: Curves.easeInOut,
                 ),
-            SizedBox(height: Responsive.getResponsiveValue(
-              context,
-              mobile: 20.0,
-              tablet: 24.0,
-              desktop: 28.0,
-            )),
+            SizedBox(
+              height: Responsive.getResponsiveValue(
+                context,
+                mobile: 20.0,
+                tablet: 24.0,
+                desktop: 28.0,
+              ),
+            ),
             Text(
               'Welcome to AVA',
               style: TextStyle(
@@ -462,12 +483,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 color: AppColors.textWhite,
               ),
             ),
-            SizedBox(height: Responsive.getResponsiveValue(
-              context,
-              mobile: 8.0,
-              tablet: 10.0,
-              desktop: 12.0,
-            )),
+            SizedBox(
+              height: Responsive.getResponsiveValue(
+                context,
+                mobile: 8.0,
+                tablet: 10.0,
+                desktop: 12.0,
+              ),
+            ),
             Text(
               'Your Personal Intelligent Multitasking Assistant',
               textAlign: TextAlign.center,
@@ -483,12 +506,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             ),
           ],
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 40.0,
-          tablet: 50.0,
-          desktop: 60.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 40.0,
+            tablet: 50.0,
+            desktop: 60.0,
+          ),
+        ),
         ...features.asMap().entries.map((entry) {
           final index = entry.key;
           final feature = entry.value;
@@ -501,114 +526,135 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 desktop: 16.0,
               ),
             ),
-            child: Container(
-              padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                context,
-                mobile: 14.0,
-                tablet: 16.0,
-                desktop: 20.0,
-              )),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF1e4a66).withOpacity(0.4),
-                    const Color(0xFF16384d).withOpacity(0.4),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 12.0,
-                  tablet: 13.0,
-                  desktop: 14.0,
-                )),
-                border: Border.all(
-                  color: AppColors.cyan500.withOpacity(0.1),
-                  width: 1,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 12.0,
-                  tablet: 13.0,
-                  desktop: 14.0,
-                )),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: Responsive.getResponsiveValue(
+            child:
+                Container(
+                      padding: EdgeInsets.all(
+                        Responsive.getResponsiveValue(
                           context,
-                          mobile: 36.0,
-                          tablet: 40.0,
-                          desktop: 44.0,
-                        ),
-                        height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 36.0,
-                          tablet: 40.0,
-                          desktop: 44.0,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.cyan500.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                            context,
-                            mobile: 10.0,
-                            tablet: 11.0,
-                            desktop: 12.0,
-                          )),
-                        ),
-                        child: Icon(
-                          feature['icon'] as IconData,
-                          size: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 18.0,
-                            tablet: 20.0,
-                            desktop: 22.0,
-                          ),
-                          color: AppColors.cyan400,
+                          mobile: 14.0,
+                          tablet: 16.0,
+                          desktop: 20.0,
                         ),
                       ),
-                      SizedBox(width: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 12.0,
-                        tablet: 14.0,
-                        desktop: 16.0,
-                      )),
-                      Expanded(
-                        child: Text(
-                          feature['text'] as String,
-                          style: TextStyle(
-                            fontSize: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 14.0,
-                              tablet: 15.0,
-                              desktop: 16.0,
-                            ),
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textWhite,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFF1e4a66).withOpacity(0.4),
+                            const Color(0xFF16384d).withOpacity(0.4),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 12.0,
+                            tablet: 13.0,
+                            desktop: 14.0,
+                          ),
+                        ),
+                        border: Border.all(
+                          color: AppColors.cyan500.withOpacity(0.1),
+                          width: 1,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 12.0,
+                            tablet: 13.0,
+                            desktop: 14.0,
+                          ),
+                        ),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 36.0,
+                                  tablet: 40.0,
+                                  desktop: 44.0,
+                                ),
+                                height: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 36.0,
+                                  tablet: 40.0,
+                                  desktop: 44.0,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.cyan500.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(
+                                    Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 10.0,
+                                      tablet: 11.0,
+                                      desktop: 12.0,
+                                    ),
+                                  ),
+                                ),
+                                child: Icon(
+                                  feature['icon'] as IconData,
+                                  size: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 18.0,
+                                    tablet: 20.0,
+                                    desktop: 22.0,
+                                  ),
+                                  color: AppColors.cyan400,
+                                ),
+                              ),
+                              SizedBox(
+                                width: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 12.0,
+                                  tablet: 14.0,
+                                  desktop: 16.0,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  feature['text'] as String,
+                                  style: TextStyle(
+                                    fontSize: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 14.0,
+                                      tablet: 15.0,
+                                      desktop: 16.0,
+                                    ),
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.textWhite,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            )
-                .animate()
-                .fadeIn(delay: Duration(milliseconds: 100 + (index * 100)), duration: 300.ms)
-                .slideY(begin: 0.2, end: 0, delay: Duration(milliseconds: 100 + (index * 100)), duration: 300.ms),
+                    )
+                    .animate()
+                    .fadeIn(
+                      delay: Duration(milliseconds: 100 + (index * 100)),
+                      duration: 300.ms,
+                    )
+                    .slideY(
+                      begin: 0.2,
+                      end: 0,
+                      delay: Duration(milliseconds: 100 + (index * 100)),
+                      duration: 300.ms,
+                    ),
           );
         }),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 30.0,
-          tablet: 40.0,
-          desktop: 50.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 30.0,
+            tablet: 40.0,
+            desktop: 50.0,
+          ),
+        ),
         Text(
           'Let\'s personalize AVA to work perfectly for you',
           textAlign: TextAlign.center,
@@ -630,12 +676,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 20.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
         Text(
           'Tell me about your work style',
           style: TextStyle(
@@ -649,12 +697,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textWhite,
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 6.0,
-          tablet: 8.0,
-          desktop: 10.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 6.0,
+            tablet: 8.0,
+            desktop: 10.0,
+          ),
+        ),
         Text(
           'This helps AVA understand how you work best',
           style: TextStyle(
@@ -667,12 +717,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textCyan200.withOpacity(0.7),
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 24.0,
-          tablet: 28.0,
-          desktop: 32.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 24.0,
+            tablet: 28.0,
+            desktop: 32.0,
+          ),
+        ),
         // Work Style
         Text(
           'How do you prefer to work? (Select all that apply)',
@@ -687,12 +739,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textWhite,
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 10.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 10.0,
+            tablet: 12.0,
+            desktop: 14.0,
+          ),
+        ),
         Wrap(
           spacing: Responsive.getResponsiveValue(
             context,
@@ -706,22 +760,34 @@ class _OnboardingPageState extends State<OnboardingPage> {
             tablet: 8.0,
             desktop: 10.0,
           ),
-          children: ['Structured', 'Flexible', 'Collaborative', 'Independent', 'Fast-paced', 'Thoughtful']
-              .map((style) => _buildSelectableButton(
-                    context,
-                    isMobile,
-                    style,
-                    _workStyle.contains(style),
-                    () => _toggleSelection(style, _workStyle),
-                  ))
-              .toList(),
+          children:
+              [
+                    'Structured',
+                    'Flexible',
+                    'Collaborative',
+                    'Independent',
+                    'Fast-paced',
+                    'Thoughtful',
+                  ]
+                  .map(
+                    (style) => _buildSelectableButton(
+                      context,
+                      isMobile,
+                      style,
+                      _workStyle.contains(style),
+                      () => _toggleSelection(style, _workStyle),
+                    ),
+                  )
+                  .toList(),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 24.0,
-          tablet: 28.0,
-          desktop: 32.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 24.0,
+            tablet: 28.0,
+            desktop: 32.0,
+          ),
+        ),
         // Communication Style
         Text(
           'Communication preference',
@@ -736,38 +802,44 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textWhite,
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 10.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
-        ...['Concise & direct', 'Detailed & thorough', 'Casual & friendly'].map((style) {
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: Responsive.getResponsiveValue(
-                context,
-                mobile: 6.0,
-                tablet: 8.0,
-                desktop: 10.0,
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 10.0,
+            tablet: 12.0,
+            desktop: 14.0,
+          ),
+        ),
+        ...['Concise & direct', 'Detailed & thorough', 'Casual & friendly'].map(
+          (style) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 6.0,
+                  tablet: 8.0,
+                  desktop: 10.0,
+                ),
               ),
-            ),
-            child: _buildSelectableButton(
-              context,
-              isMobile,
-              style,
-              _communicationStyle == style,
-              () => setState(() => _communicationStyle = style),
-              isFullWidth: true,
-            ),
-          );
-        }),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 24.0,
-          tablet: 28.0,
-          desktop: 32.0,
-        )),
+              child: _buildSelectableButton(
+                context,
+                isMobile,
+                style,
+                _communicationStyle == style,
+                () => setState(() => _communicationStyle = style),
+                isFullWidth: true,
+              ),
+            );
+          },
+        ),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 24.0,
+            tablet: 28.0,
+            desktop: 32.0,
+          ),
+        ),
         // Decision Style
         Text(
           'Decision-making style',
@@ -782,13 +854,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textWhite,
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 10.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
-        ...['Quick decisions', 'Analyze options first', 'Ask for input'].map((style) {
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 10.0,
+            tablet: 12.0,
+            desktop: 14.0,
+          ),
+        ),
+        ...['Quick decisions', 'Analyze options first', 'Ask for input'].map((
+          style,
+        ) {
           return Padding(
             padding: EdgeInsets.only(
               bottom: Responsive.getResponsiveValue(
@@ -808,12 +884,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             ),
           );
         }),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 20.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
       ],
     );
   }
@@ -822,12 +900,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 20.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
         Text(
           'Your daily routine',
           style: TextStyle(
@@ -841,12 +921,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textWhite,
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 6.0,
-          tablet: 8.0,
-          desktop: 10.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 6.0,
+            tablet: 8.0,
+            desktop: 10.0,
+          ),
+        ),
         Text(
           'Help AVA optimize your schedule',
           style: TextStyle(
@@ -859,12 +941,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textCyan200.withOpacity(0.7),
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 24.0,
-          tablet: 28.0,
-          desktop: 32.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 24.0,
+            tablet: 28.0,
+            desktop: 32.0,
+          ),
+        ),
         // Morning/Night Person
         Text(
           'Are you a morning person or night owl?',
@@ -879,12 +963,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textWhite,
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 10.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 10.0,
+            tablet: 12.0,
+            desktop: 14.0,
+          ),
+        ),
         Row(
           children: [
             Expanded(
@@ -896,12 +982,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 () => setState(() => _morningPerson = true),
               ),
             ),
-            SizedBox(width: Responsive.getResponsiveValue(
-              context,
-              mobile: 10.0,
-              tablet: 12.0,
-              desktop: 14.0,
-            )),
+            SizedBox(
+              width: Responsive.getResponsiveValue(
+                context,
+                mobile: 10.0,
+                tablet: 12.0,
+                desktop: 14.0,
+              ),
+            ),
             Expanded(
               child: _buildSelectableButton(
                 context,
@@ -913,12 +1001,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             ),
           ],
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 24.0,
-          tablet: 28.0,
-          desktop: 32.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 24.0,
+            tablet: 28.0,
+            desktop: 32.0,
+          ),
+        ),
         // Peak Hours
         Text(
           'When are you most productive? (Select all)',
@@ -933,12 +1023,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textWhite,
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 10.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 10.0,
+            tablet: 12.0,
+            desktop: 14.0,
+          ),
+        ),
         Wrap(
           spacing: Responsive.getResponsiveValue(
             context,
@@ -952,28 +1044,35 @@ class _OnboardingPageState extends State<OnboardingPage> {
             tablet: 8.0,
             desktop: 10.0,
           ),
-          children: [
-            'Early morning (6-9)',
-            'Morning (9-12)',
-            'Afternoon (12-3)',
-            'Late afternoon (3-6)',
-            'Evening (6-9)',
-            'Night (9-12)',
-          ].map((time) => _buildSelectableButton(
-                context,
-                isMobile,
-                time,
-                _peakHours.contains(time),
-                () => _toggleSelection(time, _peakHours),
-                isSmall: true,
-              )).toList(),
+          children:
+              [
+                    'Early morning (6-9)',
+                    'Morning (9-12)',
+                    'Afternoon (12-3)',
+                    'Late afternoon (3-6)',
+                    'Evening (6-9)',
+                    'Night (9-12)',
+                  ]
+                  .map(
+                    (time) => _buildSelectableButton(
+                      context,
+                      isMobile,
+                      time,
+                      _peakHours.contains(time),
+                      () => _toggleSelection(time, _peakHours),
+                      isSmall: true,
+                    ),
+                  )
+                  .toList(),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 24.0,
-          tablet: 28.0,
-          desktop: 32.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 24.0,
+            tablet: 28.0,
+            desktop: 32.0,
+          ),
+        ),
         // Busy Days
         Text(
           'Typically busy days (Optional)',
@@ -988,12 +1087,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textWhite,
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 10.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 10.0,
+            tablet: 12.0,
+            desktop: 14.0,
+          ),
+        ),
         Wrap(
           spacing: Responsive.getResponsiveValue(
             context,
@@ -1008,33 +1109,57 @@ class _OnboardingPageState extends State<OnboardingPage> {
             desktop: 10.0,
           ),
           children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-              .map((day) => _buildSelectableButton(
-                    context,
-                    isMobile,
-                    day,
-                    _busyDays.contains(day),
-                    () => _toggleSelection(day, _busyDays),
-                  ))
+              .map(
+                (day) => _buildSelectableButton(
+                  context,
+                  isMobile,
+                  day,
+                  _busyDays.contains(day),
+                  () => _toggleSelection(day, _busyDays),
+                ),
+              )
               .toList(),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 20.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildStep4(BuildContext context, bool isMobile) {
     final priorities = [
-      {'emoji': '💼', 'label': 'Work efficiency', 'desc': 'Get more done in less time'},
-      {'emoji': '👨‍👩‍👧', 'label': 'Family time', 'desc': 'Protect personal moments'},
-      {'emoji': '💪', 'label': 'Health & wellness', 'desc': 'Maintain work-life balance'},
-      {'emoji': '📚', 'label': 'Learning & growth', 'desc': 'Time for development'},
+      {
+        'emoji': '💼',
+        'label': 'Work efficiency',
+        'desc': 'Get more done in less time',
+      },
+      {
+        'emoji': '👨‍👩‍👧',
+        'label': 'Family time',
+        'desc': 'Protect personal moments',
+      },
+      {
+        'emoji': '💪',
+        'label': 'Health & wellness',
+        'desc': 'Maintain work-life balance',
+      },
+      {
+        'emoji': '📚',
+        'label': 'Learning & growth',
+        'desc': 'Time for development',
+      },
       {'emoji': '💰', 'label': 'Financial goals', 'desc': 'Budget and savings'},
-      {'emoji': '🎯', 'label': 'Career advancement', 'desc': 'Professional growth'},
+      {
+        'emoji': '🎯',
+        'label': 'Career advancement',
+        'desc': 'Professional growth',
+      },
       {'emoji': '🧘', 'label': 'Mental health', 'desc': 'Stress management'},
       {'emoji': '🤝', 'label': 'Relationships', 'desc': 'Social connections'},
     ];
@@ -1042,12 +1167,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 20.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
         Text(
           'What matters most to you?',
           style: TextStyle(
@@ -1061,12 +1188,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textWhite,
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 6.0,
-          tablet: 8.0,
-          desktop: 10.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 6.0,
+            tablet: 8.0,
+            desktop: 10.0,
+          ),
+        ),
         Text(
           'AVA will respect your priorities when making suggestions',
           style: TextStyle(
@@ -1079,12 +1208,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textCyan200.withOpacity(0.7),
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 24.0,
-          tablet: 28.0,
-          desktop: 32.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 24.0,
+            tablet: 28.0,
+            desktop: 32.0,
+          ),
+        ),
         ...priorities.map((priority) {
           final isSelected = _priorities.contains(priority['label'] as String);
           return Padding(
@@ -1097,15 +1228,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
               ),
             ),
             child: GestureDetector(
-              onTap: () => _toggleSelection(priority['label'] as String, _priorities),
+              onTap: () =>
+                  _toggleSelection(priority['label'] as String, _priorities),
               child: Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 14.0,
-                  tablet: 16.0,
-                  desktop: 20.0,
-                )),
+                padding: EdgeInsets.all(
+                  Responsive.getResponsiveValue(
+                    context,
+                    mobile: 14.0,
+                    tablet: 16.0,
+                    desktop: 20.0,
+                  ),
+                ),
                 decoration: BoxDecoration(
                   gradient: isSelected
                       ? LinearGradient(
@@ -1115,13 +1249,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           ],
                         )
                       : null,
-                  color: isSelected ? null : AppColors.textWhite.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                    context,
-                    mobile: 12.0,
-                    tablet: 13.0,
-                    desktop: 14.0,
-                  )),
+                  color: isSelected
+                      ? null
+                      : AppColors.textWhite.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(
+                    Responsive.getResponsiveValue(
+                      context,
+                      mobile: 12.0,
+                      tablet: 13.0,
+                      desktop: 14.0,
+                    ),
+                  ),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.cyan500.withOpacity(0.5)
@@ -1142,12 +1280,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         ),
                       ),
                     ),
-                    SizedBox(width: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 10.0,
-                      tablet: 12.0,
-                      desktop: 14.0,
-                    )),
+                    SizedBox(
+                      width: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 10.0,
+                        tablet: 12.0,
+                        desktop: 14.0,
+                      ),
+                    ),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1162,15 +1302,19 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                 desktop: 16.0,
                               ),
                               fontWeight: FontWeight.w500,
-                              color: isSelected ? AppColors.textCyan300 : AppColors.textWhite,
+                              color: isSelected
+                                  ? AppColors.textCyan300
+                                  : AppColors.textWhite,
                             ),
                           ),
-                          SizedBox(height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 3.0,
-                            tablet: 4.0,
-                            desktop: 5.0,
-                          )),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 3.0,
+                              tablet: 4.0,
+                              desktop: 5.0,
+                            ),
+                          ),
                           Text(
                             priority['desc'] as String,
                             style: TextStyle(
@@ -1203,12 +1347,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             ),
           );
         }),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 20.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
       ],
     );
   }
@@ -1217,12 +1363,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 20.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
         Text(
           'How AVA learns from you',
           style: TextStyle(
@@ -1236,12 +1384,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textWhite,
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 6.0,
-          tablet: 8.0,
-          desktop: 10.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 6.0,
+            tablet: 8.0,
+            desktop: 10.0,
+          ),
+        ),
         Text(
           'Understanding and consent',
           style: TextStyle(
@@ -1254,19 +1404,23 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textCyan200.withOpacity(0.7),
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 24.0,
-          tablet: 28.0,
-          desktop: 32.0,
-        )),
-        Container(
-          padding: EdgeInsets.all(Responsive.getResponsiveValue(
+        SizedBox(
+          height: Responsive.getResponsiveValue(
             context,
-            mobile: 18.0,
-            tablet: 20.0,
-            desktop: 24.0,
-          )),
+            mobile: 24.0,
+            tablet: 28.0,
+            desktop: 32.0,
+          ),
+        ),
+        Container(
+          padding: EdgeInsets.all(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 18.0,
+              tablet: 20.0,
+              desktop: 24.0,
+            ),
+          ),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -1276,24 +1430,28 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 const Color(0xFF16384d).withOpacity(0.4),
               ],
             ),
-            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-              context,
-              mobile: 16.0,
-              tablet: 18.0,
-              desktop: 20.0,
-            )),
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 16.0,
+                tablet: 18.0,
+                desktop: 20.0,
+              ),
+            ),
             border: Border.all(
               color: AppColors.cyan500.withOpacity(0.1),
               width: 1,
             ),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-              context,
-              mobile: 16.0,
-              tablet: 18.0,
-              desktop: 20.0,
-            )),
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 16.0,
+                tablet: 18.0,
+                desktop: 20.0,
+              ),
+            ),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Column(
@@ -1312,12 +1470,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       color: AppColors.textWhite,
                     ),
                   ),
-                  SizedBox(height: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 10.0,
-                    tablet: 12.0,
-                    desktop: 14.0,
-                  )),
+                  SizedBox(
+                    height: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 10.0,
+                      tablet: 12.0,
+                      desktop: 14.0,
+                    ),
+                  ),
                   ...[
                     'Your work patterns and preferences',
                     'Communication style and decision-making',
@@ -1348,12 +1508,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               color: AppColors.cyan400,
                             ),
                           ),
-                          SizedBox(width: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 6.0,
-                            tablet: 8.0,
-                            desktop: 10.0,
-                          )),
+                          SizedBox(
+                            width: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 6.0,
+                              tablet: 8.0,
+                              desktop: 10.0,
+                            ),
+                          ),
                           Expanded(
                             child: Text(
                               item,
@@ -1377,27 +1539,33 @@ class _OnboardingPageState extends State<OnboardingPage> {
             ),
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
-        Container(
-          padding: EdgeInsets.all(Responsive.getResponsiveValue(
+        SizedBox(
+          height: Responsive.getResponsiveValue(
             context,
-            mobile: 14.0,
-            tablet: 16.0,
-            desktop: 20.0,
-          )),
+            mobile: 20.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
+        Container(
+          padding: EdgeInsets.all(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 20.0,
+            ),
+          ),
           decoration: BoxDecoration(
             color: AppColors.cyan500.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-              context,
-              mobile: 12.0,
-              tablet: 13.0,
-              desktop: 14.0,
-            )),
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 12.0,
+                tablet: 13.0,
+                desktop: 14.0,
+              ),
+            ),
             border: Border.all(
               color: AppColors.cyan500.withOpacity(0.2),
               width: 1,
@@ -1418,12 +1586,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     ),
                     color: AppColors.cyan400,
                   ),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 6.0,
-                    tablet: 8.0,
-                    desktop: 10.0,
-                  )),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 6.0,
+                      tablet: 8.0,
+                      desktop: 10.0,
+                    ),
+                  ),
                   Text(
                     'Your Privacy',
                     style: TextStyle(
@@ -1439,12 +1609,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   ),
                 ],
               ),
-              SizedBox(height: Responsive.getResponsiveValue(
-                context,
-                mobile: 10.0,
-                tablet: 12.0,
-                desktop: 14.0,
-              )),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 10.0,
+                  tablet: 12.0,
+                  desktop: 14.0,
+                ),
+              ),
               ...[
                 '✓ Data stays on your device',
                 '✓ No sharing with third parties',
@@ -1477,22 +1649,26 @@ class _OnboardingPageState extends State<OnboardingPage> {
             ],
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 20.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
         GestureDetector(
           onTap: () => setState(() => _learningConsent = !_learningConsent),
           child: Container(
             width: double.infinity,
-            padding: EdgeInsets.all(Responsive.getResponsiveValue(
-              context,
-              mobile: 14.0,
-              tablet: 16.0,
-              desktop: 20.0,
-            )),
+            padding: EdgeInsets.all(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 14.0,
+                tablet: 16.0,
+                desktop: 20.0,
+              ),
+            ),
             decoration: BoxDecoration(
               gradient: _learningConsent
                   ? LinearGradient(
@@ -1502,13 +1678,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       ],
                     )
                   : null,
-              color: _learningConsent ? null : AppColors.textWhite.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                context,
-                mobile: 12.0,
-                tablet: 13.0,
-                desktop: 14.0,
-              )),
+              color: _learningConsent
+                  ? null
+                  : AppColors.textWhite.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(
+                Responsive.getResponsiveValue(
+                  context,
+                  mobile: 12.0,
+                  tablet: 13.0,
+                  desktop: 14.0,
+                ),
+              ),
               border: Border.all(
                 color: _learningConsent
                     ? AppColors.cyan500.withOpacity(0.5)
@@ -1532,13 +1712,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     desktop: 26.0,
                   ),
                   decoration: BoxDecoration(
-                    color: _learningConsent ? AppColors.cyan500 : Colors.transparent,
-                    borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                      context,
-                      mobile: 6.0,
-                      tablet: 7.0,
-                      desktop: 8.0,
-                    )),
+                    color: _learningConsent
+                        ? AppColors.cyan500
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(
+                      Responsive.getResponsiveValue(
+                        context,
+                        mobile: 6.0,
+                        tablet: 7.0,
+                        desktop: 8.0,
+                      ),
+                    ),
                     border: Border.all(
                       color: _learningConsent
                           ? AppColors.cyan500
@@ -1559,12 +1743,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         )
                       : null,
                 ),
-                SizedBox(width: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 10.0,
-                  tablet: 12.0,
-                  desktop: 14.0,
-                )),
+                SizedBox(
+                  width: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 10.0,
+                    tablet: 12.0,
+                    desktop: 14.0,
+                  ),
+                ),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1579,15 +1765,19 @@ class _OnboardingPageState extends State<OnboardingPage> {
                             desktop: 16.0,
                           ),
                           fontWeight: FontWeight.w500,
-                          color: _learningConsent ? AppColors.textCyan300 : AppColors.textWhite,
+                          color: _learningConsent
+                              ? AppColors.textCyan300
+                              : AppColors.textWhite,
                         ),
                       ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 3.0,
-                        tablet: 4.0,
-                        desktop: 5.0,
-                      )),
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 3.0,
+                          tablet: 4.0,
+                          desktop: 5.0,
+                        ),
+                      ),
                       Text(
                         'AVA can learn from my behavior to assist me better',
                         style: TextStyle(
@@ -1607,12 +1797,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             ),
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 24.0,
-          tablet: 28.0,
-          desktop: 32.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 24.0,
+            tablet: 28.0,
+            desktop: 32.0,
+          ),
+        ),
         // Automation Level
         Text(
           'How much autonomy should AVA have?',
@@ -1627,16 +1819,30 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textWhite,
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 10.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 10.0,
+            tablet: 12.0,
+            desktop: 14.0,
+          ),
+        ),
         ...[
-          {'value': 'observe', 'label': 'Observe only', 'desc': 'Just watch and learn'},
-          {'value': 'suggest', 'label': 'Make suggestions', 'desc': 'Recommend actions (Default)'},
-          {'value': 'act', 'label': 'Act with confirmation', 'desc': 'Take action after approval'},
+          {
+            'value': 'observe',
+            'label': 'Observe only',
+            'desc': 'Just watch and learn',
+          },
+          {
+            'value': 'suggest',
+            'label': 'Make suggestions',
+            'desc': 'Recommend actions (Default)',
+          },
+          {
+            'value': 'act',
+            'label': 'Act with confirmation',
+            'desc': 'Take action after approval',
+          },
         ].map((level) {
           final isSelected = _automationLevel == level['value'];
           return Padding(
@@ -1649,15 +1855,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
               ),
             ),
             child: GestureDetector(
-              onTap: () => setState(() => _automationLevel = level['value'] as String),
+              onTap: () =>
+                  setState(() => _automationLevel = level['value'] as String),
               child: Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 11.0,
-                  tablet: 12.0,
-                  desktop: 14.0,
-                )),
+                padding: EdgeInsets.all(
+                  Responsive.getResponsiveValue(
+                    context,
+                    mobile: 11.0,
+                    tablet: 12.0,
+                    desktop: 14.0,
+                  ),
+                ),
                 decoration: BoxDecoration(
                   gradient: isSelected
                       ? LinearGradient(
@@ -1667,13 +1876,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           ],
                         )
                       : null,
-                  color: isSelected ? null : AppColors.textWhite.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                    context,
-                    mobile: 12.0,
-                    tablet: 13.0,
-                    desktop: 14.0,
-                  )),
+                  color: isSelected
+                      ? null
+                      : AppColors.textWhite.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(
+                    Responsive.getResponsiveValue(
+                      context,
+                      mobile: 12.0,
+                      tablet: 13.0,
+                      desktop: 14.0,
+                    ),
+                  ),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.cyan500.withOpacity(0.5)
@@ -1697,7 +1910,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         desktop: 20.0,
                       ),
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.cyan500 : Colors.transparent,
+                        color: isSelected
+                            ? AppColors.cyan500
+                            : Colors.transparent,
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: isSelected
@@ -1707,12 +1922,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         ),
                       ),
                     ),
-                    SizedBox(width: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 10.0,
-                      tablet: 12.0,
-                      desktop: 14.0,
-                    )),
+                    SizedBox(
+                      width: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 10.0,
+                        tablet: 12.0,
+                        desktop: 14.0,
+                      ),
+                    ),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1727,15 +1944,19 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                 desktop: 15.0,
                               ),
                               fontWeight: FontWeight.w500,
-                              color: isSelected ? AppColors.textCyan300 : AppColors.textWhite,
+                              color: isSelected
+                                  ? AppColors.textCyan300
+                                  : AppColors.textWhite,
                             ),
                           ),
-                          SizedBox(height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 3.0,
-                            tablet: 4.0,
-                            desktop: 5.0,
-                          )),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 3.0,
+                              tablet: 4.0,
+                              desktop: 5.0,
+                            ),
+                          ),
                           Text(
                             level['desc'] as String,
                             style: TextStyle(
@@ -1757,34 +1978,63 @@ class _OnboardingPageState extends State<OnboardingPage> {
             ),
           );
         }),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 20.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildStep6(BuildContext context, bool isMobile) {
     final services = [
-      {'emoji': '📅', 'name': 'Google Calendar', 'desc': 'Manage your schedule', 'status': 'Ready'},
-      {'emoji': '📧', 'name': 'Gmail', 'desc': 'Email management', 'status': 'Ready'},
-      {'emoji': '🚗', 'name': 'Uber', 'desc': 'Book rides', 'status': 'Optional'},
-      {'emoji': '💬', 'name': 'Slack', 'desc': 'Team communication', 'status': 'Optional'},
-      {'emoji': '🍕', 'name': 'Food Delivery', 'desc': 'Order meals', 'status': 'Optional'},
+      {
+        'emoji': '📅',
+        'name': 'Google Calendar',
+        'desc': 'Manage your schedule',
+        'status': 'Ready',
+      },
+      {
+        'emoji': '📧',
+        'name': 'Gmail',
+        'desc': 'Email management',
+        'status': 'Ready',
+      },
+      {
+        'emoji': '🚗',
+        'name': 'Uber',
+        'desc': 'Book rides',
+        'status': 'Optional',
+      },
+      {
+        'emoji': '💬',
+        'name': 'Slack',
+        'desc': 'Team communication',
+        'status': 'Optional',
+      },
+      {
+        'emoji': '🍕',
+        'name': 'Food Delivery',
+        'desc': 'Order meals',
+        'status': 'Optional',
+      },
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 20.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
         Text(
           'Connect your services',
           style: TextStyle(
@@ -1798,12 +2048,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textWhite,
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 6.0,
-          tablet: 8.0,
-          desktop: 10.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 6.0,
+            tablet: 8.0,
+            desktop: 10.0,
+          ),
+        ),
         Text(
           'Enable AVA to help with your daily tasks',
           style: TextStyle(
@@ -1816,12 +2068,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             color: AppColors.textCyan200.withOpacity(0.7),
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 24.0,
-          tablet: 28.0,
-          desktop: 32.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 24.0,
+            tablet: 28.0,
+            desktop: 32.0,
+          ),
+        ),
         ...services.asMap().entries.map((entry) {
           final index = entry.key;
           final service = entry.value;
@@ -1835,171 +2089,201 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 desktop: 16.0,
               ),
             ),
-            child: Container(
-              padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                context,
-                mobile: 14.0,
-                tablet: 16.0,
-                desktop: 20.0,
-              )),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF1e4a66).withOpacity(0.4),
-                    const Color(0xFF16384d).withOpacity(0.4),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 12.0,
-                  tablet: 13.0,
-                  desktop: 14.0,
-                )),
-                border: Border.all(
-                  color: AppColors.cyan500.withOpacity(0.1),
-                  width: 1,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 12.0,
-                  tablet: 13.0,
-                  desktop: 14.0,
-                )),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            service['emoji'] as String,
-                            style: TextStyle(
-                              fontSize: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 24.0,
-                                tablet: 26.0,
-                                desktop: 28.0,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: Responsive.getResponsiveValue(
+            child:
+                Container(
+                      padding: EdgeInsets.all(
+                        Responsive.getResponsiveValue(
+                          context,
+                          mobile: 14.0,
+                          tablet: 16.0,
+                          desktop: 20.0,
+                        ),
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFF1e4a66).withOpacity(0.4),
+                            const Color(0xFF16384d).withOpacity(0.4),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
                             context,
-                            mobile: 10.0,
-                            tablet: 12.0,
+                            mobile: 12.0,
+                            tablet: 13.0,
                             desktop: 14.0,
-                          )),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          ),
+                        ),
+                        border: Border.all(
+                          color: AppColors.cyan500.withOpacity(0.1),
+                          width: 1,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 12.0,
+                            tablet: 13.0,
+                            desktop: 14.0,
+                          ),
+                        ),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                service['name'] as String,
-                                style: TextStyle(
-                                  fontSize: Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 14.0,
-                                    tablet: 15.0,
-                                    desktop: 16.0,
+                              Row(
+                                children: [
+                                  Text(
+                                    service['emoji'] as String,
+                                    style: TextStyle(
+                                      fontSize: Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 24.0,
+                                        tablet: 26.0,
+                                        desktop: 28.0,
+                                      ),
+                                    ),
                                   ),
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.textWhite,
-                                ),
+                                  SizedBox(
+                                    width: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 10.0,
+                                      tablet: 12.0,
+                                      desktop: 14.0,
+                                    ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        service['name'] as String,
+                                        style: TextStyle(
+                                          fontSize:
+                                              Responsive.getResponsiveValue(
+                                                context,
+                                                mobile: 14.0,
+                                                tablet: 15.0,
+                                                desktop: 16.0,
+                                              ),
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.textWhite,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        height: Responsive.getResponsiveValue(
+                                          context,
+                                          mobile: 3.0,
+                                          tablet: 4.0,
+                                          desktop: 5.0,
+                                        ),
+                                      ),
+                                      Text(
+                                        service['desc'] as String,
+                                        style: TextStyle(
+                                          fontSize:
+                                              Responsive.getResponsiveValue(
+                                                context,
+                                                mobile: 11.0,
+                                                tablet: 12.0,
+                                                desktop: 13.0,
+                                              ),
+                                          color: AppColors.cyan400.withOpacity(
+                                            0.6,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                              SizedBox(height: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 3.0,
-                                tablet: 4.0,
-                                desktop: 5.0,
-                              )),
-                              Text(
-                                service['desc'] as String,
-                                style: TextStyle(
-                                  fontSize: Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 11.0,
-                                    tablet: 12.0,
-                                    desktop: 13.0,
+                              GestureDetector(
+                                onTap: () {
+                                  // Handle connect/skip
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 14.0,
+                                      tablet: 16.0,
+                                      desktop: 18.0,
+                                    ),
+                                    vertical: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 7.0,
+                                      tablet: 8.0,
+                                      desktop: 9.0,
+                                    ),
                                   ),
-                                  color: AppColors.cyan400.withOpacity(0.6),
+                                  decoration: BoxDecoration(
+                                    color: isReady
+                                        ? AppColors.cyan500.withOpacity(0.2)
+                                        : AppColors.textWhite.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(
+                                      Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 8.0,
+                                        tablet: 9.0,
+                                        desktop: 10.0,
+                                      ),
+                                    ),
+                                    border: Border.all(
+                                      color: isReady
+                                          ? AppColors.cyan500.withOpacity(0.3)
+                                          : AppColors.textWhite.withOpacity(
+                                              0.1,
+                                            ),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    isReady ? 'Connect' : 'Skip',
+                                    style: TextStyle(
+                                      fontSize: Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 12.0,
+                                        tablet: 13.0,
+                                        desktop: 14.0,
+                                      ),
+                                      fontWeight: FontWeight.w500,
+                                      color: isReady
+                                          ? AppColors.cyan400
+                                          : AppColors.cyan400.withOpacity(0.7),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          // Handle connect/skip
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 14.0,
-                              tablet: 16.0,
-                              desktop: 18.0,
-                            ),
-                            vertical: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 7.0,
-                              tablet: 8.0,
-                              desktop: 9.0,
-                            ),
-                          ),
-                          decoration: BoxDecoration(
-                            color: isReady
-                                ? AppColors.cyan500.withOpacity(0.2)
-                                : AppColors.textWhite.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                              context,
-                              mobile: 8.0,
-                              tablet: 9.0,
-                              desktop: 10.0,
-                            )),
-                            border: Border.all(
-                              color: isReady
-                                  ? AppColors.cyan500.withOpacity(0.3)
-                                  : AppColors.textWhite.withOpacity(0.1),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            isReady ? 'Connect' : 'Skip',
-                            style: TextStyle(
-                              fontSize: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 12.0,
-                                tablet: 13.0,
-                                desktop: 14.0,
-                              ),
-                              fontWeight: FontWeight.w500,
-                              color: isReady
-                                  ? AppColors.cyan400
-                                  : AppColors.cyan400.withOpacity(0.7),
-                            ),
-                          ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            )
-                .animate()
-                .fadeIn(delay: Duration(milliseconds: index * 100), duration: 300.ms)
-                .slideY(begin: 0.2, end: 0, delay: Duration(milliseconds: index * 100), duration: 300.ms),
+                    )
+                    .animate()
+                    .fadeIn(
+                      delay: Duration(milliseconds: index * 100),
+                      duration: 300.ms,
+                    )
+                    .slideY(
+                      begin: 0.2,
+                      end: 0,
+                      delay: Duration(milliseconds: index * 100),
+                      duration: 300.ms,
+                    ),
           );
         }),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 20.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
         Text(
           'You can connect more services later in Settings',
           textAlign: TextAlign.center,
@@ -2032,8 +2316,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
         width: isFullWidth
             ? double.infinity
             : isSmall
-                ? null
-                : null,
+            ? null
+            : null,
         padding: EdgeInsets.symmetric(
           horizontal: Responsive.getResponsiveValue(
             context,
@@ -2058,12 +2342,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 )
               : null,
           color: isSelected ? null : AppColors.textWhite.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-            context,
-            mobile: 12.0,
-            tablet: 13.0,
-            desktop: 14.0,
-          )),
+          borderRadius: BorderRadius.circular(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 12.0,
+              tablet: 13.0,
+              desktop: 14.0,
+            ),
+          ),
           border: Border.all(
             color: isSelected
                 ? AppColors.cyan500.withOpacity(0.5)
@@ -2082,7 +2368,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
               desktop: isSmall ? 13.0 : 14.0,
             ),
             fontWeight: FontWeight.w500,
-            color: isSelected ? AppColors.textCyan300 : AppColors.cyan400.withOpacity(0.7),
+            color: isSelected
+                ? AppColors.textCyan300
+                : AppColors.cyan400.withOpacity(0.7),
           ),
         ),
       ),

@@ -18,6 +18,7 @@
         "google_sign_in_web",
         "http",
         "image_picker",
+        "lottie",
         "lucide_icons",
         "openai_tts",
         "shared_preferences",
@@ -900,6 +901,35 @@
       "dependencies": [
         "collection",
         "meta"
+      ]
+    },
+    {
+      "name": "lottie",
+      "version": "3.3.2",
+      "dependencies": [
+        "archive",
+        "flutter",
+        "http",
+        "path",
+        "vector_math"
+      ]
+    },
+    {
+      "name": "archive",
+      "version": "4.0.7",
+      "dependencies": [
+        "crypto",
+        "path",
+        "posix"
+      ]
+    },
+    {
+      "name": "posix",
+      "version": "6.0.3",
+      "dependencies": [
+        "ffi",
+        "meta",
+        "path"
       ]
     }
   ],

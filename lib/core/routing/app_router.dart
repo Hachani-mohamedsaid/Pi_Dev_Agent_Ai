@@ -25,6 +25,7 @@ import '../../presentation/pages/travel_page.dart';
 import '../../presentation/pages/actions_hub_page.dart';
 import '../../presentation/pages/automation_rules_page.dart';
 import '../../presentation/pages/onboarding_page.dart';
+import '../../presentation/pages/intro/pre_onboarding_page.dart';
 import '../../presentation/pages/insights_page.dart';
 import '../../presentation/pages/connected_services_page.dart';
 import '../../presentation/pages/decision_support_page.dart';
@@ -90,6 +91,14 @@ final appRouter = GoRouter(
         context: context,
         state: state,
         child: const OnboardingPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/intro',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const PreOnboardingPage(),
       ),
     ),
     GoRoute(
@@ -339,11 +348,7 @@ class _PlaceholderPage extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
+            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
           ),
         ),
         child: SafeArea(
@@ -362,10 +367,7 @@ class _PlaceholderPage extends StatelessWidget {
                 const SizedBox(height: 16),
                 const Text(
                   'Coming soon...',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFFA5F3FC),
-                  ),
+                  style: TextStyle(fontSize: 16, color: Color(0xFFA5F3FC)),
                 ),
               ],
             ),
