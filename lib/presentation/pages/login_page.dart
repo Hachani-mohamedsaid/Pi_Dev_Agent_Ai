@@ -85,6 +85,19 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  /// Navigate after successful auth: onboarding (first open) or home.
+  Future<void> _navigateAfterAuth() async {
+    if (!mounted) return;
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingComplete = prefs.getBool('ava_onboarding_complete') ?? false;
+    if (!mounted) return;
+    if (onboardingComplete) {
+      context.go('/home');
+    } else {
+      context.go('/onboarding');
+    }
+  }
+
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -104,7 +117,7 @@ class _LoginPageState extends State<LoginPage> {
         // Small delay to ensure state is updated
         await Future.delayed(const Duration(milliseconds: 100));
         if (mounted) {
-          context.go('/home');
+          await _navigateAfterAuth();
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -129,8 +142,8 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _handleSocialLogin(SocialProvider provider) async {
     final success = await widget.controller.loginWithSocial(provider);
     if (success && mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) context.go('/home');
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (mounted) await _navigateAfterAuth();
       });
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -146,8 +159,8 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _onGoogleIdToken(String idToken) async {
     final success = await widget.controller.loginWithGoogleIdToken(idToken);
     if (success && mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) context.go('/home');
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (mounted) await _navigateAfterAuth();
       });
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

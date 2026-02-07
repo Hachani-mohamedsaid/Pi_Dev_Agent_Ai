@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pi_dev_agentia/presentation/widgets/google_sign_in_button_web.dart'
     if (dart.library.io) 'package:pi_dev_agentia/presentation/widgets/google_sign_in_button_stub.dart';
 import '../../core/theme/app_colors.dart';
@@ -44,6 +45,19 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
+  /// Navigate after successful auth: onboarding (first open) or home.
+  Future<void> _navigateAfterAuth() async {
+    if (!mounted) return;
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingComplete = prefs.getBool('ava_onboarding_complete') ?? false;
+    if (!mounted) return;
+    if (onboardingComplete) {
+      context.go('/home');
+    } else {
+      context.go('/onboarding');
+    }
+  }
+
   Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
       final success = await widget.controller.register(
@@ -52,7 +66,7 @@ class _RegisterPageState extends State<RegisterPage> {
         _passwordController.text,
       );
       if (success && mounted) {
-        context.go('/home');
+        await _navigateAfterAuth();
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -67,8 +81,8 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _handleSocialRegister(SocialProvider provider) async {
     final success = await widget.controller.loginWithSocial(provider);
     if (success && mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) context.go('/home');
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (mounted) await _navigateAfterAuth();
       });
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -84,8 +98,8 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _onGoogleIdToken(String idToken) async {
     final success = await widget.controller.loginWithGoogleIdToken(idToken);
     if (success && mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) context.go('/home');
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (mounted) await _navigateAfterAuth();
       });
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
