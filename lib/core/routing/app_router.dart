@@ -30,6 +30,7 @@ import '../../presentation/pages/insights_page.dart';
 import '../../presentation/pages/connected_services_page.dart';
 import '../../presentation/pages/decision_support_page.dart';
 import '../../presentation/pages/goals_page.dart';
+import '../../presentation/pages/meeting_decision_page.dart';
 import '../../injection_container.dart';
 
 // Custom page transition - fade and scale from center
@@ -74,7 +75,8 @@ String? _redirectTrailingSpace(BuildContext context, GoRouterState state) {
 }
 
 final appRouter = GoRouter(
-  initialLocation: '/splash',
+  initialLocation:
+      '/meeting-decision', // TODO: Change back to '/splash' after testing
   redirect: _redirectTrailingSpace,
   routes: [
     GoRoute(
@@ -329,6 +331,18 @@ final appRouter = GoRouter(
         context: context,
         state: state,
         child: const GoalsPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/meeting-decision',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: MeetingDecisionPage(
+          controller: InjectionContainer.instance
+              .buildMeetingDecisionController(),
+          token: '', // Token will be loaded from SharedPreferences
+        ),
       ),
     ),
   ],

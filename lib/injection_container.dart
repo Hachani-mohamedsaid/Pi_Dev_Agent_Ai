@@ -27,6 +27,14 @@ import 'domain/usecases/request_email_verification_usecase.dart';
 import 'domain/usecases/confirm_email_verification_usecase.dart';
 import 'presentation/state/auth_controller.dart';
 
+// Meeting Decision imports
+import 'package:http/http.dart' as http;
+import 'data/datasources/meeting_decision_remote_data_source.dart';
+import 'data/repositories/meeting_decision_repository_impl.dart';
+import 'domain/repositories/meeting_decision_repository.dart';
+import 'domain/usecases/submit_meeting_decision_usecase.dart';
+import 'presentation/state/meeting_decision_controller.dart';
+
 /// Very small manual DI container (no external packages).
 class InjectionContainer {
   InjectionContainer._();
@@ -118,5 +126,23 @@ class InjectionContainer {
       confirmEmailVerificationUseCase: _confirmEmailVerificationUseCase,
     );
     return _authController!;
+  }
+
+  // Meeting Decision dependencies
+  late final http.Client _httpClient = http.Client();
+
+  late final MeetingDecisionRemoteDataSource _meetingDecisionRemoteDataSource =
+      HttpMeetingDecisionRemoteDataSource(httpClient: _httpClient);
+
+  late final MeetingDecisionRepository _meetingDecisionRepository =
+      MeetingDecisionRepositoryImpl(_meetingDecisionRemoteDataSource);
+
+  late final SubmitMeetingDecisionUseCase _submitMeetingDecisionUseCase =
+      SubmitMeetingDecisionUseCase(_meetingDecisionRepository);
+
+  MeetingDecisionController buildMeetingDecisionController() {
+    return MeetingDecisionController(
+      submitMeetingDecisionUseCase: _submitMeetingDecisionUseCase,
+    );
   }
 }
