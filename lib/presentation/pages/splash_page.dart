@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/services/pre_onboarding_storage.dart';
+import '../../core/l10n/app_strings.dart';
 import '../widgets/logo_widget.dart';
 import '../../injection_container.dart';
 
@@ -123,7 +124,7 @@ class _SplashPageState extends State<SplashPage> {
                   SizedBox(height: isMobile ? 24 : 32),
                   // App Name
                   Text(
-                        'Ava',
+                        AppStrings.tr(context, 'ava'),
                         style: TextStyle(
                           fontSize: isMobile ? 32 : 40,
                           fontWeight: FontWeight.bold,
@@ -141,7 +142,7 @@ class _SplashPageState extends State<SplashPage> {
                   SizedBox(height: isMobile ? 8 : 12),
                   // Subtitle
                   Text(
-                        'Your Personal AI Assistant',
+                        AppStrings.tr(context, 'yourPersonalAIAssistant'),
                         style: TextStyle(
                           fontSize: isMobile ? 16 : 18,
                           color: AppColors.textCyan200.withOpacity(0.8),

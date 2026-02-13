@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pi_dev_agentia/core/l10n/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../state/auth_controller.dart';
@@ -27,7 +28,7 @@ class HomePage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Welcome!',
+                  AppStrings.tr(context, 'welcome'),
                   style: TextStyle(
                     fontSize: isMobile ? 32 : 40,
                     fontWeight: FontWeight.bold,

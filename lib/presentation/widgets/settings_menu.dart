@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/l10n/app_strings.dart';
 import '../state/auth_controller.dart';
 
 class SettingsMenu extends StatefulWidget {
@@ -256,7 +257,7 @@ class _SettingsMenuContent extends StatelessWidget {
                 child: Row(
                   children: [
                     Text(
-                      'SETTINGS',
+                      AppStrings.tr(context, 'settings'),
                       style: TextStyle(
                         fontSize: isMobile ? 10 : 11,
                         fontWeight: FontWeight.w600,
@@ -276,7 +277,7 @@ class _SettingsMenuContent extends StatelessWidget {
               // Dark Mode Toggle
               _SettingsMenuItem(
                 icon: darkMode ? Icons.dark_mode : Icons.light_mode,
-                label: 'Dark Mode',
+                label: AppStrings.tr(context, 'darkMode'),
                 isMobile: isMobile,
                 isToggle: true,
                 toggleValue: darkMode,
@@ -292,7 +293,7 @@ class _SettingsMenuContent extends StatelessWidget {
               // Edit Profile
               _SettingsMenuItem(
                 icon: Icons.person,
-                label: 'Edit Profile',
+                label: AppStrings.tr(context, 'editProfile'),
                 isMobile: isMobile,
                 onTap: onEditProfile,
               ),
@@ -300,7 +301,7 @@ class _SettingsMenuContent extends StatelessWidget {
               // Change Language
               _SettingsMenuItem(
                 icon: Icons.language,
-                label: 'Change Language',
+                label: AppStrings.tr(context, 'changeLanguage'),
                 isMobile: isMobile,
                 onTap: onLanguageChange,
               ),
@@ -308,7 +309,7 @@ class _SettingsMenuContent extends StatelessWidget {
               // Notifications
               _SettingsMenuItem(
                 icon: Icons.notifications,
-                label: 'Notifications',
+                label: AppStrings.tr(context, 'notifications'),
                 isMobile: isMobile,
                 onTap: onNotifications,
               ),
@@ -316,7 +317,7 @@ class _SettingsMenuContent extends StatelessWidget {
               // Privacy & Security
               _SettingsMenuItem(
                 icon: Icons.security,
-                label: 'Privacy & Security',
+                label: AppStrings.tr(context, 'privacySecurity'),
                 isMobile: isMobile,
                 onTap: onPrivacySecurity,
               ),
@@ -330,7 +331,7 @@ class _SettingsMenuContent extends StatelessWidget {
               // Help & Support
               _SettingsMenuItem(
                 icon: Icons.help_outline,
-                label: 'Help & Support',
+                label: AppStrings.tr(context, 'helpSupport'),
                 isMobile: isMobile,
                 onTap: () {},
               ),
@@ -344,7 +345,7 @@ class _SettingsMenuContent extends StatelessWidget {
               // Logout
               _SettingsMenuItem(
                 icon: Icons.logout,
-                label: 'Log Out',
+                label: AppStrings.tr(context, 'logOut'),
                 isMobile: isMobile,
                 isDestructive: true,
                 onTap: onLogout,

@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../widgets/navigation_bar.dart';
@@ -35,44 +36,48 @@ class AutomationRulesPage extends StatefulWidget {
 }
 
 class _AutomationRulesPageState extends State<AutomationRulesPage> {
-  final List<AutomationRule> _rules = [
-    AutomationRule(
-      id: 1,
-      name: 'Decline late meetings',
-      trigger: 'Meeting after 6 PM',
-      action: 'Auto-decline with template response',
-      category: 'Calendar',
-      enabled: true,
-      icon: LucideIcons.calendar,
-    ),
-    AutomationRule(
-      id: 2,
-      name: 'Auto-reply newsletters',
-      trigger: 'Email category: Newsletter',
-      action: 'Archive and mark as read',
-      category: 'Email',
-      enabled: true,
-      icon: LucideIcons.mail,
-    ),
-    AutomationRule(
-      id: 3,
-      name: 'Uber budget limit',
-      trigger: 'Ride cost > \$50',
-      action: 'Request confirmation before booking',
-      category: 'Travel',
-      enabled: true,
-      icon: LucideIcons.dollarSign,
-    ),
-    AutomationRule(
-      id: 4,
-      name: 'Morning meeting buffer',
-      trigger: 'Meeting before 10 AM',
-      action: 'Suggest reschedule to 10 AM or later',
-      category: 'Calendar',
-      enabled: false,
-      icon: LucideIcons.calendar,
-    ),
-  ];
+  List<bool> _rulesEnabled = [true, true, true, false];
+
+  List<AutomationRule> _getRules(BuildContext context) {
+    return [
+      AutomationRule(
+        id: 1,
+        name: AppStrings.tr(context, 'declineLateMeetings'),
+        trigger: AppStrings.tr(context, 'meetingAfter6PM'),
+        action: AppStrings.tr(context, 'autoDeclineTemplate'),
+        category: AppStrings.tr(context, 'calendar'),
+        enabled: _rulesEnabled[0],
+        icon: LucideIcons.calendar,
+      ),
+      AutomationRule(
+        id: 2,
+        name: AppStrings.tr(context, 'autoReplyNewsletters'),
+        trigger: AppStrings.tr(context, 'emailCategoryNewsletter'),
+        action: AppStrings.tr(context, 'archiveMarkRead'),
+        category: AppStrings.tr(context, 'emailCategory'),
+        enabled: _rulesEnabled[1],
+        icon: LucideIcons.mail,
+      ),
+      AutomationRule(
+        id: 3,
+        name: AppStrings.tr(context, 'uberBudgetLimit'),
+        trigger: AppStrings.tr(context, 'rideCostOver50'),
+        action: AppStrings.tr(context, 'requestConfirmation'),
+        category: AppStrings.tr(context, 'travel'),
+        enabled: _rulesEnabled[2],
+        icon: LucideIcons.dollarSign,
+      ),
+      AutomationRule(
+        id: 4,
+        name: AppStrings.tr(context, 'morningMeetingBuffer'),
+        trigger: AppStrings.tr(context, 'meetingBefore10AM'),
+        action: AppStrings.tr(context, 'suggestReschedule10AM'),
+        category: AppStrings.tr(context, 'calendar'),
+        enabled: _rulesEnabled[3],
+        icon: LucideIcons.calendar,
+      ),
+    ];
+  }
 
   Map<String, dynamic> _getCategoryColors(String category) {
     switch (category) {
@@ -117,17 +122,8 @@ class _AutomationRulesPageState extends State<AutomationRulesPage> {
 
   void _toggleRule(int id) {
     setState(() {
-      final index = _rules.indexWhere((r) => r.id == id);
-      if (index != -1) {
-        _rules[index] = AutomationRule(
-          id: _rules[index].id,
-          name: _rules[index].name,
-          trigger: _rules[index].trigger,
-          action: _rules[index].action,
-          category: _rules[index].category,
-          enabled: !_rules[index].enabled,
-          icon: _rules[index].icon,
-        );
+      if (id >= 1 && id <= _rulesEnabled.length) {
+        _rulesEnabled[id - 1] = !_rulesEnabled[id - 1];
       }
     });
   }
@@ -251,7 +247,7 @@ class _AutomationRulesPageState extends State<AutomationRulesPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Automation Rules',
+          AppStrings.tr(context, 'automationRules'),
           style: TextStyle(
             fontSize: Responsive.getResponsiveValue(
               context,
@@ -270,7 +266,7 @@ class _AutomationRulesPageState extends State<AutomationRulesPage> {
           desktop: 10.0,
         )),
         Text(
-          'Teach AVA your preferences and boundaries',
+          AppStrings.tr(context, 'teachAvaPreferences'),
           style: TextStyle(
             fontSize: Responsive.getResponsiveValue(
               context,
@@ -338,7 +334,7 @@ class _AutomationRulesPageState extends State<AutomationRulesPage> {
               desktop: 10.0,
             )),
             Text(
-              'Create New Rule',
+              AppStrings.tr(context, 'createNewRule'),
               style: TextStyle(
                 fontSize: Responsive.getResponsiveValue(
                   context,
@@ -357,8 +353,9 @@ class _AutomationRulesPageState extends State<AutomationRulesPage> {
   }
 
   Widget _buildRulesList(BuildContext context, bool isMobile) {
+    final rules = _getRules(context);
     return Column(
-      children: _rules.asMap().entries.map((entry) {
+      children: rules.asMap().entries.map((entry) {
         final index = entry.key;
         final rule = entry.value;
         return Padding(
@@ -639,7 +636,7 @@ class _AutomationRulesPageState extends State<AutomationRulesPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'When:',
+                            AppStrings.tr(context, 'when'),
                             style: TextStyle(
                               fontSize: Responsive.getResponsiveValue(
                                 context,
@@ -683,7 +680,7 @@ class _AutomationRulesPageState extends State<AutomationRulesPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Then:',
+                            AppStrings.tr(context, 'then'),
                             style: TextStyle(
                               fontSize: Responsive.getResponsiveValue(
                                 context,
@@ -773,7 +770,7 @@ class _AutomationRulesPageState extends State<AutomationRulesPage> {
                                       desktop: 6.0,
                                     )),
                                     Text(
-                                      'Edit',
+                                      AppStrings.tr(context, 'edit'),
                                       style: TextStyle(
                                         fontSize: Responsive.getResponsiveValue(
                                           context,

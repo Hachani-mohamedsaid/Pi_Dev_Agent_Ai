@@ -14,6 +14,11 @@ class AppColors {
   static const Color cyan500 = Color(0xFF06B6D4);
   static const Color blue500 = Color(0xFF3B82F6);
   static const Color cyan200 = Color(0xFFA5F3FC);
+  
+  // Status colors
+  static const Color statusPending = Color(0xFFF59E0B); // Orange/Amber for "En attente"
+  static const Color statusAccepted = Color(0xFF10B981); // Green for "Acceptées"
+  static const Color statusRejected = Color(0xFFEF4444); // Red for "Rejetées"
 
   // Text colors
   static const Color textWhite = Colors.white;

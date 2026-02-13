@@ -27,6 +27,10 @@ import 'domain/usecases/request_email_verification_usecase.dart';
 import 'domain/usecases/confirm_email_verification_usecase.dart';
 import 'presentation/state/auth_controller.dart';
 
+// N8N Chat
+import 'data/services/n8n_chat_service.dart';
+import 'presentation/state/chat_provider.dart';
+
 /// Very small manual DI container (no external packages).
 class InjectionContainer {
   InjectionContainer._();
@@ -119,4 +123,21 @@ class InjectionContainer {
     );
     return _authController!;
   }
+
+  // N8N Chat dependencies
+  late final N8nChatService _n8nChatService = N8nChatService(
+    webhookUrl: 'https://n8n-production-1e13.up.railway.app/webhook/2429d011-049b-424b-9708-bf415bc682e1',
+  );
+
+  ChatProvider? _chatProvider;
+
+  /// Build ChatProvider for n8n webhook integration.
+  /// Singleton to maintain conversation history across navigation.
+  ChatProvider buildChatProvider() {
+    _chatProvider ??= ChatProvider(chatService: _n8nChatService);
+    return _chatProvider!;
+  }
+
+  /// Get the n8n chat service directly if needed
+  N8nChatService getN8nChatService() => _n8nChatService;
 }

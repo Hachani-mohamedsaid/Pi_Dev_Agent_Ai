@@ -17,6 +17,7 @@ import '../widgets/logo_widget.dart';
 import '../widgets/social_button.dart';
 import '../widgets/apple_icon.dart';
 import '../state/auth_controller.dart';
+import '../../core/l10n/app_strings.dart';
 
 class RegisterPage extends StatefulWidget {
   final AuthController controller;
@@ -232,7 +233,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Title
                                     Text(
-                                          'Create Account',
+                                          AppStrings.tr(context, 'createAccount'),
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
                                             fontSize: isMobile ? 28 : 32,
@@ -251,7 +252,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     SizedBox(height: isMobile ? 8 : 12),
                                     // Subtitle
                                     Text(
-                                      'Sign up to get started with your AI assistant',
+                                      AppStrings.tr(context, 'signUpSubtitle'),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: isMobile ? 14 : 16,
@@ -265,8 +266,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                     SizedBox(height: isMobile ? 32 : 40),
                                     // Name Input
                                     CustomTextField(
-                                          label: 'Full Name',
-                                          hint: 'Enter your name',
+                                          label: AppStrings.tr(context, 'fullName'),
+                                          hint: AppStrings.tr(context, 'enterName'),
                                           icon: Icons.person_outline,
                                           controller: _nameController,
                                           validator: Validators.nonEmpty,
@@ -282,8 +283,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Email Input
                                     CustomTextField(
-                                          label: 'Email',
-                                          hint: 'Enter your email',
+                                          label: AppStrings.tr(context, 'email'),
+                                          hint: AppStrings.tr(context, 'enterEmail'),
                                           icon: Icons.mail_outline,
                                           controller: _emailController,
                                           keyboardType:
@@ -301,8 +302,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Password Input
                                     CustomTextField(
-                                          label: 'Password',
-                                          hint: 'Create a password',
+                                          label: AppStrings.tr(context, 'password'),
+                                          hint: AppStrings.tr(context, 'enterPassword'),
                                           icon: Icons.lock_outline,
                                           controller: _passwordController,
                                           obscureText: _obscurePassword,
@@ -333,8 +334,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Confirm Password Input
                                     CustomTextField(
-                                          label: 'Confirm Password',
-                                          hint: 'Confirm your password',
+                                          label: AppStrings.tr(context, 'confirmPassword'),
+                                          hint: AppStrings.tr(context, 'confirmYourPassword'),
                                           icon: Icons.lock_outline,
                                           controller:
                                               _confirmPasswordController,
@@ -370,7 +371,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     SizedBox(height: isMobile ? 24 : 32),
                                     // Register Button
                                     CustomButton(
-                                          text: 'Sign Up',
+                                          text: AppStrings.tr(context, 'signUp'),
                                           onPressed: _handleRegister,
                                           isLoading:
                                               widget.controller.isLoading,
@@ -398,7 +399,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                             horizontal: isMobile ? 12 : 16,
                                           ),
                                           child: Text(
-                                            'Or sign up with',
+                                            AppStrings.tr(context, 'orSignUpWith'),
                                             style: TextStyle(
                                               color: AppColors.textCyan200
                                                   .withOpacity(0.6),
@@ -462,7 +463,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                                                   : 26,
                                                             ),
                                                             text:
-                                                                'Apple Account',
+                                                                AppStrings.tr(context, 'appleAccount'),
                                                             onPressed: () =>
                                                                 _handleSocialRegister(
                                                                   SocialProvider
@@ -510,7 +511,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                                           : 16,
                                                     ),
                                                     Text(
-                                                      'Inscription en cours...',
+                                                      AppStrings.tr(context, 'signingUp'),
                                                       style: TextStyle(
                                                         color:
                                                             AppColors.textWhite,
@@ -533,7 +534,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                           MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          'Already have an account? ',
+                                          AppStrings.tr(context, 'alreadyHaveAccount'),
                                           style: TextStyle(
                                             color: AppColors.textCyan200
                                                 .withOpacity(0.6),
@@ -544,7 +545,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                           onPressed: () =>
                                               context.push('/login'),
                                           child: Text(
-                                            'Sign In',
+                                            AppStrings.tr(context, 'signInAction'),
                                             style: TextStyle(
                                               color: AppColors.cyan400,
                                               fontSize: isMobile ? 13 : 14,

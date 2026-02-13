@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/l10n/app_strings.dart';
 import '../state/auth_controller.dart';
 import '../widgets/settings_menu.dart';
 import '../widgets/navigation_bar.dart';
@@ -48,15 +49,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final profile = widget.controller.currentProfile;
 
     final stats = [
-      {'label': 'Conversations', 'value': '${profile?.conversationsCount ?? 0}'},
-      {'label': 'Days Active', 'value': '${profile?.daysActive ?? 0}'},
-      {'label': 'Hours Saved', 'value': '${profile?.hoursSaved ?? 0}'},
+      {'label': AppStrings.tr(context, 'conversations'), 'value': '${profile?.conversationsCount ?? 0}'},
+      {'label': AppStrings.tr(context, 'daysActive'), 'value': '${profile?.daysActive ?? 0}'},
+      {'label': AppStrings.tr(context, 'hoursSaved'), 'value': '${profile?.hoursSaved ?? 0}'},
     ];
 
     final recentActivities = [
-      {'action': 'Started a conversation', 'time': '2 hours ago'},
-      {'action': 'Updated profile picture', 'time': '1 day ago'},
-      {'action': 'Joined Personal AI Buddy', 'time': '5 days ago'},
+      {'action': AppStrings.tr(context, 'startedConversation'), 'time': '2 hours ago'},
+      {'action': AppStrings.tr(context, 'updatedProfilePicture'), 'time': '1 day ago'},
+      {'action': AppStrings.tr(context, 'joinedPersonalAIBuddy'), 'time': '5 days ago'},
     ];
 
     return Scaffold(
@@ -89,7 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Profile',
+                          AppStrings.tr(context, 'profile'),
                           style: TextStyle(
                             fontSize: isMobile ? 24 : 28,
                             fontWeight: FontWeight.bold,
@@ -138,7 +139,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     // Recent Activity
                     Text(
-                      'Recent Activity',
+                      AppStrings.tr(context, 'recentActivity'),
                       style: TextStyle(
                         fontSize: isMobile ? 18 : 20,
                         fontWeight: FontWeight.w600,
@@ -161,7 +162,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     // AI Features Section
                     Text(
-                      'AI Features',
+                      AppStrings.tr(context, 'aiFeatures'),
                       style: TextStyle(
                         fontSize: Responsive.getResponsiveValue(
                           context,
@@ -210,47 +211,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final features = [
       {
         'icon': LucideIcons.brain,
-        'label': 'Learning Insights',
+        'label': AppStrings.tr(context, 'learningInsights'),
         'route': '/insights',
         'gradient': [
           const Color(0xFF9333EA).withOpacity(0.2),
           const Color(0xFFEC4899).withOpacity(0.2),
         ],
         'iconColor': const Color(0xFFC084FC),
-        'description': 'What AVA learned about you',
+        'description': AppStrings.tr(context, 'learningInsightsDesc'),
       },
       {
         'icon': LucideIcons.plug,
-        'label': 'Connected Services',
+        'label': AppStrings.tr(context, 'connectedServices'),
         'route': '/services',
         'gradient': [
           const Color(0xFF10B981).withOpacity(0.2),
           AppColors.cyan500.withOpacity(0.2),
         ],
         'iconColor': const Color(0xFF10B981),
-        'description': 'Manage app integrations',
+        'description': AppStrings.tr(context, 'connectedServicesDesc'),
       },
       {
         'icon': LucideIcons.scale,
-        'label': 'Decision Support',
+        'label': AppStrings.tr(context, 'decisionSupport'),
         'route': '/decisions',
         'gradient': [
           const Color(0xFF6366F1).withOpacity(0.2),
           const Color(0xFF9333EA).withOpacity(0.2),
         ],
         'iconColor': const Color(0xFF818CF8),
-        'description': 'AI-powered analysis',
+        'description': AppStrings.tr(context, 'decisionSupportDesc'),
       },
       {
         'icon': LucideIcons.trophy,
-        'label': 'Goals & Growth',
+        'label': AppStrings.tr(context, 'goalsGrowth'),
         'route': '/goals',
         'gradient': [
           const Color(0xFFF59E0B).withOpacity(0.2),
           const Color(0xFFEAB308).withOpacity(0.2),
         ],
         'iconColor': const Color(0xFFFCD34D),
-        'description': 'Track your progress',
+        'description': AppStrings.tr(context, 'goalsGrowthDesc'),
       },
     ];
 
@@ -292,7 +293,7 @@ class _ProfileCard extends StatelessWidget {
     final userName = profile?.name ?? user?.name ?? '—';
     final userEmail = profile?.email ?? user?.email ?? '—';
     final role = isLoading && profile == null
-        ? 'Chargement…'
+        ? AppStrings.tr(context, 'loading')
         : (profile?.role ?? '—');
     final initials = userName
         .split(' ')
@@ -412,7 +413,7 @@ class _ProfileCard extends StatelessWidget {
                           ),
                           SizedBox(height: 4),
                           Text(
-                            'AI Enthusiast',
+                            AppStrings.tr(context, 'aiEnthusiast'),
                             style: TextStyle(
                               fontSize: Responsive.getResponsiveValue(
                                 context,

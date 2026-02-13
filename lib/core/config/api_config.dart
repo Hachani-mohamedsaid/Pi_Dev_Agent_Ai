@@ -17,6 +17,19 @@ const String verifyEmailConfirmPath = '/verify-email/confirm';
 /// Chemin de l'endpoint chat IA (Talk to buddy). Backend attend POST avec { "messages": [ { "role": "user"|"assistant", "content": "..." } ] } et renvoie { "message": "..." } ou { "content": "..." }.
 const String chatPath = '/ai/chat';
 
+/// Endpoint NestJS pour enregistrer les décisions Accepter/Rejeter des propositions (stockage MongoDB).
+/// POST avec body: action, row_number, name, email, type_projet (optionnel: budget_estime, periode).
+const String projectDecisionsPath = '/project-decisions';
+
+/// Webhook n8n pour déclencher le workflow sur Accepter/Rejeter (body: action, row_number, name, email, type_projet).
+const String projectActionN8nWebhookUrl =
+    'https://n8n-production-1e13.up.railway.app/webhook/project-action';
+
+/// Endpoint NestJS pour sauvegarder/récupérer les analyses OpenAI des projets (stockage MongoDB).
+/// GET /project-analyses/:rowNumber - récupère l'analyse
+/// POST /project-analyses - sauvegarde l'analyse (body: row_number, analysis JSON)
+const String projectAnalysesPath = '/project-analyses';
+
 /// Clé API OpenAI utilisée côté Flutter pour OpenAI TTS (voix type ChatGPT)
 /// via le package `openai_tts`.
 ///
@@ -32,7 +45,7 @@ const String chatPath = '/ai/chat';
 /// En build: --dart-define=OPENAI_API_KEY=sk-...
 const String openaiApiKey = String.fromEnvironment(
   'OPENAI_API_KEY',
-  defaultValue: '',
+  defaultValue: '', // Ne jamais commiter la clé API ici! Utiliser --dart-define=OPENAI_API_KEY=... ou .env
 );
 
 /// Instruction système pour le chat vocal multilingüe : voix chaleureuse, féminine, naturelle.
@@ -49,4 +62,7 @@ const String chatSystemInstructionMultilingual =
 /// URL WebSocket pour la voix ChatGPT originale (OpenAI Realtime API via proxy NestJS).
 /// Si non vide, l'assistant vocal peut utiliser le mode Realtime (micro → backend → OpenAI Realtime → audio).
 /// Ex. dev : ws://localhost:3000/realtime-voice ; prod : wss://ton-backend.up.railway.app/realtime-voice
-const String realtimeVoiceWsUrl = '';
+const String realtimeVoiceWsUrl = String.fromEnvironment(
+  'REALTIME_VOICE_WS_URL',
+  defaultValue: '', // URL WebSocket pour Realtime API. Ex: wss://backend.up.railway.app/realtime-voice
+);

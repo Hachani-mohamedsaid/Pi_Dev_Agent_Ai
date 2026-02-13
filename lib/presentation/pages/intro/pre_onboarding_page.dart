@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/services/pre_onboarding_storage.dart';
+import '../../../core/l10n/app_strings.dart';
 import 'widgets/animated_gradient_background.dart';
 import 'widgets/animated_page_indicator.dart';
 import 'widgets/animated_simple_icon.dart';
@@ -221,7 +222,7 @@ class _WelcomePageState extends State<_WelcomePage>
                       child: SlideTransition(
                         position: _titleOffset,
                         child: Text(
-                          'Ava',
+                          AppStrings.tr(context, 'ava'),
                           style: TextStyle(
                             fontSize: 42,
                             fontWeight: FontWeight.w800,
@@ -237,7 +238,7 @@ class _WelcomePageState extends State<_WelcomePage>
                   FadeTransition(
                     opacity: _descOpacity,
                     child: Text(
-                      'Your Personal AI Assistant',
+                      AppStrings.tr(context, 'yourPersonalAIAssistant'),
                       style: TextStyle(
                         fontSize: 18,
                         color: AppColors.textCyan200.withOpacity(0.9),
@@ -251,7 +252,7 @@ class _WelcomePageState extends State<_WelcomePage>
                     onPressed: widget.onNext,
                     backgroundColor: AppColors.cyan500,
                     foregroundColor: AppColors.textWhite,
-                    child: const Text('Next'),
+                    child: Text(AppStrings.tr(context, 'next')),
                   ),
                   const SizedBox(height: 56),
                 ],
@@ -290,20 +291,20 @@ class _FeaturesPage extends StatefulWidget {
 
 class _FeaturesPageState extends State<_FeaturesPage>
     with TickerProviderStateMixin {
-  static const _features = [
+  static List<_FeatureData> _features(BuildContext context) => [
     _FeatureData(
       Icons.mic_rounded,
-      'Voice Assistant',
+      AppStrings.tr(context, 'voiceAssistant'),
       'Talk naturally with AI. Get instant answers and control your tasks by voice.',
     ),
     _FeatureData(
       Icons.auto_awesome_rounded,
-      'Smart Insights',
+      AppStrings.tr(context, 'smartInsights'),
       'AI analyzes your patterns and suggests actions to boost your productivity.',
     ),
     _FeatureData(
       Icons.security_rounded,
-      'Privacy First',
+      AppStrings.tr(context, 'privacyFirst'),
       'Your data stays on your device. Enterprise-grade security for your peace of mind.',
     ),
   ];
@@ -360,7 +361,7 @@ class _FeaturesPageState extends State<_FeaturesPage>
           children: [
             const SizedBox(height: 24),
             Text(
-              'Powerful Features',
+              AppStrings.tr(context, 'powerfulFeatures'),
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
@@ -369,7 +370,7 @@ class _FeaturesPageState extends State<_FeaturesPage>
             ),
             const SizedBox(height: 8),
             Text(
-              'Everything you need in one place',
+              AppStrings.tr(context, 'everythingInOnePlace'),
               style: TextStyle(
                 fontSize: 16,
                 color: AppColors.textCyan200.withOpacity(0.8),
@@ -377,7 +378,7 @@ class _FeaturesPageState extends State<_FeaturesPage>
             ),
             const SizedBox(height: 40),
             ...List.generate(3, (i) {
-              final f = _features[i];
+              final f = _features(context)[i];
               return FadeTransition(
                 opacity: _opacities[i],
                 child: SlideTransition(
@@ -398,7 +399,7 @@ class _FeaturesPageState extends State<_FeaturesPage>
               onPressed: widget.onNext,
               backgroundColor: AppColors.cyan500,
               foregroundColor: AppColors.textWhite,
-              child: const Text('Next'),
+              child: Text(AppStrings.tr(context, 'next')),
             ),
             const SizedBox(height: 56),
           ],
@@ -566,7 +567,7 @@ class _GetStartedPageState extends State<_GetStartedPage>
                 child: SlideTransition(
                   position: _textOffset,
                   child: Text(
-                    'Ready to transform\nyour workflow?',
+                    AppStrings.tr(context, 'readyToTransform'),
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w700,
@@ -581,7 +582,7 @@ class _GetStartedPageState extends State<_GetStartedPage>
               FadeTransition(
                 opacity: _textOpacity,
                 child: Text(
-                  'Join thousands of users already boosting their productivity.',
+                  AppStrings.tr(context, 'joinThousands'),
                   style: TextStyle(
                     fontSize: 15,
                     color: AppColors.textCyan200.withOpacity(0.85),
@@ -594,7 +595,7 @@ class _GetStartedPageState extends State<_GetStartedPage>
                 onPressed: widget.onRegister,
                 backgroundColor: AppColors.cyan500,
                 foregroundColor: AppColors.textWhite,
-                child: const Text('Create Account'),
+                child: Text(AppStrings.tr(context, 'createAccount')),
               ),
               const SizedBox(height: 16),
               ScalePressButton(
@@ -605,7 +606,7 @@ class _GetStartedPageState extends State<_GetStartedPage>
                   color: AppColors.cyan500.withOpacity(0.5),
                   width: 1.5,
                 ),
-                child: const Text('I already have an account'),
+                child: Text(AppStrings.tr(context, 'alreadyHaveAccount')),
               ),
               const SizedBox(height: 56),
             ],
