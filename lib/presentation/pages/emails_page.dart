@@ -36,8 +36,15 @@ class EmailsPage extends StatefulWidget {
 
 class _EmailsPageState extends State<EmailsPage> {
   Email? _selectedEmail;
+  List<Email> _emails = [];
+  bool _loading = true;
+  bool _refreshing = false;
+  bool _generatingReply = false;
+  List<String>? _replyOptions;
+  bool _showReplyModal = false;
+  Email? _replyEmail;
 
-  final List<Email> _emails = [
+  static List<Email> _mockEmails() => [
     Email(
       id: 1,
       sender: 'Sarah Johnson',
@@ -79,6 +86,53 @@ class _EmailsPageState extends State<EmailsPage> {
       time: '2 days ago',
     ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    loadEmails();
+  }
+
+  Future<void> loadEmails() async {
+    setState(() => _loading = true);
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (mounted) {
+      setState(() {
+        _emails = _mockEmails();
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> handleRefresh() async {
+    setState(() => _refreshing = true);
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (mounted) {
+      setState(() {
+        _emails = _mockEmails();
+        _refreshing = false;
+      });
+    }
+  }
+
+  Future<void> handleDraftReply() async {
+    if (_selectedEmail == null) return;
+    setState(() => _generatingReply = true);
+    await Future.delayed(const Duration(milliseconds: 1200));
+    if (!mounted) return;
+    final options = [
+      'Thanks for the update. I\'ll have the report ready by end of day Friday.',
+      'I need a short extension until Monday — can we push the deadline?',
+      'Acknowledged. I\'ll confirm once the draft is submitted.',
+    ];
+    setState(() {
+      _replyOptions = options;
+      _showReplyModal = true;
+      _replyEmail = _selectedEmail;
+      _selectedEmail = null;
+      _generatingReply = false;
+    });
+  }
 
   Map<String, dynamic> _getPriorityBadge(EmailPriority priority) {
     switch (priority) {
@@ -164,14 +218,21 @@ class _EmailsPageState extends State<EmailsPage> {
                       desktop: 28.0,
                     )),
 
-                    // Email List
-                    _buildEmailList(context, isMobile),
+                    // Loading / Empty / Email List
+                    if (_loading)
+                      _buildLoadingState(context, isMobile)
+                    else if (_emails.isEmpty)
+                      _buildEmptyState(context, isMobile)
+                    else
+                      _buildEmailList(context, isMobile),
                   ],
                 ),
               ),
               // Email Detail Modal
               if (_selectedEmail != null)
                 _buildEmailDetailModal(context, isMobile),
+              // Reply Modal
+              if (_showReplyModal) _buildReplyModal(context, isMobile),
               
               // Navigation Bar
               Positioned(
@@ -188,41 +249,205 @@ class _EmailsPageState extends State<EmailsPage> {
   }
 
   Widget _buildHeader(BuildContext context, bool isMobile) {
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          'Emails',
-          style: TextStyle(
-            fontSize: Responsive.getResponsiveValue(
-              context,
-              mobile: 26.0,
-              tablet: 28.0,
-              desktop: 32.0,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Emails',
+              style: TextStyle(
+                fontSize: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 26.0,
+                  tablet: 28.0,
+                  desktop: 32.0,
+                ),
+                fontWeight: FontWeight.bold,
+                color: AppColors.textWhite,
+              ),
             ),
-            fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
-          ),
-        ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 6.0,
-          tablet: 8.0,
-          desktop: 10.0,
-        )),
-        Text(
-          'AI-powered inbox summary',
-          style: TextStyle(
-            fontSize: Responsive.getResponsiveValue(
+            SizedBox(height: Responsive.getResponsiveValue(
               context,
-              mobile: 13.0,
+              mobile: 6.0,
+              tablet: 8.0,
+              desktop: 10.0,
+            )),
+            Text(
+              'AI-powered inbox summary',
+              style: TextStyle(
+                fontSize: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 13.0,
+                  tablet: 14.0,
+                  desktop: 15.0,
+                ),
+                color: AppColors.textCyan200.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
+        GestureDetector(
+          onTap: (_loading || _refreshing) ? null : () => handleRefresh(),
+          child: Container(
+            padding: EdgeInsets.all(Responsive.getResponsiveValue(
+              context,
+              mobile: 12.0,
               tablet: 14.0,
-              desktop: 15.0,
+              desktop: 16.0,
+            )),
+            decoration: BoxDecoration(
+              color: AppColors.cyan500.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                context,
+                mobile: 12.0,
+                tablet: 14.0,
+                desktop: 16.0,
+              )),
+              border: Border.all(
+                color: AppColors.cyan500.withOpacity(0.2),
+                width: 1,
+              ),
             ),
-            color: AppColors.textCyan200.withOpacity(0.7),
+            child: _refreshing
+                ? SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 20.0,
+                      tablet: 22.0,
+                      desktop: 24.0,
+                    ),
+                    height: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 20.0,
+                      tablet: 22.0,
+                      desktop: 24.0,
+                    ),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.cyan400,
+                    ),
+                  )
+                : Icon(
+                    LucideIcons.refreshCw,
+                    size: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 20.0,
+                      tablet: 22.0,
+                      desktop: 24.0,
+                    ),
+                    color: AppColors.cyan400,
+                  ),
           ),
-        ),
+        )
+            .animate()
+            .fadeIn(duration: 300.ms)
+            .scale(delay: 100.ms, duration: 300.ms),
       ],
+    );
+  }
+
+  Widget _buildLoadingState(BuildContext context, bool isMobile) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        vertical: Responsive.getResponsiveValue(
+          context,
+          mobile: 80.0,
+          tablet: 100.0,
+          desktop: 120.0,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: Responsive.getResponsiveValue(
+              context,
+              mobile: 32.0,
+              tablet: 36.0,
+              desktop: 40.0,
+            ),
+            height: Responsive.getResponsiveValue(
+              context,
+              mobile: 32.0,
+              tablet: 36.0,
+              desktop: 40.0,
+            ),
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.cyan400,
+            ),
+          )
+              .animate(onPlay: (c) => c.repeat())
+              .fadeIn(duration: 300.ms),
+          SizedBox(height: Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 14.0,
+            desktop: 16.0,
+          )),
+          Text(
+            'Loading emails...',
+            style: TextStyle(
+              fontSize: Responsive.getResponsiveValue(
+                context,
+                mobile: 13.0,
+                tablet: 14.0,
+                desktop: 15.0,
+              ),
+              color: AppColors.textCyan200.withOpacity(0.7),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, bool isMobile) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        vertical: Responsive.getResponsiveValue(
+          context,
+          mobile: 80.0,
+          tablet: 100.0,
+          desktop: 120.0,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            LucideIcons.mail,
+            size: Responsive.getResponsiveValue(
+              context,
+              mobile: 48.0,
+              tablet: 52.0,
+              desktop: 56.0,
+            ),
+            color: AppColors.cyan400.withOpacity(0.3),
+          ),
+          SizedBox(height: Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 14.0,
+            desktop: 16.0,
+          )),
+          Text(
+            'No emails found',
+            style: TextStyle(
+              fontSize: Responsive.getResponsiveValue(
+                context,
+                mobile: 13.0,
+                tablet: 14.0,
+                desktop: 15.0,
+              ),
+              color: AppColors.textCyan200.withOpacity(0.7),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -765,13 +990,7 @@ class _EmailsPageState extends State<EmailsPage> {
                       // Actions
                       Column(
                         children: [
-                          _buildActionButton(
-                            context,
-                            isMobile,
-                            'Draft reply',
-                            true,
-                            LucideIcons.check,
-                          ),
+                          _buildDraftReplyButton(context, isMobile),
                           SizedBox(height: Responsive.getResponsiveValue(
                             context,
                             mobile: 6.0,
@@ -813,6 +1032,109 @@ class _EmailsPageState extends State<EmailsPage> {
         .animate()
         .fadeIn(duration: 300.ms)
         .slideY(begin: 1.0, end: 0.0, duration: 400.ms, curve: Curves.easeOut);
+  }
+
+  Widget _buildDraftReplyButton(BuildContext context, bool isMobile) {
+    return GestureDetector(
+      onTap: _generatingReply ? null : () => handleDraftReply(),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(
+          vertical: Responsive.getResponsiveValue(
+            context,
+            mobile: 11.0,
+            tablet: 12.0,
+            desktop: 14.0,
+          ),
+        ),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.cyan500,
+              AppColors.cyan400,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 13.0,
+            desktop: 14.0,
+          )),
+          border: Border.all(
+            color: AppColors.cyan500.withOpacity(0.3),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.cyan400.withOpacity(0.3),
+              blurRadius: Responsive.getResponsiveValue(
+                context,
+                mobile: 12.0,
+                tablet: 14.0,
+                desktop: 16.0,
+              ),
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (_generatingReply)
+              SizedBox(
+                width: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 18.0,
+                  tablet: 20.0,
+                  desktop: 22.0,
+                ),
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 18.0,
+                  tablet: 20.0,
+                  desktop: 22.0,
+                ),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.textWhite,
+                ),
+              )
+            else
+              Icon(
+                LucideIcons.check,
+                size: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 14.0,
+                  tablet: 16.0,
+                  desktop: 18.0,
+                ),
+                color: AppColors.textWhite,
+              ),
+            SizedBox(width: Responsive.getResponsiveValue(
+              context,
+              mobile: 6.0,
+              tablet: 8.0,
+              desktop: 10.0,
+            )),
+            Text(
+              _generatingReply ? 'Generating...' : 'Draft reply',
+              style: TextStyle(
+                fontSize: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 13.0,
+                  tablet: 14.0,
+                  desktop: 15.0,
+                ),
+                fontWeight: FontWeight.w500,
+                color: AppColors.textWhite,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildActionButton(
@@ -917,6 +1239,459 @@ class _EmailsPageState extends State<EmailsPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildReplyModal(BuildContext context, bool isMobile) {
+    final email = _replyEmail;
+    if (email == null) return const SizedBox.shrink();
+
+    final badge = _getPriorityBadge(email.priority);
+    final hasOptions = _replyOptions != null && _replyOptions!.isNotEmpty;
+
+    return GestureDetector(
+      onTap: () => setState(() {
+        _showReplyModal = false;
+        _replyOptions = null;
+        _replyEmail = null;
+      }),
+      child: Container(
+        color: Colors.black.withOpacity(0.6),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: GestureDetector(
+              onTap: () {},
+              child: Container(
+                width: double.infinity,
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.8,
+                ),
+                padding: EdgeInsets.all(Responsive.getResponsiveValue(
+                  context,
+                  mobile: 22.0,
+                  tablet: 24.0,
+                  desktop: 28.0,
+                )),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFF1a3a52),
+                      Color(0xFF0f2940),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(Responsive.getResponsiveValue(
+                      context,
+                      mobile: 24.0,
+                      tablet: 26.0,
+                      desktop: 28.0,
+                    )),
+                    topRight: Radius.circular(Responsive.getResponsiveValue(
+                      context,
+                      mobile: 24.0,
+                      tablet: 26.0,
+                      desktop: 28.0,
+                    )),
+                  ),
+                  border: Border(
+                    top: BorderSide(
+                      color: AppColors.cyan500.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Email Header
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  email.sender,
+                                  style: TextStyle(
+                                    fontSize: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 20.0,
+                                      tablet: 22.0,
+                                      desktop: 24.0,
+                                    ),
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textWhite,
+                                  ),
+                                ),
+                                SizedBox(height: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 4.0,
+                                  tablet: 5.0,
+                                  desktop: 6.0,
+                                )),
+                                Text(
+                                  email.time,
+                                  style: TextStyle(
+                                    fontSize: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 12.0,
+                                      tablet: 13.0,
+                                      desktop: 14.0,
+                                    ),
+                                    color: AppColors.textCyan200.withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          _buildBadgeChip(context, isMobile, badge),
+                        ],
+                      ),
+                      SizedBox(height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 12.0,
+                        tablet: 14.0,
+                        desktop: 16.0,
+                      )),
+                      Text(
+                        email.subject,
+                        style: TextStyle(
+                          fontSize: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 15.0,
+                            tablet: 16.0,
+                            desktop: 17.0,
+                          ),
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textWhite.withOpacity(0.9),
+                        ),
+                      ),
+                      SizedBox(height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 18.0,
+                        tablet: 20.0,
+                        desktop: 24.0,
+                      )),
+                      // AI Summary
+                      Container(
+                        padding: EdgeInsets.all(Responsive.getResponsiveValue(
+                          context,
+                          mobile: 14.0,
+                          tablet: 16.0,
+                          desktop: 20.0,
+                        )),
+                        decoration: BoxDecoration(
+                          color: AppColors.cyan500.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                            context,
+                            mobile: 12.0,
+                            tablet: 13.0,
+                            desktop: 14.0,
+                          )),
+                          border: Border.all(
+                            color: AppColors.cyan500.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 30.0,
+                                tablet: 32.0,
+                                desktop: 36.0,
+                              ),
+                              height: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 30.0,
+                                tablet: 32.0,
+                                desktop: 36.0,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.cyan500.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 8.0,
+                                  tablet: 9.0,
+                                  desktop: 10.0,
+                                )),
+                              ),
+                              child: Icon(
+                                LucideIcons.mail,
+                                size: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 14.0,
+                                  tablet: 16.0,
+                                  desktop: 18.0,
+                                ),
+                                color: AppColors.cyan400,
+                              ),
+                            ),
+                            SizedBox(width: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 10.0,
+                              tablet: 12.0,
+                              desktop: 14.0,
+                            )),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Summary',
+                                    style: TextStyle(
+                                      fontSize: Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 13.0,
+                                        tablet: 14.0,
+                                        desktop: 15.0,
+                                      ),
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.cyan400,
+                                    ),
+                                  ),
+                                  SizedBox(height: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 4.0,
+                                    tablet: 5.0,
+                                    desktop: 6.0,
+                                  )),
+                                  Text(
+                                    email.summary,
+                                    style: TextStyle(
+                                      fontSize: Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 12.0,
+                                        tablet: 13.0,
+                                        desktop: 14.0,
+                                      ),
+                                      color: AppColors.textCyan200.withOpacity(0.8),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 18.0,
+                        tablet: 20.0,
+                        desktop: 24.0,
+                      )),
+                      // Reply Options
+                      if (hasOptions)
+                        ...(_replyOptions!.map((reply) {
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              bottom: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 8.0,
+                                tablet: 10.0,
+                                desktop: 12.0,
+                              ),
+                            ),
+                            child: GestureDetector(
+                              onTap: () {
+                                // Use reply (e.g. send or copy)
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 14.0,
+                                    tablet: 16.0,
+                                    desktop: 18.0,
+                                  ),
+                                  vertical: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 12.0,
+                                    tablet: 14.0,
+                                    desktop: 16.0,
+                                  ),
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.cyan500.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 12.0,
+                                    tablet: 13.0,
+                                    desktop: 14.0,
+                                  )),
+                                  border: Border.all(
+                                    color: AppColors.cyan500.withOpacity(0.2),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      LucideIcons.send,
+                                      size: Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 16.0,
+                                        tablet: 18.0,
+                                        desktop: 20.0,
+                                      ),
+                                      color: AppColors.textCyan300,
+                                    ),
+                                    SizedBox(width: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 8.0,
+                                      tablet: 10.0,
+                                      desktop: 12.0,
+                                    )),
+                                    Expanded(
+                                      child: Text(
+                                        reply,
+                                        style: TextStyle(
+                                          fontSize: Responsive.getResponsiveValue(
+                                            context,
+                                            mobile: 13.0,
+                                            tablet: 14.0,
+                                            desktop: 15.0,
+                                          ),
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.textCyan300,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }))
+                      else
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(Responsive.getResponsiveValue(
+                            context,
+                            mobile: 14.0,
+                            tablet: 16.0,
+                            desktop: 20.0,
+                          )),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFB800).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 13.0,
+                              desktop: 14.0,
+                            )),
+                            border: Border.all(
+                              color: const Color(0xFFFFB800).withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            'No reply options available at this time',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 13.0,
+                                tablet: 14.0,
+                                desktop: 15.0,
+                              ),
+                              color: const Color(0xFFFFB800),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 300.ms)
+        .slideY(begin: 1.0, end: 0.0, duration: 400.ms, curve: Curves.easeOut);
+  }
+
+  Widget _buildBadgeChip(
+    BuildContext context,
+    bool isMobile,
+    Map<String, dynamic> badge,
+  ) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: Responsive.getResponsiveValue(
+          context,
+          mobile: 10.0,
+          tablet: 12.0,
+          desktop: 14.0,
+        ),
+        vertical: Responsive.getResponsiveValue(
+          context,
+          mobile: 5.0,
+          tablet: 6.0,
+          desktop: 7.0,
+        ),
+      ),
+      decoration: BoxDecoration(
+        color: badge['bg'] as Color,
+        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+          context,
+          mobile: 8.0,
+          tablet: 9.0,
+          desktop: 10.0,
+        )),
+        border: Border.all(
+          color: badge['border'] as Color,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            badge['icon'] as IconData,
+            size: Responsive.getResponsiveValue(
+              context,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 18.0,
+            ),
+            color: badge['color'] as Color,
+          ),
+          SizedBox(width: Responsive.getResponsiveValue(
+            context,
+            mobile: 4.0,
+            tablet: 5.0,
+            desktop: 6.0,
+          )),
+          Text(
+            badge['text'] as String,
+            style: TextStyle(
+              fontSize: Responsive.getResponsiveValue(
+                context,
+                mobile: 11.0,
+                tablet: 12.0,
+                desktop: 13.0,
+              ),
+              fontWeight: FontWeight.w500,
+              color: badge['color'] as Color,
+            ),
+          ),
+        ],
       ),
     );
   }
