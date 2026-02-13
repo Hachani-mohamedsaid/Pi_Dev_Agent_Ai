@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/l10n/app_strings.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -47,38 +48,38 @@ class _NotificationsPageState extends State<NotificationsPage> {
     final notificationSettings = [
       {
         'id': 'push',
-        'title': 'Push Notifications',
-        'description': 'Receive push notifications on your device',
+        'title': AppStrings.tr(context, 'pushNotifications'),
+        'description': AppStrings.tr(context, 'receivePush'),
         'icon': LucideIcons.bell,
       },
       {
         'id': 'messages',
-        'title': 'Message Alerts',
-        'description': 'Get notified when you receive new messages',
+        'title': AppStrings.tr(context, 'messageAlerts'),
+        'description': AppStrings.tr(context, 'getNotifiedMessages'),
         'icon': LucideIcons.messageSquare,
       },
       {
         'id': 'email',
-        'title': 'Email Notifications',
-        'description': 'Receive updates and newsletters via email',
+        'title': AppStrings.tr(context, 'emailNotifications'),
+        'description': AppStrings.tr(context, 'receiveUpdatesEmail'),
         'icon': LucideIcons.mail,
       },
       {
         'id': 'reminders',
-        'title': 'Reminders',
-        'description': 'Get reminders for scheduled tasks',
+        'title': AppStrings.tr(context, 'reminders'),
+        'description': AppStrings.tr(context, 'remindersForTasks'),
         'icon': LucideIcons.calendar,
       },
       {
         'id': 'updates',
-        'title': 'App Updates',
-        'description': 'Notifications about new features and updates',
+        'title': AppStrings.tr(context, 'appUpdates'),
+        'description': AppStrings.tr(context, 'notificationsNewFeatures'),
         'icon': LucideIcons.trendingUp,
       },
       {
         'id': 'sounds',
-        'title': 'Notification Sounds',
-        'description': 'Play sounds for notifications',
+        'title': AppStrings.tr(context, 'notificationSounds'),
+        'description': AppStrings.tr(context, 'playSounds'),
         'icon': LucideIcons.volume2,
       },
     ];
@@ -242,7 +243,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
         ),
         Text(
-          'Notifications',
+          AppStrings.tr(context, 'notificationsTitle'),
           style: TextStyle(
             fontSize: Responsive.getResponsiveValue(
               context,

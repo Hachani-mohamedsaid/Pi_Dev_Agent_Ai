@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/l10n/app_strings.dart';
 
 class PreOnboardingPage extends StatefulWidget {
   const PreOnboardingPage({super.key});
@@ -197,9 +198,8 @@ class _PreOnboardingPageState extends State<PreOnboardingPage>
                           icon: Icons.auto_awesome,
                           color: AppColors.cyan400,
                         ),
-                        title: 'Welcome to Ava',
-                        subtitle:
-                            'Your personal assistant that helps you save time and focus on what matters.',
+                        title: AppStrings.tr(context, 'welcomeToAva'),
+                        subtitle: AppStrings.tr(context, 'welcomeSubtitle'),
                         actions: _PageFooter(
                           isLast: false,
                           onNext: () => _pageController.nextPage(
@@ -215,9 +215,8 @@ class _PreOnboardingPageState extends State<PreOnboardingPage>
                           icon: Icons.checklist_rounded,
                           color: AppColors.blue500,
                         ),
-                        title: 'Key Features',
-                        subtitle:
-                            'Smart suggestions, calendar integration, and more.',
+                        title: AppStrings.tr(context, 'keyFeatures'),
+                        subtitle: AppStrings.tr(context, 'keyFeaturesSubtitle'),
                         actions: _FeaturesList(controller: _controllers[1]),
                       ),
                       _buildPage(
@@ -226,8 +225,8 @@ class _PreOnboardingPageState extends State<PreOnboardingPage>
                           icon: Icons.rocket_launch,
                           color: AppColors.cyan500,
                         ),
-                        title: 'Get Started',
-                        subtitle: 'Create your account and try AVA for free.',
+                        title: AppStrings.tr(context, 'getStarted'),
+                        subtitle: AppStrings.tr(context, 'getStartedSubtitle'),
                         actions: _PageFooter(
                           isLast: true,
                           onNext: _complete,
@@ -333,7 +332,7 @@ class _PageFooter extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Next'),
+              child: Text(AppStrings.tr(context, 'next')),
             ),
           if (isLast) ...[
             ElevatedButton(
@@ -345,10 +344,10 @@ class _PageFooter extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Create Account'),
+              child: Text(AppStrings.tr(context, 'createAccount')),
             ),
             const SizedBox(width: 12),
-            TextButton(onPressed: onSkip, child: const Text('Login')),
+            TextButton(onPressed: onSkip, child: Text(AppStrings.tr(context, 'signInAction'))),
           ],
         ],
       ),
@@ -366,18 +365,18 @@ class _FeaturesList extends StatelessWidget {
     final features = [
       {
         'icon': Icons.chat_bubble,
-        'title': 'Smart replies',
-        'desc': 'Fast, contextual suggestions.',
+        'title': AppStrings.tr(context, 'smartReplies'),
+        'desc': AppStrings.tr(context, 'smartRepliesDesc'),
       },
       {
         'icon': Icons.calendar_today,
-        'title': 'Calendar sync',
-        'desc': 'Keep your schedule in one place.',
+        'title': AppStrings.tr(context, 'calendarSync'),
+        'desc': AppStrings.tr(context, 'calendarSyncDesc'),
       },
       {
         'icon': Icons.lock,
-        'title': 'Private by design',
-        'desc': 'Your data stays secure.',
+        'title': AppStrings.tr(context, 'privateByDesign'),
+        'desc': AppStrings.tr(context, 'privateByDesignDesc'),
       },
     ];
 

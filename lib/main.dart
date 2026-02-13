@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'core/config/google_oauth_config.dart';
+import 'core/services/locale_service.dart';
 import 'package:flutter_web_plugins/url_strategy.dart'
     if (dart.library.io) 'url_strategy_stub.dart' show usePathUrlStrategy;
 
@@ -20,5 +21,6 @@ void main() async {
   } else if (!kIsWeb) {
     await GoogleSignIn.instance.initialize();
   }
+  await LocaleService.instance.load();
   runApp(const App());
 }

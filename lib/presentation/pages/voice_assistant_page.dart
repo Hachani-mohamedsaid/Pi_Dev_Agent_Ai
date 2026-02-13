@@ -7,11 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../state/chat_provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:openai_tts/openai_tts.dart';
 
 import '../../core/config/api_config.dart'
-    show openaiApiKey, chatSystemInstructionMultilingual, realtimeVoiceWsUrl;
+    show openaiApiKey, realtimeVoiceWsUrl;
+import '../../core/l10n/app_strings.dart';
 import '../../core/utils/responsive.dart';
 import '../../data/datasources/chat_remote_data_source.dart';
 import '../../data/datasources/realtime_voice_client.dart';
@@ -45,18 +48,28 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
   RealtimeVoiceClient? _realtimeClient;
   StreamSubscription<List<int>>? _realtimeAudioSub;
 
-  List<ChatMessage> messages = [
-    ChatMessage(
-      id: 1,
-      text: "Bonjour ! Comment puis-je vous aider aujourd'hui ?",
-      sender: MessageSender.ai,
-      timestamp: DateTime.now(),
-    ),
-  ];
+  List<ChatMessage> messages = [];
+  bool _initialized = false;
 
   // --- Animation Controllers ---
   late AnimationController _waveformController;
   late AnimationController _pulseController;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      messages = [
+        ChatMessage(
+          id: 1,
+          text: AppStrings.tr(context, 'helloHowCanIHelp'),
+          sender: MessageSender.ai,
+          timestamp: DateTime.now(),
+        ),
+      ];
+      _initialized = true;
+    }
+  }
 
   @override
   void initState() {
@@ -435,9 +448,168 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
           transcript == "Go ahead, I'm listening..." ||
           transcript == "Parle, j'écoute...";
       if (!isPlaceholder && transcript.isNotEmpty) {
+        debugPrint('🎤 Voice transcript received: "$transcript"');
         _addMessage(transcript, MessageSender.user);
         setState(() => currentTranscript = "");
-        _requestAIResponse(transcript);
+
+        // Route voice transcript to ChatProvider for email intent detection
+        final chatProv = Provider.of<ChatProvider>(context, listen: false);
+
+        // Helper detectors
+        final emailRegex = RegExp(
+          r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",
+        );
+        final lower = transcript.toLowerCase();
+        final wantsToConfirm = RegExp(
+          r"\b(oui|confirme|confirmer|envoye|envoie|ok|ab3th|ab3at|ab3t)\b",
+        ).hasMatch(lower);
+        final wantsToCancel = RegExp(r"\b(non|annule|stop|cancel)\b").hasMatch(lower);
+
+        debugPrint('📧 Email detection - hasPendingEmail: ${chatProv.hasPendingEmail}');
+        debugPrint('📧 Email detection - wantsToConfirm: $wantsToConfirm');
+        debugPrint('📧 Email detection - wantsToCancel: $wantsToCancel');
+
+        // If provider has a pending email, check for confirmation or cancellation
+        if (chatProv.hasPendingEmail) {
+          final pending = chatProv.pendingEmail;
+          final to = pending?['to'] ?? 'destinataire';
+          debugPrint('📧 Pending email detected - to: $to');
+
+          if (wantsToConfirm) {
+            debugPrint('✅ User confirmed email sending via voice');
+            try {
+              final messageCountBefore = chatProv.messages.length;
+              await chatProv.confirmPendingEmail();
+              // Speak the real n8n result (success or error) like the Chat page
+              String toSpeak = "Parfait, le mail a été envoyé à $to.";
+              if (chatProv.messages.length > messageCountBefore) {
+                final newList = chatProv.messages
+                    .skip(messageCountBefore)
+                    .where((m) => m.role == 'assistant' && m.content.isNotEmpty)
+                    .toList();
+                if (newList.isNotEmpty) {
+                  toSpeak = newList.last.content;
+                }
+              } else if (chatProv.messages.isNotEmpty) {
+                final last = chatProv.messages.last;
+                if (last.role == 'assistant' && last.content.isNotEmpty) {
+                  toSpeak = last.content;
+                }
+              }
+              debugPrint('🔊 Speaking email result: "$toSpeak"');
+              _addMessage(toSpeak, MessageSender.ai);
+              simulateAISpeaking(toSpeak);
+              setState(() => isLoadingAI = false);
+              return;
+            } catch (e) {
+              debugPrint('❌ Error confirming email: $e');
+              final errorSpoken = "Désolé, une erreur s'est produite lors de l'envoi du mail.";
+              _addMessage(errorSpoken, MessageSender.ai);
+              simulateAISpeaking(errorSpoken);
+              setState(() => isLoadingAI = false);
+              return;
+            }
+          }
+          // Cancellation keywords
+          if (wantsToCancel) {
+            debugPrint('❌ User cancelled email sending via voice');
+            chatProv.cancelPendingEmail();
+            final cancelSpoken = "D'accord, j'annule l'envoi du mail à $to.";
+            debugPrint('🔊 Speaking cancellation: "$cancelSpoken"');
+            _addMessage(cancelSpoken, MessageSender.ai);
+            simulateAISpeaking(cancelSpoken);
+            return;
+          }
+          // If there's a pending email but user didn't confirm/cancel, remind them
+          debugPrint('⚠️ Pending email exists but no clear confirmation/cancellation detected');
+          final reminderSpoken = "Je t'attends pour confirmer l'envoi du mail à $to. Dis 'oui' pour envoyer ou 'non' pour annuler.";
+          _addMessage(reminderSpoken, MessageSender.ai);
+          simulateAISpeaking(reminderSpoken);
+          return;
+        }
+
+        // If transcript looks like an email-sending intent, delegate to ChatProvider.sendMessage
+        final containsMailWord =
+            lower.contains('mail') ||
+            lower.contains('mails') ||
+            lower.contains('email') ||
+            lower.contains('e-mail') ||
+            lower.contains('ab3th');
+        final emailMatch = emailRegex.firstMatch(transcript);
+        
+        debugPrint('📧 Email intent detection - containsMailWord: $containsMailWord');
+        debugPrint('📧 Email intent detection - emailMatch: ${emailMatch?.group(0)}');
+
+        // Always use ChatProvider (n8n) for voice messages, not the AI backend
+        debugPrint('💬 Routing voice transcript to ChatProvider (n8n)');
+        debugPrint('💬 Transcript: "$transcript"');
+        debugPrint('💬 ChatProvider messages before: ${chatProv.messages.length}');
+        
+        try {
+          setState(() => isLoadingAI = true);
+          
+          // Store message count before sending to detect new messages
+          final messageCountBefore = chatProv.messages.length;
+          
+          debugPrint('💬 Calling chatProv.sendMessage()...');
+          await chatProv.sendMessage(transcript);
+          debugPrint('💬 chatProv.sendMessage() completed');
+          debugPrint('💬 ChatProvider messages after: ${chatProv.messages.length}');
+          debugPrint('💬 hasPendingEmail after sendMessage: ${chatProv.hasPendingEmail}');
+          
+          // If provider created a pending email, ask confirmation via voice
+          if (chatProv.hasPendingEmail) {
+            final to = chatProv.pendingEmail?['to'] ?? '';
+            final subject = chatProv.pendingEmail?['subject'] ?? '';
+            debugPrint('📧 Pending email created - to: $to, subject: ${subject.substring(0, math.min(30, subject.length))}...');
+            final confirmText =
+                'Je vais envoyer un mail à $to. Veux‑tu que je l\'envoie maintenant ?';
+            debugPrint('🔊 Speaking confirmation request: "$confirmText"');
+            _addMessage(confirmText, MessageSender.ai);
+            simulateAISpeaking(confirmText);
+            setState(() => isLoadingAI = false);
+            return;
+          }
+          
+          // Get new assistant messages from ChatProvider (n8n response)
+          // Find messages added after sendMessage was called
+          if (chatProv.messages.length > messageCountBefore) {
+            // Get all new assistant messages
+            final newMessages = chatProv.messages.skip(messageCountBefore).toList();
+            for (final msg in newMessages) {
+              if (msg.role == 'assistant' && msg.content.isNotEmpty && !msg.isLoading) {
+                debugPrint('💬 Got n8n response: "${msg.content.substring(0, math.min(50, msg.content.length))}..."');
+                _addMessage(msg.content, MessageSender.ai);
+                simulateAISpeaking(msg.content);
+                setState(() => isLoadingAI = false);
+                return;
+              }
+            }
+          }
+          
+          // Fallback: check last message if no new messages detected
+          if (chatProv.messages.isNotEmpty) {
+            final lastMessage = chatProv.messages.last;
+            if (lastMessage.role == 'assistant' && lastMessage.content.isNotEmpty && !lastMessage.isLoading) {
+              debugPrint('💬 Got last n8n response: "${lastMessage.content.substring(0, math.min(50, lastMessage.content.length))}..."');
+              _addMessage(lastMessage.content, MessageSender.ai);
+              simulateAISpeaking(lastMessage.content);
+              setState(() => isLoadingAI = false);
+              return;
+            }
+          }
+          
+          // Fallback if no response
+          debugPrint('⚠️ No response from ChatProvider');
+          setState(() => isLoadingAI = false);
+        } catch (e) {
+          debugPrint('❌ Voice->ChatProvider sendMessage error: $e');
+          final errorSpoken = "Désolé, je n'ai pas pu traiter votre demande. Veuillez réessayer.";
+          _addMessage(errorSpoken, MessageSender.ai);
+          simulateAISpeaking(errorSpoken);
+          setState(() => isLoadingAI = false);
+          return;
+        }
       }
       setState(() => currentTranscript = "");
     } else {
@@ -484,41 +656,66 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
 
   void handleSendMessage() {
     final text = _textController.text.trim();
-    if (text.isNotEmpty) {
-      _addMessage(text, MessageSender.user);
-      _textController.clear();
-      _requestAIResponse(text);
-    }
+    if (text.isEmpty) return;
+    _addMessage(text, MessageSender.user);
+    _textController.clear();
+    _requestAIResponseViaChatProvider(text);
   }
 
-  /// Appelle l'API chat (backend) pour une réponse dynamique ; en cas d'erreur, affiche un message de repli.
-  Future<void> _requestAIResponse(String _) async {
+  /// Same logic as Chat page: use ChatProvider (n8n) for email intent + confirmation and all replies.
+  Future<void> _requestAIResponseViaChatProvider(String userText) async {
     if (!mounted) return;
     setState(() => isLoadingAI = true);
 
-    try {
-      final apiMessages = messages
-          .map(
-            (m) => {
-              'role': m.sender == MessageSender.user ? 'user' : 'assistant',
-              'content': m.text,
-            },
-          )
-          .toList();
+    final chatProv = Provider.of<ChatProvider>(context, listen: false);
+    final messageCountBefore = chatProv.messages.length;
 
-      final response = await widget.chatDataSource.sendMessages(
-        apiMessages,
-        systemInstruction: chatSystemInstructionMultilingual,
-      );
+    try {
+      await chatProv.sendMessage(userText);
       if (!mounted) return;
       setState(() => isLoadingAI = false);
-      _addMessage(response, MessageSender.ai);
-      simulateAISpeaking(response);
-    } catch (_) {
+
+      // Pending email: ask confirmation like Chat page
+      if (chatProv.hasPendingEmail) {
+        final to = chatProv.pendingEmail?['to'] ?? '';
+        final confirmText =
+            'Je vais envoyer un mail à $to. Veux-tu que je l\'envoie maintenant ?';
+        _addMessage(confirmText, MessageSender.ai);
+        simulateAISpeaking(confirmText);
+        return;
+      }
+
+      // New assistant message(s) from n8n
+      if (chatProv.messages.length > messageCountBefore) {
+        final newList = chatProv.messages
+            .skip(messageCountBefore)
+            .where((m) => m.role == 'assistant' && m.content.isNotEmpty && !m.isLoading)
+            .toList();
+        if (newList.isNotEmpty) {
+          final reply = newList.last.content;
+          _addMessage(reply, MessageSender.ai);
+          simulateAISpeaking(reply);
+          return;
+        }
+      }
+      if (chatProv.messages.isNotEmpty) {
+        final last = chatProv.messages.last;
+        if (last.role == 'assistant' && last.content.isNotEmpty) {
+          _addMessage(last.content, MessageSender.ai);
+          simulateAISpeaking(last.content);
+          return;
+        }
+      }
+
+      const fallback = "J'ai bien reçu votre message. Comment puis-je vous aider ?";
+      _addMessage(fallback, MessageSender.ai);
+      simulateAISpeaking(fallback);
+    } catch (e) {
       if (!mounted) return;
       setState(() => isLoadingAI = false);
-      const fallback =
-          "J'ai bien reçu votre message. Comment puis-je vous aider ?";
+      final fallback = chatProv.error?.isNotEmpty == true
+          ? chatProv.error!
+          : "Désolé, une erreur s'est produite. Veuillez réessayer.";
       _addMessage(fallback, MessageSender.ai);
       simulateAISpeaking(fallback);
     }
@@ -810,7 +1007,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                   Column(
                     children: [
                       Text(
-                        "Talk to buddy",
+                        AppStrings.tr(context, 'talkToBuddy'),
                         style: TextStyle(
                           color: Colors.cyan[200]!.withOpacity(0.6),
                           fontSize: Responsive.getResponsiveValue(
@@ -849,10 +1046,10 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                             children: [
                               Text(
                                 isListening
-                                    ? "Parle, j'écoute..."
+                                    ? AppStrings.tr(context, 'listeningPrompt')
                                     : isSpeaking
-                                    ? "Je réfléchis..."
-                                    : "Prêt à vous aider pour",
+                                    ? AppStrings.tr(context, 'thinkingPrompt')
+                                    : AppStrings.tr(context, 'readyToHelp'),
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: Responsive.getResponsiveValue(
@@ -866,7 +1063,10 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                               ),
                               if (!isListening && !isSpeaking)
                                 Text(
-                                  "tout ce dont vous avez besoin aujourd'hui !",
+                                  AppStrings.tr(
+                                    context,
+                                    'everythingYouNeedToday',
+                                  ),
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: Responsive.getResponsiveValue(
@@ -1027,7 +1227,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                     ),
                   ),
                   decoration: InputDecoration(
-                    hintText: "Enter your prompt here...",
+                    hintText: AppStrings.tr(context, 'enterPromptHere'),
                     hintStyle: TextStyle(
                       color: Colors.cyan[200]!.withOpacity(0.3),
                     ),

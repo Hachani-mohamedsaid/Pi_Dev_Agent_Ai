@@ -4,6 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/l10n/app_strings.dart';
 
 class NavigationBarWidget extends StatelessWidget {
   final String currentPath;
@@ -20,6 +21,7 @@ class NavigationBarWidget extends StatelessWidget {
     final isProfileActive = currentPath == '/profile';
     final isVoiceActive = currentPath == '/voice-assistant';
     final isAutomationActive = currentPath == '/automation';
+    final isWorkProposalsActive = currentPath == '/work-proposals';
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = isMobile ? 16.0 : 24.0;
 
@@ -65,7 +67,7 @@ class NavigationBarWidget extends StatelessWidget {
                   Flexible(
                     child: _NavButton(
                       icon: Icons.home,
-                      label: 'Home',
+                      label: AppStrings.tr(context, 'home'),
                       isActive: isHomeActive,
                       onTap: () => context.go('/home'),
                       isMobile: isMobile,
@@ -75,7 +77,7 @@ class NavigationBarWidget extends StatelessWidget {
                   Flexible(
                     child: _NavButton(
                       icon: Icons.mic,
-                      label: 'Voice',
+                      label: AppStrings.tr(context, 'voice'),
                       isActive: isVoiceActive,
                       onTap: () => context.go('/voice-assistant'),
                       isMobile: isMobile,
@@ -93,7 +95,7 @@ class NavigationBarWidget extends StatelessWidget {
                   Flexible(
                     child: _NavButton(
                       icon: LucideIcons.zap,
-                      label: 'Rules',
+                      label: AppStrings.tr(context, 'rules'),
                       isActive: isAutomationActive,
                       onTap: () => context.go('/automation'),
                       isMobile: isMobile,
@@ -110,8 +112,26 @@ class NavigationBarWidget extends StatelessWidget {
                   SizedBox(width: isMobile ? 8 : 12),
                   Flexible(
                     child: _NavButton(
+                      icon: LucideIcons.briefcase,
+                      label: 'Propositions',
+                      isActive: isWorkProposalsActive,
+                      onTap: () => context.go('/work-proposals'),
+                      isMobile: isMobile,
+                      activeGradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFF10B981).withOpacity(0.3),
+                          const Color(0xFF059669).withOpacity(0.3),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: isMobile ? 8 : 12),
+                  Flexible(
+                    child: _NavButton(
                       icon: Icons.person,
-                      label: 'Profile',
+                      label: AppStrings.tr(context, 'profile'),
                       isActive: isProfileActive,
                       onTap: () => context.go('/profile'),
                       isMobile: isMobile,

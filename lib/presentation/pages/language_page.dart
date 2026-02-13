@@ -4,6 +4,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/services/locale_service.dart';
+import '../../core/l10n/app_strings.dart';
 
 class LanguagePage extends StatefulWidget {
   const LanguagePage({super.key});
@@ -13,7 +15,13 @@ class LanguagePage extends StatefulWidget {
 }
 
 class _LanguagePageState extends State<LanguagePage> {
-  String _selectedLanguage = 'en';
+  late String _selectedLanguage;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedLanguage = LocaleService.instance.languageCode;
+  }
 
   final List<Map<String, String>> _languages = [
     {'code': 'en', 'name': 'English', 'nativeName': 'English', 'flag': '🇺🇸'},
@@ -34,8 +42,8 @@ class _LanguagePageState extends State<LanguagePage> {
     setState(() {
       _selectedLanguage = code;
     });
-    // Handle language change
-    Future.delayed(const Duration(milliseconds: 500), () {
+    LocaleService.instance.setLocale(code);
+    Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted) {
         context.pop();
       }
@@ -101,7 +109,7 @@ class _LanguagePageState extends State<LanguagePage> {
                       ),
                     ),
                     Text(
-                      'Language',
+                      AppStrings.tr(context, 'languagePageTitle'),
                       style: TextStyle(
                         fontSize: isMobile ? 20 : 24,
                         fontWeight: FontWeight.bold,
@@ -146,7 +154,7 @@ class _LanguagePageState extends State<LanguagePage> {
                           SizedBox(width: isMobile ? 12 : 16),
                           Expanded(
                             child: Text(
-                              'Select your preferred language for the app',
+                              AppStrings.tr(context, 'selectPreferredLanguage'),
                               style: TextStyle(
                                 fontSize: isMobile ? 13 : 14,
                                 color: AppColors.textCyan200.withOpacity(0.7),

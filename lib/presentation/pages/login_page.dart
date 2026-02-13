@@ -11,6 +11,7 @@ import 'package:pi_dev_agentia/presentation/widgets/google_sign_in_button_web.da
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/utils/validators.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../domain/usecases/social_login_usecase.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
@@ -293,7 +294,7 @@ class _LoginPageState extends State<LoginPage> {
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Title
                                     Text(
-                                          'Welcome Back',
+                                          AppStrings.tr(context, 'welcomeBack'),
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
                                             fontSize: isMobile ? 28 : 32,
@@ -312,7 +313,7 @@ class _LoginPageState extends State<LoginPage> {
                                     SizedBox(height: isMobile ? 8 : 12),
                                     // Subtitle
                                     Text(
-                                      'Sign in to continue to your AI assistant',
+                                      AppStrings.tr(context, 'signInSubtitle'),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: isMobile ? 14 : 16,
@@ -328,8 +329,8 @@ class _LoginPageState extends State<LoginPage> {
                                     Builder(
                                           builder: (context) {
                                             return CustomTextField(
-                                              label: 'Email',
-                                              hint: 'Enter your email',
+                                              label: AppStrings.tr(context, 'email'),
+                                              hint: AppStrings.tr(context, 'enterEmail'),
                                               icon: Icons.mail_outline,
                                               controller: _emailController,
                                               keyboardType:
@@ -351,8 +352,8 @@ class _LoginPageState extends State<LoginPage> {
                                     Builder(
                                           builder: (context) {
                                             return CustomTextField(
-                                              label: 'Password',
-                                              hint: 'Enter your password',
+                                              label: AppStrings.tr(context, 'password'),
+                                              hint: AppStrings.tr(context, 'enterPassword'),
                                               icon: Icons.lock_outline,
                                               controller: _passwordController,
                                               obscureText: _obscurePassword,
@@ -449,7 +450,7 @@ class _LoginPageState extends State<LoginPage> {
                                                 desktop: 10.0,
                                               )),
                                               Text(
-                                                'Remember me',
+                                                AppStrings.tr(context, 'rememberMe'),
                                                 style: TextStyle(
                                                   color: AppColors.textCyan200,
                                                   fontSize: Responsive.getResponsiveValue(
@@ -468,7 +469,7 @@ class _LoginPageState extends State<LoginPage> {
                                           onPressed: () =>
                                               context.push('/reset-password'),
                                           child: Text(
-                                            'Forgot Password?',
+                                            AppStrings.tr(context, 'forgotPassword'),
                                             style: TextStyle(
                                               color: AppColors.cyan400,
                                               fontSize: Responsive.getResponsiveValue(
@@ -491,7 +492,7 @@ class _LoginPageState extends State<LoginPage> {
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Login Button
                                     CustomButton(
-                                          text: 'Sign In',
+                                          text: AppStrings.tr(context, 'signIn'),
                                           onPressed: _handleLogin,
                                           isLoading:
                                               widget.controller.isLoading,
@@ -519,7 +520,7 @@ class _LoginPageState extends State<LoginPage> {
                                             horizontal: isMobile ? 12 : 16,
                                           ),
                                           child: Text(
-                                            'Or continue with',
+                                            AppStrings.tr(context, 'orContinueWith'),
                                             style: TextStyle(
                                               color: AppColors.textCyan200
                                                   .withOpacity(0.6),
@@ -576,7 +577,7 @@ class _LoginPageState extends State<LoginPage> {
                                                                   : 22,
                                                             ),
                                                             text:
-                                                                'Google Account',
+                                                                AppStrings.tr(context, 'googleAccount'),
                                                             onPressed: () =>
                                                                 _handleSocialLogin(
                                                                   SocialProvider
@@ -608,7 +609,7 @@ class _LoginPageState extends State<LoginPage> {
                                                                   : 26,
                                                             ),
                                                             text:
-                                                                'Apple Account',
+                                                                AppStrings.tr(context, 'appleAccount'),
                                                             onPressed: () =>
                                                                 _handleSocialLogin(
                                                                   SocialProvider
@@ -656,7 +657,7 @@ class _LoginPageState extends State<LoginPage> {
                                                           : 16,
                                                     ),
                                                     Text(
-                                                      'Connexion en cours...',
+                                                      AppStrings.tr(context, 'loggingIn'),
                                                       style: TextStyle(
                                                         color:
                                                             AppColors.textWhite,
@@ -679,7 +680,7 @@ class _LoginPageState extends State<LoginPage> {
                                           MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          "Don't have an account? ",
+                                          AppStrings.tr(context, 'dontHaveAccount') + ' ',
                                           style: TextStyle(
                                             color: AppColors.textCyan200
                                                 .withOpacity(0.6),
@@ -690,7 +691,7 @@ class _LoginPageState extends State<LoginPage> {
                                           onPressed: () =>
                                               context.push('/register'),
                                           child: Text(
-                                            'Sign Up',
+                                            AppStrings.tr(context, 'register'),
                                             style: TextStyle(
                                               color: AppColors.cyan400,
                                               fontSize: isMobile ? 13 : 14,

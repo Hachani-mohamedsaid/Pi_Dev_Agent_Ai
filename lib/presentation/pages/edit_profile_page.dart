@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/config/imgbb_config.dart';
 import '../../core/config/open_weather_config.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/utils/responsive.dart';
 import '../../data/services/imgbb_upload_service.dart';
 import '../../data/services/open_weather_service.dart';
@@ -141,7 +142,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         setState(() => _uploadingPhoto = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Upload failed'), backgroundColor: Colors.red),
+            SnackBar(content: Text(AppStrings.tr(context, 'uploadFailed')), backgroundColor: Colors.red),
           );
         }
         return;
@@ -154,7 +155,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       });
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Photo updated'), backgroundColor: Colors.green),
+          SnackBar(content: Text(AppStrings.tr(context, 'photoUpdated')), backgroundColor: Colors.green),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -165,7 +166,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (mounted) setState(() => _uploadingPhoto = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Upload failed'), backgroundColor: Colors.red),
+          SnackBar(content: Text(AppStrings.tr(context, 'uploadFailed')), backgroundColor: Colors.red),
         );
       }
     }
@@ -230,8 +231,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (!mounted) return;
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profil mis à jour'),
+        SnackBar(
+          content: Text(AppStrings.tr(context, 'profileUpdated')),
           backgroundColor: Colors.green,
         ),
       );
@@ -314,7 +315,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       ),
                     ),
                     Text(
-                      'Edit Profile',
+                      AppStrings.tr(context, 'editProfile'),
                       style: TextStyle(
                         fontSize: isMobile ? 20 : 24,
                         fontWeight: FontWeight.bold,
@@ -441,7 +442,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   child: Column(
                     children: [
                       CustomTextField(
-                        label: 'Full Name',
+                        label: AppStrings.tr(context, 'fullName'),
                         hint: 'Enter your name',
                         icon: Icons.person_outline,
                         controller: _nameController,
@@ -451,7 +452,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           .slideY(begin: 0.2, end: 0, duration: 300.ms),
                       SizedBox(height: isMobile ? 20 : 24),
                       CustomTextField(
-                        label: 'Email Address',
+                        label: AppStrings.tr(context, 'emailAddress'),
                         hint: 'Enter your email',
                         icon: Icons.mail_outline,
                         controller: _emailController,
@@ -463,7 +464,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           .slideY(begin: 0.2, end: 0, duration: 300.ms),
                       SizedBox(height: isMobile ? 20 : 24),
                       CustomTextField(
-                        label: 'Phone Number',
+                        label: AppStrings.tr(context, 'phoneNumber'),
                         hint: 'Enter your phone',
                         icon: Icons.phone_outlined,
                         controller: _phoneController,
@@ -477,7 +478,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           CustomTextField(
-                            label: 'Location',
+                            label: AppStrings.tr(context, 'location'),
                             hint: 'Type to search cities…',
                             icon: Icons.location_on_outlined,
                             controller: _locationController,
@@ -644,8 +645,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           }
                         },
                         child: CustomTextField(
-                          label: 'Birth Date',
-                          hint: 'Select date',
+                          label: AppStrings.tr(context, 'birthDate'),
+                          hint: AppStrings.tr(context, 'selectDate'),
                           icon: Icons.calendar_today_outlined,
                           controller: _birthDateController,
                           readOnly: true,

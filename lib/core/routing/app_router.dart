@@ -17,6 +17,7 @@ import '../../presentation/pages/notifications_center_page.dart';
 import '../../presentation/pages/privacy_security_page.dart';
 import '../../presentation/pages/change_password_page.dart';
 import '../../presentation/pages/voice_assistant_page.dart';
+import '../../presentation/pages/chat_page.dart';
 import '../../presentation/pages/suggestions_feed_page.dart';
 import '../../presentation/pages/agenda_page.dart';
 import '../../presentation/pages/emails_page.dart';
@@ -30,6 +31,11 @@ import '../../presentation/pages/insights_page.dart';
 import '../../presentation/pages/connected_services_page.dart';
 import '../../presentation/pages/decision_support_page.dart';
 import '../../presentation/pages/goals_page.dart';
+import '../../presentation/pages/work_proposals_page.dart';
+import '../../presentation/pages/project_analysis_page.dart';
+import '../../presentation/pages/how_to_work_page.dart';
+import '../../presentation/pages/work_proposal_details_page.dart';
+import '../../data/models/work_proposal_model.dart';
 import '../../injection_container.dart';
 
 // Custom page transition - fade and scale from center
@@ -234,6 +240,14 @@ final appRouter = GoRouter(
         ),
       ),
     ),
+    GoRoute(
+      path: '/chat',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const ChatPage(),
+      ),
+    ),
     // Notifications Center (from home screen bell)
     GoRoute(
       path: '/notifications-center',
@@ -330,6 +344,68 @@ final appRouter = GoRouter(
         state: state,
         child: const GoalsPage(),
       ),
+    ),
+    GoRoute(
+      path: '/work-proposals',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const WorkProposalsPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/project-analysis',
+      pageBuilder: (context, state) {
+        final proposal = state.extra as WorkProposal?;
+        if (proposal == null) {
+          return _fadeScaleTransition(
+            context: context,
+            state: state,
+            child: const WorkProposalsPage(),
+          );
+        }
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: ProjectAnalysisPage(proposal: proposal),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/work-proposal-details',
+      pageBuilder: (context, state) {
+        final proposal = state.extra as WorkProposal?;
+        if (proposal == null) {
+          return _fadeScaleTransition(
+            context: context,
+            state: state,
+            child: const WorkProposalsPage(),
+          );
+        }
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: WorkProposalDetailsPage(proposal: proposal),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/how-to-work',
+      pageBuilder: (context, state) {
+        final proposal = state.extra as WorkProposal?;
+        if (proposal == null) {
+          return _fadeScaleTransition(
+            context: context,
+            state: state,
+            child: const WorkProposalsPage(),
+          );
+        }
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: HowToWorkPage(proposal: proposal),
+        );
+      },
     ),
   ],
 );

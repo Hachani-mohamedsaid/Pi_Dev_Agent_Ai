@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/l10n/app_strings.dart';
 import '../state/auth_controller.dart';
 import '../widgets/navigation_bar.dart';
 
@@ -95,39 +96,39 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  String _getGreeting() {
+  String _getGreeting(BuildContext context) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return AppStrings.tr(context, 'goodMorning');
+    if (hour < 18) return AppStrings.tr(context, 'goodAfternoon');
+    return AppStrings.tr(context, 'goodEvening');
   }
 
   String _getCurrentDate() {
     final now = DateTime.now();
     final weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
+      AppStrings.tr(context, 'monday'),
+      AppStrings.tr(context, 'tuesday'),
+      AppStrings.tr(context, 'wednesday'),
+      AppStrings.tr(context, 'thursday'),
+      AppStrings.tr(context, 'friday'),
+      AppStrings.tr(context, 'saturday'),
+      AppStrings.tr(context, 'sunday'),
     ];
     final months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
+      AppStrings.tr(context, 'january'),
+      AppStrings.tr(context, 'february'),
+      AppStrings.tr(context, 'march'),
+      AppStrings.tr(context, 'april'),
+      AppStrings.tr(context, 'may'),
+      AppStrings.tr(context, 'june'),
+      AppStrings.tr(context, 'july'),
+      AppStrings.tr(context, 'august'),
+      AppStrings.tr(context, 'september'),
+      AppStrings.tr(context, 'october'),
+      AppStrings.tr(context, 'november'),
+      AppStrings.tr(context, 'december'),
     ];
-    return 'Today is ${weekdays[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
+    return '${AppStrings.tr(context, 'todayIs')} ${weekdays[now.weekday - 1]}, ${now.day} ${months[now.month - 1]}';
   }
 
   @override
@@ -148,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       desktop: 700.0,
     );
 
-    final userName = widget.controller.currentUser?.name ?? 'User';
+    final userName = widget.controller.currentUser?.name ?? AppStrings.tr(context, 'user');
 
     return Scaffold(
       body: Container(
@@ -409,7 +410,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${_getGreeting()}, $userName',
+                '${_getGreeting(context)}, $userName',
                 style: TextStyle(
                   fontSize: Responsive.getResponsiveValue(
                     context,
@@ -488,7 +489,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   Text(
-                    'Up to date',
+                    AppStrings.tr(context, 'upToDate'),
                     style: TextStyle(
                       fontSize: Responsive.getResponsiveValue(
                         context,
@@ -1128,7 +1129,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         Text(
-                          "Today's Overview",
+                          AppStrings.tr(context, 'dailySummary'),
                           style: TextStyle(
                             fontSize: Responsive.getResponsiveValue(
                               context,
@@ -1406,7 +1407,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
             Flexible(
               child: Text(
-                'View Smart Suggestions',
+                AppStrings.tr(context, 'viewSmartSuggestions'),
                 style: TextStyle(
                   color: const Color(0xFFFFE082),
                   fontSize: Responsive.getResponsiveValue(
@@ -1520,7 +1521,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Suggestion',
+                          AppStrings.tr(context, 'suggestion'),
                           style: TextStyle(
                             fontSize: Responsive.getResponsiveValue(
                               context,
@@ -1636,7 +1637,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   ),
                                 ),
                                 Text(
-                                  'Confirm',
+                                  AppStrings.tr(context, 'confirm'),
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: Responsive.getResponsiveValue(
@@ -1724,7 +1725,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   ),
                                 ),
                                 Text(
-                                  'Modify',
+                                  AppStrings.tr(context, 'modify'),
                                   style: TextStyle(
                                     color: AppColors.textCyan300,
                                     fontSize: Responsive.getResponsiveValue(
@@ -1814,35 +1815,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildQuickActionsSection(BuildContext context, bool isMobile) {
     final actions = [
       {
-        'title': 'Review agenda',
+        'title': AppStrings.tr(context, 'reviewAgenda'),
         'icon': LucideIcons.calendar,
         'route': '/agenda',
         'color': const Color(0xFFA855F7),
         'colorLight': const Color(0xFF3B82F6),
       },
       {
-        'title': 'Summarize emails',
+        'title': AppStrings.tr(context, 'summarizeEmails'),
         'icon': LucideIcons.mail,
         'route': '/emails',
         'color': AppColors.cyan500,
         'colorLight': const Color(0xFF3B82F6),
       },
       {
-        'title': 'View AI activity',
+        'title': AppStrings.tr(context, 'viewAIActivity'),
         'icon': LucideIcons.history,
         'route': '/history',
         'color': const Color(0xFFFFC107),
         'colorLight': const Color(0xFFFF9800),
       },
       {
-        'title': 'Travel & Journeys',
+        'title': AppStrings.tr(context, 'travelAndJourneys'),
         'icon': LucideIcons.car,
         'route': '/travel',
         'color': const Color(0xFFFF9800),
         'colorLight': const Color(0xFFFFC107),
       },
       {
-        'title': 'Smart Actions Hub',
+        'title': AppStrings.tr(context, 'smartActionsHub'),
         'icon': LucideIcons.zap,
         'route': '/actions',
         'color': const Color(0xFFEC4899),
@@ -1854,7 +1855,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Quick Actions',
+          AppStrings.tr(context, 'quickActions'),
           style: TextStyle(
             fontSize: Responsive.getResponsiveValue(
               context,
