@@ -253,6 +253,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'iconColor': const Color(0xFFFCD34D),
         'description': AppStrings.tr(context, 'goalsGrowthDesc'),
       },
+      {
+        'icon': LucideIcons.zap,
+        'label': 'Automation Rules',
+        'route': '/automation',
+        'gradient': [
+          const Color(0xFFFFB800).withOpacity(0.2),
+          const Color(0xFFFF9800).withOpacity(0.2),
+        ],
+        'iconColor': const Color(0xFFFFD93D),
+        'description': 'Manage your AI automation rules',
+      },
     ];
 
     return features.asMap().entries.map((entry) {

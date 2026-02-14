@@ -20,7 +20,7 @@ class NavigationBarWidget extends StatelessWidget {
     final isHomeActive = currentPath == '/home';
     final isProfileActive = currentPath == '/profile';
     final isVoiceActive = currentPath == '/voice-assistant';
-    final isAutomationActive = currentPath == '/automation';
+    final isFinanceActive = currentPath == '/finance';
     final isWorkProposalsActive = currentPath == '/work-proposals';
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = isMobile ? 16.0 : 24.0;
@@ -76,6 +76,24 @@ class NavigationBarWidget extends StatelessWidget {
                   SizedBox(width: isMobile ? 8 : 12),
                   Flexible(
                     child: _NavButton(
+                      icon: LucideIcons.dollarSign,
+                      label: 'Finance',
+                      isActive: isFinanceActive,
+                      onTap: () => context.go('/finance'),
+                      isMobile: isMobile,
+                      activeGradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFF10B981).withOpacity(0.3),
+                          const Color(0xFF06B6D4).withOpacity(0.3),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: isMobile ? 8 : 12),
+                  Flexible(
+                    child: _NavButton(
                       icon: Icons.mic,
                       label: AppStrings.tr(context, 'voice'),
                       isActive: isVoiceActive,
@@ -87,24 +105,6 @@ class NavigationBarWidget extends StatelessWidget {
                         colors: [
                           const Color(0xFF9333EA).withOpacity(0.3),
                           const Color(0xFFEC4899).withOpacity(0.3),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: isMobile ? 8 : 12),
-                  Flexible(
-                    child: _NavButton(
-                      icon: LucideIcons.zap,
-                      label: AppStrings.tr(context, 'rules'),
-                      isActive: isAutomationActive,
-                      onTap: () => context.go('/automation'),
-                      isMobile: isMobile,
-                      activeGradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          const Color(0xFFFFB800).withOpacity(0.3),
-                          const Color(0xFFFF9800).withOpacity(0.3),
                         ],
                       ),
                     ),
