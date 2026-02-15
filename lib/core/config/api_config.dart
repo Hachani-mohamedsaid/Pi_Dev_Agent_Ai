@@ -30,6 +30,14 @@ const String projectActionN8nWebhookUrl =
 /// POST /project-analyses - sauvegarde l'analyse (body: row_number, analysis JSON)
 const String projectAnalysesPath = '/project-analyses';
 
+/// Endpoints Goals (objectifs utilisateur).
+/// GET /goals -> Liste des objectifs [{ id, title, category, progress, deadline, dailyActions: [{ id, label, completed }], streak }]
+/// GET /goals/achievements -> Liste des achievements [{ id, icon, title, date }]
+/// POST /goals -> Créer un objectif (body: title, category, deadline?, dailyActions?)
+/// PATCH /goals/:id -> Mettre à jour (body: progress?, ...)
+/// PATCH /goals/:id/actions/:actionId -> Toggle action (body: { completed: true })
+const String goalsPath = '/goals';
+
 /// Clé API OpenAI utilisée côté Flutter pour OpenAI TTS (voix type ChatGPT)
 /// via le package `openai_tts`.
 ///

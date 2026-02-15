@@ -20,8 +20,8 @@ class NavigationBarWidget extends StatelessWidget {
     final isHomeActive = currentPath == '/home';
     final isProfileActive = currentPath == '/profile';
     final isVoiceActive = currentPath == '/voice-assistant';
-    final isFinanceActive = currentPath == '/finance';
-    final isWorkProposalsActive = currentPath == '/work-proposals';
+    final isAutomationActive = currentPath == '/automation';
+    final isWorkProposalsActive = currentPath == '/work-proposals' || currentPath == '/work-proposals-dashboard';
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = isMobile ? 16.0 : 24.0;
 

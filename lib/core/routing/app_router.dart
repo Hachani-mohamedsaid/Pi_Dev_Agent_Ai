@@ -15,6 +15,7 @@ import '../../presentation/pages/language_page.dart';
 import '../../presentation/pages/notifications_page.dart';
 import '../../presentation/pages/notifications_center_page.dart';
 import '../../presentation/pages/privacy_security_page.dart';
+import '../../presentation/pages/help_support_page.dart';
 import '../../presentation/pages/change_password_page.dart';
 import '../../presentation/pages/voice_assistant_page.dart';
 import '../../presentation/pages/chat_page.dart';
@@ -33,6 +34,7 @@ import '../../presentation/pages/connected_services_page.dart';
 import '../../presentation/pages/decision_support_page.dart';
 import '../../presentation/pages/goals_page.dart';
 import '../../presentation/pages/work_proposals_page.dart';
+import '../../presentation/pages/work_proposals_dashboard_page.dart';
 import '../../presentation/pages/project_analysis_page.dart';
 import '../../presentation/pages/how_to_work_page.dart';
 import '../../presentation/pages/work_proposal_details_page.dart';
@@ -222,6 +224,14 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/help-support',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const HelpSupportPage(),
+      ),
+    ),
+    GoRoute(
       path: '/change-password',
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
@@ -360,6 +370,14 @@ final appRouter = GoRouter(
         context: context,
         state: state,
         child: const WorkProposalsPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/work-proposals-dashboard',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const WorkProposalsDashboardPage(),
       ),
     ),
     GoRoute(
