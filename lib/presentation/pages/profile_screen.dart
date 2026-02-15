@@ -85,7 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header with Settings
+                    // Header with Dashboard and Settings
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -97,7 +97,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: AppColors.textWhite,
                           ),
                         ),
-                        SettingsMenu(controller: widget.controller),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Dashboard button
+                            GestureDetector(
+                              onTap: () => context.go('/work-proposals-dashboard'),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isMobile ? 12 : 16,
+                                  vertical: isMobile ? 10 : 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      AppColors.cyan500.withOpacity(0.3),
+                                      AppColors.blue500.withOpacity(0.3),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
+                                  border: Border.all(
+                                    color: AppColors.cyan500.withOpacity(0.4),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      LucideIcons.layoutDashboard,
+                                      size: isMobile ? 18 : 20,
+                                      color: AppColors.cyan400,
+                                    ),
+                                    SizedBox(width: isMobile ? 6 : 8),
+                                    Text(
+                                      AppStrings.tr(context, 'dashboard'),
+                                      style: TextStyle(
+                                        fontSize: isMobile ? 13 : 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.cyan400,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: isMobile ? 10 : 12),
+                            SettingsMenu(controller: widget.controller),
+                          ],
+                        ),
                       ],
                     ),
                     SizedBox(height: isMobile ? 24 : 32),

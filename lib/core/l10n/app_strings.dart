@@ -23,6 +23,7 @@ class AppStrings {
 
       "home": "Home",
       "profile": "Profile",
+      "dashboard": "Dashboard",
       "voiceAssistant": "Voice Assistant",
       "suggestions": "Suggestions",
       "agenda": "Agenda",
@@ -95,6 +96,7 @@ class AppStrings {
 
       "home": "Accueil",
       "profile": "Profil",
+      "dashboard": "Tableau de bord",
       "voiceAssistant": "Assistant vocal",
 
       "email": "E-mail",

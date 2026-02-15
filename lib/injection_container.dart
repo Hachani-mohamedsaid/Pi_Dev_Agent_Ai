@@ -31,6 +31,9 @@ import 'presentation/state/auth_controller.dart';
 import 'data/services/n8n_chat_service.dart';
 import 'presentation/state/chat_provider.dart';
 
+// Goals API (avec JWT pour stockage backend)
+import 'data/services/goals_api_service.dart';
+
 /// Very small manual DI container (no external packages).
 class InjectionContainer {
   InjectionContainer._();
@@ -140,4 +143,10 @@ class InjectionContainer {
 
   /// Get the n8n chat service directly if needed
   N8nChatService getN8nChatService() => _n8nChatService;
+
+  // Goals API (envoie le JWT pour que le backend stocke les objectifs par utilisateur)
+  late final GoalsApiService _goalsApiService =
+      GoalsApiService(authLocalDataSource: _authLocalDataSource);
+
+  GoalsApiService get goalsApiService => _goalsApiService;
 }

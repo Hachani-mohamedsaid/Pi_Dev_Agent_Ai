@@ -48,6 +48,11 @@ class _SettingsMenuState extends State<SettingsMenu> {
     context.push('/privacy-security');
   }
 
+  void _handleHelpSupport() {
+    _hideMenu();
+    context.push('/help-support');
+  }
+
   void _showMenu() {
     final overlay = Overlay.of(context);
     final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
@@ -70,6 +75,7 @@ class _SettingsMenuState extends State<SettingsMenu> {
         onLanguageChange: _handleLanguageChange,
         onNotifications: _handleNotifications,
         onPrivacySecurity: _handlePrivacySecurity,
+        onHelpSupport: _handleHelpSupport,
         onLogout: _handleLogout,
       ),
     );
@@ -142,6 +148,7 @@ class _SettingsMenuOverlay extends StatelessWidget {
   final VoidCallback onLanguageChange;
   final VoidCallback onNotifications;
   final VoidCallback onPrivacySecurity;
+  final VoidCallback onHelpSupport;
   final VoidCallback onLogout;
 
   const _SettingsMenuOverlay({
@@ -153,6 +160,7 @@ class _SettingsMenuOverlay extends StatelessWidget {
     required this.onLanguageChange,
     required this.onNotifications,
     required this.onPrivacySecurity,
+    required this.onHelpSupport,
     required this.onLogout,
   });
 
@@ -183,6 +191,7 @@ class _SettingsMenuOverlay extends StatelessWidget {
                   onLanguageChange: onLanguageChange,
                   onNotifications: onNotifications,
                   onPrivacySecurity: onPrivacySecurity,
+                  onHelpSupport: onHelpSupport,
                   onLogout: onLogout,
                 ),
               ),
@@ -202,6 +211,7 @@ class _SettingsMenuContent extends StatelessWidget {
   final VoidCallback onLanguageChange;
   final VoidCallback onNotifications;
   final VoidCallback onPrivacySecurity;
+  final VoidCallback onHelpSupport;
   final VoidCallback onLogout;
 
   const _SettingsMenuContent({
@@ -212,6 +222,7 @@ class _SettingsMenuContent extends StatelessWidget {
     required this.onLanguageChange,
     required this.onNotifications,
     required this.onPrivacySecurity,
+    required this.onHelpSupport,
     required this.onLogout,
   });
 
@@ -333,7 +344,7 @@ class _SettingsMenuContent extends StatelessWidget {
                 icon: Icons.help_outline,
                 label: AppStrings.tr(context, 'helpSupport'),
                 isMobile: isMobile,
-                onTap: () {},
+                onTap: onHelpSupport,
               ),
 
               Divider(
