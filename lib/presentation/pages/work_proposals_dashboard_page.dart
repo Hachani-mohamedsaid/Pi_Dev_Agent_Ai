@@ -419,10 +419,13 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
         borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
         border: Border.all(color: AppColors.cyan500.withOpacity(0.2), width: 1),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+      clipBehavior: Clip.antiAlias,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: Responsive.getResponsiveValue(context, mobile: 4.0, tablet: 6.0, desktop: 8.0),
+          ),
           child: Column(
             children: [
               SizedBox(
@@ -513,10 +516,13 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
         borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
         border: Border.all(color: AppColors.cyan500.withOpacity(0.2), width: 1),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+      clipBehavior: Clip.antiAlias,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: Responsive.getResponsiveValue(context, mobile: 4.0, tablet: 6.0, desktop: 8.0),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -663,10 +669,13 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
         borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
         border: Border.all(color: AppColors.cyan500.withOpacity(0.2), width: 1),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+      clipBehavior: Clip.antiAlias,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: Responsive.getResponsiveValue(context, mobile: 4.0, tablet: 6.0, desktop: 8.0),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -856,10 +865,13 @@ class _DashboardMetricCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
         border: Border.all(color: color.withOpacity(0.35), width: 1),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+      clipBehavior: Clip.antiAlias,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: Responsive.getResponsiveValue(context, mobile: 4.0, tablet: 6.0, desktop: 8.0),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,

@@ -7,6 +7,8 @@ import 'package:http/http.dart' as http;
 class N8nEmailService {
   static const String _fetchUrl =
       'https://n8n-production-1e13.up.railway.app/webhook/email-summaries';
+  static const String _statsUrl =
+      'https://n8n-production-1e13.up.railway.app/webhook/email-summary-stats';
   static const String _generateUrl =
       'https://n8n-production-1e13.up.railway.app/webhook/generate-reply';
   static const String _sendUrl =
@@ -83,6 +85,48 @@ class N8nEmailService {
     
     print('❌ No emails found in response');
     return [];
+  }
+
+  /// Fetches emails and optional summary stats (deadlines, requiredActions) from n8n.
+  /// Returns { emails: List, deadlines: int?, requiredActions: int? }.
+  /// Use deadlines/requiredActions if n8n includes them at top level; else compute from emails.
+  Future<Map<String, dynamic>> fetchEmailsWithStats() async {
+    final response = await http.get(Uri.parse(_fetchUrl));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load emails: ${response.statusCode}');
+    }
+    final decoded = json.decode(response.body);
+    List<dynamic> emails = [];
+    int? deadlines;
+    int? requiredActions;
+
+    if (decoded is Map<String, dynamic>) {
+      final summary = decoded['summary'] as Map<String, dynamic>?;
+      final root = summary ?? decoded;
+      if (root['deadlines'] is num) deadlines = (root['deadlines'] as num).toInt();
+      if (root['requiredActions'] is num) requiredActions = (root['requiredActions'] as num).toInt();
+      if (deadlines == null && root['deadlineCount'] is num) deadlines = (root['deadlineCount'] as num).toInt();
+      if (requiredActions == null && root['actionCount'] is num) requiredActions = (root['actionCount'] as num).toInt();
+      if (decoded.containsKey('data')) {
+        final data = decoded['data'];
+        if (data is List<dynamic>) emails = data;
+        else if (data is Map) emails = data.values.toList();
+      } else if (decoded.containsKey('emails')) {
+        final e = decoded['emails'];
+        emails = e is List<dynamic> ? e : (e is Map ? e.values.toList() : []);
+      }
+    } else if (decoded is List<dynamic>) {
+      emails = decoded;
+    }
+    return {'emails': emails, 'deadlines': deadlines, 'requiredActions': requiredActions};
+  }
+
+  Future<Map<String, dynamic>> getEmailSummaryStats() async {
+    final response = await http.get(Uri.parse(_statsUrl));
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    throw Exception('Failed to load email stats');
   }
 
   Future<Map<String, dynamic>> generateReply(

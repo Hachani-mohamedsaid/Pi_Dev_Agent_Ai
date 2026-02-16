@@ -24,7 +24,7 @@ class NavigationBarWidget extends StatelessWidget {
     final isAutomationActive = currentPath == '/automation';
     final isWorkProposalsActive = currentPath == '/work-proposals' || currentPath == '/work-proposals-dashboard';
     final screenWidth = MediaQuery.of(context).size.width;
-    final horizontalPadding = isMobile ? 16.0 : 24.0;
+    final horizontalPadding = isMobile ? 10.0 : 24.0;
 
     return Container(
       padding: EdgeInsets.only(
@@ -62,8 +62,8 @@ class NavigationBarWidget extends StatelessWidget {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   Flexible(
                     child: _NavButton(
@@ -114,7 +114,7 @@ class NavigationBarWidget extends StatelessWidget {
                   Flexible(
                     child: _NavButton(
                       icon: LucideIcons.briefcase,
-                      label: 'Propositions',
+                      label: 'Project',
                       isActive: isWorkProposalsActive,
                       onTap: () => context.go('/work-proposals'),
                       isMobile: isMobile,
@@ -191,8 +191,8 @@ class _NavButtonState extends State<_NavButton> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: EdgeInsets.symmetric(
-                  horizontal: widget.isMobile ? 12 : 16,
-                  vertical: widget.isMobile ? 8 : 10,
+                  horizontal: widget.isMobile ? 14 : 18,
+                  vertical: widget.isMobile ? 10 : 12,
                 ),
                 decoration: BoxDecoration(
                   gradient: widget.isActive
@@ -207,7 +207,7 @@ class _NavButtonState extends State<_NavButton> {
                           ))
                       : null,
                   color: widget.isActive ? null : Colors.transparent,
-                  borderRadius: BorderRadius.circular(widget.isMobile ? 12 : 16),
+                  borderRadius: BorderRadius.circular(widget.isMobile ? 24 : 28),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -221,12 +221,16 @@ class _NavButtonState extends State<_NavButton> {
                     ),
                     if (widget.isActive) ...[
                       SizedBox(height: widget.isMobile ? 4 : 6),
-                      Text(
-                        widget.label,
-                        style: TextStyle(
-                          fontSize: widget.isMobile ? 10 : 11,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.cyan400,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          widget.label,
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontSize: widget.isMobile ? 10 : 11,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.cyan400,
+                          ),
                         ),
                       ),
                     ],

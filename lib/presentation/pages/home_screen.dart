@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/l10n/app_strings.dart';
+import '../../services/n8n_email_service.dart';
 import '../state/auth_controller.dart';
 import '../widgets/navigation_bar.dart';
 
@@ -21,6 +22,18 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  final _emailService = N8nEmailService();
+  int _emailTotal = 0;
+  int _emailHigh = 0;
+  int _emailMedium = 0;
+  int _emailLow = 0;
+  int _emailDeadlines = 0;
+  int _emailActionsRequired = 0;
+  bool _emailSummaryLoading = true;
+
+  /// Tracks if we were the current route; used to reload when home becomes visible again.
+  bool _wasCurrentRoute = false;
+
   late AnimationController _glowController1;
   late AnimationController _glowController2;
   late AnimationController _pulseController;
@@ -36,6 +49,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (widget.controller.currentUser == null) {
       widget.controller.loadCurrentUser();
     }
+    // Email summary is loaded in didChangeDependencies when home becomes visible
+    // (runs on first open and every time user navigates back to home)
 
     // Animation controllers for daily summary card
     _glowController1 = AnimationController(
@@ -81,6 +96,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload email summary whenever home becomes the current route (e.g. user switched back from another tab)
+    final isCurrent = ModalRoute.of(context)?.isCurrent ?? false;
+    if (isCurrent && !_wasCurrentRoute) {
+      _wasCurrentRoute = true;
+      _loadEmailSummary();
+    } else if (!isCurrent) {
+      _wasCurrentRoute = false;
+    }
+  }
+
+  @override
   void dispose() {
     _glowController1.dispose();
     _glowController2.dispose();
@@ -94,6 +122,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  /// Loads dashboard counts from GET email-summary-stats only.
+  /// Does NOT call email-summaries — that runs only when the Emails page is opened.
+  Future<void> _loadEmailSummary() async {
+    try {
+      final stats = await _emailService.getEmailSummaryStats();
+      if (!mounted) return;
+      setState(() {
+        _emailTotal = _toInt(stats['totalEmails']);
+        _emailHigh = _toInt(stats['highPriority']);
+        _emailMedium = _toInt(stats['mediumPriority']);
+        _emailLow = _toInt(stats['lowPriority']);
+        _emailDeadlines = _toInt(stats['deadlines']);
+        _emailActionsRequired = _toInt(stats['requiredActions']);
+        _emailSummaryLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _emailSummaryLoading = false);
+    }
+  }
+
+  static int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString()) ?? 0;
   }
 
   String _getGreeting(BuildContext context) {
@@ -129,6 +184,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       AppStrings.tr(context, 'december'),
     ];
     return '${AppStrings.tr(context, 'todayIs')} ${weekdays[now.weekday - 1]}, ${now.day} ${months[now.month - 1]}';
+  }
+
+  String _getShortDate() {
+    final now = DateTime.now();
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${days[now.weekday - 1]} ${now.day} ${months[now.month - 1]} ${now.year}';
   }
 
   @override
@@ -184,10 +246,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Header Section
-                        _buildHeader(context, isMobile, userName, padding)
-                            .animate()
-                            .fadeIn(duration: 500.ms)
-                            .slideY(begin: -0.2, end: 0, duration: 500.ms),
+                        _buildHeader(context, isMobile, userName, padding),
 
                         SizedBox(
                           height: Responsive.getResponsiveValue(
@@ -199,15 +258,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
 
                         // Daily Summary Card
-                        _buildDailySummaryCard(context, isMobile)
-                            .animate()
-                            .fadeIn(delay: 200.ms, duration: 500.ms)
-                            .slideY(
-                              begin: 0.2,
-                              end: 0,
-                              delay: 200.ms,
-                              duration: 500.ms,
-                            ),
+                        _buildDailySummaryCard(context, isMobile),
 
                         SizedBox(
                           height: Responsive.getResponsiveValue(
@@ -219,15 +270,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
 
                         // Smart Suggestions Button
-                        _buildSmartSuggestionsButton(context, isMobile)
-                            .animate()
-                            .fadeIn(delay: 350.ms, duration: 500.ms)
-                            .slideY(
-                              begin: 0.2,
-                              end: 0,
-                              delay: 350.ms,
-                              duration: 500.ms,
-                            ),
+                        _buildSmartSuggestionsButton(context, isMobile),
 
                         SizedBox(
                           height: Responsive.getResponsiveValue(
@@ -239,15 +282,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
 
                         // Suggested Action Card
-                        _buildSuggestedActionCard(context, isMobile)
-                            .animate()
-                            .fadeIn(delay: 400.ms, duration: 500.ms)
-                            .slideY(
-                              begin: 0.2,
-                              end: 0,
-                              delay: 400.ms,
-                              duration: 500.ms,
-                            ),
+                        _buildSuggestedActionCard(context, isMobile),
 
                         SizedBox(
                           height: Responsive.getResponsiveValue(
@@ -259,15 +294,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
 
                         // Quick Actions Section
-                        _buildQuickActionsSection(context, isMobile)
-                            .animate()
-                            .fadeIn(delay: 800.ms, duration: 500.ms)
-                            .slideY(
-                              begin: 0.2,
-                              end: 0,
-                              delay: 800.ms,
-                              duration: 500.ms,
-                            ),
+                        _buildQuickActionsSection(context, isMobile),
                       ],
                     ),
                   ),
@@ -414,9 +441,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 style: TextStyle(
                   fontSize: Responsive.getResponsiveValue(
                     context,
-                    mobile: 26.0,
-                    tablet: 30.0,
-                    desktop: 32.0,
+                    mobile: 18.0,
+                    tablet: 20.0,
+                    desktop: 22.0,
                   ),
                   fontWeight: FontWeight.bold,
                   color: AppColors.textWhite,
@@ -702,14 +729,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               },
             ),
 
-            // Shimmer effect
+            // Shimmer effect (LayoutBuilder must not be parent of Positioned — wrap in Stack)
             LayoutBuilder(
               builder: (context, constraints) {
-                return AnimatedBuilder(
-                  animation: _shimmerController,
-                  builder: (context, child) {
-                    return Positioned.fill(
-                      child: Transform.translate(
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    AnimatedBuilder(
+                      animation: _shimmerController,
+                      builder: (context, child) {
+                        return Positioned.fill(
+                          child: Transform.translate(
                         offset: Offset(
                           -constraints.maxWidth +
                               (_shimmerController.value *
@@ -733,7 +763,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                     );
-                  },
+                    },
+                  ),
+                  ],
                 );
               },
             ),
@@ -1053,12 +1085,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ),
 
+            // LayoutBuilder must not be parent of Positioned — wrap in Stack
             LayoutBuilder(
               builder: (context, constraints) {
-                return Positioned(
-                  bottom: 16,
-                  left: constraints.maxWidth / 2 - 72,
-                  child: AnimatedBuilder(
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned(
+                      bottom: 16,
+                      left: constraints.maxWidth / 2 - 72,
+                      child: AnimatedBuilder(
                     animation: _pulseController,
                     builder: (context, child) {
                       return Container(
@@ -1089,6 +1125,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       );
                     },
                   ),
+                    ),
+                  ],
                 );
               },
             ),
@@ -1822,7 +1860,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'colorLight': const Color(0xFF3B82F6),
       },
       {
-        'title': AppStrings.tr(context, 'summarizeEmails'),
+        'title': 'Summarized Emails',
         'icon': LucideIcons.mail,
         'route': '/emails',
         'color': AppColors.cyan500,
@@ -1875,7 +1913,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             desktop: 16.0,
           ),
         ),
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: Responsive.getResponsiveValue(
+              context,
+              mobile: 10.0,
+              tablet: 12.0,
+              desktop: 16.0,
+            ),
+          ),
+          child: _buildSummarizedEmailsCard(context, isMobile),
+        ),
         ...actions.asMap().entries.map((entry) {
+          if (entry.key == 1) return const SizedBox.shrink();
           final index = entry.key;
           final action = entry.value;
           return Padding(
@@ -1900,6 +1950,227 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           );
         }),
       ],
+    );
+  }
+
+  Widget _buildSummarizedEmailsCard(BuildContext context, bool isMobile) {
+    final r = Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0);
+    return GestureDetector(
+      onTap: () => context.push('/emails'),
+      child: Container(
+        padding: EdgeInsets.all(r),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF0a1f2e),
+              Color(0xFF14354c),
+              Color(0xFF1e4a66),
+              Color(0xFF19405b),
+              Color(0xFF0f2a3d),
+            ],
+            stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+          ),
+          borderRadius: BorderRadius.circular(r),
+          border: Border.all(color: AppColors.cyan500.withOpacity(0.2), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.4),
+              blurRadius: 32,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(LucideIcons.mail, color: AppColors.cyan400, size: r),
+                SizedBox(width: r * 0.5),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Summarized Emails',
+                        style: TextStyle(
+                          fontSize: Responsive.getResponsiveValue(context, mobile: 17.0, tablet: 18.0, desktop: 20.0),
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _getShortDate(),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textCyan200.withOpacity(0.8),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: r),
+            Container(
+              padding: EdgeInsets.all(Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 14.0, desktop: 16.0)),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Priority',
+                    style: TextStyle(
+                      fontSize: Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 15.0, desktop: 16.0),
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.cyan400,
+                    ),
+                  ),
+                  SizedBox(height: Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildPriorityChip(context, _emailHigh, 'High', const Color(0xFFEF4444)),
+                      ),
+                      SizedBox(width: Responsive.getResponsiveValue(context, mobile: 8.0, tablet: 10.0, desktop: 12.0)),
+                      Expanded(
+                        child: _buildPriorityChip(context, _emailMedium, 'Medium', const Color(0xFFFACC15)),
+                      ),
+                      SizedBox(width: Responsive.getResponsiveValue(context, mobile: 8.0, tablet: 10.0, desktop: 12.0)),
+                      Expanded(
+                        child: _buildPriorityChip(context, _emailLow, 'Low', const Color(0xFF22C55E)),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatRow(context, 'Deadlines', _emailDeadlines, const Color(0xFFF97316)),
+                      ),
+                      SizedBox(width: Responsive.getResponsiveValue(context, mobile: 8.0, tablet: 10.0, desktop: 12.0)),
+                      Expanded(
+                        child: _buildStatRow(context, 'Actions', _emailActionsRequired, const Color(0xFF10B981)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: r),
+            Container(
+              padding: EdgeInsets.symmetric(
+                vertical: Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0),
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.cyan500.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.cyan400.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'View All Emails',
+                    style: TextStyle(
+                      fontSize: Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 15.0, desktop: 16.0),
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textCyan200,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(LucideIcons.arrowRight, size: 16, color: AppColors.cyan400),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityChip(BuildContext context, int count, String label, Color color) {
+    return Container(
+      padding: EdgeInsets.all(Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0)),
+      decoration: BoxDecoration(
+        color: AppColors.cyan500.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.cyan400.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle, boxShadow: [
+              BoxShadow(color: color.withOpacity(0.7), blurRadius: 6),
+            ]),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$count',
+            style: TextStyle(
+              fontSize: Responsive.getResponsiveValue(context, mobile: 20.0, tablet: 22.0, desktop: 24.0),
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatRow(BuildContext context, String label, int value, Color color) {
+    return Container(
+      padding: EdgeInsets.all(Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0)),
+      decoration: BoxDecoration(
+        color: AppColors.cyan500.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.cyan400.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle, boxShadow: [
+                  BoxShadow(color: color.withOpacity(0.7), blurRadius: 6),
+                ]),
+              ),
+              const SizedBox(width: 8),
+              Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+            ],
+          ),
+          Text(
+            '$value',
+            style: TextStyle(
+              fontSize: Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0),
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -2041,17 +2312,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ),
           ),
-        )
-        .animate()
-        .fadeIn(
-          delay: Duration(milliseconds: 500 + (index * 100)),
-          duration: 500.ms,
-        )
-        .slideY(
-          begin: 0.2,
-          end: 0,
-          delay: Duration(milliseconds: 500 + (index * 100)),
-          duration: 500.ms,
         );
   }
 }

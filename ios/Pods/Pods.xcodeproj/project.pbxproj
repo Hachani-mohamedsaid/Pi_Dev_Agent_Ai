@@ -7163,9 +7163,6 @@
 			baseConfigurationReference = 9AB002CBF4371D780553D97C1165FB4E /* flutter_tts.debug.xcconfig */;
 			buildSettings = {
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -7282,9 +7279,6 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -7400,9 +7394,6 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -7614,7 +7605,6 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_IDENTITY = "-";
 				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/GTMSessionFetcher";
 				EXPANDED_CODE_SIGN_IDENTITY = "-";
 				IBSC_MODULE = GTMSessionFetcher;
@@ -7834,7 +7824,6 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_IDENTITY = "-";
 				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/GTMAppAuth";
 				EXPANDED_CODE_SIGN_IDENTITY = "-";
 				IBSC_MODULE = GTMAppAuth;
@@ -7970,9 +7959,6 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -8112,7 +8098,6 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_IDENTITY = "-";
 				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/image_picker_ios";
 				EXPANDED_CODE_SIGN_IDENTITY = "-";
 				IBSC_MODULE = image_picker_ios;
@@ -8308,7 +8293,6 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_IDENTITY = "-";
 				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/GoogleSignIn";
 				EXPANDED_CODE_SIGN_IDENTITY = "-";
 				IBSC_MODULE = GoogleSignIn;
@@ -8601,9 +8585,6 @@
 			baseConfigurationReference = 94DC05C912AB0D8B278158D044906014 /* GoogleUtilities.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -8643,9 +8624,6 @@
 			baseConfigurationReference = F5916C2C7E293D7239B232DB83939CA7 /* GTMSessionFetcher.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -8706,7 +8684,6 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_IDENTITY = "-";
 				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/url_launcher_ios";
 				EXPANDED_CODE_SIGN_IDENTITY = "-";
 				IBSC_MODULE = url_launcher_ios;
@@ -8766,9 +8743,6 @@
 			baseConfigurationReference = BA0F3C19894E4D2E1C40FC68F7FC6EB9 /* flutter_sound_core.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -8809,9 +8783,6 @@
 			baseConfigurationReference = 0E773816D6EA840813A1B85C43D1343B /* AppAuth.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -8853,7 +8824,6 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_IDENTITY = "-";
 				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/GTMSessionFetcher";
 				EXPANDED_CODE_SIGN_IDENTITY = "-";
 				IBSC_MODULE = GTMSessionFetcher;
@@ -8875,9 +8845,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -8896,9 +8863,6 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -9010,7 +8974,6 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_IDENTITY = "-";
 				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/path_provider_foundation";
 				EXPANDED_CODE_SIGN_IDENTITY = "-";
 				IBSC_MODULE = path_provider_foundation;
@@ -9279,7 +9242,6 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_IDENTITY = "-";
 				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/AppAuth";
 				EXPANDED_CODE_SIGN_IDENTITY = "-";
 				IBSC_MODULE = AppAuth;
@@ -9299,9 +9261,6 @@
 			baseConfigurationReference = D8EDCB0832B7A9C61EAB19781ADA1871 /* AppCheckCore.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -9341,9 +9300,6 @@
 			baseConfigurationReference = 111D676E0D43D492420180AD16A668E7 /* CwlCatchExceptionSupport.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -9384,9 +9340,6 @@
 			baseConfigurationReference = D35B89BE2C22464FCB5D9CB6984F907D /* sign_in_with_apple.debug.xcconfig */;
 			buildSettings = {
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -9481,7 +9434,6 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_IDENTITY = "-";
 				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/google_sign_in_ios";
 				EXPANDED_CODE_SIGN_IDENTITY = "-";
 				IBSC_MODULE = google_sign_in_ios;
@@ -9774,9 +9726,6 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -10044,9 +9993,6 @@
 			baseConfigurationReference = 984E5D0CAAEA56AA8A1EF41BA2494B25 /* CwlCatchException.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -10146,9 +10092,6 @@
 			baseConfigurationReference = 2FF40A6CE3E119BE7B7DCAC60A503A52 /* GoogleSignIn.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -10227,9 +10170,6 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -10321,7 +10261,6 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_IDENTITY = "-";
 				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/shared_preferences_foundation";
 				EXPANDED_CODE_SIGN_IDENTITY = "-";
 				IBSC_MODULE = shared_preferences_foundation;
@@ -10400,7 +10339,6 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_IDENTITY = "-";
 				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/GoogleUtilities";
 				EXPANDED_CODE_SIGN_IDENTITY = "-";
 				IBSC_MODULE = GoogleUtilities;
@@ -10538,9 +10476,6 @@
 			baseConfigurationReference = 20BFFC6EE622303B0D6D088523ABC5A8 /* GTMAppAuth.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -10620,9 +10555,6 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -10856,9 +10788,6 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -10964,9 +10893,6 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
@@ -11045,7 +10971,6 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_IDENTITY = "-";
 				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/PromisesObjC";
 				EXPANDED_CODE_SIGN_IDENTITY = "-";
 				IBSC_MODULE = FBLPromises;
@@ -11184,9 +11109,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 48899CD47B62930A3ED9936406C369AC /* PromisesObjC.debug.xcconfig */;
 			buildSettings = {
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";

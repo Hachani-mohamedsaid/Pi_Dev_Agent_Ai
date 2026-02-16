@@ -890,15 +890,18 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
           width: 1,
         ),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+      clipBehavior: Clip.antiAlias,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: Responsive.getResponsiveValue(
+              context,
+              mobile: 4.0,
+              tablet: 6.0,
+              desktop: 8.0,
+            ),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1312,98 +1315,104 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                 tablet: 18.0,
                 desktop: 20.0,
               )),
-              // Action Buttons
+              // Action Buttons: Détails full width, then the other 2 side-by-side (half each)
               if (isAccepted) ...[
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: _ActionButton(
-                        label: 'Détails',
-                        icon: LucideIcons.info,
-                        color: AppColors.cyan400,
-                        onTap: () => _navigateToDetails(proposal),
-                        isLoading: false,
-                        isMobile: isMobile,
-                      ),
+                    _ActionButton(
+                      label: 'Détails',
+                      icon: LucideIcons.info,
+                      color: AppColors.cyan400,
+                      onTap: () => _navigateToDetails(proposal),
+                      isLoading: false,
+                      isMobile: isMobile,
                     ),
-                    SizedBox(width: Responsive.getResponsiveValue(
+                    SizedBox(height: Responsive.getResponsiveValue(
                       context,
                       mobile: 8.0,
                       tablet: 10.0,
                       desktop: 12.0,
                     )),
-                    Expanded(
-                      child: _ActionButton(
-                        label: 'Analyse',
-                        icon: LucideIcons.search,
-                        color: AppColors.cyan400,
-                        onTap: () => _navigateToAnalysis(proposal),
-                        isLoading: false,
-                        isMobile: isMobile,
-                      ),
-                    ),
-                    SizedBox(width: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 8.0,
-                      tablet: 10.0,
-                      desktop: 12.0,
-                    )),
-                    Expanded(
-                      child: _ActionButton(
-                        label: 'Comment travailler',
-                        icon: LucideIcons.lightbulb,
-                        color: AppColors.statusPending,
-                        onTap: () => _navigateToHowToWork(proposal),
-                        isLoading: false,
-                        isMobile: isMobile,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ActionButton(
+                            label: 'Analyse',
+                            icon: LucideIcons.search,
+                            color: AppColors.cyan400,
+                            onTap: () => _navigateToAnalysis(proposal),
+                            isLoading: false,
+                            isMobile: isMobile,
+                          ),
+                        ),
+                        SizedBox(width: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 8.0,
+                          tablet: 10.0,
+                          desktop: 12.0,
+                        )),
+                        Expanded(
+                          child: _ActionButton(
+                            label: 'Comment travailler',
+                            icon: LucideIcons.lightbulb,
+                            color: AppColors.statusPending,
+                            onTap: () => _navigateToHowToWork(proposal),
+                            isLoading: false,
+                            isMobile: isMobile,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ] else if (isPending) ...[
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: _ActionButton(
-                        label: 'Détails',
-                        icon: LucideIcons.info,
-                        color: AppColors.cyan400,
-                        onTap: () => _navigateToDetails(proposal),
-                        isLoading: false,
-                        isMobile: isMobile,
-                      ),
+                    _ActionButton(
+                      label: 'Détails',
+                      icon: LucideIcons.info,
+                      color: AppColors.cyan400,
+                      onTap: () => _navigateToDetails(proposal),
+                      isLoading: false,
+                      isMobile: isMobile,
                     ),
-                    SizedBox(width: Responsive.getResponsiveValue(
+                    SizedBox(height: Responsive.getResponsiveValue(
                       context,
                       mobile: 8.0,
                       tablet: 10.0,
                       desktop: 12.0,
                     )),
-                    Expanded(
-                      child: _ActionButton(
-                        label: 'Accepter',
-                        icon: LucideIcons.check,
-                        color: AppColors.statusAccepted,
-                        onTap: isSending ? null : () => _acceptProposal(proposal),
-                        isLoading: isSending,
-                        isMobile: isMobile,
-                      ),
-                    ),
-                    SizedBox(width: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 8.0,
-                      tablet: 10.0,
-                      desktop: 12.0,
-                    )),
-                    Expanded(
-                      child: _ActionButton(
-                        label: 'Rejeter',
-                        icon: LucideIcons.x,
-                        color: AppColors.statusRejected,
-                        onTap: isSending ? null : () => _rejectProposal(proposal),
-                        isLoading: isSending,
-                        isMobile: isMobile,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ActionButton(
+                            label: 'Accepter',
+                            icon: LucideIcons.check,
+                            color: AppColors.statusAccepted,
+                            onTap: isSending ? null : () => _acceptProposal(proposal),
+                            isLoading: isSending,
+                            isMobile: isMobile,
+                          ),
+                        ),
+                        SizedBox(width: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 8.0,
+                          tablet: 10.0,
+                          desktop: 12.0,
+                        )),
+                        Expanded(
+                          child: _ActionButton(
+                            label: 'Rejeter',
+                            icon: LucideIcons.x,
+                            color: AppColors.statusRejected,
+                            onTap: isSending ? null : () => _rejectProposal(proposal),
+                            isLoading: isSending,
+                            isMobile: isMobile,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

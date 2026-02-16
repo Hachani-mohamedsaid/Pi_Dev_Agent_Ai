@@ -103,7 +103,7 @@ class _EmailsPageState extends State<EmailsPage> {
   String? _errorMessage;
   bool _isSendingReply = false;
   final _emailService = N8nEmailService();
-  // NEW: confirm-send modal state
+  // confirm-send modal state
   bool _showConfirmSendModal = false;
   String _confirmSubject = '';
   String _confirmBody = '';
@@ -345,10 +345,7 @@ class _EmailsPageState extends State<EmailsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildHeader(context, isMobile)
-                        .animate()
-                        .fadeIn(duration: 500.ms)
-                        .slideY(begin: -0.2, end: 0, duration: 500.ms),
+                    _buildHeader(context, isMobile),
 
                     SizedBox(height: Responsive.getResponsiveValue(
                       context,
@@ -363,8 +360,9 @@ class _EmailsPageState extends State<EmailsPage> {
                       _buildErrorState(context, isMobile)
                     else if (_emails.isEmpty)
                       _buildEmptyState(context, isMobile)
-                    else
+                    else ...[
                       _buildEmailList(context, isMobile),
+                    ],
                   ],
                 ),
               ),
@@ -869,10 +867,7 @@ class _EmailsPageState extends State<EmailsPage> {
           ),
         ),
       ),
-    )
-        .animate()
-        .fadeIn(delay: Duration(milliseconds: index * 100), duration: 300.ms)
-        .slideY(begin: 0.2, end: 0, delay: Duration(milliseconds: index * 100), duration: 300.ms);
+    );
   }
 
   Widget _buildEmailDetailModal(BuildContext context, bool isMobile) {
@@ -882,12 +877,25 @@ class _EmailsPageState extends State<EmailsPage> {
 
     return GestureDetector(
       onTap: () => setState(() => _selectedEmail = null),
-      child: Container(
-        color: Colors.black.withOpacity(0.6),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Align(
-            alignment: Alignment.bottomCenter,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Overlay – blur first, then dim; fade in together for smooth transition
+          Positioned.fill(
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  color: Colors.black.withOpacity(0.6),
+                ),
+              ),
+            ).animate().fadeIn(duration: 420.ms, curve: Curves.easeInOut),
+          ),
+          // Content – slides up with smooth deceleration
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
             child: GestureDetector(
               onTap: () {}, // Prevent closing when tapping modal content
               child: Container(
@@ -1216,14 +1224,13 @@ class _EmailsPageState extends State<EmailsPage> {
                   ),
                 ),
               ),
-            ),
+            )
+                .animate()
+                .slideY(begin: 1.0, end: 0.0, duration: 380.ms, curve: Curves.easeOutCubic),
           ),
-        ),
+        ],
       ),
-    )
-        .animate()
-        .fadeIn(duration: 300.ms)
-        .slideY(begin: 1.0, end: 0.0, duration: 400.ms, curve: Curves.easeOut);
+    );
   }
 
   Widget _buildDraftReplyButton(BuildContext context, bool isMobile) {
@@ -1448,12 +1455,23 @@ class _EmailsPageState extends State<EmailsPage> {
         _replyOptions = null;
         _replyEmail = null;
       }),
-      child: Container(
-        color: Colors.black.withOpacity(0.6),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Align(
-            alignment: Alignment.bottomCenter,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned.fill(
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  color: Colors.black.withOpacity(0.6),
+                ),
+              ),
+            ).animate().fadeIn(duration: 420.ms, curve: Curves.easeInOut),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
             child: GestureDetector(
               onTap: () {},
               child: Container(
@@ -1945,14 +1963,13 @@ class _EmailsPageState extends State<EmailsPage> {
                   ),
                 ),
               ),
-            ),
+            )
+                .animate()
+                .slideY(begin: 1.0, end: 0.0, duration: 380.ms, curve: Curves.easeOutCubic),
           ),
-        ),
+        ],
       ),
-    )
-        .animate()
-        .fadeIn(duration: 300.ms)
-        .slideY(begin: 1.0, end: 0.0, duration: 400.ms, curve: Curves.easeOut);
+    );
   }
 
   /// NEW: Confirm-send modal (To, subject, full body, Send Reply / Cancel). Same style as email modals.
@@ -1961,12 +1978,23 @@ class _EmailsPageState extends State<EmailsPage> {
 
     return GestureDetector(
       onTap: _closeConfirmSendModal,
-      child: Container(
-        color: Colors.black.withOpacity(0.6),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Align(
-            alignment: Alignment.bottomCenter,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned.fill(
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  color: Colors.black.withOpacity(0.6),
+                ),
+              ),
+            ).animate().fadeIn(duration: 420.ms, curve: Curves.easeInOut),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
             child: GestureDetector(
               onTap: () {},
               child: Container(
@@ -2246,14 +2274,13 @@ class _EmailsPageState extends State<EmailsPage> {
                   ),
                 ),
               ),
-            ),
+            )
+                .animate()
+                .slideY(begin: 1.0, end: 0.0, duration: 380.ms, curve: Curves.easeOutCubic),
           ),
-        ),
+        ],
       ),
-    )
-        .animate()
-        .fadeIn(duration: 300.ms)
-        .slideY(begin: 1.0, end: 0.0, duration: 400.ms, curve: Curves.easeOut);
+    );
   }
 
   Widget _buildBadgeChip(
