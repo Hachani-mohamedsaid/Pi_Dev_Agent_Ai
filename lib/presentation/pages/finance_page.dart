@@ -309,9 +309,8 @@ class _FinancePageState extends State<FinancePage> {
                   ), // MODIFIED: Close RefreshIndicator
                 ), // MODIFIED: Close else statement
 
-              // Navigation Bar (always visible)
-              if (!_isLoading && _errorMessage == null)
-                Positioned(
+              // Navigation Bar (always visible, including during loading)
+              Positioned(
                 left: 0,
                 right: 0,
                 bottom: 0,
@@ -1290,15 +1289,19 @@ class _FinancePageState extends State<FinancePage> {
             width: 1,
           ),
         ),
-        child: SvgPicture.string(
-          // Telegram paper-plane logo glyph (white) inside existing blue circle
-          '''
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: SvgPicture.string(
+            // Telegram paper-plane logo glyph (white) inside existing blue circle
+            '''
 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
   <path fill="#FFFFFF" d="M21.9 4.6c.3-1.4-1-2.5-2.3-2L2.7 8.6c-1.4.5-1.3 2.4.1 2.8l4.2 1.3 1.6 5.1c.4 1.3 2 1.7 3 .8l2.4-2.2 4.4 3.2c1 .7 2.4.2 2.6-1L21.9 4.6zM9.6 12.3l8-5.1c.3-.2.6.2.3.4l-6.7 6.1-.3 2.8-1.3-4.2z"/>
 </svg>
 ''',
-          width: 28,
-          height: 28,
+            width: 24,
+            height: 24,
+            fit: BoxFit.contain,
+          ),
         ),
       ),
     )
