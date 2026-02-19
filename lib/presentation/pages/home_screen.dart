@@ -149,7 +149,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       desktop: 700.0,
     );
 
-    final userName = widget.controller.currentUser?.name ?? AppStrings.tr(context, 'user');
+    final userName =
+        widget.controller.currentUser?.name ?? AppStrings.tr(context, 'user');
 
     return Scaffold(
       body: Container(
@@ -1817,7 +1818,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       {
         'title': AppStrings.tr(context, 'reviewAgenda'),
         'icon': LucideIcons.calendar,
-        'route': '/agenda',
+        'route': '/meetings',
         'color': const Color(0xFFA855F7),
         'colorLight': const Color(0xFF3B82F6),
       },
@@ -1914,7 +1915,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     int index,
   ) {
     return GestureDetector(
-          onTap: () => context.push(route),
+          onTap: () => context.go(route),
           child: Container(
             padding: EdgeInsets.all(
               Responsive.getResponsiveValue(
