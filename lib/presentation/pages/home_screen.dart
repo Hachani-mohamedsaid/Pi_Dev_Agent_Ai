@@ -1887,6 +1887,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'color': const Color(0xFFEC4899),
         'colorLight': const Color(0xFFA855F7),
       },
+      {
+        'title': 'AI Project Analyzer',
+        'icon': LucideIcons.sparkles,
+        'route': '/ai-analysis',
+        'color': const Color(0xFF06B6D4),
+        'colorLight': const Color(0xFF22D3EE),
+      },
+      {
+        'title': 'AI Financial Simulation',
+        'icon': LucideIcons.calculator,
+        'route': '/advisor',
+        'color': const Color(0xFF10B981),
+        'colorLight': const Color(0xFF34D399),
+      },
     ];
 
     return Column(

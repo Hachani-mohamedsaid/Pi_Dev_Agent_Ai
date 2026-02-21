@@ -38,6 +38,17 @@ const String projectAnalysesPath = '/project-analyses';
 /// PATCH /goals/:id/actions/:actionId -> Toggle action (body: { completed: true })
 const String goalsPath = '/goals';
 
+/// AI Financial Simulation Advisor: backend endpoint (POST body: { project_text }).
+/// Backend forwards to n8n and saves to MongoDB. Response: { report: string }.
+const String advisorPath = '/api/advisor/analyze';
+
+/// GET /api/advisor/history – list of past analyses for current user. Response: { analyses: [{ id, project_text, report, createdAt }] }.
+const String advisorHistoryPath = '/api/advisor/history';
+
+/// n8n webhook for financial simulation (used by backend or directly if no backend).
+const String advisorWebhookUrl =
+    'https://n8n-production-1e13.up.railway.app/webhook/a0cd36ce-41f1-4ef8-8bb2-b22cbe7cad6c';
+
 /// Clé API OpenAI utilisée côté Flutter pour OpenAI TTS (voix type ChatGPT)
 /// via le package `openai_tts`.
 ///
@@ -45,15 +56,10 @@ const String goalsPath = '/goals';
 /// et ne tombera sur `flutter_tts` qu'en cas d'erreur OpenAI.
 ///
 /// ⚠️ IMPORTANT: Ne jamais commiter la vraie clé en clair!
-/// Utilise une variable d'environnement ou un fichier .env local (gitignore).
-/// Exemple avec flutter_dotenv:
-///   - Crée .env à la racine du projet avec: OPENAI_API_KEY=sk-...
-///   - Dans pubspec.yaml: flutter: assets: - .env
-///   - Dans main.dart: await dotenv.load();
-/// En build: --dart-define=OPENAI_API_KEY=sk-...
+/// Utilise --dart-define=OPENAI_API_KEY=sk-... en build/run, ou un fichier .env (gitignore) avec flutter_dotenv.
 const String openaiApiKey = String.fromEnvironment(
   'OPENAI_API_KEY',
-  defaultValue: '', // Ne jamais commiter la clé API ici! Utiliser --dart-define=OPENAI_API_KEY=... ou .env
+  defaultValue: '',
 );
 
 /// Instruction système pour le chat vocal multilingüe : voix chaleureuse, féminine, naturelle.

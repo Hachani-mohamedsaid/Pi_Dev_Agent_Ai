@@ -64,6 +64,9 @@ class InjectionContainer {
   late final AuthLocalDataSource _authLocalDataSource =
       SharedPreferencesAuthLocalDataSource();
 
+  /// Exposed for features that need to send JWT (e.g. advisor history).
+  AuthLocalDataSource get authLocalDataSource => _authLocalDataSource;
+
   late final AuthRemoteDataSource _authRemoteDataSource =
       ApiAuthRemoteDataSource(); // ou MockAuthRemoteDataSource() pour tests sans backend
 
