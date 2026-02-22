@@ -20,7 +20,8 @@ import '../../presentation/pages/change_password_page.dart';
 import '../../presentation/pages/voice_assistant_page.dart';
 import '../../presentation/pages/chat_page.dart';
 import '../../presentation/pages/suggestions_feed_page.dart';
-import '../../presentation/pages/agenda_page.dart';
+import '../../presentation/pages/meeting_detail_page.dart';
+import '../../presentation/pages/meeting_loader_page.dart';
 import '../../presentation/pages/emails_page.dart';
 import '../../presentation/pages/history_page.dart';
 import '../../presentation/pages/travel_page.dart';
@@ -277,12 +278,23 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/agenda',
+      path: '/meetings',
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: const AgendaPage(),
+        child: const MeetingLoaderPage(),
       ),
+    ),
+    GoRoute(
+      path: '/meeting/:meetingId',
+      pageBuilder: (context, state) {
+        final meetingId = state.pathParameters['meetingId'] ?? '';
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: MeetingDetailPage(meetingId: meetingId),
+        );
+      },
     ),
     GoRoute(
       path: '/emails',
