@@ -4,12 +4,16 @@ import 'package:flutter/widgets.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'core/config/google_oauth_config.dart';
+import 'core/config/env_loader_stub.dart'
+    if (dart.library.io) 'core/config/env_loader_io.dart' as env_loader;
 import 'core/services/locale_service.dart';
 import 'package:flutter_web_plugins/url_strategy.dart'
     if (dart.library.io) 'url_strategy_stub.dart' show usePathUrlStrategy;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Charger la clé OpenAI depuis .env (mobile/desktop uniquement, pas web)
+  env_loader.loadEnv();
   // Web : utiliser le chemin de l'URL (pas le hash) pour que le lien reset password
   // (ex. /reset-password/confirm?token=...) ouvre bien la page « définir nouveau mot de passe ».
   if (kIsWeb) {

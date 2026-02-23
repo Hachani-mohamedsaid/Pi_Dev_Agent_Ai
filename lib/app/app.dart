@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../core/routing/app_router.dart';
 import '../core/services/locale_service.dart';
+import '../features/ai_analysis/providers/analysis_provider.dart';
+import '../features/financial_advisor/providers/advisor_provider.dart';
 import '../injection_container.dart';
 import '../presentation/state/chat_provider.dart';
 
@@ -20,6 +22,12 @@ class App extends StatelessWidget {
           providers: [
             ChangeNotifierProvider<ChatProvider>(
               create: (_) => InjectionContainer.instance.buildChatProvider(),
+            ),
+            ChangeNotifierProvider<AnalysisProvider>(
+              create: (_) => AnalysisProvider(),
+            ),
+            ChangeNotifierProvider<AdvisorProvider>(
+              create: (_) => AdvisorProvider(),
             ),
           ],
           child: MaterialApp.router(

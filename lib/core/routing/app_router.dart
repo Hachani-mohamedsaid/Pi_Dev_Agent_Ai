@@ -41,6 +41,18 @@ import '../../presentation/pages/how_to_work_page.dart';
 import '../../presentation/pages/work_proposal_details_page.dart';
 import '../../data/models/work_proposal_model.dart';
 import '../../injection_container.dart';
+import '../../features/ai_analysis/models/analysis_model.dart';
+import '../../features/ai_analysis/screens/new_analysis_screen.dart';
+import '../../features/ai_analysis/screens/analysis_result_screen.dart';
+import '../../features/ai_analysis/screens/analysis_history_screen.dart';
+import '../../features/financial_advisor/models/advisor_report_model.dart';
+import '../../features/financial_advisor/screens/advisor_page.dart';
+import '../../features/financial_advisor/screens/advisor_result_page.dart';
+import '../../features/financial_advisor/screens/advisor_project_details_page.dart';
+import '../../features/my_business/models/business_session.dart';
+import '../../features/my_business/screens/business_url_screen.dart';
+import '../../features/my_business/screens/dashboard_style_screen.dart';
+import '../../features/my_business/screens/business_dashboard_screen.dart';
 
 // Custom page transition - fade and scale from center
 Page<T> _fadeScaleTransition<T extends Object?>({
@@ -443,6 +455,121 @@ final appRouter = GoRouter(
           context: context,
           state: state,
           child: HowToWorkPage(proposal: proposal),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/ai-analysis',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const NewAnalysisScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/ai-analysis-result',
+      pageBuilder: (context, state) {
+        final analysis = state.extra as AnalysisModel?;
+        if (analysis == null) {
+          return _fadeScaleTransition(
+            context: context,
+            state: state,
+            child: const NewAnalysisScreen(),
+          );
+        }
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: AnalysisResultScreen(analysis: analysis),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/ai-analysis-history',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const AnalysisHistoryScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/advisor',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const AdvisorPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/advisor-result',
+      pageBuilder: (context, state) {
+        final report = state.extra as AdvisorReportModel?;
+        if (report == null) {
+          return _fadeScaleTransition(
+            context: context,
+            state: state,
+            child: const AdvisorPage(),
+          );
+        }
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: AdvisorResultPage(report: report),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/advisor-project-details',
+      pageBuilder: (context, state) {
+        final report = state.extra as AdvisorReportModel?;
+        if (report == null) {
+          return _fadeScaleTransition(
+            context: context,
+            state: state,
+            child: const AdvisorPage(),
+          );
+        }
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: AdvisorProjectDetailsPage(report: report),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/my-business',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const BusinessUrlScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/my-business/style',
+      pageBuilder: (context, state) {
+        final websiteUrl = state.extra as String? ?? '';
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: DashboardStyleScreen(websiteUrl: websiteUrl),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/my-business/dashboard',
+      pageBuilder: (context, state) {
+        final session = state.extra as BusinessSession?;
+        if (session == null) {
+          return _fadeScaleTransition(
+            context: context,
+            state: state,
+            child: const BusinessUrlScreen(),
+          );
+        }
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: BusinessDashboardScreen(session: session),
         );
       },
     ),

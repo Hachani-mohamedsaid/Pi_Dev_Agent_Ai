@@ -38,23 +38,36 @@ const String projectAnalysesPath = '/project-analyses';
 /// PATCH /goals/:id/actions/:actionId -> Toggle action (body: { completed: true })
 const String goalsPath = '/goals';
 
+/// AI Financial Simulation Advisor: backend endpoint (POST body: { project_text }).
+/// Backend forwards to n8n and saves to MongoDB. Response: { report: string }.
+const String advisorPath = '/api/advisor/analyze';
+
+/// GET /api/advisor/history – list of past analyses for current user. Response: { analyses: [{ id, project_text, report, createdAt }] }.
+const String advisorHistoryPath = '/api/advisor/history';
+
+/// n8n webhook for financial simulation (used by backend or directly if no backend).
+const String advisorWebhookUrl =
+    'https://n8n-production-1e13.up.railway.app/webhook/a0cd36ce-41f1-4ef8-8bb2-b22cbe7cad6c';
+
 /// Clé API OpenAI utilisée côté Flutter pour OpenAI TTS (voix type ChatGPT)
 /// via le package `openai_tts`.
 ///
 /// Tant que cette valeur n'est **pas vide**, la voix utilisera **OpenAI TTS**
 /// et ne tombera sur `flutter_tts` qu'en cas d'erreur OpenAI.
 ///
-/// ⚠️ IMPORTANT: Ne jamais commiter la vraie clé en clair!
-/// Utilise une variable d'environnement ou un fichier .env local (gitignore).
-/// Exemple avec flutter_dotenv:
-///   - Crée .env à la racine du projet avec: OPENAI_API_KEY=sk-...
-///   - Dans pubspec.yaml: flutter: assets: - .env
-///   - Dans main.dart: await dotenv.load();
-/// En build: --dart-define=OPENAI_API_KEY=sk-...
-const String openaiApiKey = String.fromEnvironment(
-  'OPENAI_API_KEY',
-  defaultValue: '', // Ne jamais commiter la clé API ici! Utiliser --dart-define=OPENAI_API_KEY=... ou .env
-);
+/// ⚠️ Ne jamais commiter la clé sur GitHub. Elle n'est utilisée que si elle est présente.
+/// Chargée au démarrage depuis le fichier .env (si présent) ou depuis --dart-define.
+/// String.fromEnvironment doit rester en const (compile-time uniquement).
+const String _openaiKeyFromDartDefine =
+    String.fromEnvironment('OPENAI_API_KEY', defaultValue: '');
+
+String get openaiApiKey => _openaiKeyFromEnv ?? _openaiKeyFromDartDefine;
+
+/// Valeur lue depuis le fichier .env au démarrage (ne pas utiliser ailleurs).
+String? _openaiKeyFromEnv;
+void setOpenaiKeyFromEnv(String? value) {
+  _openaiKeyFromEnv = value;
+}
 
 /// Instruction système pour le chat vocal multilingüe : voix chaleureuse, féminine, naturelle.
 /// Le backend doit transmettre le rôle "system" au LLM.
