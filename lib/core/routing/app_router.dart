@@ -48,6 +48,10 @@ import '../../features/financial_advisor/models/advisor_report_model.dart';
 import '../../features/financial_advisor/screens/advisor_page.dart';
 import '../../features/financial_advisor/screens/advisor_result_page.dart';
 import '../../features/financial_advisor/screens/advisor_project_details_page.dart';
+import '../../features/my_business/models/business_session.dart';
+import '../../features/my_business/screens/business_url_screen.dart';
+import '../../features/my_business/screens/dashboard_style_screen.dart';
+import '../../features/my_business/screens/business_dashboard_screen.dart';
 
 // Custom page transition - fade and scale from center
 Page<T> _fadeScaleTransition<T extends Object?>({
@@ -517,6 +521,43 @@ final appRouter = GoRouter(
           context: context,
           state: state,
           child: AdvisorProjectDetailsPage(report: report),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/my-business',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const BusinessUrlScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/my-business/style',
+      pageBuilder: (context, state) {
+        final websiteUrl = state.extra as String? ?? '';
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: DashboardStyleScreen(websiteUrl: websiteUrl),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/my-business/dashboard',
+      pageBuilder: (context, state) {
+        final session = state.extra as BusinessSession?;
+        if (session == null) {
+          return _fadeScaleTransition(
+            context: context,
+            state: state,
+            child: const BusinessUrlScreen(),
+          );
+        }
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: BusinessDashboardScreen(session: session),
         );
       },
     ),

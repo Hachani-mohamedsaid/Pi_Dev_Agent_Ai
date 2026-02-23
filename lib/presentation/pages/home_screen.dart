@@ -1901,6 +1901,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'color': const Color(0xFF10B981),
         'colorLight': const Color(0xFF34D399),
       },
+      {
+        'title': 'Mon business',
+        'icon': LucideIcons.briefcase,
+        'route': '/my-business',
+        'color': const Color(0xFF8B5CF6),
+        'colorLight': const Color(0xFFA78BFA),
+      },
     ];
 
     return Column(

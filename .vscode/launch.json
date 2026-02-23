@@ -10,6 +10,16 @@
             "type": "dart"
         },
         {
+            "name": "Flutter (web avec clé OpenAI)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "args": [
+                "-d", "chrome",
+                "--dart-define", "OPENAI_API_KEY=${env:OPENAI_API_KEY}"
+            ]
+        },
+        {
             "name": "Pi_Dev_Agent_Ai (profile mode)",
             "request": "launch",
             "type": "dart",

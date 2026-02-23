@@ -55,12 +55,19 @@ const String advisorWebhookUrl =
 /// Tant que cette valeur n'est **pas vide**, la voix utilisera **OpenAI TTS**
 /// et ne tombera sur `flutter_tts` qu'en cas d'erreur OpenAI.
 ///
-/// ⚠️ IMPORTANT: Ne jamais commiter la vraie clé en clair!
-/// Utilise --dart-define=OPENAI_API_KEY=sk-... en build/run, ou un fichier .env (gitignore) avec flutter_dotenv.
-const String openaiApiKey = String.fromEnvironment(
-  'OPENAI_API_KEY',
-  defaultValue: '',
-);
+/// ⚠️ Ne jamais commiter la clé sur GitHub. Elle n'est utilisée que si elle est présente.
+/// Chargée au démarrage depuis le fichier .env (si présent) ou depuis --dart-define.
+/// String.fromEnvironment doit rester en const (compile-time uniquement).
+const String _openaiKeyFromDartDefine =
+    String.fromEnvironment('OPENAI_API_KEY', defaultValue: '');
+
+String get openaiApiKey => _openaiKeyFromEnv ?? _openaiKeyFromDartDefine;
+
+/// Valeur lue depuis le fichier .env au démarrage (ne pas utiliser ailleurs).
+String? _openaiKeyFromEnv;
+void setOpenaiKeyFromEnv(String? value) {
+  _openaiKeyFromEnv = value;
+}
 
 /// Instruction système pour le chat vocal multilingüe : voix chaleureuse, féminine, naturelle.
 /// Le backend doit transmettre le rôle "system" au LLM.

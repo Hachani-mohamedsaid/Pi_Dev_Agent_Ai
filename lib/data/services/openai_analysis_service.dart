@@ -52,7 +52,8 @@ class OpenAIAnalysisService {
       return existingAnalysis;
     }
 
-    // 2) Générer avec OpenAI
+    // 2) Générer avec OpenAI uniquement si la clé est présente
+    if (openaiApiKey.isEmpty) return null;
     try {
       final prompt = _buildAnalysisPrompt(proposal);
       
