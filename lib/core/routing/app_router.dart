@@ -286,7 +286,9 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: const SuggestionsFeedPage(),
+        child: SuggestionsFeedPage(
+          controller: InjectionContainer.instance.buildAuthController(),
+        ),
       ),
     ),
     GoRoute(

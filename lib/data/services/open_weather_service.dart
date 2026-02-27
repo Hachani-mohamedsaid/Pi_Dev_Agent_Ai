@@ -93,6 +93,60 @@ class OpenWeatherService {
     }
   }
 
+  /// Retourne la température en °C pour une ville, ou null si indisponible.
+  static Future<double?> getTemperatureForCity(String cityName) async {
+    final trimmed = cityName.trim();
+    if (trimmed.isEmpty || openWeatherApiKey.isEmpty) return null;
+    try {
+      final uri = Uri.parse(_weatherUrl).replace(
+        queryParameters: {
+          'q': trimmed,
+          'appid': openWeatherApiKey,
+          'units': 'metric',
+        },
+      );
+      final res = await http.get(uri);
+      if (res.statusCode != 200) return null;
+      final data = jsonDecode(res.body) as Map<String, dynamic>?;
+      final main = data?['main'] as Map<String, dynamic>?;
+      final temp = main?['temp'] as num?;
+      return temp?.toDouble();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Retourne "sunny" | "cloudy" | "rain" pour POST /assistant/context.
+  static Future<String> getWeatherConditionForCity(String cityName) async {
+    final trimmed = cityName.trim();
+    if (trimmed.isEmpty || openWeatherApiKey.isEmpty) return 'sunny';
+    try {
+      final uri = Uri.parse(_weatherUrl).replace(
+        queryParameters: {
+          'q': trimmed,
+          'appid': openWeatherApiKey,
+          'units': 'metric',
+        },
+      );
+      final res = await http.get(uri);
+      if (res.statusCode != 200) return 'sunny';
+      final data = jsonDecode(res.body) as Map<String, dynamic>?;
+      final weatherList = data?['weather'] as List<dynamic>?;
+      final first = weatherList != null && weatherList.isNotEmpty
+          ? weatherList.first as Map<String, dynamic>?
+          : null;
+      final id = (first?['id'] as num?)?.toInt();
+      if (id == null) return 'sunny';
+      if (id >= 200 && id < 600) return 'rain'; // thunderstorm, drizzle, rain
+      if (id >= 600 && id < 700) return 'rain'; // snow → simplifié en rain
+      if (id >= 801 && id <= 804) return 'cloudy'; // clouds
+      if (id == 800) return 'sunny'; // clear
+      return 'cloudy'; // 701-799 atmosphere, etc.
+    } catch (_) {
+      return 'sunny';
+    }
+  }
+
   static String _capitalize(String s) {
     if (s.isEmpty) return s;
     return s[0].toUpperCase() + s.substring(1).toLowerCase();

@@ -85,5 +85,6 @@ const String chatSystemInstructionMultilingual =
 /// Ex. dev : ws://localhost:3000/realtime-voice ; prod : wss://ton-backend.up.railway.app/realtime-voice
 const String realtimeVoiceWsUrl = String.fromEnvironment(
   'REALTIME_VOICE_WS_URL',
-  defaultValue: '', // URL WebSocket pour Realtime API. Ex: wss://backend.up.railway.app/realtime-voice
+  defaultValue:
+      '', // URL WebSocket pour Realtime API. Ex: wss://backend.up.railway.app/realtime-voice
 );
