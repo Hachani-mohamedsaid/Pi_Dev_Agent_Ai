@@ -227,6 +227,9 @@ class MeetingHubScreen extends StatelessWidget {
   }
 
   Widget _buildRecentMeetingCard(BuildContext context, RecentMeetingModel m, int index) {
+    const metaStyle = TextStyle(color: AppColors.textCyan200, fontSize: 13);
+    final metaColor = AppColors.textCyan200.withOpacity(0.7);
+
     return GestureDetector(
       onTap: () => context.push('/meeting-transcript/${m.id}'),
       child: Container(
@@ -244,9 +247,11 @@ class MeetingHubScreen extends StatelessWidget {
           border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -258,43 +263,63 @@ class MeetingHubScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Icon(LucideIcons.clock, size: 14, color: AppColors.textCyan200.withOpacity(0.7)),
-                      const SizedBox(width: 4),
-                      Text(m.date, style: TextStyle(color: AppColors.textCyan200.withOpacity(0.7), fontSize: 13)),
-                      const SizedBox(width: 12),
-                      Icon(LucideIcons.video, size: 14, color: AppColors.textCyan200.withOpacity(0.7)),
-                      const SizedBox(width: 4),
-                      Text(m.duration, style: TextStyle(color: AppColors.textCyan200.withOpacity(0.7), fontSize: 13)),
-                      const SizedBox(width: 12),
-                      Icon(LucideIcons.users, size: 14, color: AppColors.textCyan200.withOpacity(0.7)),
-                      const SizedBox(width: 4),
-                      Text('${m.participants}', style: TextStyle(color: AppColors.textCyan200.withOpacity(0.7), fontSize: 13)),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(LucideIcons.clock, size: 14, color: metaColor),
+                          const SizedBox(width: 4),
+                          Text(m.date, style: metaStyle.copyWith(color: metaColor)),
+                        ],
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(LucideIcons.video, size: 14, color: metaColor),
+                          const SizedBox(width: 4),
+                          Text(m.duration, style: metaStyle.copyWith(color: metaColor)),
+                        ],
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(LucideIcons.users, size: 14, color: metaColor),
+                          const SizedBox(width: 4),
+                          Text('${m.participants}', style: metaStyle.copyWith(color: metaColor)),
+                        ],
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.cyan500.withOpacity(0.25), AppColors.blue500.withOpacity(0.25)],
-                ),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.cyan500.withOpacity(0.35)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(LucideIcons.fileText, size: 16, color: AppColors.cyan400),
-                  const SizedBox(width: 6),
-                  Text(
-                    'View Transcript',
-                    style: TextStyle(color: AppColors.cyan400, fontSize: 13, fontWeight: FontWeight.w500),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.cyan500.withOpacity(0.25), AppColors.blue500.withOpacity(0.25)],
                   ),
-                ],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.cyan500.withOpacity(0.35)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(LucideIcons.fileText, size: 16, color: AppColors.cyan400),
+                    const SizedBox(width: 6),
+                    Text(
+                      'View Transcript',
+                      style: TextStyle(color: AppColors.cyan400, fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
