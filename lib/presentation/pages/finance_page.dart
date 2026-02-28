@@ -9,6 +9,7 @@ import '../../core/utils/responsive.dart';
 import '../widgets/navigation_bar.dart';
 // NEW: n8n finance service for real data
 import '../../services/n8n_finance_service.dart';
+import '../../services/ml_prediction_service.dart';
 
 class FinancePage extends StatefulWidget {
   const FinancePage({super.key});
@@ -22,12 +23,14 @@ class _FinancePageState extends State<FinancePage> {
   bool _isLoading = true;
   String? _errorMessage;
   final _financeService = N8nFinanceService();
+  final _mlService = MlPredictionService();
 
   // NEW: Data from n8n webhooks
   Map<String, dynamic>? _monthStats;
   List<dynamic>? _vendors;
   List<dynamic>? _categories;
   List<dynamic>? _daySpending;
+  SpendingPredictionResult? _mlPrediction;
 
 
   // NEW: Load data from n8n webhooks on init
@@ -45,9 +48,7 @@ class _FinancePageState extends State<FinancePage> {
     });
 
     try {
-      print('🔄 Loading finance data from n8n...');
-      
-      // Fetch all data in parallel
+      // Fetch all finance data + ML prediction in parallel
       final results = await Future.wait([
         _financeService.getCurrentMonthStats(),
         _financeService.getVendorBreakdown(),
@@ -55,30 +56,25 @@ class _FinancePageState extends State<FinancePage> {
         _financeService.getSpendingByDay(),
       ]);
 
-      // MODIFIED: Add detailed debug logging for raw responses
-      print('Month stats response: ${results[0]}');
-      print('Vendor response: ${results[1]}');
-      print('Category response: ${results[2]}');
-      print('Day spending response: ${results[3]}');
+      // ML prediction fetched separately so a failure doesn't block the page
+      SpendingPredictionResult? ml;
+      try {
+        ml = await _mlService.getSpendingPrediction();
+      } catch (mlErr) {
+        // ML is optional — page still works without it
+        print('⚠️ ML prediction unavailable: $mlErr');
+      }
 
       if (!mounted) return;
 
       setState(() {
         _monthStats = results[0];
-        // MODIFIED: Safe nested parsing with empty-list fallback
         _vendors = (results[1]['vendors'] as List?) ?? [];
         _categories = (results[2]['breakdown'] as List?) ?? [];
         _daySpending = (results[3]['byDay'] as List?) ?? [];
-
-        // MODIFIED: Add parsed debug logging
-        print('Parsed vendors: $_vendors');
-        print('Parsed categories: $_categories');
-        print('Parsed days: $_daySpending');
-
+        _mlPrediction = ml;
         _isLoading = false;
       });
-
-      print('✅ All finance data loaded successfully');
     } catch (e) {
       print('❌ Error loading finance data: $e');
       if (!mounted) return;
@@ -304,6 +300,16 @@ class _FinancePageState extends State<FinancePage> {
 
                     // Time Analysis
                     _buildTimeAnalysis(context, isMobile),
+
+                    SizedBox(height: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 24.0,
+                      tablet: 28.0,
+                      desktop: 32.0,
+                    )),
+
+                    // ML: Spending Prediction (static for now; dynamic later)
+                    _buildSpendingPredictionSection(context, isMobile),
                   ],
                 ),
                   ), // MODIFIED: Close RefreshIndicator
@@ -1252,6 +1258,260 @@ class _FinancePageState extends State<FinancePage> {
         .animate()
         .fadeIn(delay: 400.ms, duration: 500.ms)
         .slideY(begin: 0.2, end: 0, delay: 400.ms, duration: 500.ms);
+  }
+
+  /// ML Spending Prediction section — real data from NestJS /ml/spending-prediction.
+  /// Falls back to a friendly loading/unavailable state if backend isn't ready yet.
+  Widget _buildSpendingPredictionSection(BuildContext context, bool isMobile) {
+    // While ML data is still null, show a subtle loading placeholder
+    if (_mlPrediction == null) {
+      return Container(
+        padding: EdgeInsets.all(Responsive.getResponsiveValue(
+          context, mobile: 20.0, tablet: 24.0, desktop: 28.0,
+        )),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF1e4a66).withOpacity(0.4),
+              const Color(0xFF16384d).withOpacity(0.4),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.cyan500.withOpacity(0.1), width: 1),
+        ),
+        child: Row(
+          children: [
+            const Icon(LucideIcons.brain, color: Color(0xFFA855F7), size: 20),
+            const SizedBox(width: 10),
+            Text(
+              'Spending Prediction — loading…',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textCyan200.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
+      )
+          .animate()
+          .fadeIn(delay: 500.ms, duration: 400.ms);
+    }
+
+    final nextMonthLabel = _mlPrediction!.nextMonthLabel;
+    final overBudgetCount = _mlPrediction!.overBudgetCount;
+    final isOverBudget = overBudgetCount > 0;
+    final predictions = _mlPrediction!.predictions;
+
+    return Container(
+      padding: EdgeInsets.all(Responsive.getResponsiveValue(
+        context,
+        mobile: 20.0,
+        tablet: 24.0,
+        desktop: 28.0,
+      )),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF1e4a66).withOpacity(0.4),
+            const Color(0xFF16384d).withOpacity(0.4),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.cyan500.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(LucideIcons.brain, color: Color(0xFFA855F7), size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Spending Prediction',
+                style: TextStyle(
+                  fontSize: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 16.0,
+                    tablet: 18.0,
+                    desktop: 20.0,
+                  ),
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textWhite,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Next month ($nextMonthLabel) • Simple linear regression',
+            style: TextStyle(
+              fontSize: Responsive.getResponsiveValue(
+                context,
+                mobile: 11.0,
+                tablet: 12.0,
+                desktop: 13.0,
+              ),
+              color: const Color(0xFF06B6D4).withOpacity(0.7),
+            ),
+          ),
+          SizedBox(height: Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          )),
+
+          // Over budget alert
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isOverBudget
+                  ? const Color(0xFFF59E0B).withOpacity(0.15)
+                  : const Color(0xFF22C55E).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isOverBudget
+                    ? const Color(0xFFF59E0B).withOpacity(0.4)
+                    : const Color(0xFF22C55E).withOpacity(0.4),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  isOverBudget ? LucideIcons.alertTriangle : LucideIcons.checkCircle,
+                  size: 18,
+                  color: isOverBudget ? const Color(0xFFF59E0B) : const Color(0xFF22C55E),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isOverBudget
+                      ? '$overBudgetCount category(ies) trending over budget'
+                      : 'On track — predicted within budget',
+                  style: TextStyle(
+                    fontSize: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 12.0,
+                      tablet: 13.0,
+                      desktop: 14.0,
+                    ),
+                    fontWeight: FontWeight.w500,
+                    color: isOverBudget ? const Color(0xFFF59E0B) : const Color(0xFF22C55E),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          )),
+
+          Text(
+            'Predicted by category',
+            style: TextStyle(
+              fontSize: Responsive.getResponsiveValue(
+                context,
+                mobile: 13.0,
+                tablet: 14.0,
+                desktop: 15.0,
+              ),
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF06B6D4).withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          ...List.generate(predictions.length, (index) {
+            final p = predictions[index];
+            final category = p.category;
+            final predicted = p.predicted;
+            final budget = p.budget;
+            final overBudget = p.overBudget;
+            final trend = p.trend; // 'up' | 'down' | 'stable'
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      category,
+                      style: TextStyle(
+                        fontSize: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 12.0,
+                          tablet: 13.0,
+                          desktop: 14.0,
+                        ),
+                        color: AppColors.textWhite.withOpacity(0.9),
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    trend == 'up'
+                        ? LucideIcons.trendingUp
+                        : trend == 'down'
+                            ? LucideIcons.trendingDown
+                            : LucideIcons.minus,
+                    size: 14,
+                    color: trend == 'up'
+                        ? const Color(0xFFF59E0B)
+                        : const Color(0xFF22C55E),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '\$${predicted.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 13.0,
+                        tablet: 14.0,
+                        desktop: 15.0,
+                      ),
+                      fontWeight: FontWeight.w600,
+                      color: overBudget ? const Color(0xFFF59E0B) : const Color(0xFF06B6D4),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: overBudget
+                          ? const Color(0xFFF59E0B).withOpacity(0.2)
+                          : const Color(0xFF22C55E).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      overBudget ? 'Over' : 'OK',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: overBudget ? const Color(0xFFF59E0B) : const Color(0xFF22C55E),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(delay: 500.ms, duration: 500.ms)
+        .slideY(begin: 0.2, end: 0, delay: 500.ms, duration: 500.ms);
   }
 
   Widget _buildTelegramButton(BuildContext context) {

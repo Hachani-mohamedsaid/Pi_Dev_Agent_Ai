@@ -8,7 +8,9 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/l10n/app_strings.dart';
+import '../../data/services/meeting_service.dart';
 import '../../services/n8n_email_service.dart';
+import '../../features/phone_agent/data/phone_agent_mock_data.dart';
 import '../state/auth_controller.dart';
 import '../widgets/navigation_bar.dart';
 
@@ -30,6 +32,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _emailDeadlines = 0;
   int _emailActionsRequired = 0;
   bool _emailSummaryLoading = true;
+
+  /// Number of meetings today (null = loading).
+  int? _meetingsTodayCount;
+  final _meetingService = MeetingService();
 
   /// Tracks if we were the current route; used to reload when home becomes visible again.
   bool _wasCurrentRoute = false;
@@ -103,6 +109,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (isCurrent && !_wasCurrentRoute) {
       _wasCurrentRoute = true;
       _loadEmailSummary();
+      _loadMeetingsToday();
     } else if (!isCurrent) {
       _wasCurrentRoute = false;
     }
@@ -121,6 +128,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     for (var controller in _ringControllers) {
       controller.dispose();
     }
+    _meetingService.dispose();
     super.dispose();
   }
 
@@ -141,6 +149,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       });
     } catch (_) {
       if (mounted) setState(() => _emailSummaryLoading = false);
+    }
+  }
+
+  Future<void> _loadMeetingsToday() async {
+    try {
+      final meetings = await _meetingService.fetchMeetings();
+      if (!mounted) return;
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final count = meetings.where((m) {
+        final start = m.startTime;
+        final startDay = DateTime(start.year, start.month, start.day);
+        return startDay == today;
+      }).length;
+      setState(() => _meetingsTodayCount = count);
+    } catch (_) {
+      if (mounted) setState(() => _meetingsTodayCount = 0);
     }
   }
 
@@ -1889,13 +1914,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'colorLight': const Color(0xFFA855F7),
       },
       {
-        'title': 'AI Project Analyzer',
-        'icon': LucideIcons.sparkles,
-        'route': '/ai-analysis',
-        'color': const Color(0xFF06B6D4),
-        'colorLight': const Color(0xFF22D3EE),
-      },
-      {
         'title': 'AI Financial Simulation',
         'icon': LucideIcons.calculator,
         'route': '/advisor',
@@ -1908,6 +1926,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'route': '/my-business',
         'color': const Color(0xFF8B5CF6),
         'colorLight': const Color(0xFFA78BFA),
+      },
+      {
+        'title': 'Phone Agent',
+        'icon': LucideIcons.phone,
+        'route': '/phone-agent',
+        'color': const Color(0xFF06B6D4),
+        'colorLight': const Color(0xFF22D3EE),
       },
     ];
 
@@ -1946,8 +1971,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
           child: _buildSummarizedEmailsCard(context, isMobile),
         ),
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: Responsive.getResponsiveValue(
+              context,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 20.0,
+            ),
+          ),
+          child: _buildMeetingHubCard(context, isMobile),
+        ),
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: Responsive.getResponsiveValue(
+              context,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 20.0,
+            ),
+          ),
+          child: _buildOngoingProjectsGrid(context, isMobile),
+        ),
         ...actions.asMap().entries.map((entry) {
           if (entry.key == 1) return const SizedBox.shrink();
+          if (entry.key == 0 || entry.key == 5 || entry.key == 6 || entry.key == 7) return const SizedBox.shrink();
           final index = entry.key;
           final action = entry.value;
           return Padding(
@@ -2119,6 +2167,95 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  /// Meeting Hub card (React-style): Video icon, title, subtitle, arrow → /meetings.
+  Widget _buildMeetingHubCard(BuildContext context, bool isMobile) {
+    final r = Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 24.0);
+    return GestureDetector(
+      onTap: () => context.push('/meetings'),
+      child: Container(
+        padding: EdgeInsets.all(r),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF0a1f2e),
+              Color(0xFF0f2a3d),
+              Color(0xFF14354c),
+              Color(0xFF19405b),
+              Color(0xFF1e4a66),
+            ],
+            stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+          ),
+          borderRadius: BorderRadius.circular(r),
+          border: Border.all(color: AppColors.cyan500.withOpacity(0.3), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.cyan500.withOpacity(0.2),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.4),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
+              height: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
+              decoration: BoxDecoration(
+                color: AppColors.cyan500.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.cyan400.withOpacity(0.3)),
+              ),
+              child: Icon(LucideIcons.video, color: AppColors.cyan400, size: 28),
+            ),
+            SizedBox(width: r),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Meeting Hub',
+                    style: TextStyle(
+                      fontSize: Responsive.getResponsiveValue(context, mobile: 17.0, tablet: 18.0, desktop: 20.0),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Start or join with AI assistance',
+                    style: TextStyle(
+                      fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
+                      color: AppColors.textCyan200.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: Responsive.getResponsiveValue(context, mobile: 38.0, tablet: 40.0, desktop: 44.0),
+              height: Responsive.getResponsiveValue(context, mobile: 38.0, tablet: 40.0, desktop: 44.0),
+              decoration: BoxDecoration(
+                color: AppColors.cyan500,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(LucideIcons.chevronRight, color: Colors.white, size: 22),
+            ),
+          ],
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn(delay: 200.ms, duration: 400.ms)
+        .slideX(begin: 0.02, end: 0, curve: Curves.easeOut);
+  }
+
   Widget _buildPriorityChip(BuildContext context, int count, String label, Color color) {
     return Container(
       padding: EdgeInsets.all(Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0)),
@@ -2192,6 +2329,216 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  List<Map<String, dynamic>> _getOngoingProjectsData() {
+    final phoneCalls = mockPhoneCalls;
+    final phoneTotal = phoneCalls.length;
+    final phoneImportant = phoneCalls.where((c) => c.priority == 'high').length;
+    final meetingsText = _meetingsTodayCount != null
+        ? '$_meetingsTodayCount meeting${_meetingsTodayCount == 1 ? '' : 's'} today'
+        : null;
+    return [
+      {'title': 'Review Agenda', 'subtitle': meetingsText, 'icon': LucideIcons.calendar, 'route': '/meetings', 'color': const Color(0xFFA855F7)},
+      {'title': 'AI Financial Simulation', 'subtitle': null, 'icon': LucideIcons.calculator, 'route': '/advisor', 'color': const Color(0xFF10B981)},
+      {'title': 'Mon business', 'subtitle': null, 'icon': LucideIcons.briefcase, 'route': '/my-business', 'color': const Color(0xFF8B5CF6)},
+      {'title': 'Phone Agent', 'subtitle': '$phoneTotal calls • $phoneImportant important', 'icon': LucideIcons.phone, 'route': '/phone-agent', 'color': const Color(0xFF06B6D4)},
+    ];
+  }
+
+  Widget _buildOngoingProjectsGrid(BuildContext context, bool isMobile) {
+    final spacing = Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Ongoing Projects',
+              style: TextStyle(
+                fontSize: Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 17.0, desktop: 18.0),
+                fontWeight: FontWeight.bold,
+                color: AppColors.textWhite,
+              ),
+            ),
+            GestureDetector(
+              onTap: () {},
+              child: Text(
+                'view all',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.cyan400,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: spacing),
+        Builder(
+          builder: (context) {
+            final data = _getOngoingProjectsData();
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(right: spacing / 2),
+                          child: _buildOngoingProjectCard(
+                            context,
+                            isMobile,
+                            title: data[0]['title'] as String,
+                            subtitle: data[0]['subtitle'] as String?,
+                            icon: data[0]['icon'] as IconData,
+                            route: data[0]['route'] as String,
+                            color: data[0]['color'] as Color,
+                            isHighlighted: true,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(left: spacing / 2),
+                          child: _buildOngoingProjectCard(
+                            context,
+                            isMobile,
+                            title: data[1]['title'] as String,
+                            subtitle: data[1]['subtitle'] as String?,
+                            icon: data[1]['icon'] as IconData,
+                            route: data[1]['route'] as String,
+                            color: data[1]['color'] as Color,
+                            isHighlighted: false,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: spacing),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(right: spacing / 2),
+                          child: _buildOngoingProjectCard(
+                            context,
+                            isMobile,
+                            title: data[2]['title'] as String,
+                            subtitle: data[2]['subtitle'] as String?,
+                            icon: data[2]['icon'] as IconData,
+                            route: data[2]['route'] as String,
+                            color: data[2]['color'] as Color,
+                            isHighlighted: false,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(left: spacing / 2),
+                          child: _buildOngoingProjectCard(
+                            context,
+                            isMobile,
+                            title: data[3]['title'] as String,
+                            subtitle: data[3]['subtitle'] as String?,
+                            icon: data[3]['icon'] as IconData,
+                            route: data[3]['route'] as String,
+                            color: data[3]['color'] as Color,
+                            isHighlighted: false,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOngoingProjectCard(
+    BuildContext context,
+    bool isMobile, {
+    required String title,
+    required String? subtitle,
+    required IconData icon,
+    required String route,
+    required Color color,
+    required bool isHighlighted,
+  }) {
+    final r = Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 16.0, desktop: 18.0);
+    return GestureDetector(
+      onTap: () => context.go(route),
+      child: Container(
+        padding: EdgeInsets.all(r),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isHighlighted
+                ? [
+                    const Color(0xFF1e4a66),
+                    const Color(0xFF16384d),
+                    const Color(0xFF0f2940),
+                  ]
+                : [
+                    const Color(0xFF1e4a66).withOpacity(0.35),
+                    const Color(0xFF16384d).withOpacity(0.35),
+                  ],
+            ),
+          borderRadius: BorderRadius.circular(r),
+          border: Border.all(
+            color: isHighlighted ? AppColors.cyan500.withOpacity(0.35) : AppColors.cyan500.withOpacity(0.12),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withOpacity(isHighlighted ? 0.35 : 0.25),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: isHighlighted ? Colors.white : color, size: 22),
+            ),
+            SizedBox(height: r * 0.5),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
+                fontWeight: FontWeight.bold,
+                color: isHighlighted ? Colors.white : AppColors.textWhite,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (subtitle != null && subtitle.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isHighlighted ? AppColors.textCyan200.withOpacity(0.85) : AppColors.textCyan200.withOpacity(0.7),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

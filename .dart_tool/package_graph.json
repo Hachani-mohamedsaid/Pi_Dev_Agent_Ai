@@ -20,6 +20,7 @@
         "google_sign_in_web",
         "http",
         "image_picker",
+        "intl",
         "lottie",
         "lucide_icons",
         "openai_tts",
@@ -27,6 +28,7 @@
         "shared_preferences",
         "sign_in_with_apple",
         "speech_to_text",
+        "syncfusion_flutter_calendar",
         "url_launcher",
         "web_socket_channel"
       ],
@@ -139,6 +141,28 @@
         "collection",
         "flutter",
         "nested"
+      ]
+    },
+    {
+      "name": "intl",
+      "version": "0.20.2",
+      "dependencies": [
+        "clock",
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "syncfusion_flutter_calendar",
+      "version": "32.2.5",
+      "dependencies": [
+        "flutter",
+        "flutter_localizations",
+        "intl",
+        "syncfusion_flutter_core",
+        "syncfusion_flutter_datepicker",
+        "syncfusion_localizations",
+        "timezone"
       ]
     },
     {
@@ -565,6 +589,40 @@
       ]
     },
     {
+      "name": "syncfusion_localizations",
+      "version": "32.2.5",
+      "dependencies": [
+        "flutter",
+        "intl",
+        "syncfusion_flutter_core"
+      ]
+    },
+    {
+      "name": "syncfusion_flutter_datepicker",
+      "version": "32.2.5",
+      "dependencies": [
+        "flutter",
+        "intl",
+        "syncfusion_flutter_core"
+      ]
+    },
+    {
+      "name": "syncfusion_flutter_core",
+      "version": "32.2.5",
+      "dependencies": [
+        "flutter",
+        "vector_math"
+      ]
+    },
+    {
+      "name": "timezone",
+      "version": "0.11.0",
+      "dependencies": [
+        "http",
+        "path"
+      ]
+    },
+    {
       "name": "url_launcher_windows",
       "version": "3.1.5",
       "dependencies": [
@@ -795,15 +853,6 @@
       "name": "logging",
       "version": "1.3.0",
       "dependencies": []
-    },
-    {
-      "name": "intl",
-      "version": "0.20.2",
-      "dependencies": [
-        "clock",
-        "meta",
-        "path"
-      ]
     },
     {
       "name": "sky_engine",
