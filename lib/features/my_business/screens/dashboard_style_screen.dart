@@ -46,7 +46,16 @@ class DashboardStyleScreen extends StatelessWidget {
                 centerTitle: true,
                 backgroundColor: Colors.transparent,
                 elevation: 0,
-                leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => context.pop()),
+                leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/my-business');
+                  }
+                },
+              ),
               ),
               Expanded(
                 child: SingleChildScrollView(
