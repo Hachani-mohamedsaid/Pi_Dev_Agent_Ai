@@ -106,7 +106,13 @@ class _AdvisorProjectDetailsPageState extends State<AdvisorProjectDetailsPage> {
                 elevation: 0,
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: () => context.pop(),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/advisor');
+                    }
+                  },
                 ),
               ),
               Expanded(
