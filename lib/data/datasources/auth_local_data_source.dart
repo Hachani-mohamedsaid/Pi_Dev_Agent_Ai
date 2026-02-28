@@ -9,6 +9,9 @@ abstract class AuthLocalDataSource {
   Future<UserModel?> getCachedUser();
   Future<void> clearCache();
 
+  /// User ID from cached user. Null if not signed in. Used by assistant.
+  Future<String?> getUserId();
+
   /// JWT après login/register (null en mode mock).
   Future<String?> getAccessToken();
 
@@ -35,6 +38,9 @@ class InMemoryAuthLocalDataSource implements AuthLocalDataSource {
     _cachedUser = null;
     _accessToken = null;
   }
+
+  @override
+  Future<String?> getUserId() async => _cachedUser?.id;
 
   @override
   Future<String?> getAccessToken() async => _accessToken;
@@ -75,6 +81,12 @@ class SharedPreferencesAuthLocalDataSource implements AuthLocalDataSource {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyAccessToken);
     await prefs.remove(_keyCachedUser);
+  }
+
+  @override
+  Future<String?> getUserId() async {
+    final user = await getCachedUser();
+    return user?.id;
   }
 
   @override

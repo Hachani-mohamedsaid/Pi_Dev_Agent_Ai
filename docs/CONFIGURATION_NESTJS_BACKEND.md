@@ -20,8 +20,10 @@ Ce document récapitule **toute la configuration** à mettre en place dans le ba
 | **FRONTEND_VERIFY_EMAIL_URL** | Oui (si vérification email) | URL de la page « confirmer mon email » (lien envoyé par email : cette URL + `?token=...`). L’app Flutter ouvre cette route puis appelle POST /auth/verify-email/confirm avec le token. | En prod : `https://ton-app.web.app/verify-email/confirm` ; en dev : `http://localhost:8080/verify-email/confirm` ou `myapp://verify-email/confirm` |
 | **OPENAI_API_KEY** | Oui (si Talk to buddy) | Clé API OpenAI pour POST /ai/chat. | `sk-proj-...` |
 | **OPENAI_MODEL** | Non | Modèle OpenAI (défaut : `gpt-4o-mini`). | `gpt-4o-mini` ou `gpt-4o` |
+| **ML_SERVICE_URL** | Oui (si Assistant / suggestions) | URL publique du service ML sur Railway. Le **backend** appelle ce service ; le frontend ne doit jamais l’appeler. | `https://incredible-determination-production-a7c3.up.railway.app` |
 
-**Note :** Le backend peut accepter **MONGO_URI** (prioritaire sur MONGODB_URI) pour la connexion MongoDB.
+**Note :** Le backend peut accepter **MONGO_URI** (prioritaire sur MONGODB_URI) pour la connexion MongoDB.  
+**Service ML :** Si l’URL du service ML change (ex. nouveau déploiement Railway), mettre à jour **ML_SERVICE_URL** dans les variables du service **backend** (pas dans le frontend).
 
 **Exemple `.env` complet :**
 
@@ -43,6 +45,9 @@ FRONTEND_VERIFY_EMAIL_URL=https://ton-app.web.app/verify-email/confirm
 # Talk to buddy (optionnel)
 OPENAI_API_KEY=sk-proj-...
 OPENAI_MODEL=gpt-4o-mini
+
+# Assistant / suggestions – service ML (backend appelle cette URL uniquement)
+ML_SERVICE_URL=https://incredible-determination-production-a7c3.up.railway.app
 ```
 
 ---
@@ -103,6 +108,7 @@ Le frontend appelle les endpoints suivants. Ils doivent exister et utiliser les 
 | GET | `/auth/me` | Header `Authorization: Bearer <accessToken>` | `{ "user" }` (inclut `emailVerified`) |
 | POST | `/auth/change-password` | Header + `{ "currentPassword", "newPassword" }` | 200 OK |
 | POST | `/ai/chat` | `{ "messages": [ { "role": "system"\|"user"\|"assistant", "content": "..." } ] }` | `{ "message": "..." }` ou `{ "content": "..." }` (réponse IA pour Talk to buddy) |
+| POST | `/assistant/feedback` | `{ "suggestionId", "action": "accepted"\|"dismissed", "userId?", "message?", "type?" }` | 200 OK – persister dans `assistant_feedback` (voir `NESTJS_ASSISTANT_FEEDBACK_MONGODB.md`) |
 
 **Talk to buddy (assistant vocal / chat)** : le frontend envoie **POST /ai/chat** avec la liste des messages (user + assistant) et peut envoyer un premier message **system** (ex. « Répondre uniquement en français »). Si l'utilisateur est connecté, le frontend envoie le header **`Authorization: Bearer <accessToken>`** pour que le backend puisse identifier l'utilisateur et avoir accès aux données de son compte (profil, etc.). Le backend doit transmettre tous les messages (y compris **system**) au LLM et renvoyer `{ "message": "..." }` ou `{ "content": "..." }`.
 

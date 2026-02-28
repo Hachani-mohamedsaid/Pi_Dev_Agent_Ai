@@ -56,6 +56,7 @@ dependencies:
   # HTTP & storage
   http: ^1.2.0
   shared_preferences: ^2.2.2
+  geolocator: ^13.0.2
 
   # Charts and UI
   fl_chart: ^0.69.0
