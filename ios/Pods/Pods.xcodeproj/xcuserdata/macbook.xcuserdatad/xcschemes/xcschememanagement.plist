@@ -114,6 +114,16 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>geolocator_apple-geolocator_apple_privacy.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>geolocator_apple.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>google_sign_in_ios-google_sign_in_ios_privacy.xcscheme</key>
 		<dict>
 			<key>isShown</key>
