@@ -21,6 +21,7 @@ import '../../presentation/pages/voice_assistant_page.dart';
 import '../../presentation/pages/chat_page.dart';
 import '../../presentation/pages/suggestions_feed_page.dart';
 import '../../presentation/pages/meeting_detail_page.dart';
+import '../../presentation/pages/agenda_page.dart';
 import '../../features/meeting_hub/screens/meeting_hub_screen.dart';
 import '../../features/meeting_hub/screens/active_meeting_screen.dart';
 import '../../features/meeting_hub/screens/meeting_transcript_screen.dart';
@@ -290,6 +291,14 @@ final appRouter = GoRouter(
         child: SuggestionsFeedPage(
           controller: InjectionContainer.instance.buildAuthController(),
         ),
+      ),
+    ),
+    GoRoute(
+      path: '/agenda',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const AgendaPage(),
       ),
     ),
     GoRoute(
