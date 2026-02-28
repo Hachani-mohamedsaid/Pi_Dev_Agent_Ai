@@ -42,7 +42,6 @@ class MeetingHubScreen extends StatelessWidget {
                       _buildCenterCard(context, isMobile),
                       SizedBox(height: Responsive.getResponsiveValue(context, mobile: 24.0, tablet: 28.0, desktop: 32.0)),
                       _buildRecentSection(context, isMobile, padding),
-                      SizedBox(height: 80),
                     ],
                   ),
                 ),
@@ -227,6 +226,9 @@ class MeetingHubScreen extends StatelessWidget {
   }
 
   Widget _buildRecentMeetingCard(BuildContext context, RecentMeetingModel m, int index) {
+    const metaStyle = TextStyle(color: AppColors.textCyan200, fontSize: 13);
+    final metaColor = AppColors.textCyan200.withOpacity(0.7);
+
     return GestureDetector(
       onTap: () => context.push('/meeting-transcript/${m.id}'),
       child: Container(
@@ -243,58 +245,77 @@ class MeetingHubScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
         ),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    m.title,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: Responsive.getResponsiveValue(context, mobile: 15.0, tablet: 16.0, desktop: 17.0),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(LucideIcons.clock, size: 14, color: AppColors.textCyan200.withOpacity(0.7)),
-                      const SizedBox(width: 4),
-                      Text(m.date, style: TextStyle(color: AppColors.textCyan200.withOpacity(0.7), fontSize: 13)),
-                      const SizedBox(width: 12),
-                      Icon(LucideIcons.video, size: 14, color: AppColors.textCyan200.withOpacity(0.7)),
-                      const SizedBox(width: 4),
-                      Text(m.duration, style: TextStyle(color: AppColors.textCyan200.withOpacity(0.7), fontSize: 13)),
-                      const SizedBox(width: 12),
-                      Icon(LucideIcons.users, size: 14, color: AppColors.textCyan200.withOpacity(0.7)),
-                      const SizedBox(width: 4),
-                      Text('${m.participants}', style: TextStyle(color: AppColors.textCyan200.withOpacity(0.7), fontSize: 13)),
-                    ],
-                  ),
-                ],
+            Text(
+              m.title,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: Responsive.getResponsiveValue(context, mobile: 15.0, tablet: 16.0, desktop: 17.0),
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.cyan500.withOpacity(0.25), AppColors.blue500.withOpacity(0.25)],
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.clock, size: 14, color: metaColor),
+                    const SizedBox(width: 4),
+                    Text(m.date, style: metaStyle.copyWith(color: metaColor)),
+                  ],
                 ),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.cyan500.withOpacity(0.35)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(LucideIcons.fileText, size: 16, color: AppColors.cyan400),
-                  const SizedBox(width: 6),
-                  Text(
-                    'View Transcript',
-                    style: TextStyle(color: AppColors.cyan400, fontSize: 13, fontWeight: FontWeight.w500),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.video, size: 14, color: metaColor),
+                    const SizedBox(width: 4),
+                    Text(m.duration, style: metaStyle.copyWith(color: metaColor)),
+                  ],
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.users, size: 14, color: metaColor),
+                    const SizedBox(width: 4),
+                    Text('${m.participants}', style: metaStyle.copyWith(color: metaColor)),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: Responsive.getResponsiveValue(context, mobile: 20.0, tablet: 24.0, desktop: 28.0),
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.cyan500.withOpacity(0.25), AppColors.blue500.withOpacity(0.25)],
                   ),
-                ],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.cyan500.withOpacity(0.35)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(LucideIcons.fileText, size: 16, color: AppColors.cyan400),
+                    const SizedBox(width: 8),
+                    Text(
+                      'View Transcript',
+                      style: TextStyle(color: AppColors.cyan400, fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
