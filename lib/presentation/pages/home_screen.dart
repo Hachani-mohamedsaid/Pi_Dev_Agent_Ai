@@ -1879,8 +1879,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildQuickActionsSection(BuildContext context, bool isMobile) {
     final actions = [
       {
-        'title': AppStrings.tr(context, 'reviewAgenda'),
-        'icon': LucideIcons.calendar,
+        'title': 'Meeting Hub',
+        'icon': LucideIcons.video,
         'route': '/meetings',
         'color': const Color(0xFFA855F7),
         'colorLight': const Color(0xFF3B82F6),
@@ -2341,7 +2341,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ? '$_meetingsTodayCount meeting${_meetingsTodayCount == 1 ? '' : 's'} today'
         : null;
     return [
-      {'title': 'Review Agenda', 'subtitle': meetingsText, 'icon': LucideIcons.calendar, 'route': '/meetings', 'color': const Color(0xFFA855F7)},
+      {'title': 'Meeting Hub', 'subtitle': meetingsText, 'icon': LucideIcons.video, 'route': '/meetings', 'color': const Color(0xFFA855F7)},
       {'title': 'AI Financial Simulation', 'subtitle': null, 'icon': LucideIcons.calculator, 'route': '/advisor', 'color': const Color(0xFF10B981)},
       {'title': 'Mon business', 'subtitle': null, 'icon': LucideIcons.briefcase, 'route': '/my-business', 'color': const Color(0xFF8B5CF6)},
       {'title': 'Phone Agent', 'subtitle': '$phoneTotal calls • $phoneImportant important', 'icon': LucideIcons.phone, 'route': '/phone-agent', 'color': const Color(0xFF06B6D4)},
