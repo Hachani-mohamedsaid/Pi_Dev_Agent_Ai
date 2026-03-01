@@ -10,6 +10,7 @@ import 'package:zego_express_engine/zego_express_engine.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/responsive.dart';
+import '../../../services/meeting_api_service.dart';
 import '../../../services/meeting_service.dart';
 import '../../../services/transcription_service.dart';
 import '../../../services/suggestion_service.dart';
@@ -55,6 +56,8 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
   StreamSubscription<List<String>>? _suggestionSub;
   StreamSubscription<String>? _suggestionErrorSub;
   String? _suggestionErrorMessage;
+  /// Backend meeting record id (set after createMeeting on start).
+  String? _meetingId;
 
   @override
   void initState() {
@@ -132,6 +135,13 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
           'Failed to join the meeting room.\nPlease verify your room ID and network, then try again.',
         );
         return;
+      }
+      // Create backend meeting record so we can append transcript and save summary later.
+      try {
+        final id = await MeetingApiService.instance.createMeeting(widget.roomID, DateTime.now());
+        if (mounted) setState(() => _meetingId = id);
+      } catch (_) {
+        // Non-blocking: meeting still works; transcript/summary won't sync to backend.
       }
     } else if (mounted) {
       setState(() => _roomConnected = true);
@@ -293,8 +303,16 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
     final fullTranscript = history
         .map((text) => TranscriptLineModel(speaker: 'Speaker', text: text, timestamp: ''))
         .toList();
+
+    if (_meetingId != null && fullTranscript.isNotEmpty) {
+      try {
+        await MeetingApiService.instance.appendTranscript(_meetingId!, fullTranscript);
+      } catch (_) {}
+    }
+
     if (!mounted) return;
-    context.push('/meeting-transcript/current', extra: fullTranscript);
+    final meetingId = _meetingId ?? 'current';
+    context.push('/meeting-transcript/$meetingId', extra: fullTranscript);
   }
 
   @override
