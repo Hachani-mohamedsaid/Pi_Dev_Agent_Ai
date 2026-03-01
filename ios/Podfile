@@ -39,5 +39,92 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+    # Enforce minimum iOS 13.0 to match Flutter and avoid SDK warnings
+    target.build_configurations.each do |config|
+      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 13.0
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      end
+
+      # permission_handler iOS compile-time flags.
+      # Without these, Camera requests may never trigger the iOS system popup.
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
+        '$(inherited)',
+        'PERMISSION_CAMERA=1',
+        'PERMISSION_MICROPHONE=1',
+      ]
+    end
+  end
+
+  # CwlCatchExceptionSupport pod from trunk can end up with only LICENSE/README in Pods/;
+  # CwlCatchException.swift needs "import CwlCatchExceptionSupport". Copy Sources from cache if missing.
+  cwl_support_root = File.join(installer.sandbox.root, 'CwlCatchExceptionSupport')
+  cwl_sources = File.join(cwl_support_root, 'Sources', 'CwlCatchExceptionSupport', 'CwlCatchException.m')
+  unless File.exist?(cwl_sources)
+    cache_base = File.join(Dir.home, 'Library', 'Caches', 'CocoaPods', 'Pods', 'Release', 'CwlCatchExceptionSupport')
+    if File.directory?(cache_base)
+      src_dir = Dir.glob(File.join(cache_base, '*', 'Sources')).find { |d| File.exist?(File.join(d, 'CwlCatchExceptionSupport', 'CwlCatchException.m')) }
+      if src_dir
+        FileUtils.mkdir_p(File.join(cwl_support_root, 'Sources'))
+        FileUtils.cp_r(File.join(src_dir, '.'), File.join(cwl_support_root, 'Sources'))
+      end
+    end
+  end
+  # Podspec expects "Include" (capital I); cache has "include". Create alias if needed.
+  cwl_include = File.join(cwl_support_root, 'Sources', 'CwlCatchExceptionSupport', 'Include')
+  cwl_include_lower = File.join(cwl_support_root, 'Sources', 'CwlCatchExceptionSupport', 'include')
+  if File.directory?(cwl_include_lower) && !File.exist?(cwl_include)
+    FileUtils.ln_sf('include', cwl_include)
+  end
+  # No-op download.sh so any script phase that runs it does not fail.
+  download_sh = File.join(cwl_support_root, 'download.sh')
+  unless File.exist?(download_sh)
+    File.write(download_sh, "#!/bin/sh\n# No-op: sources copied by Podfile post_install.\nexit 0\n")
+    FileUtils.chmod(0755, download_sh)
+  end
+
+  # GTMAppAuth pod sometimes doesn't generate its modulemap (Xcode "Build input file cannot be found").
+  gtm_support = File.join(installer.sandbox.root, 'Target Support Files', 'GTMAppAuth')
+  gtm_modulemap = File.join(gtm_support, 'GTMAppAuth.modulemap')
+  unless File.exist?(gtm_modulemap)
+    FileUtils.mkdir_p(gtm_support)
+    File.write(gtm_modulemap, <<~MODULEMAP)
+      framework module GTMAppAuth {
+        umbrella header "GTMAppAuth-umbrella.h"
+        export *
+        module * { export * }
+      }
+    MODULEMAP
+  end
+
+  # flutter_sound_core pod from trunk can end up with only LICENSE/README in Pods/;
+  # Xcode expects ios/Classes/Flauto*. Copy from CocoaPods cache if missing.
+  core_pod_root = File.join(installer.sandbox.root, 'flutter_sound_core')
+  core_classes = File.join(core_pod_root, 'ios', 'Classes')
+  unless File.exist?(File.join(core_classes, 'Flauto.h'))
+    cache_base = File.join(Dir.home, 'Library', 'Caches', 'CocoaPods', 'Pods', 'Release', 'flutter_sound_core')
+    if File.directory?(cache_base)
+      src = Dir.glob(File.join(cache_base, '*', 'ios', 'Classes')).find { |d| File.exist?(File.join(d, 'Flauto.h')) }
+      if src
+        FileUtils.mkdir_p(core_classes)
+        FileUtils.cp(Dir.glob(File.join(src, '*')), core_classes)
+      end
+    end
+  end
+
+  # flutter_sound imports <flutter_sound_core/Flauto.h>; ensure the path resolves (module or header).
+  installer.pods_project.targets.each do |target|
+    if target.name == 'flutter_sound'
+      core_root = File.join(installer.sandbox.root, 'flutter_sound_core', 'ios')
+      classes_dir = File.join(core_root, 'Classes')
+      link_dir = File.join(core_root, 'flutter_sound_core')
+      unless File.exist?(link_dir)
+        FileUtils.ln_sf('Classes', link_dir)
+      end
+      target.build_configurations.each do |config|
+        config.build_settings['HEADER_SEARCH_PATHS'] ||= '$(inherited)'
+        config.build_settings['HEADER_SEARCH_PATHS'] << " \"#{File.join(installer.sandbox.root, 'flutter_sound_core', 'ios')}\""
+      end
+      break
+    end
   end
 end

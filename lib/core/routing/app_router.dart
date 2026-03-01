@@ -25,6 +25,7 @@ import '../../presentation/pages/agenda_page.dart';
 import '../../features/meeting_hub/screens/meeting_hub_screen.dart';
 import '../../features/meeting_hub/screens/active_meeting_screen.dart';
 import '../../features/meeting_hub/screens/meeting_transcript_screen.dart';
+import '../../features/meeting_hub/models/meeting_model.dart';
 import '../../presentation/pages/emails_page.dart';
 import '../../presentation/pages/history_page.dart';
 import '../../presentation/pages/travel_page.dart';
@@ -311,20 +312,32 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/active-meeting',
-      pageBuilder: (context, state) => _fadeScaleTransition(
-        context: context,
-        state: state,
-        child: const ActiveMeetingScreen(),
-      ),
+      pageBuilder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: ActiveMeetingScreen(
+            roomID: extra?['roomID'] as String? ?? '',
+            userID: extra?['userID'] as String? ?? '',
+            userName: extra?['userName'] as String? ?? 'User',
+            isStart: extra?['isStart'] as bool? ?? true,
+          ),
+        );
+      },
     ),
     GoRoute(
       path: '/meeting-transcript/:meetingId',
       pageBuilder: (context, state) {
         final meetingId = state.pathParameters['meetingId'] ?? 'current';
+        final fullTranscript = state.extra as List<TranscriptLineModel>?;
         return _fadeScaleTransition(
           context: context,
           state: state,
-          child: MeetingTranscriptScreen(meetingId: meetingId),
+          child: MeetingTranscriptScreen(
+            meetingId: meetingId,
+            fullTranscript: fullTranscript,
+          ),
         );
       },
     ),
