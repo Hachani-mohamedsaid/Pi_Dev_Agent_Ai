@@ -7,4 +7,10 @@
    <FileRef
       location = "group:Pods/Pods.xcodeproj">
    </FileRef>
+   <FileRef
+      location = "group:Debug.xcconfig">
+   </FileRef>
+   <FileRef
+      location = "group:Profile.xcconfig">
+   </FileRef>
 </Workspace>

@@ -56,8 +56,10 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is required for video meetings</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>This app needs access to your microphone for voice commands and conversations.</string>
+	<string>Microphone access is required for meeting audio and transcription</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>This app needs speech recognition to understand your voice commands.</string>
 </dict>
