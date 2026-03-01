@@ -55,9 +55,11 @@ const String advisorWebhookUrl =
 /// Tant que cette valeur n'est **pas vide**, la voix utilisera **OpenAI TTS**
 /// et ne tombera sur `flutter_tts` qu'en cas d'erreur OpenAI.
 ///
-/// ⚠️ Ne jamais commiter la clé sur GitHub. Elle n'est utilisée que si elle est présente.
-/// Chargée au démarrage depuis le fichier .env (si présent) ou depuis --dart-define.
-/// String.fromEnvironment doit rester en const (compile-time uniquement).
+/// ⚠️ Ne jamais commiter une clé réelle sur GitHub.
+/// Pour activer OpenAI TTS : crée un fichier .env à la racine avec :
+///   OPENAI_API_KEY=sk-proj-xxx
+/// (clé valide sur https://platform.openai.com/account/api-keys)
+/// Sinon l'app utilise FlutterTts (pas de 401).
 const String _openaiKeyFromDartDefine =
     String.fromEnvironment('OPENAI_API_KEY', defaultValue: '');
 
@@ -83,8 +85,8 @@ const String chatSystemInstructionMultilingual =
 /// URL WebSocket pour la voix ChatGPT originale (OpenAI Realtime API via proxy NestJS).
 /// Si non vide, l'assistant vocal peut utiliser le mode Realtime (micro → backend → OpenAI Realtime → audio).
 /// Ex. dev : ws://localhost:3000/realtime-voice ; prod : wss://ton-backend.up.railway.app/realtime-voice
+/// URL WebSocket pour Realtime API. Ex: wss://backend.up.railway.app/realtime-voice
 const String realtimeVoiceWsUrl = String.fromEnvironment(
   'REALTIME_VOICE_WS_URL',
-  defaultValue:
-      '', // URL WebSocket pour Realtime API. Ex: wss://backend.up.railway.app/realtime-voice
+  defaultValue: '',
 );

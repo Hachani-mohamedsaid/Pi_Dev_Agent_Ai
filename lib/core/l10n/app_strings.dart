@@ -139,6 +139,7 @@ class AppStrings {
       "everythingYouNeedToday": "tout ce dont vous avez besoin aujourd'hui !",
       "enterPromptHere": "Entrez votre message ici...",
 
+      "history": "Historique",
       "back": "Retour",
       "cancel": "Annuler",
       "done": "Terminé",

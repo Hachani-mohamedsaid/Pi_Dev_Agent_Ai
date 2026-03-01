@@ -126,18 +126,17 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
           await InjectionContainer.instance.authLocalDataSource.getUserId();
       final signals = await _collectSignals();
 
-      // Générer les notifications à partir des signaux (stateless POST).
-      final generated = signals.isNotEmpty
-          ? await _assistantService.fetchNotifications(
-              userId: userId,
-              locale: WidgetsBinding.instance.platformDispatcher.locale
-                  .toLanguageTag(),
-              timezone: 'Africa/Tunis',
-              tone: 'professional',
-              maxItems: 20,
-              signals: signals,
-            )
-          : <AssistantNotification>[];
+      // POST /assistant/notifications : signaux front (réunions, mails, focus, etc.)
+      // + le backend ajoute contexte + ML si besoin.
+      final generated = await _assistantService.fetchNotifications(
+        userId: userId,
+        locale: WidgetsBinding.instance.platformDispatcher.locale
+            .toLanguageTag(),
+        timezone: 'Africa/Tunis',
+        tone: 'professional',
+        maxItems: 20,
+        signals: signals,
+      );
 
       // Deduplicate by dedupeKey; also hide any already dismissed by title+message.
       final deduped = <String, AssistantNotification>{};
@@ -189,6 +188,141 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
   static String _titleMessageKey(String title, String message) =>
       '$title|$message';
 
+  Future<List<Map<String, dynamic>>> _collectSignals() async {
+    final nowUtc = DateTime.now().toUtc();
+    final occurredAt = nowUtc.toIso8601String();
+    final signals = <Map<String, dynamic>>[];
+
+    // Focus -> BREAK_SUGGESTED (dès 1h de focus).
+    final focusMinutes = FocusSessionManager.instance.getFocusMinutes();
+    if (focusMinutes >= 60) {
+      final focusHours = (focusMinutes / 60).round().clamp(1, 24);
+      signals.add({
+        'signalType': 'BREAK_SUGGESTED',
+        'payload': {'focusHours': focusHours},
+        'scores': {'priority': 0.6, 'confidence': 0.8},
+        'occurredAt': occurredAt,
+        'source': 'frontend',
+      });
+    }
+
+    // Meetings -> MEETING_SOON (prochaine réunion dans 2 h).
+    final meetingService = MeetingService();
+    try {
+      final meetings = await meetingService.fetchMeetings();
+      final upcoming = meetings
+          .where((m) => m.startTime.isAfter(DateTime.now()))
+          .toList()
+        ..sort((a, b) => a.startTime.compareTo(b.startTime));
+      if (upcoming.isNotEmpty) {
+        final next = upcoming.first;
+        final startsInMin = next.startTime.difference(DateTime.now()).inMinutes;
+        if (startsInMin >= 0 && startsInMin <= 120) {
+          signals.add({
+            'signalType': 'MEETING_SOON',
+            'payload': {
+              'title': next.subject,
+              'startsInMin': startsInMin,
+              'location': next.timezone,
+              'meetingId': next.meetingId,
+            },
+            'scores': {'priority': 0.9, 'confidence': 0.85},
+            'occurredAt': occurredAt,
+            'source': 'n8n',
+          });
+        }
+      }
+    } catch (_) {
+      // ignore
+    } finally {
+      meetingService.dispose();
+    }
+
+    // Emails -> EMAIL_REQUIRES_RESPONSE (emails importants).
+    try {
+      final emailService = N8nEmailService();
+      final emails = await emailService.fetchEmails();
+      final important = emails
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .where((e) {
+            final priority = (e['priority'] ?? '').toString().toLowerCase();
+            final status = (e['status'] ?? '').toString().toLowerCase();
+            final actionItems = (e['actionItems'] ?? '').toString().trim();
+            final hasId = (e['emailId'] ?? '').toString().trim().isNotEmpty;
+            final isReplied = status == 'replied';
+            final isHigh = priority == 'high';
+            final needsAction = actionItems.isNotEmpty;
+            return hasId && !isReplied && (isHigh || needsAction);
+          })
+          .toList();
+      for (final e in important.take(3)) {
+        signals.add({
+          'signalType': 'EMAIL_REQUIRES_RESPONSE',
+          'payload': {
+            'subject': (e['emailSubject'] ?? '').toString(),
+            'from': (e['emailFrom'] ?? '').toString(),
+            'emailId': (e['emailId'] ?? '').toString(),
+          },
+          'scores': {'priority': 0.85, 'confidence': 0.8},
+          'occurredAt': occurredAt,
+          'source': 'n8n',
+        });
+      }
+    } catch (_) {
+      // ignore
+    }
+
+    // Traffic -> TRAFFIC_ALERT (heures de pointe).
+    final nowLocal = DateTime.now();
+    final hour = nowLocal.hour;
+    final isCommuteMorning = hour >= 7 && hour <= 9;
+    final isCommuteEvening = hour >= 17 && hour <= 19;
+    if (isCommuteMorning || isCommuteEvening) {
+      signals.add({
+        'signalType': 'TRAFFIC_ALERT',
+        'payload': {
+          'route': isCommuteMorning ? 'Home → Office' : 'Office → Home',
+          'destination': isCommuteMorning ? 'Office' : 'Home',
+          'etaMin': 30,
+          'extraDelayMin': 10,
+        },
+        'scores': {'priority': 0.7, 'confidence': 0.6},
+        'occurredAt': occurredAt,
+        'source': 'frontend',
+      });
+    }
+
+    // Late night -> BREAK_SUGGESTED.
+    if (hour >= 23 || hour < 6) {
+      final lateFocusHours = ((focusMinutes / 60).round()).clamp(1, 24);
+      signals.add({
+        'signalType': 'BREAK_SUGGESTED',
+        'payload': {
+          'focusHours': lateFocusHours,
+          'reason': 'late_night',
+          'localTime': nowLocal.toIso8601String(),
+        },
+        'scores': {'priority': 0.95, 'confidence': 0.8},
+        'occurredAt': occurredAt,
+        'source': 'frontend',
+      });
+    }
+
+    // Fallback si aucun signal : le backend peut quand même renvoyer du contexte + ML.
+    if (signals.isEmpty) {
+      signals.add({
+        'signalType': 'WEEKLY_SUMMARY_READY',
+        'payload': {},
+        'scores': {'priority': 0.2, 'confidence': 0.6},
+        'occurredAt': occurredAt,
+        'source': 'frontend',
+      });
+    }
+
+    return signals;
+  }
+
   Future<void> _loadDismissedFromStorage() async {
     final prefs = await SharedPreferences.getInstance();
     final stored = prefs.getStringList(_prefsDismissedKey) ?? const <String>[];
@@ -211,150 +345,6 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
       _prefsDismissedTitleMessageKey,
       _dismissedTitleMessage.toList(),
     );
-  }
-
-  Future<List<Map<String, dynamic>>> _collectSignals() async {
-    final nowUtc = DateTime.now().toUtc();
-    final occurredAt = nowUtc.toIso8601String();
-    final signals = <Map<String, dynamic>>[];
-
-    // Focus -> BREAK_SUGGESTED (dès 1h de focus).
-    final focusMinutes = FocusSessionManager.instance.getFocusMinutes();
-    if (focusMinutes >= 60) {
-      final focusHours = (focusMinutes / 60).round().clamp(
-        1,
-        24,
-      ); // 1h, 2h, 3h, ...
-      signals.add({
-        'signalType': 'BREAK_SUGGESTED',
-        'payload': {'focusHours': focusHours},
-        'scores': {'priority': 0.6, 'confidence': 0.8},
-        'occurredAt': occurredAt,
-        'source': 'frontend',
-      });
-    }
-
-    // Meetings -> MEETING_SOON (next meeting within 2 hours).
-    final meetingService = MeetingService();
-    try {
-      final meetings = await meetingService.fetchMeetings();
-      final upcoming =
-          meetings.where((m) => m.startTime.isAfter(DateTime.now())).toList()
-            ..sort((a, b) => a.startTime.compareTo(b.startTime));
-      if (upcoming.isNotEmpty) {
-        final next = upcoming.first;
-        final startsInMin = next.startTime.difference(DateTime.now()).inMinutes;
-        if (startsInMin >= 0 && startsInMin <= 120) {
-          signals.add({
-            'signalType': 'MEETING_SOON',
-            'payload': {
-              'title': next.subject,
-              'startsInMin': startsInMin,
-              'location': next.timezone,
-              'meetingId': next.meetingId,
-            },
-            'scores': {'priority': 0.9, 'confidence': 0.85},
-            'occurredAt': occurredAt,
-            'source': 'n8n',
-          });
-        }
-      }
-    } catch (_) {
-      // Ignore meeting errors; notifications will still be generated from other signals.
-    } finally {
-      meetingService.dispose();
-    }
-
-    // Emails -> EMAIL_REQUIRES_RESPONSE (top important emails).
-    try {
-      final emailService = N8nEmailService();
-      final emails = await emailService.fetchEmails();
-      final important = emails
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .where((e) {
-            final priority = (e['priority'] ?? '').toString().toLowerCase();
-            final status = (e['status'] ?? '').toString().toLowerCase();
-            final actionItems = (e['actionItems'] ?? '').toString().trim();
-            final hasId = (e['emailId'] ?? '').toString().trim().isNotEmpty;
-            final isReplied = status == 'replied';
-            final isHigh = priority == 'high';
-            final needsAction = actionItems.isNotEmpty;
-            return hasId && !isReplied && (isHigh || needsAction);
-          })
-          .toList();
-
-      for (final e in important.take(3)) {
-        signals.add({
-          'signalType': 'EMAIL_REQUIRES_RESPONSE',
-          'payload': {
-            'subject': (e['emailSubject'] ?? '').toString(),
-            'from': (e['emailFrom'] ?? '').toString(),
-            'emailId': (e['emailId'] ?? '').toString(),
-          },
-          'scores': {'priority': 0.85, 'confidence': 0.8},
-          'occurredAt': occurredAt,
-          'source': 'n8n',
-        });
-      }
-    } catch (_) {
-      // Ignore email errors.
-    }
-
-    // Traffic -> TRAFFIC_ALERT (heuristique basée sur l'heure).
-    final nowLocal = DateTime.now();
-    final hour = nowLocal.hour;
-    final isCommuteWindowMorning = hour >= 7 && hour <= 9;
-    final isCommuteWindowEvening = hour >= 17 && hour <= 19;
-    if (isCommuteWindowMorning || isCommuteWindowEvening) {
-      final goingToOffice = isCommuteWindowMorning;
-      final route = goingToOffice ? 'Home → Office' : 'Office → Home';
-      final destination = goingToOffice ? 'Office' : 'Home';
-      signals.add({
-        'signalType': 'TRAFFIC_ALERT',
-        'payload': {
-          'route': route,
-          'destination': destination,
-          'etaMin': 30,
-          'extraDelayMin': 10,
-        },
-        'scores': {'priority': 0.7, 'confidence': 0.6},
-        'occurredAt': occurredAt,
-        'source': 'frontend',
-      });
-    }
-
-    // Late-night energy alert -> BREAK_SUGGESTED (when it's getting really late).
-    if (hour >= 23 || hour < 6) {
-      final lateFocusHours = ((focusMinutes / 60).round()).clamp(
-        1,
-        24,
-      ); // at least 1h
-      signals.add({
-        'signalType': 'BREAK_SUGGESTED',
-        'payload': {
-          'focusHours': lateFocusHours,
-          'reason': 'late_night',
-          'localTime': nowLocal.toIso8601String(),
-        },
-        'scores': {'priority': 0.95, 'confidence': 0.8},
-        'occurredAt': occurredAt,
-        'source': 'frontend',
-      });
-    }
-
-    // Ensure signals is never empty (backend requires signals[]).
-    if (signals.isEmpty) {
-      signals.add({
-        'signalType': 'WEEKLY_SUMMARY_READY',
-        'payload': {},
-        'scores': {'priority': 0.2, 'confidence': 0.6},
-        'occurredAt': occurredAt,
-        'source': 'frontend',
-      });
-    }
-
-    return signals;
   }
 
   UiNotification _mapAssistantNotificationToUi(AssistantNotification n) {
@@ -460,8 +450,13 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
       desktop: 32.0,
     );
 
+    // Même bleu que le dégradé pour éviter la bande noire sous la nav (safe area / première ouverture).
+    const Color _scaffoldBg = Color(0xFF0f2940);
     return Scaffold(
+      backgroundColor: _scaffoldBg,
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
