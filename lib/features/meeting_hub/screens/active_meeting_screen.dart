@@ -356,46 +356,59 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
 
   Future<void> _shareRoomInvite() async {
     final text =
-        'Join my Ava meeting: https://friendly-baklava-1232ca.netlify.app?room=${widget.roomID}';
+        'Join my Ava meeting: https://stirring-sfogliatella-3cac75.netlify.app?room=${widget.roomID}';
     await SharePlus.instance.share(ShareParams(text: text));
   }
 
   Widget _buildRoomIdChip(BuildContext context, double padding) {
     return Padding(
       padding: EdgeInsets.fromLTRB(padding, 0, padding, 8),
-      child: GestureDetector(
-        onTap: _copyRoomId,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.cyan500.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: AppColors.cyan500.withOpacity(0.35)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            onTap: _copyRoomId,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.cyan500.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: AppColors.cyan500.withOpacity(0.35)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Room: ${widget.roomID}',
+                    style: TextStyle(
+                      color: AppColors.textCyan200,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: _copyRoomId,
+                    child: Icon(LucideIcons.copy, size: 16, color: AppColors.cyan400),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: _shareRoomInvite,
+                    child: Icon(LucideIcons.share2, size: 16, color: AppColors.cyan400),
+                  ),
+                ],
+              ),
+            ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Room: ${widget.roomID}',
-                style: TextStyle(
-                  color: AppColors.textCyan200,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: _copyRoomId,
-                child: Icon(LucideIcons.copy, size: 16, color: AppColors.cyan400),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: _shareRoomInvite,
-                child: Icon(LucideIcons.share2, size: 16, color: AppColors.cyan400),
-              ),
-            ],
+          const SizedBox(height: 6),
+          Text(
+            'Share link & open on PC to join the same meeting',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.7),
+              fontSize: 11,
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

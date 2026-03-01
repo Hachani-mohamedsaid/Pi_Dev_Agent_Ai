@@ -93,7 +93,7 @@ exports.handler = async (event) => {
     }
 
     const appID = 1789528352;
-    const secret = "e04a69bef74ba8dad682794fe5a26d941d1759dc3d9ecd6372fe76064c84f96a";
+    const secret = "0b0859483bba588d97ed478e8b69da06"; // Zego ServerSecret (32-char)
     const token = generateToken04(appID, userID, secret, 3600, "");
 
     return {
