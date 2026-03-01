@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/config/meeting_env.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../services/meeting_api_service.dart';
 import '../../../core/utils/responsive.dart';
 import '../data/meeting_hub_mock_data.dart';
 import '../models/meeting_model.dart';
@@ -153,6 +154,17 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
         _summaryLoading = false;
         _summaryError = null;
       });
+      // Persist AI summary to backend when we have a real meeting id.
+      if (widget.meetingId.isNotEmpty && widget.meetingId != 'current') {
+        try {
+          await MeetingApiService.instance.saveSummary(
+            widget.meetingId,
+            keyPoints,
+            actionItems,
+            decisions,
+          );
+        } catch (_) {}
+      }
     }
   }
 
