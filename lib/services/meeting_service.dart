@@ -63,6 +63,15 @@ class MeetingService {
     final config = ZegoRoomConfig(0, true, '');
     try {
       await ZegoExpressEngine.instance.loginRoom(roomID, user, config: config);
+      // Explicitly signal camera ON and unmute video before publishing so
+      // ZegoUIKitPrebuilt on the web receives the correct camera-open state
+      // from the very first moment and renders video instead of the avatar.
+      await ZegoExpressEngine.instance.enableCamera(true,
+          channel: ZegoPublishChannel.Main);
+      await ZegoExpressEngine.instance.mutePublishStreamVideo(false,
+          channel: ZegoPublishChannel.Main);
+      await ZegoExpressEngine.instance.mutePublishStreamAudio(false,
+          channel: ZegoPublishChannel.Main);
       await ZegoExpressEngine.instance.startPublishingStream(
         _currentStreamId!,
         channel: ZegoPublishChannel.Main,
@@ -85,6 +94,13 @@ class MeetingService {
     final config = ZegoRoomConfig(0, true, '');
     try {
       await ZegoExpressEngine.instance.loginRoom(roomID, user, config: config);
+      // Same explicit camera-ON signal for joinMeeting path.
+      await ZegoExpressEngine.instance.enableCamera(true,
+          channel: ZegoPublishChannel.Main);
+      await ZegoExpressEngine.instance.mutePublishStreamVideo(false,
+          channel: ZegoPublishChannel.Main);
+      await ZegoExpressEngine.instance.mutePublishStreamAudio(false,
+          channel: ZegoPublishChannel.Main);
       await ZegoExpressEngine.instance.startPublishingStream(
         _currentStreamId!,
         channel: ZegoPublishChannel.Main,
@@ -185,7 +201,12 @@ class MeetingService {
 
   /// Call when user toggles video (optional).
   Future<void> setVideoOn(bool on) async {
-    await ZegoExpressEngine.instance.enableCamera(on, channel: ZegoPublishChannel.Main);
+    await ZegoExpressEngine.instance.enableCamera(on,
+        channel: ZegoPublishChannel.Main);
+    // Muting the video track in sync ensures UIKit on the web sees the correct
+    // camera state and switches between avatar and live video immediately.
+    await ZegoExpressEngine.instance.mutePublishStreamVideo(!on,
+        channel: ZegoPublishChannel.Main);
   }
 
   void dispose() {
