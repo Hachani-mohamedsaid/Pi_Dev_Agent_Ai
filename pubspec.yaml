@@ -58,6 +58,11 @@ dependencies:
   shared_preferences: ^2.2.2
   geolocator: ^13.0.2
 
+  # Meeting / Zegocloud video conferencing
+  zego_express_engine: ^3.14.5
+  permission_handler: ^11.0.0
+  flutter_dotenv: ^5.1.0
+
   # Charts and UI
   fl_chart: ^0.69.0
   url_launcher: ^6.3.1
@@ -75,9 +80,9 @@ dependencies:
   flutter_tts: ^4.2.5
   # Voix type ChatGPT (OpenAI TTS) – optionnel : définir openaiApiKey dans api_config
   openai_tts: ^0.0.3
-  flutter_sound: ^9.2.13
   # WebSocket pour Realtime Voice (voix ChatGPT originale via NestJS proxy)
   web_socket_channel: ^3.0.1
+  share_plus: ^12.0.1
 
 dev_dependencies:
   flutter_test:
@@ -89,6 +94,15 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.0
+
+# Generate app launcher icons from assets/app_icon.png (run: dart run flutter_launcher_icons)
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/app_icon.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/app_icon.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -103,6 +117,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - .env
     - assets/images/
     - assets/lottie/
 

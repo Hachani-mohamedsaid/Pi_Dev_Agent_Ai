@@ -1,11 +1,18 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/responsive.dart';
+import '../../../services/meeting_service.dart';
 import '../data/meeting_hub_mock_data.dart';
 import '../models/meeting_model.dart';
+
+const _chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+String _randomRoomId() => List.generate(6, (_) => _chars[Random().nextInt(_chars.length)]).join();
 
 /// Meeting Hub landing: Start/Join meeting + recent meetings list.
 /// Same structure as phone_agent feature (screens + data + models).
@@ -48,6 +55,150 @@ class MeetingHubScreen extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  static Future<void> _goStartMeeting(BuildContext context) async {
+    // If a meeting is already active and not ended, reopen it instead of creating a new room.
+    if (MeetingService.instance.hasActiveMeeting &&
+        (MeetingService.instance.currentRoomId?.isNotEmpty ?? false)) {
+      context.push('/active-meeting', extra: {
+        'roomID': MeetingService.instance.currentRoomId!,
+        'userID': MeetingService.instance.currentUserId ?? 'user_resume',
+        'userName': MeetingService.instance.currentUserName ?? 'User',
+        'isStart': true,
+      });
+      return;
+    }
+
+    final granted = await _requestCameraAndMicOnHub();
+    if (!context.mounted) return;
+    if (granted) {
+      context.push('/active-meeting', extra: {
+        'roomID': _randomRoomId(),
+        'userID': 'user_${DateTime.now().millisecondsSinceEpoch}',
+        'userName': 'User',
+        'isStart': true,
+      });
+    } else {
+      _showPermissionDeniedDialog(context, () {
+        Navigator.of(context).pop();
+        _goStartMeeting(context);
+      });
+    }
+  }
+
+  /// Request camera then microphone on Meeting Hub (popups appear here). Returns true if both granted.
+  static Future<bool> _requestCameraAndMicOnHub() async {
+    var cameraStatus = await Permission.camera.request();
+    if (!cameraStatus.isGranted) return false;
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+    var micStatus = await Permission.microphone.request();
+    return micStatus.isGranted;
+  }
+
+  static void _showPermissionDeniedDialog(BuildContext context, VoidCallback onTryAgain) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1e293b),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(LucideIcons.videoOff, color: AppColors.cyan400, size: 28),
+            const SizedBox(width: 10),
+            const Flexible(
+              child: Text(
+                'Camera & microphone required',
+                style: TextStyle(color: Colors.white, fontSize: 17),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Tap "Try again" to see the system permission prompts, or open Settings.',
+          style: TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              openAppSettings();
+            },
+            icon: const Icon(LucideIcons.settings, size: 20, color: AppColors.cyan400),
+            label: const Text('Open Settings', style: TextStyle(color: AppColors.cyan400)),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              onTryAgain();
+            },
+            icon: const Icon(LucideIcons.refreshCw, size: 20),
+            label: const Text('Try again'),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.cyan500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static void _showJoinSheet(BuildContext context) {
+    final controller = TextEditingController();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF1a3a52),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Join Meeting', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Enter room ID',
+                hintStyle: TextStyle(color: AppColors.textCyan200.withOpacity(0.6)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.cyan500.withOpacity(0.4))),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () async {
+                final roomID = controller.text.trim();
+                if (roomID.isEmpty) return;
+                final granted = await _requestCameraAndMicOnHub();
+                if (!ctx.mounted) return;
+                if (granted) {
+                  Navigator.of(ctx).pop();
+                  context.push('/active-meeting', extra: {
+                    'roomID': roomID,
+                    'userID': 'user_${DateTime.now().millisecondsSinceEpoch}',
+                    'userName': 'User',
+                    'isStart': false,
+                  });
+                } else {
+                  _showPermissionDeniedDialog(context, () => Navigator.of(ctx).pop());
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.cyan500,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Join'),
+            ),
+          ],
         ),
       ),
     );
@@ -133,7 +284,7 @@ class MeetingHubScreen extends StatelessWidget {
             context,
             label: 'Start Meeting',
             icon: LucideIcons.video,
-            onTap: () => context.push('/active-meeting'),
+            onTap: () => _goStartMeeting(context),
             isPrimary: true,
           ),
           SizedBox(height: 14),
@@ -141,7 +292,7 @@ class MeetingHubScreen extends StatelessWidget {
             context,
             label: 'Join Meeting',
             icon: LucideIcons.users,
-            onTap: () => context.push('/active-meeting'),
+            onTap: () => _showJoinSheet(context),
             isPrimary: false,
           ),
         ],

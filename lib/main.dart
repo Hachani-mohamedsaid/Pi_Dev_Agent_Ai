@@ -2,6 +2,7 @@ import 'app/app.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/widgets.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'core/config/google_oauth_config.dart';
 import 'package:pi_dev_agentia/core/config/env_loader_stub.dart'
@@ -13,6 +14,10 @@ import 'package:flutter_web_plugins/url_strategy.dart'
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Load .env for Meeting Hub (Zegocloud, ROCCO keys). Optional so app runs if .env missing.
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (_) {}
   // Charger la clé OpenAI depuis .env (mobile/desktop uniquement, pas web)
   env_loader.loadEnv();
   // Web : utiliser le chemin de l'URL (pas le hash) pour que le lien reset password

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ava Web Join</title>
+  <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/protobufjs@6.11.2/dist/minimal/protobuf.min.js"></script>
+  <script>
+    window["protobufjs/minimal"] = window["protobufjs/minimal"] || window.protobuf;
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/zego-express-engine-webrtm@1.25.0/ZegoExpressWebRTM.js"></script>
+  <script>
+    window["zego-express-engine-webrtm"] =
+      window["zego-express-engine-webrtm"] ||
+      { ZegoExpressWebRTMEngine: window.ZegoExpressWebRTMEngine };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/zego-express-engine-webrtc@2.26.2/ZegoExpressWebRTC.js"></script>
+  <!-- UIKit prebuilt loaded only for generateKitTokenForTest — not for its UI -->
+  <script src="https://unpkg.com/@zegocloud/zego-uikit-prebuilt/zego-uikit-prebuilt.js"></script>
+  <style>
+    :root {
+      --bg: #0f2940;
+      --bg-2: #1a3a52;
+      --card: #112b44;
+      --card-2: #0f2236;
+      --cyan: #14b8d4;
+      --cyan-2: #22d3ee;
+      --text: #e6f4ff;
+      --muted: #9bc2d8;
+      --danger: #ef4444;
+      --ok: #22c55e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, var(--bg), var(--bg-2), var(--bg));
+      min-height: 100vh;
+    }
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 32px;
+    }
+    .card {
+      background: linear-gradient(160deg, rgba(17,43,68,.95), rgba(15,34,54,.95));
+      border: 1px solid rgba(34,211,238,.25);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    .join-wrap {
+      max-width: 520px;
+      margin: 28px auto;
+      padding: 22px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: .3px;
+    }
+    .subtitle {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .row { display: flex; gap: 10px; align-items: center; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(34,211,238,.28);
+      background: rgba(20,184,212,.12);
+      color: #bdf4ff;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(34,211,238,.35);
+      background: rgba(8,24,38,.8);
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+    }
+    input[type="text"]:focus {
+      border-color: var(--cyan-2);
+      box-shadow: 0 0 0 3px rgba(34,211,238,.15);
+    }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary {
+      width: 100%;
+      color: #042537;
+      background: linear-gradient(90deg, var(--cyan), var(--cyan-2));
+      margin-top: 12px;
+    }
+    .btn-muted {
+      color: #d6eeff;
+      background: rgba(148,163,184,.2);
+      border: 1px solid rgba(148,163,184,.3);
+    }
+    .btn-danger {
+      color: #fff;
+      background: rgba(239,68,68,.92);
+    }
+    .status {
+      margin-top: 12px;
+      min-height: 20px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .status.ok { color: #8effc1; }
+    .status.err { color: #ffb4b4; }
+
+    .meeting {
+      display: none;
+      margin-top: 14px;
+      padding: 14px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .videos {
+      position: relative;
+      min-height: 420px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #071523;
+      border: 1px solid rgba(34,211,238,.2);
+    }
+    .remote-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 8px;
+      height: 100%;
+      min-height: 420px;
+    }
+    .remote-tile {
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0b1b2b;
+      border: 1px solid rgba(34,211,238,.2);
+      min-height: 200px;
+    }
+    .remote-tile video, .local-mini video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .empty {
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      height: 100%;
+      min-height: 420px;
+      text-align: center;
+      padding: 20px;
+    }
+    .local-mini {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      width: 160px;
+      height: 220px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid rgba(34,211,238,.6);
+      box-shadow: 0 8px 18px rgba(0,0,0,.45);
+      background: #0b1b2b;
+      z-index: 6;
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .chip {
+      font-size: 12px;
+      color: #bce8ff;
+      background: rgba(34,211,238,.12);
+      border: 1px solid rgba(34,211,238,.25);
+      border-radius: 999px;
+      padding: 6px 10px;
+    }
+    @media (max-width: 720px) {
+      .remote-grid { grid-template-columns: 1fr; }
+      .local-mini { width: 110px; height: 150px; }
+      .videos { min-height: 360px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="join-wrap card" id="joinCard">
+      <h1>Ava Meeting</h1>
+      <p class="subtitle">Join a room from your browser.</p>
+      <div class="pill">Room: <strong id="roomLabel">-</strong></div>
+      <input id="nameInput" type="text" placeholder="Enter your name" maxlength="40" />
+      <button id="joinBtn" class="btn-primary">Join Meeting</button>
+      <div id="joinStatus" class="status"></div>
+    </div>
+
+    <div class="meeting card" id="meetingCard">
+      <div class="topbar">
+        <div class="row">
+          <span class="chip">Room: <span id="roomChip">-</span></span>
+          <span class="chip">User: <span id="userChip">-</span></span>
+        </div>
+        <div id="callStatus" class="status"></div>
+      </div>
+
+      <div class="videos" id="videoStage">
+        <div class="empty" id="emptyRemote">Waiting for remote participants...</div>
+        <div class="remote-grid" id="remoteGrid" style="display:none;"></div>
+        <div class="local-mini" id="localMini" style="display:none;"></div>
+      </div>
+
+      <div class="controls">
+        <button id="muteBtn" class="btn-muted">Mute</button>
+        <button id="endBtn" class="btn-danger">End Call</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const APP_ID = 1789528352;
+    const APP_SIGN = "e04a69bef74ba8dad682794fe5a26d941d1759dc3d9ecd6372fe76064c84f96a";
+
+    // Optional: add ?server=... if your project requires explicit server URL from ZEGO console.
+    const params = new URLSearchParams(window.location.search);
+    const ROOM_ID = (params.get("room") || "").trim();
+    const SERVER = "wss://webliveroom1789528352-api.coolzcloud.com/ws";
+
+    const roomLabel = document.getElementById("roomLabel");
+    const roomChip = document.getElementById("roomChip");
+    const userChip = document.getElementById("userChip");
+    const nameInput = document.getElementById("nameInput");
+    const joinBtn = document.getElementById("joinBtn");
+    const joinStatus = document.getElementById("joinStatus");
+    const meetingCard = document.getElementById("meetingCard");
+    const joinCard = document.getElementById("joinCard");
+    const callStatus = document.getElementById("callStatus");
+    const remoteGrid = document.getElementById("remoteGrid");
+    const localMini = document.getElementById("localMini");
+    const emptyRemote = document.getElementById("emptyRemote");
+    const muteBtn = document.getElementById("muteBtn");
+    const endBtn = document.getElementById("endBtn");
+
+    roomLabel.textContent = ROOM_ID || "(missing ?room=...)";
+    roomChip.textContent = ROOM_ID || "-";
+
+    let zg = null;
+    let localStream = null;
+    let streamID = "";
+    let isMuted = false;
+    const remotePlayers = new Map(); // streamID -> { stream, view, container }
+
+    function setStatus(el, text, type = "") {
+      el.textContent = text || "";
+      el.className = "status" + (type ? " " + type : "");
+    }
+
+    function randomID(prefix) {
+      return prefix + "_" + Math.random().toString(36).slice(2, 10);
+    }
+
+    function ensureRoomParam() {
+      if (!ROOM_ID) {
+        setStatus(joinStatus, "Missing room parameter. Use URL like ?room=ABCD12", "err");
+        return false;
+      }
+      return true;
+    }
+
+    function getTokenForTest(roomID, userID, userName) {
+      try {
+        if (window.ZegoUIKitPrebuilt && typeof window.ZegoUIKitPrebuilt.generateKitTokenForTest === "function") {
+          return window.ZegoUIKitPrebuilt.generateKitTokenForTest(APP_ID, APP_SIGN, roomID, userID, userName);
+        }
+      } catch (_) {}
+      return "";
+    }
+
+    function renderRemoteLayout() {
+      const count = remotePlayers.size;
+      if (count === 0) {
+        remoteGrid.style.display = "none";
+        emptyRemote.style.display = "grid";
+      } else {
+        emptyRemote.style.display = "none";
+        remoteGrid.style.display = "grid";
+        remoteGrid.style.gridTemplateColumns = count === 1 ? "1fr" : "repeat(2, minmax(0, 1fr))";
+      }
+      localMini.style.display = localStream ? "block" : "none";
+    }
+
+    async function addRemoteStream(streamInfo) {
+      const id = streamInfo.streamID;
+      if (remotePlayers.has(id)) return;
+
+      const remoteMediaStream = await zg.startPlayingStream(id);
+      const remoteView = zg.createRemoteStreamView(remoteMediaStream);
+
+      const tile = document.createElement("div");
+      tile.className = "remote-tile";
+      tile.id = "remote_" + id;
+      remoteGrid.appendChild(tile);
+      remoteView.play(tile, { enableAutoplayDialog: true });
+
+      remotePlayers.set(id, { stream: remoteMediaStream, view: remoteView, container: tile });
+      renderRemoteLayout();
+    }
+
+    function removeRemoteStream(streamInfo) {
+      const id = streamInfo.streamID;
+      if (!remotePlayers.has(id)) return;
+      try { zg.stopPlayingStream(id); } catch (_) {}
+
+      const item = remotePlayers.get(id);
+      if (item && item.container && item.container.parentNode) {
+        item.container.parentNode.removeChild(item.container);
+      }
+      remotePlayers.delete(id);
+      renderRemoteLayout();
+    }
+
+    async function joinMeeting() {
+      if (!ensureRoomParam()) return;
+
+      const userName = (nameInput.value || "").trim();
+      if (!userName) {
+        setStatus(joinStatus, "Please enter your name.", "err");
+        return;
+      }
+
+      joinBtn.disabled = true;
+      setStatus(joinStatus, "Joining room...");
+      setStatus(callStatus, "");
+
+      const userID = randomID("web");
+      userChip.textContent = userName;
+
+      try {
+        // Create engine instance (Web SDK via CDN).
+        zg = new ZegoExpressEngine(APP_ID, SERVER);
+        zg.setDebugVerbose(false);
+
+        zg.on("roomStateChanged", (roomID, reason, errorCode) => {
+          if (reason === "LOGINED") setStatus(callStatus, "Connected", "ok");
+          if (reason === "RECONNECTING") setStatus(callStatus, "Reconnecting...");
+          if (reason === "RECONNECTED") setStatus(callStatus, "Reconnected", "ok");
+          if (reason === "LOGIN_FAILED" || reason === "RECONNECT_FAILED") {
+            setStatus(callStatus, "Room connection failed (" + errorCode + ")", "err");
+          }
+        });
+
+        zg.on("roomStreamUpdate", async (roomID, updateType, streamList) => {
+          if (roomID !== ROOM_ID) return;
+          for (const s of streamList) {
+            if (updateType === "ADD") {
+              await addRemoteStream(s);
+            } else if (updateType === "DELETE") {
+              removeRemoteStream(s);
+            }
+          }
+        });
+
+        // generateKitTokenForTest uses the AppSign to build a valid Token04 locally.
+        // Replace with a server-side token call once you have your Zego ServerSecret.
+        const token = ZegoUIKitPrebuilt.generateKitTokenForTest(
+          APP_ID, APP_SIGN, ROOM_ID, userID, userName
+        );
+        const loginOK = await zg.loginRoom(
+          ROOM_ID,
+          token,
+          { userID, userName },
+          { userUpdate: true }
+        );
+        if (!loginOK) {
+          throw new Error("loginRoom returned false");
+        }
+
+        localStream = await zg.createZegoStream();
+        const localView = zg.createLocalStreamView(localStream);
+        localMini.innerHTML = "";
+        localView.play(localMini, { enableAutoplayDialog: true, muted: true });
+
+        streamID = randomID("stream");
+        await zg.startPublishingStream(streamID, localStream);
+
+        joinCard.style.display = "none";
+        meetingCard.style.display = "block";
+        setStatus(callStatus, "In meeting", "ok");
+        renderRemoteLayout();
+      } catch (err) {
+        console.error(err);
+        setStatus(
+          joinStatus,
+          "Failed to join. Ensure ?room=... is set and (if needed) provide ?server=... from your ZEGO console.",
+          "err"
+        );
+        joinBtn.disabled = false;
+      }
+    }
+
+    async function toggleMute() {
+      if (!zg) return;
+      isMuted = !isMuted;
+      try {
+        await zg.mutePublishStreamAudio(isMuted);
+      } catch (_) {
+        try {
+          localStream && localStream.getAudioTracks().forEach(t => { t.enabled = !isMuted; });
+        } catch (_) {}
+      }
+      muteBtn.textContent = isMuted ? "Unmute" : "Mute";
+    }
+
+    async function endCall() {
+      try {
+        for (const [id] of remotePlayers) {
+          try { zg.stopPlayingStream(id); } catch (_) {}
+        }
+        remotePlayers.clear();
+        remoteGrid.innerHTML = "";
+
+        if (streamID) {
+          try { await zg.stopPublishingStream(streamID); } catch (_) {}
+        }
+        if (localStream) {
+          try { await zg.destroyStream(localStream); } catch (_) {}
+          localStream = null;
+        }
+        if (zg) {
+          try { await zg.logoutRoom(ROOM_ID); } catch (_) {}
+          try { await zg.destroyEngine(); } catch (_) {}
+          zg = null;
+        }
+      } finally {
+        meetingCard.style.display = "none";
+        joinCard.style.display = "block";
+        joinBtn.disabled = false;
+        setStatus(joinStatus, "Call ended.");
+      }
+    }
+
+    joinBtn.addEventListener("click", joinMeeting);
+    muteBtn.addEventListener("click", toggleMute);
+    endBtn.addEventListener("click", endCall);
+    nameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") joinMeeting();
+    });
+  </script>
+</body>
+</html>
