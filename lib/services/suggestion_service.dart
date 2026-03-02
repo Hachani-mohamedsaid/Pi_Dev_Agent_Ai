@@ -65,10 +65,7 @@ class SuggestionService {
       'max_tokens': 256,
       'system': _systemPrompt,
       'messages': [
-        {
-          'role': 'user',
-          'content': _history.join('\n'),
-        },
+        {'role': 'user', 'content': _history.join('\n')},
       ],
     };
 

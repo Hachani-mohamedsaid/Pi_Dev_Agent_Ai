@@ -90,7 +90,8 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _navigateAfterAuth() async {
     if (!mounted) return;
     final prefs = await SharedPreferences.getInstance();
-    final onboardingComplete = prefs.getBool('ava_onboarding_complete') ?? false;
+    final onboardingComplete =
+        prefs.getBool('ava_onboarding_complete') ?? false;
     if (!mounted) return;
     if (onboardingComplete) {
       context.go('/home');
@@ -329,8 +330,14 @@ class _LoginPageState extends State<LoginPage> {
                                     Builder(
                                           builder: (context) {
                                             return CustomTextField(
-                                              label: AppStrings.tr(context, 'email'),
-                                              hint: AppStrings.tr(context, 'enterEmail'),
+                                              label: AppStrings.tr(
+                                                context,
+                                                'email',
+                                              ),
+                                              hint: AppStrings.tr(
+                                                context,
+                                                'enterEmail',
+                                              ),
                                               icon: Icons.mail_outline,
                                               controller: _emailController,
                                               keyboardType:
@@ -352,8 +359,14 @@ class _LoginPageState extends State<LoginPage> {
                                     Builder(
                                           builder: (context) {
                                             return CustomTextField(
-                                              label: AppStrings.tr(context, 'password'),
-                                              hint: AppStrings.tr(context, 'enterPassword'),
+                                              label: AppStrings.tr(
+                                                context,
+                                                'password',
+                                              ),
+                                              hint: AppStrings.tr(
+                                                context,
+                                                'enterPassword',
+                                              ),
                                               icon: Icons.lock_outline,
                                               controller: _passwordController,
                                               obscureText: _obscurePassword,
@@ -387,7 +400,8 @@ class _LoginPageState extends State<LoginPage> {
                                     SizedBox(height: isMobile ? 12 : 16),
                                     // Remember Me and Forgot Password Row
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         // Remember Me Checkbox
                                         GestureDetector(
@@ -401,64 +415,79 @@ class _LoginPageState extends State<LoginPage> {
                                           child: Row(
                                             children: [
                                               Container(
-                                                width: Responsive.getResponsiveValue(
-                                                  context,
-                                                  mobile: 18.0,
-                                                  tablet: 20.0,
-                                                  desktop: 22.0,
-                                                ),
-                                                height: Responsive.getResponsiveValue(
-                                                  context,
-                                                  mobile: 18.0,
-                                                  tablet: 20.0,
-                                                  desktop: 22.0,
-                                                ),
+                                                width:
+                                                    Responsive.getResponsiveValue(
+                                                      context,
+                                                      mobile: 18.0,
+                                                      tablet: 20.0,
+                                                      desktop: 22.0,
+                                                    ),
+                                                height:
+                                                    Responsive.getResponsiveValue(
+                                                      context,
+                                                      mobile: 18.0,
+                                                      tablet: 20.0,
+                                                      desktop: 22.0,
+                                                    ),
                                                 decoration: BoxDecoration(
                                                   color: _rememberMe
                                                       ? AppColors.cyan500
                                                       : Colors.transparent,
-                                                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                                    context,
-                                                    mobile: 4.0,
-                                                    tablet: 5.0,
-                                                    desktop: 6.0,
-                                                  )),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        Responsive.getResponsiveValue(
+                                                          context,
+                                                          mobile: 4.0,
+                                                          tablet: 5.0,
+                                                          desktop: 6.0,
+                                                        ),
+                                                      ),
                                                   border: Border.all(
                                                     color: _rememberMe
                                                         ? AppColors.cyan500
-                                                        : AppColors.cyan400.withOpacity(0.5),
+                                                        : AppColors.cyan400
+                                                              .withOpacity(0.5),
                                                     width: 2,
                                                   ),
                                                 ),
                                                 child: _rememberMe
                                                     ? Icon(
                                                         Icons.check,
-                                                        size: Responsive.getResponsiveValue(
-                                                          context,
-                                                          mobile: 14.0,
-                                                          tablet: 16.0,
-                                                          desktop: 18.0,
-                                                        ),
-                                                        color: AppColors.textWhite,
+                                                        size:
+                                                            Responsive.getResponsiveValue(
+                                                              context,
+                                                              mobile: 14.0,
+                                                              tablet: 16.0,
+                                                              desktop: 18.0,
+                                                            ),
+                                                        color:
+                                                            AppColors.textWhite,
                                                       )
                                                     : null,
                                               ),
-                                              SizedBox(width: Responsive.getResponsiveValue(
-                                                context,
-                                                mobile: 6.0,
-                                                tablet: 8.0,
-                                                desktop: 10.0,
-                                              )),
+                                              SizedBox(
+                                                width:
+                                                    Responsive.getResponsiveValue(
+                                                      context,
+                                                      mobile: 6.0,
+                                                      tablet: 8.0,
+                                                      desktop: 10.0,
+                                                    ),
+                                              ),
                                               Text(
-                                                AppStrings.tr(context, 'rememberMe'),
+                                                AppStrings.tr(
+                                                  context,
+                                                  'rememberMe',
+                                                ),
                                                 style: TextStyle(
                                                   color: AppColors.textCyan200,
-                                                  fontSize: Responsive.getResponsiveValue(
-                                                    context,
-                                                    mobile: 13.0,
-                                                    tablet: 14.0,
-                                                    desktop: 15.0,
-                                                  ),
+                                                  fontSize:
+                                                      Responsive.getResponsiveValue(
+                                                        context,
+                                                        mobile: 13.0,
+                                                        tablet: 14.0,
+                                                        desktop: 15.0,
+                                                      ),
                                                 ),
                                               ),
                                             ],
@@ -469,15 +498,19 @@ class _LoginPageState extends State<LoginPage> {
                                           onPressed: () =>
                                               context.push('/reset-password'),
                                           child: Text(
-                                            AppStrings.tr(context, 'forgotPassword'),
+                                            AppStrings.tr(
+                                              context,
+                                              'forgotPassword',
+                                            ),
                                             style: TextStyle(
                                               color: AppColors.cyan400,
-                                              fontSize: Responsive.getResponsiveValue(
-                                                context,
-                                                mobile: 13.0,
-                                                tablet: 14.0,
-                                                desktop: 15.0,
-                                              ),
+                                              fontSize:
+                                                  Responsive.getResponsiveValue(
+                                                    context,
+                                                    mobile: 13.0,
+                                                    tablet: 14.0,
+                                                    desktop: 15.0,
+                                                  ),
                                             ),
                                           ),
                                         ).animate().fadeIn(
@@ -492,7 +525,10 @@ class _LoginPageState extends State<LoginPage> {
                                     SizedBox(height: isMobile ? 20 : 24),
                                     // Login Button
                                     CustomButton(
-                                          text: AppStrings.tr(context, 'signIn'),
+                                          text: AppStrings.tr(
+                                            context,
+                                            'signIn',
+                                          ),
                                           onPressed: _handleLogin,
                                           isLoading:
                                               widget.controller.isLoading,
@@ -520,7 +556,10 @@ class _LoginPageState extends State<LoginPage> {
                                             horizontal: isMobile ? 12 : 16,
                                           ),
                                           child: Text(
-                                            AppStrings.tr(context, 'orContinueWith'),
+                                            AppStrings.tr(
+                                              context,
+                                              'orContinueWith',
+                                            ),
                                             style: TextStyle(
                                               color: AppColors.textCyan200
                                                   .withOpacity(0.6),
@@ -576,8 +615,10 @@ class _LoginPageState extends State<LoginPage> {
                                                                   ? 20
                                                                   : 22,
                                                             ),
-                                                            text:
-                                                                AppStrings.tr(context, 'googleAccount'),
+                                                            text: AppStrings.tr(
+                                                              context,
+                                                              'googleAccount',
+                                                            ),
                                                             onPressed: () =>
                                                                 _handleSocialLogin(
                                                                   SocialProvider
@@ -608,8 +649,10 @@ class _LoginPageState extends State<LoginPage> {
                                                                   ? 24
                                                                   : 26,
                                                             ),
-                                                            text:
-                                                                AppStrings.tr(context, 'appleAccount'),
+                                                            text: AppStrings.tr(
+                                                              context,
+                                                              'appleAccount',
+                                                            ),
                                                             onPressed: () =>
                                                                 _handleSocialLogin(
                                                                   SocialProvider
@@ -657,7 +700,10 @@ class _LoginPageState extends State<LoginPage> {
                                                           : 16,
                                                     ),
                                                     Text(
-                                                      AppStrings.tr(context, 'loggingIn'),
+                                                      AppStrings.tr(
+                                                        context,
+                                                        'loggingIn',
+                                                      ),
                                                       style: TextStyle(
                                                         color:
                                                             AppColors.textWhite,
@@ -680,7 +726,11 @@ class _LoginPageState extends State<LoginPage> {
                                           MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          AppStrings.tr(context, 'dontHaveAccount') + ' ',
+                                          AppStrings.tr(
+                                                context,
+                                                'dontHaveAccount',
+                                              ) +
+                                              ' ',
                                           style: TextStyle(
                                             color: AppColors.textCyan200
                                                 .withOpacity(0.6),

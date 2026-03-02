@@ -1,6 +1,7 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:pi_dev_agentia/core/config/env_loader_stub.dart'
-    if (dart.library.io) 'package:pi_dev_agentia/core/config/env_loader_io.dart' as env_loader;
+    if (dart.library.io) 'package:pi_dev_agentia/core/config/env_loader_io.dart'
+    as env_loader;
 
 /// Returns value for [key] from .env for Meeting Hub (Zegocloud, ROCCO). Use after loadEnv() in main.
 String getMeetingEnv(String key) {

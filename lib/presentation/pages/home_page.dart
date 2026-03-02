@@ -7,10 +7,7 @@ import '../state/auth_controller.dart';
 class HomePage extends StatelessWidget {
   final AuthController controller;
 
-  const HomePage({
-    super.key,
-    required this.controller,
-  });
+  const HomePage({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -19,9 +16,7 @@ class HomePage extends StatelessWidget {
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.primaryGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
         child: SafeArea(
           child: Center(
             child: Column(
