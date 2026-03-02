@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
@@ -58,10 +59,13 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
   String? _suggestionErrorMessage;
   /// Backend meeting record id (set after createMeeting on start).
   String? _meetingId;
+  DateTime? _meetingStartAt;
+  final Set<String> _participantNames = <String>{};
 
   @override
   void initState() {
     super.initState();
+    _participantNames.add(widget.userName.trim().isEmpty ? 'User' : widget.userName.trim());
     _initIfPermissionsGranted();
   }
 
@@ -105,6 +109,9 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
       for (final stream in streamList) {
         if (stream.user.userID == widget.userID) continue; // ignore own published stream
         if (updateType == ZegoUpdateType.Add) {
+          final name = (stream.user.userName ?? '').trim();
+          final fallback = (stream.user.userID ?? '').trim();
+          _participantNames.add(name.isNotEmpty ? name : (fallback.isNotEmpty ? fallback : 'Participant'));
           _addRemoteStreamView(stream);
         } else if (updateType == ZegoUpdateType.Delete) {
           _removeRemoteStreamView(stream.streamID);
@@ -138,6 +145,7 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
       }
       // Create backend meeting record so we can append transcript and save summary later.
       try {
+        _meetingStartAt = DateTime.now();
         final id = await MeetingApiService.instance.createMeeting(widget.roomID, DateTime.now());
         if (mounted) setState(() => _meetingId = id);
       } catch (_) {
@@ -294,6 +302,7 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
   }
 
   Future<void> _endCall() async {
+    final endAt = DateTime.now();
     await _clearRemoteViews();
     await MeetingService.instance.endMeeting();
     _transcriptionSub?.cancel();
@@ -301,12 +310,30 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
     _suggestionErrorSub?.cancel();
     final history = SuggestionService.instance.conversationHistory;
     final fullTranscript = history
-        .map((text) => TranscriptLineModel(speaker: 'Speaker', text: text, timestamp: ''))
+        .map((text) => TranscriptLineModel(
+              speaker: widget.userName.trim().isEmpty ? 'User' : widget.userName.trim(),
+              text: text,
+              timestamp: '',
+            ))
         .toList();
 
     if (_meetingId != null && fullTranscript.isNotEmpty) {
+      final startAt = _meetingStartAt;
+      final durationMinutes = (startAt == null)
+          ? null
+          : endAt.difference(startAt).inSeconds <= 0
+              ? 0
+              : (endAt.difference(startAt).inSeconds / 60).ceil();
+      final meetingTitle = 'Meeting - ${DateFormat('yyyy-MM-dd').format(endAt)}';
       try {
-        await MeetingApiService.instance.appendTranscript(_meetingId!, fullTranscript);
+        await MeetingApiService.instance.appendTranscript(
+          _meetingId!,
+          fullTranscript,
+          participants: _participantNames.toList(),
+          durationMinutes: durationMinutes,
+          endTime: endAt,
+          title: meetingTitle,
+        );
       } catch (_) {}
     }
 

@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:intl/intl.dart';
 import '../../../core/config/meeting_env.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../services/meeting_api_service.dart';
@@ -27,6 +28,7 @@ class MeetingTranscriptScreen extends StatefulWidget {
 
 class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
   bool _copied = false;
+  MeetingDetailModel? _backendMeeting;
 
   // ── AI summary state ─────────────────────────────────────────────────────
   bool _summaryLoading = true;
@@ -42,17 +44,84 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
     if (widget.fullTranscript != null && widget.fullTranscript!.isNotEmpty) {
       return widget.fullTranscript!;
     }
-    return defaultMeetingTranscript.fullTranscript;
+    if (_backendMeeting != null) return _backendMeeting!.transcript;
+    return const <TranscriptLineModel>[];
   }
 
-  MeetingTranscriptModel get _transcriptMeta => defaultMeetingTranscript;
+  String get _title {
+    if (widget.fullTranscript != null && widget.fullTranscript!.isNotEmpty) {
+      return 'Meeting Transcript';
+    }
+    return _backendMeeting?.title ?? 'Meeting Transcript';
+  }
+
+  String get _dateAndDuration {
+    if (widget.fullTranscript != null && widget.fullTranscript!.isNotEmpty) {
+      return 'Just now';
+    }
+    final createdAt = _backendMeeting?.createdAt;
+    final dateStr = createdAt == null ? '—' : DateFormat.yMMMd().format(createdAt);
+    final dur = _backendMeeting?.durationMinutes ?? 0;
+    final durStr = dur <= 0 ? '—' : '$dur min';
+    return '$dateStr • $durStr';
+  }
 
   // ── Lifecycle ────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
-    _participants = _extractSpeakers(_lines);
-    _generateSummary();
+    if (widget.fullTranscript != null && widget.fullTranscript!.isNotEmpty) {
+      _participants = _extractSpeakers(_lines);
+      _generateSummary();
+    } else if (widget.meetingId.isNotEmpty && widget.meetingId != 'current') {
+      _loadFromBackend();
+    } else {
+      _participants = _extractSpeakers(_lines);
+      _generateSummary();
+    }
+  }
+
+  Future<void> _loadFromBackend() async {
+    setState(() {
+      _summaryLoading = true;
+      _summaryError = null;
+    });
+    try {
+      final meeting = await MeetingApiService.instance.getMeeting(widget.meetingId);
+      if (!mounted) return;
+      setState(() {
+        _backendMeeting = meeting;
+        _participants = meeting.participants.isNotEmpty
+            ? meeting.participants
+            : _extractSpeakers(meeting.transcript);
+      });
+
+      // If summary already exists on backend, show it and skip Claude call.
+      final hasSummary = meeting.keyPoints.isNotEmpty ||
+          meeting.actionItems.isNotEmpty ||
+          meeting.decisions.isNotEmpty;
+      if (hasSummary) {
+        if (!mounted) return;
+        setState(() {
+          _keyPoints = meeting.keyPoints;
+          _actionItems = meeting.actionItems;
+          _actionChecked = List.filled(meeting.actionItems.length, false);
+          _decisions = meeting.decisions;
+          _summaryLoading = false;
+          _summaryError = null;
+        });
+        return;
+      }
+
+      // Otherwise generate and persist.
+      await _generateSummary();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _summaryLoading = false;
+        _summaryError = e.toString();
+      });
+    }
   }
 
   List<String> _extractSpeakers(List<TranscriptLineModel> lines) {
@@ -188,7 +257,6 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
   @override
   Widget build(BuildContext context) {
     final padding = Responsive.getResponsiveValue(context, mobile: 24.0, tablet: 32.0, desktop: 48.0);
-    final t = _transcriptMeta;
 
     return Scaffold(
       body: Container(
@@ -210,7 +278,7 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
                     children: [
                       _buildBackButton(context),
                       SizedBox(height: Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 20.0, desktop: 24.0)),
-                      _buildHeader(context, t),
+                      _buildHeader(context),
                       SizedBox(height: Responsive.getResponsiveValue(context, mobile: 20.0, tablet: 24.0, desktop: 28.0)),
                       _buildSummaryCard(context),
                       const SizedBox(height: 20),
@@ -244,7 +312,7 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
     ).animate().fadeIn(duration: 300.ms).slideX(begin: -0.1, end: 0, curve: Curves.easeOut);
   }
 
-  Widget _buildHeader(BuildContext context, MeetingTranscriptModel t) {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -253,9 +321,7 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                widget.fullTranscript != null && widget.fullTranscript!.isNotEmpty
-                    ? 'Meeting Transcript'
-                    : t.title,
+                _title,
                 style: TextStyle(
                   fontSize: Responsive.getResponsiveValue(context, mobile: 24.0, tablet: 28.0, desktop: 32.0),
                   fontWeight: FontWeight.bold,
@@ -268,7 +334,7 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
                   Icon(LucideIcons.clock, size: 16, color: AppColors.textCyan200.withOpacity(0.8)),
                   const SizedBox(width: 6),
                   Text(
-                    widget.fullTranscript != null ? 'Just now' : '${t.date} • ${t.duration}',
+                    _dateAndDuration,
                     style: TextStyle(color: AppColors.textCyan200.withOpacity(0.8), fontSize: 13),
                   ),
                   const SizedBox(width: 16),
@@ -590,7 +656,7 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
   Widget _buildParticipantsCard(BuildContext context) {
     final displayParticipants = _participants.isNotEmpty
         ? _participants
-        : _transcriptMeta.participants;
+        : const <String>[];
 
     return Container(
       padding: EdgeInsets.all(Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 24.0)),
