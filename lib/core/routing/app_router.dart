@@ -43,6 +43,10 @@ import '../../presentation/pages/work_proposals_dashboard_page.dart';
 import '../../presentation/pages/project_analysis_page.dart';
 import '../../presentation/pages/how_to_work_page.dart';
 import '../../presentation/pages/create_job_page.dart';
+import '../../presentation/pages/evaluation_status_page.dart';
+import '../../presentation/pages/candidatures_page.dart';
+import '../../presentation/pages/evaluation_detail_page.dart';
+import '../../data/models/evaluation.dart';
 import '../../presentation/pages/work_proposal_details_page.dart';
 import '../../data/models/work_proposal_model.dart';
 import '../../injection_container.dart';
@@ -492,6 +496,43 @@ final appRouter = GoRouter(
         state: state,
         child: const CreateJobPage(),
       ),
+    ),
+    GoRoute(
+      path: '/candidatures',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const CandidaturesPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/evaluation-detail',
+      pageBuilder: (context, state) {
+        final evaluation = state.extra as Evaluation?;
+        if (evaluation == null) {
+          return _fadeScaleTransition(
+            context: context,
+            state: state,
+            child: const CandidaturesPage(),
+          );
+        }
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: EvaluationDetailPage(evaluation: evaluation),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/evaluation-status',
+      pageBuilder: (context, state) {
+        final id = state.uri.queryParameters['id'] ?? '';
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: EvaluationStatusPage(evaluationId: id),
+        );
+      },
     ),
     GoRoute(
       path: '/how-to-work',

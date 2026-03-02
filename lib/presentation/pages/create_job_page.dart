@@ -255,6 +255,11 @@ class _CreateJobPageState extends State<CreateJobPage> {
                         ),
                       ),
                     ),
+                    IconButton(
+                      tooltip: 'Candidatures',
+                      onPressed: () => context.push('/candidatures'),
+                      icon: const Icon(LucideIcons.clipboardList, color: AppColors.cyan400),
+                    ),
                   ],
                 ),
               ),
