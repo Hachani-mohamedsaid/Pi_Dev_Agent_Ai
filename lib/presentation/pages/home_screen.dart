@@ -1493,6 +1493,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildQuickActionsSection(BuildContext context, bool isMobile) {
     final actions = [
       {
+        'title': AppStrings.tr(context, 'createJobPost'),
+        'icon': LucideIcons.briefcase,
+        'route': '/create-job',
+        'color': const Color(0xFF10B981),
+        'colorLight': const Color(0xFF06B6D4),
+      },
+      {
         'title': 'Meeting Hub',
         'icon': LucideIcons.video,
         'route': '/meetings',

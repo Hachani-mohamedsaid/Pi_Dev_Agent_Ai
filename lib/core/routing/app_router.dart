@@ -42,6 +42,7 @@ import '../../presentation/pages/work_proposals_page.dart';
 import '../../presentation/pages/work_proposals_dashboard_page.dart';
 import '../../presentation/pages/project_analysis_page.dart';
 import '../../presentation/pages/how_to_work_page.dart';
+import '../../presentation/pages/create_job_page.dart';
 import '../../presentation/pages/work_proposal_details_page.dart';
 import '../../data/models/work_proposal_model.dart';
 import '../../injection_container.dart';
@@ -483,6 +484,14 @@ final appRouter = GoRouter(
           child: WorkProposalDetailsPage(proposal: proposal),
         );
       },
+    ),
+    GoRoute(
+      path: '/create-job',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const CreateJobPage(),
+      ),
     ),
     GoRoute(
       path: '/how-to-work',
