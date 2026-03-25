@@ -1514,6 +1514,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'colorLight': const Color(0xFFFF9800),
       },
       {
+        'title': AppStrings.tr(context, 'createJobPost'),
+        'icon': LucideIcons.briefcase,
+        'route': '/create-job',
+        'color': const Color(0xFF10B981),
+        'colorLight': const Color(0xFF06B6D4),
+      },
+      {
         'title': AppStrings.tr(context, 'travelAndJourneys'),
         'icon': LucideIcons.car,
         'route': '/travel',

@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/responsive.dart';
+import '../../../services/meeting_api_service.dart';
 import '../../../services/meeting_service.dart';
 import '../data/meeting_hub_mock_data.dart';
 import '../models/meeting_model.dart';
@@ -16,8 +17,63 @@ String _randomRoomId() => List.generate(6, (_) => _chars[Random().nextInt(_chars
 
 /// Meeting Hub landing: Start/Join meeting + recent meetings list.
 /// Same structure as phone_agent feature (screens + data + models).
-class MeetingHubScreen extends StatelessWidget {
+class MeetingHubScreen extends StatefulWidget {
   const MeetingHubScreen({super.key});
+
+  @override
+  State<MeetingHubScreen> createState() => _MeetingHubScreenState();
+}
+
+class _MeetingHubScreenState extends State<MeetingHubScreen> {
+  List<RecentMeetingModel> _recentMeetings = [];
+  bool _loading = true;
+  String? _loadError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMeetings();
+  }
+
+  Future<void> _loadMeetings() async {
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
+    try {
+      final list = await MeetingApiService.instance.getMeetings();
+      if (mounted) {
+        setState(() {
+          _recentMeetings = list;
+          _loading = false;
+          _loadError = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _recentMeetings = [];
+          _loading = false;
+          _loadError = e.toString();
+        });
+      }
+    }
+  }
+
+  Future<void> _deleteMeeting(String id) async {
+    try {
+      await MeetingApiService.instance.deleteMeeting(id);
+      if (mounted) {
+        setState(() => _recentMeetings = _recentMeetings.where((m) => m.id != id).toList());
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not delete meeting')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +104,7 @@ class MeetingHubScreen extends StatelessWidget {
                       SizedBox(height: Responsive.getResponsiveValue(context, mobile: 20.0, tablet: 24.0, desktop: 28.0)),
                       _buildCenterCard(context, isMobile),
                       SizedBox(height: Responsive.getResponsiveValue(context, mobile: 24.0, tablet: 28.0, desktop: 32.0)),
-                      _buildRecentSection(context, isMobile, padding),
+                      _buildRecentSection(context, isMobile, padding, _recentMeetings, _loading, _loadError, _deleteMeeting, _loadMeetings),
                     ],
                   ),
                 ),
@@ -60,7 +116,7 @@ class MeetingHubScreen extends StatelessWidget {
     );
   }
 
-  static Future<void> _goStartMeeting(BuildContext context) async {
+  Future<void> _goStartMeeting() async {
     // If a meeting is already active and not ended, reopen it instead of creating a new room.
     if (MeetingService.instance.hasActiveMeeting &&
         (MeetingService.instance.currentRoomId?.isNotEmpty ?? false)) {
@@ -85,7 +141,7 @@ class MeetingHubScreen extends StatelessWidget {
     } else {
       _showPermissionDeniedDialog(context, () {
         Navigator.of(context).pop();
-        _goStartMeeting(context);
+        _goStartMeeting();
       });
     }
   }
@@ -284,7 +340,7 @@ class MeetingHubScreen extends StatelessWidget {
             context,
             label: 'Start Meeting',
             icon: LucideIcons.video,
-            onTap: () => _goStartMeeting(context),
+            onTap: _goStartMeeting,
             isPrimary: true,
           ),
           SizedBox(height: 14),
@@ -350,26 +406,80 @@ class MeetingHubScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentSection(BuildContext context, bool isMobile, double padding) {
-    final recent = mockRecentMeetings;
+  Widget _buildRecentSection(
+    BuildContext context,
+    bool isMobile,
+    double padding,
+    List<RecentMeetingModel> recent,
+    bool loading,
+    String? loadError,
+    Future<void> Function(String id) onDelete,
+    VoidCallback onRefresh,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Recent Meetings',
-          style: TextStyle(
-            fontSize: Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 22.0),
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+        Row(
+          children: [
+            Text(
+              'Recent Meetings',
+              style: TextStyle(
+                fontSize: Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 22.0),
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            if (loading) ...[
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.cyan400),
+                ),
+              ),
+            ],
+            const Spacer(),
+            if (loadError != null || !loading)
+              IconButton(
+                onPressed: loading ? null : onRefresh,
+                icon: const Icon(LucideIcons.refreshCw, color: AppColors.cyan400, size: 20),
+                tooltip: 'Refresh',
+              ),
+          ],
         ),
+        if (loadError != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Could not load meetings. Pull to refresh.',
+            style: TextStyle(color: Colors.orange.shade300, fontSize: 13),
+          ),
+        ],
         const SizedBox(height: 14),
         ...recent.asMap().entries.map((entry) {
           final i = entry.key;
           final m = entry.value;
           return Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: _buildRecentMeetingCard(context, m, i),
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Dismissible(
+              key: ValueKey(m.id),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(LucideIcons.trash2, color: Colors.white, size: 24),
+              ),
+              confirmDismiss: (_) async {
+                await onDelete(m.id);
+                return true;
+              },
+              child: _buildRecentMeetingCard(context, m, i),
+            ),
           );
         }),
       ],

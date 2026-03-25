@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
@@ -10,6 +11,7 @@ import 'package:zego_express_engine/zego_express_engine.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/responsive.dart';
+import '../../../services/meeting_api_service.dart';
 import '../../../services/meeting_service.dart';
 import '../../../services/transcription_service.dart';
 import '../../../services/suggestion_service.dart';
@@ -55,10 +57,15 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
   StreamSubscription<List<String>>? _suggestionSub;
   StreamSubscription<String>? _suggestionErrorSub;
   String? _suggestionErrorMessage;
+  /// Backend meeting record id (set after createMeeting on start).
+  String? _meetingId;
+  DateTime? _meetingStartAt;
+  final Set<String> _participantNames = <String>{};
 
   @override
   void initState() {
     super.initState();
+    _participantNames.add(widget.userName.trim().isEmpty ? 'User' : widget.userName.trim());
     _initIfPermissionsGranted();
   }
 
@@ -102,6 +109,9 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
       for (final stream in streamList) {
         if (stream.user.userID == widget.userID) continue; // ignore own published stream
         if (updateType == ZegoUpdateType.Add) {
+          final name = (stream.user.userName ?? '').trim();
+          final fallback = (stream.user.userID ?? '').trim();
+          _participantNames.add(name.isNotEmpty ? name : (fallback.isNotEmpty ? fallback : 'Participant'));
           _addRemoteStreamView(stream);
         } else if (updateType == ZegoUpdateType.Delete) {
           _removeRemoteStreamView(stream.streamID);
@@ -132,6 +142,14 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
           'Failed to join the meeting room.\nPlease verify your room ID and network, then try again.',
         );
         return;
+      }
+      // Create backend meeting record so we can append transcript and save summary later.
+      try {
+        _meetingStartAt = DateTime.now();
+        final id = await MeetingApiService.instance.createMeeting(widget.roomID, DateTime.now());
+        if (mounted) setState(() => _meetingId = id);
+      } catch (_) {
+        // Non-blocking: meeting still works; transcript/summary won't sync to backend.
       }
     } else if (mounted) {
       setState(() => _roomConnected = true);
@@ -284,6 +302,7 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
   }
 
   Future<void> _endCall() async {
+    final endAt = DateTime.now();
     await _clearRemoteViews();
     await MeetingService.instance.endMeeting();
     _transcriptionSub?.cancel();
@@ -291,10 +310,36 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
     _suggestionErrorSub?.cancel();
     final history = SuggestionService.instance.conversationHistory;
     final fullTranscript = history
-        .map((text) => TranscriptLineModel(speaker: 'Speaker', text: text, timestamp: ''))
+        .map((text) => TranscriptLineModel(
+              speaker: widget.userName.trim().isEmpty ? 'User' : widget.userName.trim(),
+              text: text,
+              timestamp: '',
+            ))
         .toList();
+
+    if (_meetingId != null && fullTranscript.isNotEmpty) {
+      final startAt = _meetingStartAt;
+      final durationMinutes = (startAt == null)
+          ? null
+          : endAt.difference(startAt).inSeconds <= 0
+              ? 0
+              : (endAt.difference(startAt).inSeconds / 60).ceil();
+      final meetingTitle = 'Meeting - ${DateFormat('yyyy-MM-dd').format(endAt)}';
+      try {
+        await MeetingApiService.instance.appendTranscript(
+          _meetingId!,
+          fullTranscript,
+          participants: _participantNames.toList(),
+          durationMinutes: durationMinutes,
+          endTime: endAt,
+          title: meetingTitle,
+        );
+      } catch (_) {}
+    }
+
     if (!mounted) return;
-    context.push('/meeting-transcript/current', extra: fullTranscript);
+    final meetingId = _meetingId ?? 'current';
+    context.push('/meeting-transcript/$meetingId', extra: fullTranscript);
   }
 
   @override
@@ -356,46 +401,59 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
 
   Future<void> _shareRoomInvite() async {
     final text =
-        'Join my Ava meeting: https://friendly-baklava-1232ca.netlify.app?room=${widget.roomID}';
+        'Join my Ava meeting: https://stirring-sfogliatella-3cac75.netlify.app?room=${widget.roomID}';
     await SharePlus.instance.share(ShareParams(text: text));
   }
 
   Widget _buildRoomIdChip(BuildContext context, double padding) {
     return Padding(
       padding: EdgeInsets.fromLTRB(padding, 0, padding, 8),
-      child: GestureDetector(
-        onTap: _copyRoomId,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.cyan500.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: AppColors.cyan500.withOpacity(0.35)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            onTap: _copyRoomId,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.cyan500.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: AppColors.cyan500.withOpacity(0.35)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Room: ${widget.roomID}',
+                    style: TextStyle(
+                      color: AppColors.textCyan200,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: _copyRoomId,
+                    child: Icon(LucideIcons.copy, size: 16, color: AppColors.cyan400),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: _shareRoomInvite,
+                    child: Icon(LucideIcons.share2, size: 16, color: AppColors.cyan400),
+                  ),
+                ],
+              ),
+            ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Room: ${widget.roomID}',
-                style: TextStyle(
-                  color: AppColors.textCyan200,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: _copyRoomId,
-                child: Icon(LucideIcons.copy, size: 16, color: AppColors.cyan400),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: _shareRoomInvite,
-                child: Icon(LucideIcons.share2, size: 16, color: AppColors.cyan400),
-              ),
-            ],
+          const SizedBox(height: 6),
+          Text(
+            'Share link & open on PC to join the same meeting',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.7),
+              fontSize: 11,
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
