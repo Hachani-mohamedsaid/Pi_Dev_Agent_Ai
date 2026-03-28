@@ -32,7 +32,7 @@ class GoalsApiService {
   Future<List<Goal>> fetchGoals() async {
     try {
       final response = await http
-          .get(Uri.parse('$apiBaseUrl$goalsPath'), headers: await _headers())
+          .get(Uri.parse('$apiRootUrl$goalsPath'), headers: await _headers())
           .timeout(_timeout);
       if (response.statusCode != 200) return [];
       final list = jsonDecode(response.body) as List<dynamic>?;
@@ -49,7 +49,7 @@ class GoalsApiService {
   Future<List<Achievement>> fetchAchievements() async {
     try {
       final response = await http
-          .get(Uri.parse('$apiBaseUrl$goalsPath/achievements'), headers: await _headers())
+          .get(Uri.parse('$apiRootUrl$goalsPath/achievements'), headers: await _headers())
           .timeout(_timeout);
       if (response.statusCode != 200) return [];
       final list = jsonDecode(response.body) as List<dynamic>?;
@@ -88,7 +88,7 @@ class GoalsApiService {
       };
       final response = await http
           .post(
-            Uri.parse('$apiBaseUrl$goalsPath'),
+            Uri.parse('$apiRootUrl$goalsPath'),
             headers: await _headers(),
             body: jsonEncode(body),
           )
@@ -107,7 +107,7 @@ class GoalsApiService {
     try {
       final response = await http
           .patch(
-            Uri.parse('$apiBaseUrl$goalsPath/$goalId'),
+            Uri.parse('$apiRootUrl$goalsPath/$goalId'),
             headers: await _headers(),
             body: jsonEncode({'progress': progress.clamp(0, 100)}),
           )
@@ -131,7 +131,7 @@ class GoalsApiService {
     try {
       final response = await http
           .patch(
-            Uri.parse('$apiBaseUrl$goalsPath/$goalId/actions/$actionId'),
+            Uri.parse('$apiRootUrl$goalsPath/$goalId/actions/$actionId'),
             headers: await _headers(),
             body: jsonEncode({'completed': completed}),
           )

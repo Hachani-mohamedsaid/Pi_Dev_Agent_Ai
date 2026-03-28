@@ -74,6 +74,7 @@ dependencies:
 
   # Photo de profil (ImgBB)
   image_picker: ^1.0.7
+  file_picker: ^8.1.4
 
   # Talk to buddy – voix : reconnaissance vocale (STT) + synthèse vocale (TTS)
   speech_to_text: ^7.0.0

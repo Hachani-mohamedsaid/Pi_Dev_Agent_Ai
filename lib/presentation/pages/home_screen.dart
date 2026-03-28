@@ -8,8 +8,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/l10n/app_strings.dart';
-import '../../data/services/meeting_service.dart';
-import '../../services/n8n_email_service.dart';
 import '../../features/phone_agent/data/phone_agent_mock_data.dart';
 import '../state/auth_controller.dart';
 import '../widgets/navigation_bar.dart';
@@ -24,21 +22,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  final _emailService = N8nEmailService();
-  int _emailTotal = 0;
-  int _emailHigh = 0;
-  int _emailMedium = 0;
-  int _emailLow = 0;
-  int _emailDeadlines = 0;
-  int _emailActionsRequired = 0;
-  bool _emailSummaryLoading = true;
-
-  /// Number of meetings today (null = loading).
-  int? _meetingsTodayCount;
-  final _meetingService = MeetingService();
-
-  /// Tracks if we were the current route; used to reload when home becomes visible again.
-  bool _wasCurrentRoute = false;
+  /// Home screen: static mock only — no API calls on this screen (product spec).
+  static const int _mockEmailHigh = 4;
+  static const int _mockEmailMedium = 2;
+  static const int _mockEmailLow = 1;
+  static const int _mockEmailDeadlines = 3;
+  static const int _mockEmailActionsRequired = 2;
 
   late AnimationController _glowController1;
   late AnimationController _glowController2;
@@ -102,20 +91,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Reload email summary whenever home becomes the current route (e.g. user switched back from another tab)
-    final isCurrent = ModalRoute.of(context)?.isCurrent ?? false;
-    if (isCurrent && !_wasCurrentRoute) {
-      _wasCurrentRoute = true;
-      _loadEmailSummary();
-      _loadMeetingsToday();
-    } else if (!isCurrent) {
-      _wasCurrentRoute = false;
-    }
-  }
-
-  @override
   void dispose() {
     _glowController1.dispose();
     _glowController2.dispose();
@@ -128,52 +103,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     for (var controller in _ringControllers) {
       controller.dispose();
     }
-    _meetingService.dispose();
     super.dispose();
-  }
-
-  /// Loads dashboard counts from GET email-summary-stats only.
-  /// Does NOT call email-summaries — that runs only when the Emails page is opened.
-  Future<void> _loadEmailSummary() async {
-    try {
-      final stats = await _emailService.getEmailSummaryStats();
-      if (!mounted) return;
-      setState(() {
-        _emailTotal = _toInt(stats['totalEmails']);
-        _emailHigh = _toInt(stats['highPriority']);
-        _emailMedium = _toInt(stats['mediumPriority']);
-        _emailLow = _toInt(stats['lowPriority']);
-        _emailDeadlines = _toInt(stats['deadlines']);
-        _emailActionsRequired = _toInt(stats['requiredActions']);
-        _emailSummaryLoading = false;
-      });
-    } catch (_) {
-      if (mounted) setState(() => _emailSummaryLoading = false);
-    }
-  }
-
-  Future<void> _loadMeetingsToday() async {
-    try {
-      final meetings = await _meetingService.fetchMeetings();
-      if (!mounted) return;
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      final count = meetings.where((m) {
-        final start = m.startTime;
-        final startDay = DateTime(start.year, start.month, start.day);
-        return startDay == today;
-      }).length;
-      setState(() => _meetingsTodayCount = count);
-    } catch (_) {
-      if (mounted) setState(() => _meetingsTodayCount = 0);
-    }
-  }
-
-  static int _toInt(dynamic v) {
-    if (v == null) return 0;
-    if (v is int) return v;
-    if (v is num) return v.toInt();
-    return int.tryParse(v.toString()) ?? 0;
   }
 
   String _getGreeting(BuildContext context) {
@@ -1561,16 +1491,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          AppStrings.tr(context, 'quickActions'),
+          AppStrings.tr(context, 'quickActions').toUpperCase(),
           style: TextStyle(
             fontSize: Responsive.getResponsiveValue(
               context,
-              mobile: 17.0,
-              tablet: 19.0,
-              desktop: 20.0,
+              mobile: 11.0,
+              tablet: 12.0,
+              desktop: 13.0,
             ),
             fontWeight: FontWeight.w600,
-            color: AppColors.textWhite,
+            letterSpacing: 1.4,
+            color: const Color(0xFF94A3B8),
           ),
         ),
         SizedBox(
@@ -1585,12 +1516,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           padding: EdgeInsets.only(
             bottom: Responsive.getResponsiveValue(
               context,
-              mobile: 10.0,
-              tablet: 12.0,
-              desktop: 16.0,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 20.0,
             ),
           ),
-          child: _buildSummarizedEmailsCard(context, isMobile),
+          child: _buildInvestorMeetingCard(context, isMobile),
         ),
         Padding(
           padding: EdgeInsets.only(
@@ -1601,7 +1532,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               desktop: 20.0,
             ),
           ),
-          child: _buildMeetingHubCard(context, isMobile),
+          child: _buildRecentSessionsSection(context, isMobile),
+        ),
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: Responsive.getResponsiveValue(
+              context,
+              mobile: 10.0,
+              tablet: 12.0,
+              desktop: 16.0,
+            ),
+          ),
+          child: _buildSummarizedEmailsCard(context, isMobile),
         ),
         Padding(
           padding: EdgeInsets.only(
@@ -1729,15 +1671,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Row(
                     children: [
                       Expanded(
-                        child: _buildPriorityChip(context, _emailHigh, 'High', const Color(0xFFEF4444)),
+                        child: _buildPriorityChip(context, _mockEmailHigh, 'High', const Color(0xFFEF4444)),
                       ),
                       SizedBox(width: Responsive.getResponsiveValue(context, mobile: 8.0, tablet: 10.0, desktop: 12.0)),
                       Expanded(
-                        child: _buildPriorityChip(context, _emailMedium, 'Medium', const Color(0xFFFACC15)),
+                        child: _buildPriorityChip(context, _mockEmailMedium, 'Medium', const Color(0xFFFACC15)),
                       ),
                       SizedBox(width: Responsive.getResponsiveValue(context, mobile: 8.0, tablet: 10.0, desktop: 12.0)),
                       Expanded(
-                        child: _buildPriorityChip(context, _emailLow, 'Low', const Color(0xFF22C55E)),
+                        child: _buildPriorityChip(context, _mockEmailLow, 'Low', const Color(0xFF22C55E)),
                       ),
                     ],
                   ),
@@ -1745,11 +1687,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Row(
                     children: [
                       Expanded(
-                        child: _buildStatRow(context, 'Deadlines', _emailDeadlines, const Color(0xFFF97316)),
+                        child: _buildStatRow(context, 'Deadlines', _mockEmailDeadlines, const Color(0xFFF97316)),
                       ),
                       SizedBox(width: Responsive.getResponsiveValue(context, mobile: 8.0, tablet: 10.0, desktop: 12.0)),
                       Expanded(
-                        child: _buildStatRow(context, 'Actions', _emailActionsRequired, const Color(0xFF10B981)),
+                        child: _buildStatRow(context, 'Actions', _mockEmailActionsRequired, const Color(0xFF10B981)),
                       ),
                     ],
                   ),
@@ -1788,93 +1730,167 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  /// Meeting Hub card (React-style): Video icon, title, subtitle, arrow → /meetings.
-  Widget _buildMeetingHubCard(BuildContext context, bool isMobile) {
-    final r = Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 24.0);
-    return GestureDetector(
-      onTap: () => context.push('/meetings'),
-      child: Container(
-        padding: EdgeInsets.all(r),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0a1f2e),
-              Color(0xFF0f2a3d),
-              Color(0xFF14354c),
-              Color(0xFF19405b),
-              Color(0xFF1e4a66),
+  void _goToInvestorMeetingSetup(BuildContext context) {
+    context.push('/investor-meeting-setup');
+  }
+
+  /// Investor Meeting — static UI; tap card or gold action → setup screen (no API).
+  Widget _buildInvestorMeetingCard(BuildContext context, bool isMobile) {
+    const gold = Color(0xFFD4AF37);
+    const goldLight = Color(0xFFE8C547);
+    final r = Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 22.0);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _goToInvestorMeetingSetup(context),
+        borderRadius: BorderRadius.circular(r),
+        child: Ink(
+          padding: EdgeInsets.all(r),
+          decoration: BoxDecoration(
+            color: const Color(0xFF141c26),
+            borderRadius: BorderRadius.circular(r),
+            border: Border.all(color: gold.withOpacity(0.85), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: gold.withOpacity(0.12),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
             ],
-            stops: [0.0, 0.25, 0.5, 0.75, 1.0],
           ),
-          borderRadius: BorderRadius.circular(r),
-          border: Border.all(color: AppColors.cyan500.withOpacity(0.3), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.cyan500.withOpacity(0.2),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-            BoxShadow(
-              color: Colors.black.withOpacity(0.4),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
-              height: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
-              decoration: BoxDecoration(
-                color: AppColors.cyan500.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.cyan400.withOpacity(0.3)),
+          child: Row(
+            children: [
+              Container(
+                width: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
+                height: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1a2430),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: gold.withOpacity(0.35)),
+                ),
+                child: Icon(LucideIcons.calendar, color: goldLight, size: 28),
               ),
-              child: Icon(LucideIcons.video, color: AppColors.cyan400, size: 28),
-            ),
-            SizedBox(width: r),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Meeting Hub',
-                    style: TextStyle(
-                      fontSize: Responsive.getResponsiveValue(context, mobile: 17.0, tablet: 18.0, desktop: 20.0),
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+              SizedBox(width: r),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Investor Meeting',
+                      style: TextStyle(
+                        fontSize: Responsive.getResponsiveValue(context, mobile: 17.0, tablet: 18.0, desktop: 20.0),
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Start or join with AI assistance',
-                    style: TextStyle(
-                      fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
-                      color: AppColors.textCyan200.withOpacity(0.8),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Full AI preparation briefing',
+                      style: TextStyle(
+                        fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
+                        color: const Color(0xFF94A3B8),
+                      ),
                     ),
+                  ],
+                ),
+              ),
+              Material(
+                color: goldLight,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () => _goToInvestorMeetingSetup(context),
+                  child: Padding(
+                    padding: EdgeInsets.all(
+                      Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 11.0, desktop: 12.0),
+                    ),
+                    child: Icon(LucideIcons.send, color: const Color(0xFF0f172a), size: 20),
                   ),
-                ],
+                ),
               ),
-            ),
-            Container(
-              width: Responsive.getResponsiveValue(context, mobile: 38.0, tablet: 40.0, desktop: 44.0),
-              height: Responsive.getResponsiveValue(context, mobile: 38.0, tablet: 40.0, desktop: 44.0),
-              decoration: BoxDecoration(
-                color: AppColors.cyan500,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(LucideIcons.chevronRight, color: Colors.white, size: 22),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     )
         .animate()
         .fadeIn(delay: 200.ms, duration: 400.ms)
         .slideX(begin: 0.02, end: 0, curve: Curves.easeOut);
+  }
+
+  /// Mock only — history API in v2.
+  Widget _buildRecentSessionsSection(BuildContext context, bool isMobile) {
+    const sessions = <Map<String, String>>[
+      {'title': 'Q1 Investor Review', 'meta': 'Mar 12 · Completed'},
+      {'title': 'Seed follow-up call', 'meta': 'Mar 10 · Draft'},
+      {'title': 'Pitch dry run', 'meta': 'Mar 8 · Completed'},
+    ];
+    final gap = Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'RECENT SESSIONS',
+          style: TextStyle(
+            fontSize: Responsive.getResponsiveValue(context, mobile: 11.0, tablet: 12.0, desktop: 13.0),
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.4,
+            color: const Color(0xFF94A3B8),
+          ),
+        ),
+        SizedBox(height: gap),
+        ...sessions.map((s) {
+          return Padding(
+            padding: EdgeInsets.only(bottom: gap * 0.8),
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 16.0, desktop: 18.0),
+                vertical: Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 14.0, desktop: 16.0),
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0f2940).withOpacity(0.65),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.cyan500.withOpacity(0.15)),
+              ),
+              child: Row(
+                children: [
+                  Icon(LucideIcons.clock, size: 18, color: AppColors.cyan400.withOpacity(0.9)),
+                  SizedBox(width: gap),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          s['title']!,
+                          style: const TextStyle(
+                            color: AppColors.textWhite,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          s['meta']!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textCyan200.withOpacity(0.75),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
+    );
   }
 
   Widget _buildPriorityChip(BuildContext context, int count, String label, Color color) {
@@ -1958,9 +1974,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final phoneCalls = mockPhoneCalls;
     final phoneTotal = phoneCalls.length;
     final phoneImportant = phoneCalls.where((c) => c.priority == 'high').length;
-    final meetingsText = _meetingsTodayCount != null
-        ? '$_meetingsTodayCount meeting${_meetingsTodayCount == 1 ? '' : 's'} today'
-        : null;
+    const meetingsText = '2 meetings today';
     return [
       {'title': 'Review Agenda', 'subtitle': meetingsText, 'icon': LucideIcons.calendar, 'route': '/agenda', 'color': const Color(0xFFA855F7)},
       {'title': 'AI Financial Simulation', 'subtitle': null, 'icon': LucideIcons.calculator, 'route': '/advisor', 'color': const Color(0xFF10B981)},

@@ -1,10 +1,59 @@
+import 'package:flutter/foundation.dart';
+
 /// Base URL de l'API backend (NestJS).
 /// Utilisée pour toutes les routes auth : login, register, reset-password, /auth/google, /auth/me, etc.
-/// - Production : Railway
-/// - Dev émulateur Android : http://10.0.2.2:3000
-/// - Dev iOS Simulator / local : http://localhost:3000
-const String baseUrl = 'https://backendagentai-production.up.railway.app';
-const String apiBaseUrl = baseUrl;
+///
+/// Résolution (dans l’ordre) :
+/// 1. `--dart-define=API_BASE_URL=...` si non vide
+/// 2. **Debug** : machine locale (évite l’erreur « Cannot POST /meetings/... » sur Railway non déployé)
+///    - Web / iOS / desktop : `http://127.0.0.1:3000`
+///    - Android émulateur : `http://10.0.2.2:3000`
+/// 3. **Release / profile** : Railway
+///
+/// Pour forcer la prod en local debug :
+///   flutter run -d chrome --dart-define=API_BASE_URL=https://backendagentai-production.up.railway.app
+///
+/// Si Nest utilise `setGlobalPrefix('api')`, ajoute :
+///   --dart-define=API_PATH_PREFIX=api
+const String _apiBaseUrlFromEnvironment = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: '',
+);
+
+const String _productionApiBaseUrl =
+    'https://backendagentai-production.up.railway.app';
+
+String get apiBaseUrl {
+  final fromEnv = _apiBaseUrlFromEnvironment.trim();
+  if (fromEnv.isNotEmpty) {
+    return fromEnv.replaceAll(RegExp(r'/$'), '');
+  }
+  if (kDebugMode) {
+    if (kIsWeb) return 'http://127.0.0.1:3000';
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return 'http://10.0.2.2:3000';
+      default:
+        return 'http://127.0.0.1:3000';
+    }
+  }
+  return _productionApiBaseUrl;
+}
+
+/// Segment optionnel après [apiBaseUrl] (sans slash). Ex. `api` → `http://host:3000/api/...`.
+/// Laisser vide si [apiBaseUrl] contient déjà `/api` ou si le backend n’a pas de préfixe global.
+const String apiPathPrefix = String.fromEnvironment(
+  'API_PATH_PREFIX',
+  defaultValue: '',
+);
+
+/// Racine HTTP réelle pour auth, meetings, goals, etc.
+String get apiRootUrl {
+  final base = apiBaseUrl.replaceAll(RegExp(r'/$'), '');
+  final p = apiPathPrefix.trim().replaceAll(RegExp(r'^/|/$'), '');
+  if (p.isEmpty) return base;
+  return '$base/$p';
+}
 
 /// Chemin de la page "définir nouveau mot de passe" (après clic sur le lien email).
 /// Le backend (Resend, etc.) doit mettre dans l'email : (URL de l'app) + ce chemin + ?token=...
