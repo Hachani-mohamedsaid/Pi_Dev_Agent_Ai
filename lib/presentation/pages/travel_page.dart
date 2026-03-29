@@ -1,38 +1,22 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../injection_container.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
+import '../../data/services/mobility_api_service.dart';
+import 'travel_schedule_page.dart';
 import '../widgets/navigation_bar.dart';
-
-enum TravelMode { car, train, plane, taxi }
-enum JourneyStatus { upcoming, completed }
-
-class Journey {
-  final int id;
-  final String from;
-  final String to;
-  final String time;
-  final String duration;
-  final TravelMode mode;
-  final JourneyStatus status;
-  final String? traffic;
-  final String? aiInsight;
-
-  Journey({
-    required this.id,
-    required this.from,
-    required this.to,
-    required this.time,
-    required this.duration,
-    required this.mode,
-    required this.status,
-    this.traffic,
-    this.aiInsight,
-  });
-}
 
 class TravelPage extends StatefulWidget {
   const TravelPage({super.key});
@@ -41,110 +25,2454 @@ class TravelPage extends StatefulWidget {
   State<TravelPage> createState() => _TravelPageState();
 }
 
-class _TravelPageState extends State<TravelPage> {
-  TravelMode? _selectedMode;
+class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
+  static const Duration _providerPendingTimeout = Duration(seconds: 90);
+  static const LatLng _defaultTestHub = LatLng(
+    25.20485,
+    55.27078,
+  ); // Downtown Dubai
 
-  final List<Journey> _journeys = [
-    Journey(
-      id: 1,
-      from: 'Home',
-      to: 'Office',
-      time: 'Today, 8:30 AM',
-      duration: '25 min',
-      mode: TravelMode.car,
-      status: JourneyStatus.upcoming,
-      traffic: 'Moderate traffic',
-      aiInsight: 'Leave 5 minutes earlier than usual',
-    ),
-    Journey(
-      id: 2,
-      from: 'Office',
-      to: 'Client Meeting',
-      time: 'Today, 2:00 PM',
-      duration: '15 min',
-      mode: TravelMode.taxi,
-      status: JourneyStatus.upcoming,
-      aiInsight: 'Book Uber 10 minutes before',
-    ),
-    Journey(
-      id: 3,
-      from: 'Home',
-      to: 'Office',
-      time: 'Yesterday, 8:15 AM',
-      duration: '20 min',
-      mode: TravelMode.car,
-      status: JourneyStatus.completed,
-      traffic: 'Light traffic',
-    ),
-    Journey(
-      id: 4,
-      from: 'Airport',
-      to: 'Home',
-      time: 'Last week',
-      duration: '45 min',
-      mode: TravelMode.train,
-      status: JourneyStatus.completed,
+  final TextEditingController _destinationController = TextEditingController();
+  final MapController _mapController = MapController();
+  final MobilityApiService _mobilityApiService = InjectionContainer.instance
+      .buildMobilityApiService();
+
+  Position? _currentPosition;
+  LatLng? _pickupLatLng;
+  LatLng? _destinationLatLng;
+
+  bool _loadingLocation = true;
+  bool _loadingRoute = false;
+  bool _loadingEstimate = false;
+  bool _confirmingBooking = false;
+  bool _syncingDailyRule = false;
+  bool _dailyRuleEnabled = false;
+  bool _bestPriceWindowEnabled = false;
+  int _bestPriceWindowMinutes = 30;
+  bool _selectingFromOnMap = false;
+  bool _showDebugPanel = false;
+  bool _estimateRetryPending = false;
+  String? _errorMessage;
+  String? _bookingStatusMessage;
+  String? _estimateInfoMessage;
+  String? _lastMobilityErrorCode;
+  String? _lastMobilityErrorBody;
+  String? _lastBookingBackendStatus;
+  bool _pollingProposalStatus = false;
+  bool _refreshingProposalStatus = false;
+  bool _submittingDriverDecision = false;
+  DateTime? _proposalPendingSince;
+  final Set<String> _locallyDecidedBookingIds = <String>{};
+  final List<String> _proposalStatusHistory = <String>[];
+  List<LatLng> _nearbyTaxiPoints = const <LatLng>[];
+  bool _loadingNearbyTaxis = false;
+  String? _nearbyTaxiError;
+  LatLng? _nearbyTaxiSearchCenter;
+  final Distance _distanceCalc = const Distance();
+
+  List<LatLng> _routePoints = const <LatLng>[];
+  double? _distanceKm;
+  double? _durationMin;
+  MobilityEstimateResponse? _estimate;
+  MobilityProposal? _latestProposal;
+  MobilityBooking? _latestBooking;
+  String? _latestProposalOfferLabel;
+  String _plannedFromLocation = 'Current location';
+  List<SavedTravelRequest> _savedScheduleRequests =
+      const <SavedTravelRequest>[];
+  TimeOfDay _plannedTime = const TimeOfDay(hour: 8, minute: 0);
+  List<TravelScheduleSlot> _scheduleSlots = <TravelScheduleSlot>[
+    TravelScheduleSlot(
+      time: TimeOfDay(hour: 8, minute: 0),
+      weekdays: <int>{
+        DateTime.monday,
+        DateTime.tuesday,
+        DateTime.wednesday,
+        DateTime.thursday,
+        DateTime.friday,
+      },
+      enabled: false,
+      adjustedTime: null,
+      lastSyncedAt: null,
     ),
   ];
+  int _estimateRetryAttempts = 0;
 
-  IconData _getModeIcon(TravelMode mode) {
-    switch (mode) {
-      case TravelMode.car:
-      case TravelMode.taxi:
-        return LucideIcons.car;
-      case TravelMode.train:
-        return LucideIcons.train;
-      case TravelMode.plane:
-        return LucideIcons.plane;
+  StreamSubscription<Position>? _positionSubscription;
+  Timer? _estimateRetryTimer;
+  Timer? _proposalStatusTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadLocation();
+    _loadDailyRule();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _positionSubscription?.cancel();
+    _estimateRetryTimer?.cancel();
+    _proposalStatusTimer?.cancel();
+    _destinationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !mounted) return;
+
+    if (_latestProposal == null || _latestProposal!.id.isEmpty) {
+      unawaited(_recoverLatestProposalFromBackend(silent: true));
+      return;
+    }
+
+    unawaited(_refreshLatestProposalStatus(silent: true));
+  }
+
+  Future<void> _loadLocation() async {
+    setState(() {
+      _loadingLocation = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          _loadingLocation = false;
+          _errorMessage = 'Location services are disabled.';
+        });
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        setState(() {
+          _loadingLocation = false;
+          _errorMessage = 'Location permission is required.';
+        });
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _currentPosition = position;
+        _loadingLocation = false;
+      });
+
+      _startLiveLocationStream();
+      _mapController.move(_defaultTestHub, 13.5);
+      unawaited(_fetchNearbyTaxiStations());
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadingLocation = false;
+        _errorMessage = 'Unable to fetch your current location.';
+      });
     }
   }
 
-  List<Color> _getModeColors(TravelMode mode) {
-    switch (mode) {
-      case TravelMode.car:
-        return [
-          AppColors.blue500.withOpacity(0.2),
-          AppColors.cyan500.withOpacity(0.2),
-        ];
-      case TravelMode.train:
-        return [
-          const Color(0xFF9333EA).withOpacity(0.2),
-          AppColors.blue500.withOpacity(0.2),
-        ];
-      case TravelMode.plane:
-        return [
-          const Color(0xFFEC4899).withOpacity(0.2),
-          const Color(0xFF9333EA).withOpacity(0.2),
-        ];
-      case TravelMode.taxi:
-        return [
-          const Color(0xFFFFB800).withOpacity(0.2),
-          const Color(0xFFFF9800).withOpacity(0.2),
-        ];
+  void _startLiveLocationStream() {
+    _positionSubscription?.cancel();
+    _positionSubscription =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.best,
+            distanceFilter: 15,
+          ),
+        ).listen((position) {
+          if (!mounted) return;
+          setState(() => _currentPosition = position);
+        });
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _plannedTime,
+    );
+    if (picked != null) {
+      setState(() {
+        _plannedTime = picked;
+        if (_scheduleSlots.isNotEmpty) {
+          _scheduleSlots[0] = _scheduleSlots[0].copyWith(
+            time: picked,
+            adjustedTime: null,
+            lastSyncedAt: null,
+          );
+        }
+      });
+      if (_dailyRuleEnabled) {
+        unawaited(_syncDailyRule(enabled: true));
+      }
     }
   }
 
-  List<Journey> get _filteredJourneys {
-    if (_selectedMode == null) {
-      return _journeys;
+  Future<void> _buildRoute() async {
+    final from =
+        _pickupLatLng ??
+        (_currentPosition == null
+            ? null
+            : LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+
+    if (from == null || _destinationLatLng == null) {
+      return;
     }
-    return _journeys.where((j) => j.mode == _selectedMode).toList();
+
+    setState(() {
+      _loadingRoute = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final origin = '${from.longitude},${from.latitude}';
+      final destination =
+          '${_destinationLatLng!.longitude},${_destinationLatLng!.latitude}';
+
+      final uri = Uri.parse(
+        'https://router.project-osrm.org/route/v1/driving/$origin;$destination?overview=full&geometries=geojson',
+      );
+      final response = await http.get(uri);
+
+      if (response.statusCode != 200) {
+        throw Exception('Routing failed: ${response.statusCode}');
+      }
+
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final routes = decoded['routes'] as List<dynamic>?;
+      if (routes == null || routes.isEmpty) {
+        setState(() {
+          _loadingRoute = false;
+          _errorMessage = 'No route found for this destination.';
+        });
+        return;
+      }
+
+      final route = routes.first as Map<String, dynamic>;
+      final geometry = route['geometry'] as Map<String, dynamic>?;
+      final coordinates = geometry?['coordinates'] as List<dynamic>?;
+
+      if (coordinates == null || coordinates.isEmpty) {
+        throw Exception('No polyline coordinates returned.');
+      }
+
+      final points = coordinates
+          .map((coord) {
+            final lon = (coord as List<dynamic>)[0] as num;
+            final lat = coord[1] as num;
+            return LatLng(lat.toDouble(), lon.toDouble());
+          })
+          .toList(growable: false);
+
+      final distanceMeters = (route['distance'] as num?)?.toDouble() ?? 0;
+      final durationSeconds = (route['duration'] as num?)?.toDouble() ?? 0;
+
+      if (!mounted) return;
+      setState(() {
+        _routePoints = points;
+        _distanceKm = distanceMeters / 1000;
+        _durationMin = durationSeconds / 60;
+        _loadingRoute = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadingRoute = false;
+        _errorMessage = 'Failed to build route.';
+      });
+    }
   }
 
-  List<Journey> get _upcomingJourneys =>
-      _filteredJourneys.where((j) => j.status == JourneyStatus.upcoming).toList();
+  DateTime _nextPickupDateTime() {
+    final now = DateTime.now();
+    var dt = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      _plannedTime.hour,
+      _plannedTime.minute,
+    );
+    if (dt.isBefore(now)) {
+      dt = dt.add(const Duration(days: 1));
+    }
+    return dt;
+  }
 
-  List<Journey> get _completedJourneys =>
-      _filteredJourneys.where((j) => j.status == JourneyStatus.completed).toList();
+  Future<void> _fetchMobilityEstimate() async {
+    final destination = _destinationController.text.trim();
+    if (destination.isEmpty || _distanceKm == null || _durationMin == null) {
+      return;
+    }
+
+    final fromPoint =
+        _pickupLatLng ??
+        (_currentPosition == null
+            ? null
+            : LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+
+    if (fromPoint == null) {
+      return;
+    }
+
+    setState(() {
+      _loadingEstimate = true;
+      _errorMessage = null;
+      _bookingStatusMessage = null;
+      _estimateInfoMessage = null;
+      _lastMobilityErrorCode = null;
+      _lastMobilityErrorBody = null;
+    });
+
+    try {
+      final estimate = await _mobilityApiService.estimateQuotes(
+        from: _pickupLatLng == null
+            ? 'Current location'
+            : 'Map selected pickup',
+        to: destination,
+        pickupAt: _nextPickupDateTime(),
+        fromLatitude: fromPoint.latitude,
+        fromLongitude: fromPoint.longitude,
+        toLatitude: _destinationLatLng?.latitude,
+        toLongitude: _destinationLatLng?.longitude,
+      );
+      if (!mounted) return;
+      setState(() {
+        _estimate = estimate;
+        _loadingEstimate = false;
+        _estimateRetryPending = false;
+        _estimateRetryAttempts = 0;
+        _estimateInfoMessage = 'Live estimate loaded from backend.';
+      });
+      _estimateRetryTimer?.cancel();
+    } on MobilityApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingEstimate = false;
+        _estimate = null;
+        _estimateInfoMessage = 'No live estimate available (${e.code}).';
+        _errorMessage = _mobilityErrorMessage(e);
+        _lastMobilityErrorCode = e.code;
+        _lastMobilityErrorBody = _truncateForDebug(e.body);
+      });
+      if (_shouldAutoRetryEstimate(e.code)) {
+        _scheduleEstimateRetry();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadingEstimate = false;
+        _estimate = null;
+        _estimateInfoMessage = 'Unable to fetch backend live estimates.';
+        _errorMessage = 'Unable to fetch backend live estimates.';
+        _lastMobilityErrorCode = 'unknown_exception';
+        _lastMobilityErrorBody = null;
+      });
+      _scheduleEstimateRetry();
+    }
+  }
+
+  String? _truncateForDebug(String? value) {
+    if (value == null || value.isEmpty) return null;
+    const maxLen = 280;
+    if (value.length <= maxLen) return value;
+    return '${value.substring(0, maxLen)}...';
+  }
+
+  void _scheduleEstimateRetry() {
+    if (_estimateRetryPending || _estimateRetryAttempts >= 3) {
+      return;
+    }
+
+    _estimateRetryPending = true;
+    _estimateRetryAttempts += 1;
+    final attempt = _estimateRetryAttempts;
+
+    if (mounted) {
+      setState(() {
+        _estimateInfoMessage =
+            '${_estimateInfoMessage ?? 'No live estimate available.'} Auto-retry in 10s (#$attempt).';
+      });
+    }
+
+    _estimateRetryTimer?.cancel();
+    _estimateRetryTimer = Timer(const Duration(seconds: 10), () {
+      _estimateRetryPending = false;
+      if (!mounted) return;
+      if (_estimate == null && !_loadingEstimate) {
+        unawaited(_fetchMobilityEstimate());
+      }
+    });
+  }
+
+  bool _shouldAutoRetryEstimate(String code) {
+    final normalized = code.toLowerCase();
+    if (normalized == 'login_required') return false;
+
+    if (normalized.startsWith('http_')) {
+      final status = int.tryParse(normalized.replaceFirst('http_', ''));
+      if (status != null && status >= 400 && status < 500) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  String _mobilityErrorMessage(MobilityApiException e) {
+    switch (e.code) {
+      case 'login_required':
+        return 'Please log in to use live mobility backend.';
+      default:
+        return 'Mobility backend error (${e.code}).';
+    }
+  }
+
+  String _toCron(TimeOfDay t, Set<int> weekdays) {
+    if (weekdays.isEmpty || weekdays.length == 7) {
+      return '${t.minute} ${t.hour} * * *';
+    }
+
+    final dayValues =
+        weekdays.map((day) => day == DateTime.sunday ? 0 : day).toList()
+          ..sort();
+    final dayExpr = dayValues.join(',');
+    return '${t.minute} ${t.hour} * * $dayExpr';
+  }
+
+  String _weekdaysLabel(Set<int> weekdays) {
+    if (weekdays.length == 7) return 'Every day';
+    const labels = <int, String>{
+      DateTime.monday: 'Mon',
+      DateTime.tuesday: 'Tue',
+      DateTime.wednesday: 'Wed',
+      DateTime.thursday: 'Thu',
+      DateTime.friday: 'Fri',
+      DateTime.saturday: 'Sat',
+      DateTime.sunday: 'Sun',
+    };
+    final ordered = weekdays.toList()..sort();
+    return ordered.map((day) => labels[day] ?? day.toString()).join(', ');
+  }
+
+  String _scheduleSummaryLabel() {
+    if (_scheduleSlots.isEmpty) return 'No schedule';
+    final enabledSlots = _scheduleSlots.where((slot) => slot.enabled).toList();
+    if (enabledSlots.isEmpty) {
+      return '${_scheduleSlots.length} schedules configured (all disabled)';
+    }
+
+    final preview = enabledSlots
+        .take(2)
+        .map(
+          (slot) =>
+              '${slot.time.format(context)} ${_weekdaysLabel(slot.weekdays)}',
+        )
+        .join(' | ');
+    final extra = enabledSlots.length > 2
+        ? ' +${enabledSlots.length - 2} more'
+        : '';
+    final bestPriceTag = _bestPriceWindowEnabled
+        ? ' • best-price ±$_bestPriceWindowMinutes min'
+        : '';
+    return '$preview$extra$bestPriceTag';
+  }
+
+  void _syncPrimaryPickupFromSchedules() {
+    if (_scheduleSlots.isEmpty) return;
+    final preferred = _scheduleSlots.firstWhere(
+      (slot) => slot.enabled,
+      orElse: () => _scheduleSlots.first,
+    );
+    _plannedTime = preferred.time;
+  }
+
+  Set<int>? _cronDayExprToWeekdays(String dayExpr) {
+    if (dayExpr == '*') {
+      return <int>{
+        DateTime.monday,
+        DateTime.tuesday,
+        DateTime.wednesday,
+        DateTime.thursday,
+        DateTime.friday,
+        DateTime.saturday,
+        DateTime.sunday,
+      };
+    }
+
+    final parts = dayExpr.split(',').map((e) => e.trim()).toList();
+    final days = <int>{};
+    for (final part in parts) {
+      final value = int.tryParse(part);
+      if (value == null || value < 0 || value > 7) {
+        return null;
+      }
+      days.add(value == 0 || value == 7 ? DateTime.sunday : value);
+    }
+    return days.isEmpty ? null : days;
+  }
+
+  TravelScheduleSlot? _slotFromRule(MobilityRule rule) {
+    final segments = rule.cron.trim().split(RegExp(r'\s+'));
+    if (segments.length < 5) return null;
+
+    final minute = int.tryParse(segments[0]);
+    final hour = int.tryParse(segments[1]);
+    final weekdays = _cronDayExprToWeekdays(segments[4]);
+    if (minute == null || hour == null || weekdays == null) {
+      return null;
+    }
+    if (minute < 0 || minute > 59 || hour < 0 || hour > 23) {
+      return null;
+    }
+
+    return TravelScheduleSlot(
+      ruleId: rule.id,
+      time: TimeOfDay(hour: hour, minute: minute),
+      adjustedTime: TimeOfDay(hour: hour, minute: minute),
+      lastSyncedAt: null,
+      weekdays: weekdays,
+      enabled: rule.enabled,
+    );
+  }
+
+  void _setAllScheduleEnabled(bool enabled) {
+    _dailyRuleEnabled = enabled;
+    _scheduleSlots = _scheduleSlots
+        .map(
+          (slot) => slot.copyWith(
+            enabled: enabled,
+            adjustedTime: null,
+            lastSyncedAt: null,
+          ),
+        )
+        .toList(growable: true);
+    _syncPrimaryPickupFromSchedules();
+  }
+
+  TimeOfDay _offsetTime(TimeOfDay value, int deltaMinutes) {
+    final total = (value.hour * 60 + value.minute + deltaMinutes) % 1440;
+    final normalized = total < 0 ? total + 1440 : total;
+    return TimeOfDay(hour: normalized ~/ 60, minute: normalized % 60);
+  }
+
+  DateTime _slotPickupDateTime(TimeOfDay time) {
+    final now = DateTime.now();
+    var dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
+    if (dt.isBefore(now)) {
+      dt = dt.add(const Duration(days: 1));
+    }
+    return dt;
+  }
+
+  Future<TimeOfDay> _resolveBestWindowTime({
+    required TravelScheduleSlot slot,
+    required String destination,
+    required int windowMinutes,
+  }) async {
+    if (windowMinutes <= 0) return slot.time;
+
+    final candidates = <TimeOfDay>[
+      _offsetTime(slot.time, -windowMinutes),
+      slot.time,
+      _offsetTime(slot.time, windowMinutes),
+    ];
+
+    final uniqueCandidates = <TimeOfDay>[];
+    final seen = <String>{};
+    for (final candidate in candidates) {
+      final key = '${candidate.hour}:${candidate.minute}';
+      if (seen.add(key)) {
+        uniqueCandidates.add(candidate);
+      }
+    }
+
+    final fromPoint =
+        _pickupLatLng ??
+        (_currentPosition == null
+            ? null
+            : LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+
+    double? bestPrice;
+    TimeOfDay bestTime = slot.time;
+
+    for (final candidate in uniqueCandidates) {
+      try {
+        final estimate = await _mobilityApiService.estimateQuotes(
+          from: _pickupLatLng == null
+              ? 'Current location'
+              : 'Map selected pickup',
+          to: destination,
+          pickupAt: _slotPickupDateTime(candidate),
+          fromLatitude: fromPoint?.latitude,
+          fromLongitude: fromPoint?.longitude,
+          toLatitude: _destinationLatLng?.latitude,
+          toLongitude: _destinationLatLng?.longitude,
+        );
+
+        final option =
+            estimate.best ??
+            (estimate.options.isEmpty ? null : estimate.options.first);
+        if (option == null) continue;
+
+        if (bestPrice == null || option.minPrice < bestPrice) {
+          bestPrice = option.minPrice;
+          bestTime = candidate;
+        }
+      } catch (_) {
+        // Keep current best candidate when estimate fails for one window edge.
+      }
+    }
+
+    return bestTime;
+  }
+
+  Future<void> _openSchedulePlanner() async {
+    final plan = await Navigator.of(context).push<TravelSchedulePlan>(
+      MaterialPageRoute(
+        builder: (_) => TravelSchedulePage(
+          initialFromLocation: _plannedFromLocation,
+          initialToLocation: _destinationController.text.trim(),
+          initialSlots: _scheduleSlots,
+          initialBestPriceWindowEnabled: _bestPriceWindowEnabled,
+          initialBestPriceWindowMinutes: _bestPriceWindowMinutes,
+          initialSavedRequests: _savedScheduleRequests,
+          baseMinPrice: _estimate?.best?.minPrice,
+          baseMaxPrice: _estimate?.best?.maxPrice,
+          baseEtaMinutes: _estimate?.best?.etaMinutes,
+        ),
+      ),
+    );
+
+    if (plan == null || !mounted) return;
+
+    setState(() {
+      _scheduleSlots = plan.slots
+          .map(
+            (slot) => TravelScheduleSlot(
+              time: slot.time,
+              weekdays: Set<int>.from(slot.weekdays),
+              enabled: slot.enabled,
+              adjustedTime: slot.adjustedTime,
+              lastSyncedAt: slot.lastSyncedAt,
+              ruleId: slot.ruleId,
+            ),
+          )
+          .toList(growable: true);
+      _dailyRuleEnabled = _scheduleSlots.any((slot) => slot.enabled);
+      _bestPriceWindowEnabled = plan.bestPriceWindowEnabled;
+      _bestPriceWindowMinutes = plan.bestPriceWindowMinutes;
+      _savedScheduleRequests = plan.savedRequests;
+      _syncPrimaryPickupFromSchedules();
+      _plannedFromLocation = plan.fromLocation;
+      _destinationController.text = plan.toLocation;
+      _errorMessage = null;
+    });
+
+    final parsedDestination = _parseLatLngInput(plan.toLocation);
+    if (parsedDestination != null) {
+      setState(() {
+        _destinationLatLng = parsedDestination;
+      });
+      await _buildRoute();
+      await _fetchMobilityEstimate();
+    }
+
+    if (!mounted) return;
+    if (_dailyRuleEnabled) {
+      await _syncDailyRule(enabled: true);
+    }
+  }
+
+  String _clientTimezone() {
+    final tz = DateTime.now().timeZoneName.trim();
+    return tz.isEmpty ? 'UTC' : tz;
+  }
+
+  String _coordsLabel(LatLng point) {
+    return '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}';
+  }
+
+  LatLng? _parseLatLngInput(String raw) {
+    final parts = raw
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList(growable: false);
+    if (parts.length != 2) return null;
+
+    final lat = double.tryParse(parts[0]);
+    final lng = double.tryParse(parts[1]);
+    if (lat == null || lng == null) return null;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+
+    return LatLng(lat, lng);
+  }
+
+  Future<void> _applyManualDestination() async {
+    final parsed = _parseLatLngInput(_destinationController.text.trim());
+    if (parsed == null) {
+      setState(() {
+        _errorMessage =
+            'Manual destination format: latitude, longitude (example: 36.80421, 10.17453).';
+      });
+      return;
+    }
+
+    setState(() {
+      _destinationLatLng = parsed;
+      _destinationController.text = _coordsLabel(parsed);
+      _errorMessage = null;
+      _bookingStatusMessage = null;
+    });
+
+    await _buildRoute();
+    await _fetchMobilityEstimate();
+  }
+
+  Future<void> _onMapTapped(LatLng point) async {
+    setState(() {
+      _errorMessage = null;
+      _bookingStatusMessage = null;
+      if (_selectingFromOnMap) {
+        _pickupLatLng = point;
+        _selectingFromOnMap = false;
+      } else {
+        _destinationLatLng = point;
+        _destinationController.text = _coordsLabel(point);
+      }
+    });
+
+    if (_destinationLatLng != null) {
+      await _buildRoute();
+      await _fetchMobilityEstimate();
+    }
+  }
+
+  Future<void> _openFullMapSelection() async {
+    final fullMapController = MapController();
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (routeContext) {
+          return StatefulBuilder(
+            builder: (context, setModalState) {
+              return Scaffold(
+                backgroundColor: const Color(0xFF0f2940),
+                appBar: AppBar(
+                  title: const Text('Full Map Selection (A -> B)'),
+                  backgroundColor: const Color(0xFF16384d),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Done'),
+                    ),
+                  ],
+                ),
+                body: Stack(
+                  children: [
+                    FlutterMap(
+                      mapController: fullMapController,
+                      options: MapOptions(
+                        initialCenter:
+                            _destinationLatLng ??
+                            _pickupLatLng ??
+                            _initialCenter,
+                        initialZoom: 12.8,
+                        minZoom: 3,
+                        maxZoom: 19,
+                        onTap: (_, point) async {
+                          await _onMapTapped(point);
+                          setModalState(() {});
+                        },
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'pi_dev_agentia',
+                        ),
+                        if (_routePoints.isNotEmpty)
+                          PolylineLayer(
+                            polylines: [
+                              Polyline(
+                                points: _routePoints,
+                                strokeWidth: 5,
+                                color: AppColors.cyan400,
+                              ),
+                            ],
+                          ),
+                        MarkerLayer(
+                          markers: [
+                            if (_driverLatLng() != null)
+                              Marker(
+                                point: _driverLatLng()!,
+                                width: 44,
+                                height: 44,
+                                child: const Icon(
+                                  Icons.local_taxi,
+                                  color: Colors.lightGreenAccent,
+                                  size: 30,
+                                ),
+                              ),
+                            if (_currentPosition != null)
+                              Marker(
+                                point: LatLng(
+                                  _currentPosition!.latitude,
+                                  _currentPosition!.longitude,
+                                ),
+                                width: 44,
+                                height: 44,
+                                child: const Icon(
+                                  Icons.my_location,
+                                  color: Colors.blue,
+                                  size: 28,
+                                ),
+                              ),
+                            if (_pickupLatLng != null)
+                              Marker(
+                                point: _pickupLatLng!,
+                                width: 44,
+                                height: 44,
+                                child: const Icon(
+                                  Icons.trip_origin,
+                                  color: Colors.orangeAccent,
+                                  size: 28,
+                                ),
+                              ),
+                            if (_destinationLatLng != null)
+                              Marker(
+                                point: _destinationLatLng!,
+                                width: 48,
+                                height: 48,
+                                child: const Icon(
+                                  Icons.location_on,
+                                  color: Colors.redAccent,
+                                  size: 30,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Positioned(
+                      left: 12,
+                      right: 12,
+                      top: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.58),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          _selectingFromOnMap
+                              ? 'Tap map to set A (From).'
+                              : 'Tap map to set B (Destination).',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                floatingActionButton: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FloatingActionButton.extended(
+                      heroTag: 'toggle-from-full-map',
+                      onPressed: () {
+                        setState(() {
+                          _selectingFromOnMap = !_selectingFromOnMap;
+                        });
+                        setModalState(() {});
+                      },
+                      icon: Icon(
+                        _selectingFromOnMap
+                            ? Icons.touch_app
+                            : Icons.trip_origin,
+                      ),
+                      label: Text(
+                        _selectingFromOnMap ? 'Selecting A' : 'Select A',
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    FloatingActionButton.extended(
+                      heroTag: 'center-full-map',
+                      onPressed: () {
+                        final center =
+                            _destinationLatLng ??
+                            _pickupLatLng ??
+                            _initialCenter;
+                        fullMapController.move(center, 13.5);
+                      },
+                      icon: const Icon(Icons.center_focus_strong),
+                      label: const Text('Center'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _loadDailyRule() async {
+    try {
+      final rules = await _mobilityApiService.fetchRules();
+      if (!mounted) return;
+      final existing = rules
+          .where((r) {
+            return r.name == 'Daily commute template' ||
+                r.name.startsWith('Daily commute template #');
+          })
+          .toList(growable: false);
+      if (existing.isEmpty) return;
+
+      final loadedSlots = <TravelScheduleSlot>[];
+      for (final rule in existing) {
+        final slot = _slotFromRule(rule);
+        if (slot != null) {
+          loadedSlots.add(slot);
+        }
+      }
+
+      if (loadedSlots.isEmpty) return;
+
+      setState(() {
+        _scheduleSlots = loadedSlots;
+        _dailyRuleEnabled = loadedSlots.any((slot) => slot.enabled);
+        _syncPrimaryPickupFromSchedules();
+      });
+    } catch (_) {
+      // Non-blocking: travel still works without daily rule sync.
+    }
+  }
+
+  Future<void> _syncDailyRule({required bool enabled}) async {
+    final destination = _destinationController.text.trim();
+    if (destination.isEmpty) {
+      setState(() {
+        _dailyRuleEnabled = false;
+        _errorMessage = 'Set destination before enabling the daily rule.';
+      });
+      return;
+    }
+
+    setState(() {
+      _syncingDailyRule = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final existingRules = await _mobilityApiService.fetchRules();
+      final existingByName = <String, MobilityRule>{
+        for (final rule in existingRules)
+          if (rule.name == 'Daily commute template' ||
+              rule.name.startsWith('Daily commute template #'))
+            rule.name: rule,
+      };
+
+      var slotsForSync = _scheduleSlots
+          .map(
+            (slot) => TravelScheduleSlot(
+              time: slot.time,
+              weekdays: Set<int>.from(slot.weekdays),
+              enabled: slot.enabled,
+              adjustedTime: slot.adjustedTime,
+              lastSyncedAt: slot.lastSyncedAt,
+              ruleId: slot.ruleId,
+            ),
+          )
+          .toList(growable: true);
+
+      if (enabled && _bestPriceWindowEnabled) {
+        for (var i = 0; i < slotsForSync.length; i += 1) {
+          final slot = slotsForSync[i];
+          if (!slot.enabled) continue;
+          final bestTime = await _resolveBestWindowTime(
+            slot: slot,
+            destination: destination,
+            windowMinutes: _bestPriceWindowMinutes,
+          );
+          slotsForSync[i] = slot.copyWith(adjustedTime: bestTime);
+        }
+      }
+
+      final updatedSlots = <TravelScheduleSlot>[];
+      final usedNames = <String>{};
+      final syncedAt = DateTime.now();
+
+      for (var i = 0; i < slotsForSync.length; i += 1) {
+        final slot = slotsForSync[i];
+        final name = 'Daily commute template #${i + 1}';
+        usedNames.add(name);
+
+        final effectiveTime = enabled && slot.enabled
+            ? (slot.adjustedTime ?? slot.time)
+            : slot.time;
+        final cron = _toCron(effectiveTime, slot.weekdays);
+        final existing = existingByName[name];
+        final finalAdjustedTime = enabled && slot.enabled
+            ? effectiveTime
+            : null;
+        final finalSyncedAt = enabled && slot.enabled ? syncedAt : null;
+
+        if (existing == null) {
+          final created = await _mobilityApiService.createRule(
+            name: name,
+            from: _plannedFromLocation,
+            to: destination,
+            timezone: _clientTimezone(),
+            cron: cron,
+            enabled: enabled && slot.enabled,
+            requireUserApproval: true,
+          );
+          updatedSlots.add(
+            slot.copyWith(
+              ruleId: created?.id,
+              adjustedTime: finalAdjustedTime,
+              lastSyncedAt: finalSyncedAt,
+            ),
+          );
+        } else {
+          await _mobilityApiService.updateRule(
+            ruleId: existing.id,
+            patch: {
+              'enabled': enabled && slot.enabled,
+              'to': destination,
+              'cron': cron,
+              'requireUserApproval': true,
+            },
+          );
+          updatedSlots.add(
+            slot.copyWith(
+              ruleId: existing.id,
+              adjustedTime: finalAdjustedTime,
+              lastSyncedAt: finalSyncedAt,
+            ),
+          );
+        }
+      }
+
+      for (final entry in existingByName.entries) {
+        if (usedNames.contains(entry.key)) continue;
+        await _mobilityApiService.updateRule(
+          ruleId: entry.value.id,
+          patch: {'enabled': false, 'requireUserApproval': true},
+        );
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _scheduleSlots = updatedSlots;
+        _dailyRuleEnabled = enabled;
+        _syncingDailyRule = false;
+      });
+    } on MobilityApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _syncingDailyRule = false;
+        _setAllScheduleEnabled(!enabled);
+        _errorMessage = _mobilityErrorMessage(e);
+        _lastMobilityErrorCode = e.code;
+        _lastMobilityErrorBody = _truncateForDebug(e.body);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _syncingDailyRule = false;
+        _setAllScheduleEnabled(!enabled);
+        _errorMessage = 'Failed to sync daily rule with backend.';
+      });
+    }
+  }
+
+  String _normalizeStatus(String? status) {
+    final value = (status ?? '').trim();
+    if (value.isEmpty) return 'PENDING';
+    return value.toUpperCase();
+  }
+
+  String _nowClock() {
+    final now = DateTime.now();
+    final hh = now.hour.toString().padLeft(2, '0');
+    final mm = now.minute.toString().padLeft(2, '0');
+    final ss = now.second.toString().padLeft(2, '0');
+    return '$hh:$mm:$ss';
+  }
+
+  void _appendStatusHistory(String status) {
+    final normalized = _normalizeStatus(status);
+    final entry = '${_nowClock()} - $normalized';
+    if (_proposalStatusHistory.isNotEmpty &&
+        _proposalStatusHistory.last.endsWith(normalized)) {
+      return;
+    }
+    _proposalStatusHistory.add(entry);
+    if (_proposalStatusHistory.length > 8) {
+      _proposalStatusHistory.removeAt(0);
+    }
+  }
+
+  Color _statusAccentColor(String status) {
+    switch (_normalizeStatus(status)) {
+      case 'CONFIRMED':
+      case 'ACCEPTED':
+      case 'COMPLETED':
+        return Colors.greenAccent;
+      case 'REJECTED':
+      case 'FAILED':
+      case 'CANCELED':
+      case 'CANCELLED':
+      case 'EXPIRED':
+        return Colors.redAccent;
+      default:
+        return Colors.orangeAccent;
+    }
+  }
+
+  Future<void> _cancelCurrentProposal() async {
+    final proposal = _latestProposal;
+    if (proposal == null || proposal.id.isEmpty) return;
+
+    final confirmCancel = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Cancel taxi request'),
+          content: const Text(
+            'Do you want to cancel this request from the application?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('No'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Yes, cancel'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmCancel != true) return;
+
+    try {
+      await _mobilityApiService.rejectProposal(proposal.id);
+      if (!mounted) return;
+      setState(() {
+        _proposalStatusTimer?.cancel();
+        _pollingProposalStatus = false;
+        _proposalPendingSince = null;
+        _locallyDecidedBookingIds.clear();
+        _lastBookingBackendStatus = 'REJECTED';
+        _latestBooking = null;
+        _latestProposal = MobilityProposal(
+          id: proposal.id,
+          from: proposal.from,
+          to: proposal.to,
+          status: 'REJECTED',
+          provider: proposal.provider,
+        );
+        _bookingStatusMessage = 'Taxi request canceled from app.';
+        _appendStatusHistory('REJECTED');
+      });
+    } on MobilityApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _lastMobilityErrorCode = e.code;
+        _lastMobilityErrorBody = _truncateForDebug(e.body);
+        _errorMessage = 'Unable to cancel request (${e.code}).';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _lastMobilityErrorCode = 'unknown_exception';
+        _lastMobilityErrorBody = null;
+        _errorMessage = 'Unable to cancel request right now.';
+      });
+    }
+  }
+
+  Future<void> _submitDriverDecision({required bool accept}) async {
+    final booking = _latestBooking;
+    if (booking == null || booking.id.isEmpty) {
+      setState(() {
+        _errorMessage = 'No booking available for driver decision.';
+      });
+      return;
+    }
+
+    setState(() {
+      _submittingDriverDecision = true;
+      _errorMessage = null;
+    });
+
+    try {
+      if (accept) {
+        await _mobilityApiService.acceptDriver(booking.id);
+      } else {
+        await _mobilityApiService.rejectDriver(booking.id);
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _locallyDecidedBookingIds.add(booking.id);
+        _bookingStatusMessage = accept
+            ? 'Driver accepted by user. Refreshing status...'
+            : 'Driver rejected by user. Refreshing status...';
+      });
+      await _refreshLatestProposalStatus();
+    } on MobilityApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _lastMobilityErrorCode = e.code;
+        _lastMobilityErrorBody = _truncateForDebug(e.body);
+        _errorMessage =
+            'Unable to submit driver decision (${e.code}). Backend endpoint may be missing.';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Unable to submit driver decision right now.';
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _submittingDriverDecision = false;
+      });
+    }
+  }
+
+  bool _isTerminalBookingStatus(String status) {
+    const terminal = <String>{
+      'CONFIRMED',
+      'ACCEPTED',
+      'COMPLETED',
+      'FAILED',
+      'REJECTED',
+      'CANCELED',
+      'CANCELLED',
+      'EXPIRED',
+    };
+    return terminal.contains(_normalizeStatus(status));
+  }
+
+  String _statusToUserText(String status) {
+    final s = _normalizeStatus(status);
+    switch (s) {
+      case 'CONFIRMED':
+      case 'ACCEPTED':
+        if (_requiresUserDriverDecision()) {
+          return 'Driver found. Please choose Accept or Reject.';
+        }
+        return 'Taxi accepted. Driver confirmed in backend.';
+      case 'REJECTED':
+      case 'FAILED':
+      case 'CANCELED':
+      case 'CANCELLED':
+      case 'EXPIRED':
+        return 'Taxi request was not accepted ($s).';
+      default:
+        final pendingSince = _proposalPendingSince;
+        if (s == 'PENDING_PROVIDER' && pendingSince != null) {
+          final wait = DateTime.now().difference(pendingSince);
+          if (wait >= _providerPendingTimeout) {
+            return 'No taxi available for now. You can refresh, change destination, or retry request.';
+          }
+        }
+        return 'Taxi request pending. Waiting for provider response...';
+    }
+  }
+
+  bool _requiresUserDriverDecision() {
+    final booking = _latestBooking;
+    if (booking == null) return false;
+
+    if (_locallyDecidedBookingIds.contains(booking.id)) {
+      return false;
+    }
+
+    final decision = _normalizeStatus(booking.userDriverDecision);
+    if (decision == 'ACCEPTED' || decision == 'REJECTED') {
+      return false;
+    }
+
+    if (booking.userDecisionRequired == true) {
+      return true;
+    }
+
+    final tripStatus = _normalizeStatus(booking.tripStatus);
+    if (tripStatus == 'DRIVER_PROPOSED' ||
+        tripStatus == 'AWAITING_USER_CONFIRMATION') {
+      return true;
+    }
+
+    // Backward-compatible fallback: accepted booking without explicit decision
+    // metadata should still allow user choice.
+    final bookingStatus = _normalizeStatus(booking.status);
+    return bookingStatus == 'ACCEPTED';
+  }
+
+  String _displayProposalStatus(String status) {
+    if (_requiresUserDriverDecision()) return 'AWAITING_USER_DECISION';
+    return _normalizeStatus(status);
+  }
+
+  Future<bool> _recoverLatestProposalFromBackend({bool silent = false}) async {
+    if (!silent && mounted) {
+      setState(() {
+        _refreshingProposalStatus = true;
+      });
+    }
+
+    try {
+      final pending = await _mobilityApiService.fetchPendingProposals();
+      final bookings = await _mobilityApiService.fetchBookings();
+
+      final destination = _destinationController.text.trim().toLowerCase();
+      MobilityProposal? selectedProposal;
+
+      if (destination.isNotEmpty) {
+        for (final p in pending) {
+          final to = p.to.toLowerCase();
+          if (to == destination || to.contains(destination)) {
+            selectedProposal = p;
+            break;
+          }
+        }
+      }
+      selectedProposal ??= pending.isNotEmpty ? pending.first : null;
+
+      if (selectedProposal != null && mounted) {
+        final proposalData = selectedProposal;
+        final status = _normalizeStatus(proposalData.status);
+        setState(() {
+          _latestBooking = null;
+          _latestProposal = MobilityProposal(
+            id: proposalData.id,
+            from: proposalData.from,
+            to: proposalData.to,
+            status: status,
+            provider: proposalData.provider,
+          );
+          _lastBookingBackendStatus = status;
+          _proposalPendingSince = status == 'PENDING_PROVIDER'
+              ? DateTime.now()
+              : null;
+          _bookingStatusMessage = _statusToUserText(status);
+          _appendStatusHistory(status);
+        });
+        if (!_isTerminalBookingStatus(status)) {
+          _startProposalStatusPolling();
+        }
+        return true;
+      }
+
+      MobilityBooking? selectedBooking;
+      final latestId = _latestProposal?.id;
+      if (latestId != null && latestId.isNotEmpty) {
+        for (final b in bookings) {
+          if (b.proposalId == latestId || b.id == latestId) {
+            selectedBooking = b;
+            break;
+          }
+        }
+      }
+
+      if (selectedBooking == null && bookings.isNotEmpty) {
+        for (final b in bookings) {
+          if (!_isTerminalBookingStatus(b.status)) {
+            selectedBooking = b;
+            break;
+          }
+        }
+      }
+      selectedBooking ??= bookings.isNotEmpty ? bookings.first : null;
+
+      if (selectedBooking != null && mounted) {
+        final bookingData = selectedBooking;
+        final status = _normalizeStatus(bookingData.status);
+        final fallbackFrom = _pickupLatLng == null
+            ? 'Current location'
+            : 'Map selected pickup';
+        final fallbackTo = _destinationController.text.trim().isEmpty
+            ? 'Backend destination'
+            : _destinationController.text.trim();
+        setState(() {
+          _latestBooking = bookingData;
+          _latestProposal = MobilityProposal(
+            id: bookingData.proposalId.isEmpty
+                ? bookingData.id
+                : bookingData.proposalId,
+            from: fallbackFrom,
+            to: fallbackTo,
+            status: status,
+            provider: bookingData.provider,
+          );
+          _lastBookingBackendStatus = status;
+          _proposalPendingSince = status == 'PENDING_PROVIDER'
+              ? DateTime.now()
+              : null;
+          _bookingStatusMessage = _statusToUserText(status);
+          _appendStatusHistory(status);
+        });
+        if (!_isTerminalBookingStatus(status)) {
+          _startProposalStatusPolling();
+        }
+        return true;
+      }
+
+      return false;
+    } on MobilityApiException catch (e) {
+      if (!mounted || silent) return false;
+      setState(() {
+        _lastMobilityErrorCode = e.code;
+        _lastMobilityErrorBody = _truncateForDebug(e.body);
+      });
+      return false;
+    } catch (_) {
+      if (!mounted || silent) return false;
+      setState(() {
+        _lastMobilityErrorCode = 'unknown_exception';
+        _lastMobilityErrorBody = null;
+      });
+      return false;
+    } finally {
+      if (!silent && mounted) {
+        setState(() {
+          _refreshingProposalStatus = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _refreshLatestProposalStatus({bool silent = false}) async {
+    final proposal = _latestProposal;
+    if (proposal == null || proposal.id.isEmpty) {
+      await _recoverLatestProposalFromBackend(silent: silent);
+      return;
+    }
+
+    if (!silent && mounted) {
+      setState(() {
+        _refreshingProposalStatus = true;
+      });
+    }
+
+    try {
+      final pending = await _mobilityApiService.fetchPendingProposals();
+      final matchPending = pending.where((p) => p.id == proposal.id).toList();
+      if (matchPending.isNotEmpty && mounted) {
+        final p = matchPending.first;
+        final pendingStatus = _normalizeStatus(p.status);
+        setState(() {
+          _latestBooking = null;
+          _latestProposal = MobilityProposal(
+            id: p.id,
+            from: p.from,
+            to: p.to,
+            status: pendingStatus,
+            provider: p.provider ?? _latestProposal?.provider,
+          );
+          if (pendingStatus == 'PENDING_PROVIDER') {
+            _proposalPendingSince ??= DateTime.now();
+          } else {
+            _proposalPendingSince = null;
+          }
+          _lastBookingBackendStatus = pendingStatus;
+          _appendStatusHistory(pendingStatus);
+        });
+      }
+
+      final bookings = await _mobilityApiService.fetchBookings();
+      final bookingMatch = bookings
+          .where((b) => b.proposalId == proposal.id)
+          .toList();
+
+      if (bookingMatch.isNotEmpty && mounted) {
+        final booking = bookingMatch.first;
+        final bookingStatus = _normalizeStatus(booking.status);
+        setState(() {
+          _latestBooking = booking;
+          _lastBookingBackendStatus = bookingStatus;
+          _latestProposal = MobilityProposal(
+            id: proposal.id,
+            from: proposal.from,
+            to: proposal.to,
+            status: bookingStatus,
+            provider: booking.provider ?? _latestProposal?.provider,
+          );
+          if (bookingStatus == 'PENDING_PROVIDER') {
+            _proposalPendingSince ??= DateTime.now();
+          } else {
+            _proposalPendingSince = null;
+          }
+          _bookingStatusMessage = _statusToUserText(bookingStatus);
+          _appendStatusHistory(bookingStatus);
+        });
+
+        if (_isTerminalBookingStatus(bookingStatus)) {
+          _proposalStatusTimer?.cancel();
+          if (mounted) {
+            setState(() {
+              _pollingProposalStatus = false;
+            });
+          }
+        }
+      } else if (mounted) {
+        final current = _latestProposal?.status ?? proposal.status;
+        if (_normalizeStatus(current) == 'PENDING_PROVIDER') {
+          _proposalPendingSince ??= DateTime.now();
+        }
+        final nextMessage = _statusToUserText(current);
+        if (_bookingStatusMessage != nextMessage) {
+          setState(() {
+            _bookingStatusMessage = nextMessage;
+          });
+        }
+      }
+    } on MobilityApiException catch (e) {
+      if (!mounted || silent) return;
+      setState(() {
+        _lastMobilityErrorCode = e.code;
+        _lastMobilityErrorBody = _truncateForDebug(e.body);
+      });
+    } catch (_) {
+      if (!mounted || silent) return;
+      setState(() {
+        _lastMobilityErrorCode = 'unknown_exception';
+        _lastMobilityErrorBody = null;
+      });
+    } finally {
+      if (!silent && mounted) {
+        setState(() {
+          _refreshingProposalStatus = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _refreshInAppData() async {
+    setState(() {
+      _errorMessage = null;
+      _bookingStatusMessage = null;
+    });
+
+    if (_destinationLatLng != null && !_loadingRoute) {
+      await _buildRoute();
+    }
+
+    await _fetchMobilityEstimate();
+    await _refreshLatestProposalStatus(silent: true);
+    await _fetchNearbyTaxiStations();
+  }
+
+  Future<void> _fetchNearbyTaxiStations() async {
+    LatLng? center;
+    try {
+      final mapCenter = _mapController.camera.center;
+      if (mapCenter.latitude.isFinite && mapCenter.longitude.isFinite) {
+        center = mapCenter;
+      }
+    } catch (_) {
+      // Map camera may not be ready yet on first frames.
+    }
+
+    center ??=
+        _pickupLatLng ??
+        (_currentPosition == null
+            ? null
+            : LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+    if (center == null) return;
+
+    setState(() {
+      _loadingNearbyTaxis = true;
+      _nearbyTaxiError = null;
+      _nearbyTaxiSearchCenter = center;
+    });
+
+    try {
+      final query =
+          '''
+[out:json][timeout:15];
+(
+  node["amenity"="taxi"](around:12000,${center.latitude},${center.longitude});
+  way["amenity"="taxi"](around:12000,${center.latitude},${center.longitude});
+  relation["amenity"="taxi"](around:12000,${center.latitude},${center.longitude});
+  node["taxi"="yes"](around:12000,${center.latitude},${center.longitude});
+  way["taxi"="yes"](around:12000,${center.latitude},${center.longitude});
+  relation["taxi"="yes"](around:12000,${center.latitude},${center.longitude});
+  node["station"="taxi"](around:12000,${center.latitude},${center.longitude});
+  way["station"="taxi"](around:12000,${center.latitude},${center.longitude});
+  relation["station"="taxi"](around:12000,${center.latitude},${center.longitude});
+);
+out center 30;
+''';
+
+      final endpoints = <String>[
+        'https://overpass-api.de/api/interpreter',
+        'https://overpass.kumi.systems/api/interpreter',
+        'https://overpass.openstreetmap.fr/api/interpreter',
+      ];
+
+      http.Response? response;
+      Object? lastError;
+      for (final endpoint in endpoints) {
+        try {
+          var candidate = await http
+              .post(
+                Uri.parse(endpoint),
+                headers: const {'Content-Type': 'text/plain; charset=utf-8'},
+                body: query,
+              )
+              .timeout(const Duration(seconds: 18));
+          if (candidate.statusCode != 200) {
+            candidate = await http
+                .post(
+                  Uri.parse(endpoint),
+                  headers: const {
+                    'Content-Type':
+                        'application/x-www-form-urlencoded; charset=utf-8',
+                  },
+                  body: 'data=${Uri.encodeQueryComponent(query)}',
+                )
+                .timeout(const Duration(seconds: 18));
+          }
+          if (candidate.statusCode == 200) {
+            response = candidate;
+            break;
+          }
+          lastError = 'OSM query failed: ${candidate.statusCode}';
+        } catch (e) {
+          lastError = e;
+        }
+      }
+
+      if (response == null) {
+        throw Exception(lastError ?? 'OSM request failed');
+      }
+
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final elements =
+          decoded['elements'] as List<dynamic>? ?? const <dynamic>[];
+
+      final points = <LatLng>[];
+      final seen = <String>{};
+      for (final e in elements) {
+        if (e is! Map<String, dynamic>) continue;
+        final latNum = e['lat'] as num?;
+        final lonNum = e['lon'] as num?;
+        if (latNum != null && lonNum != null) {
+          final lat = latNum.toDouble();
+          final lon = lonNum.toDouble();
+          final key = '${lat.toStringAsFixed(5)},${lon.toStringAsFixed(5)}';
+          if (seen.add(key)) {
+            points.add(LatLng(lat, lon));
+          }
+          continue;
+        }
+
+        final centerMap = e['center'];
+        if (centerMap is Map<String, dynamic>) {
+          final cLat = centerMap['lat'] as num?;
+          final cLon = centerMap['lon'] as num?;
+          if (cLat != null && cLon != null) {
+            final lat = cLat.toDouble();
+            final lon = cLon.toDouble();
+            final key = '${lat.toStringAsFixed(5)},${lon.toStringAsFixed(5)}';
+            if (seen.add(key)) {
+              points.add(LatLng(lat, lon));
+            }
+          }
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _nearbyTaxiPoints = points;
+        _loadingNearbyTaxis = false;
+        _nearbyTaxiError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingNearbyTaxis = false;
+        _nearbyTaxiPoints = const <LatLng>[];
+        _nearbyTaxiError = e.toString();
+      });
+    }
+  }
+
+  double? _nearestTaxiDistanceMeters() {
+    if (_nearbyTaxiPoints.isEmpty) return null;
+
+    final origin =
+        _pickupLatLng ??
+        (_currentPosition == null
+            ? null
+            : LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+    if (origin == null) return null;
+
+    double? best;
+    for (final p in _nearbyTaxiPoints) {
+      final d = _distanceCalc(origin, p);
+      if (best == null || d < best) {
+        best = d;
+      }
+    }
+    return best;
+  }
+
+  String _nearestTaxiDistanceLabel() {
+    final meters = _nearestTaxiDistanceMeters();
+    if (meters == null) return 'n/a';
+    if (meters >= 1000) {
+      return '${(meters / 1000).toStringAsFixed(2)} km';
+    }
+    return '${meters.round()} m';
+  }
+
+  LatLng? _driverLatLng() {
+    final booking = _latestBooking;
+    if (booking == null) return null;
+    final lat = booking.driverLatitude;
+    final lng = booking.driverLongitude;
+    if (lat == null || lng == null) return null;
+    return LatLng(lat, lng);
+  }
+
+  bool _canUserDecideDriver() {
+    if (_latestBooking == null) return false;
+    if (_submittingDriverDecision) return false;
+    return _requiresUserDriverDecision();
+  }
+
+  void _startProposalStatusPolling() {
+    _proposalStatusTimer?.cancel();
+    if (mounted) {
+      setState(() {
+        _pollingProposalStatus = true;
+      });
+    } else {
+      _pollingProposalStatus = true;
+    }
+    _proposalStatusTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      unawaited(_refreshLatestProposalStatus(silent: true));
+    });
+  }
+
+  Future<void> _confirmInAppTaxiRequest() async {
+    final selectedOption = _estimate?.best;
+    if (_destinationLatLng == null ||
+        _distanceKm == null ||
+        _durationMin == null) {
+      setState(
+        () => _errorMessage = 'Search destination and build route first.',
+      );
+      return;
+    }
+
+    // Fallback mode: allow in-app request even if live quote is unavailable.
+    final effectiveOption =
+        selectedOption ??
+        MobilityQuoteOption(
+          provider: 'uberx',
+          minPrice: 0,
+          maxPrice: 0,
+          etaMinutes: _durationMin!.round(),
+          confidence: 0,
+          reasons: const <String>['live estimate unavailable'],
+        );
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: AppColors.cardGradient,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.borderCyanFocus),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.28),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.buttonGradient,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.local_taxi_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Confirm Taxi Request',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 22,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryMedium.withOpacity(0.45),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.borderCyan),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Destination: ${_destinationController.text.trim()}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Pickup time: ${_plannedTime.format(context)}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Provider: ${effectiveOption.provider}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryMedium.withOpacity(0.45),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.borderCyan),
+                        ),
+                        child: Text(
+                          '${effectiveOption.minPrice.toStringAsFixed(1)}-${effectiveOption.maxPrice.toStringAsFixed(1)} AED',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.cyan200,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryMedium.withOpacity(0.45),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.borderCyan),
+                        ),
+                        child: Text(
+                          '${_distanceKm!.toStringAsFixed(1)} km • ${_durationMin!.round()} min',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.cyan200,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (selectedOption == null) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber.withOpacity(0.45)),
+                    ),
+                    child: Text(
+                      'Live estimate is unavailable now. Request will still be sent to backend.',
+                      style: TextStyle(
+                        color: Colors.amberAccent.withOpacity(0.95),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Text(
+                  'We will send the request and track acceptance/refusal in this app.',
+                  style: TextStyle(
+                    color: AppColors.textCyan200.withOpacity(0.88),
+                    fontSize: 13,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(false),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: AppColors.borderCyanFocus),
+                          foregroundColor: AppColors.cyan200,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          gradient: AppColors.buttonGradient,
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                        child: FilledButton(
+                          onPressed: () =>
+                              Navigator.of(dialogContext).pop(true),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: const Text('Request Taxi'),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    setState(() {
+      _confirmingBooking = true;
+      _errorMessage = null;
+      _bookingStatusMessage = null;
+      _proposalPendingSince = null;
+      _locallyDecidedBookingIds.clear();
+      _latestBooking = null;
+      _latestProposal = null;
+      _latestProposalOfferLabel = null;
+      _lastBookingBackendStatus = null;
+      _proposalStatusHistory.clear();
+      _proposalStatusTimer?.cancel();
+      _pollingProposalStatus = false;
+    });
+
+    try {
+      final destination = _destinationController.text.trim();
+      MobilityProposal? proposal = await _mobilityApiService.createProposal(
+        from: _pickupLatLng == null
+            ? 'Current location'
+            : 'Map selected pickup',
+        to: destination,
+        pickupAt: _nextPickupDateTime(),
+        selectedOption: effectiveOption,
+        fromLatitude: _pickupLatLng?.latitude ?? _currentPosition?.latitude,
+        fromLongitude: _pickupLatLng?.longitude ?? _currentPosition?.longitude,
+        toLatitude: _destinationLatLng?.latitude,
+        toLongitude: _destinationLatLng?.longitude,
+        distanceKm: _distanceKm,
+        durationMin: _durationMin,
+      );
+
+      if (proposal == null) {
+        final pending = await _mobilityApiService.fetchPendingProposals();
+        final lowerDestination = destination.toLowerCase();
+        final matches = pending.where((p) {
+          return p.to.toLowerCase() == lowerDestination ||
+              p.to.toLowerCase().contains(lowerDestination);
+        }).toList();
+        if (matches.isNotEmpty) {
+          proposal = matches.first;
+        }
+      }
+
+      if (proposal != null && proposal.id.isNotEmpty) {
+        final confirmResult = await _mobilityApiService.confirmProposal(
+          proposal.id,
+        );
+        final confirmedStatus = _normalizeStatus(confirmResult['status']);
+        proposal = MobilityProposal(
+          id: proposal.id,
+          from: proposal.from,
+          to: proposal.to,
+          status: confirmedStatus,
+          provider: proposal.provider ?? effectiveOption.provider,
+        );
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _latestProposal = proposal;
+        _latestProposalOfferLabel =
+            selectedOption?.label ?? 'fallback in-app request';
+        _lastBookingBackendStatus = proposal == null
+            ? null
+            : _normalizeStatus(proposal.status);
+        _proposalPendingSince =
+            proposal != null &&
+                _normalizeStatus(proposal.status) == 'PENDING_PROVIDER'
+            ? DateTime.now()
+            : null;
+        _bookingStatusMessage = proposal == null
+            ? 'Taxi request submitted, waiting for backend proposal...'
+            : _statusToUserText(proposal.status);
+        if (proposal != null) {
+          _appendStatusHistory(proposal.status);
+        }
+      });
+
+      if (proposal != null && proposal.id.isNotEmpty) {
+        _startProposalStatusPolling();
+      }
+    } on MobilityApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _latestProposalOfferLabel =
+            selectedOption?.label ?? 'fallback in-app request';
+        _estimateInfoMessage = 'Backend request failed (${e.code}).';
+        _bookingStatusMessage = 'Taxi request failed in backend. Please retry.';
+        _lastMobilityErrorCode = e.code;
+        _lastMobilityErrorBody = _truncateForDebug(e.body);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _estimateInfoMessage = 'Backend request failed.';
+        _bookingStatusMessage = 'Taxi request failed in backend. Please retry.';
+        _lastMobilityErrorCode = 'unknown_exception';
+        _lastMobilityErrorBody = null;
+      });
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _confirmingBooking = false;
+    });
+  }
+
+  Widget _buildEstimateCard(BuildContext context) {
+    if (_loadingEstimate) {
+      return _buildStatusCard(
+        context,
+        title: 'Live Backend Estimate',
+        message: 'Fetching mobility quotes from Railway backend...',
+        loading: true,
+      );
+    }
+
+    final estimate = _estimate;
+    if (estimate == null || estimate.options.isEmpty) {
+      return _buildStatusCard(
+        context,
+        title: 'Live Backend Estimate',
+        message: 'Trace a route to request cheapest provider options.',
+      );
+    }
+
+    final best = estimate.best ?? estimate.options.first;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.sparkles, color: AppColors.cyan400, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'Best live offer',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${(best.confidence * 100).round()}% confidence',
+                style: TextStyle(
+                  color: AppColors.textCyan200.withOpacity(0.86),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            best.label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (best.reasons.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              best.reasons.join(' • '),
+              style: TextStyle(
+                color: AppColors.textCyan200.withOpacity(0.84),
+                fontSize: 12,
+              ),
+            ),
+          ],
+          if (estimate.options.length > 1) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: estimate.options
+                  .skip(1)
+                  .map(
+                    (option) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.1),
+                        ),
+                      ),
+                      child: Text(
+                        option.label,
+                        style: TextStyle(
+                          color: AppColors.textCyan200.withOpacity(0.86),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(growable: false),
+            ),
+          ],
+          if (_estimateInfoMessage != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              _estimateInfoMessage!,
+              style: TextStyle(
+                color: AppColors.textCyan200.withOpacity(0.8),
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusCard(
+    BuildContext context, {
+    required String title,
+    required String message,
+    bool loading = false,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.16)),
+      ),
+      child: Row(
+        children: [
+          if (loading)
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else
+            Icon(Icons.info_outline, size: 16, color: AppColors.cyan400),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$title: $message',
+              style: TextStyle(
+                color: AppColors.textCyan200.withOpacity(0.9),
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProposalCard(BuildContext context) {
+    final proposal = _latestProposal;
+    if (proposal == null) {
+      return const SizedBox.shrink();
+    }
+
+    final status = proposal.status.isEmpty ? 'PENDING' : proposal.status;
+    final shownStatus = _displayProposalStatus(status);
+    final provider = proposal.provider ?? 'uber';
+    final statusColor = _statusAccentColor(shownStatus);
+    final isTerminal = _isTerminalBookingStatus(status);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.green.withOpacity(0.38)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Your proposal in app',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: statusColor.withOpacity(0.65)),
+                ),
+                child: Text(
+                  shownStatus,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Text(
+                'Provider: $provider',
+                style: TextStyle(
+                  color: AppColors.textCyan200.withOpacity(0.92),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Status: $shownStatus',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.92),
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            'Proposal ID: ${proposal.id}',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.92),
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            'Trip: ${proposal.from} -> ${proposal.to}',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.92),
+              fontSize: 12,
+            ),
+          ),
+          if (_latestProposalOfferLabel != null)
+            Text(
+              'Offer: $_latestProposalOfferLabel',
+              style: TextStyle(
+                color: AppColors.textCyan200.withOpacity(0.92),
+                fontSize: 12,
+              ),
+            ),
+          if (_latestBooking?.providerBookingRef != null &&
+              _latestBooking!.providerBookingRef!.isNotEmpty)
+            Text(
+              'Provider booking ref: ${_latestBooking!.providerBookingRef}',
+              style: TextStyle(
+                color: AppColors.textCyan200.withOpacity(0.92),
+                fontSize: 12,
+              ),
+            ),
+          if (_canUserDecideDriver())
+            Text(
+              'User decision required: please Accept or Reject this driver.',
+              style: TextStyle(
+                color: Colors.amberAccent.withOpacity(0.95),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          if (_normalizeStatus(status) == 'FAILED' &&
+              _latestBooking?.failureMessage != null &&
+              _latestBooking!.failureMessage!.isNotEmpty)
+            Text(
+              'Failure: ${_latestBooking!.failureMessage}',
+              style: TextStyle(
+                color: AppColors.textCyan200.withOpacity(0.92),
+                fontSize: 12,
+              ),
+            ),
+          const SizedBox(height: 4),
+          Text(
+            _pollingProposalStatus
+                ? 'Waiting for provider decision... auto-refresh every 5s.'
+                : 'Status handled fully in app (no Uber web redirect).',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.80),
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Wrap(
+              spacing: 10,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _refreshingProposalStatus
+                      ? null
+                      : () => unawaited(_refreshLatestProposalStatus()),
+                  icon: _refreshingProposalStatus
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.refresh, size: 16),
+                  label: Text(
+                    _refreshingProposalStatus
+                        ? 'Refreshing...'
+                        : 'Refresh status',
+                  ),
+                ),
+                if (!isTerminal)
+                  OutlinedButton.icon(
+                    onPressed: _cancelCurrentProposal,
+                    icon: const Icon(Icons.close, size: 16),
+                    label: const Text('Cancel request'),
+                  ),
+              ],
+            ),
+          ),
+          if (_proposalStatusHistory.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Timeline',
+              style: TextStyle(
+                color: AppColors.textCyan200.withOpacity(0.92),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _proposalStatusHistory.reversed.take(4).join('\n'),
+              style: TextStyle(
+                color: AppColors.textCyan200.withOpacity(0.85),
+                fontSize: 11,
+                height: 1.3,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  LatLng get _initialCenter {
+    return _defaultTestHub;
+  }
 
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
     final padding = Responsive.getResponsiveValue(
       context,
-      mobile: 24.0,
+      mobile: 20.0,
       tablet: 28.0,
-      desktop: 32.0,
+      desktop: 36.0,
     );
 
     return Scaffold(
@@ -153,101 +2481,57 @@ class _TravelPageState extends State<TravelPage> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
+            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
           ),
         ),
         child: SafeArea(
           bottom: false,
           child: Stack(
             children: [
-              // Main Content
               SingleChildScrollView(
                 padding: EdgeInsets.only(
                   left: padding,
                   right: padding,
                   top: padding,
-                  bottom: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 100.0,
-                    tablet: 120.0,
-                    desktop: 140.0,
-                  ), // Space for navigation bar
+                  bottom: isMobile ? 110 : 130,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                // Header
-                _buildHeader(context, isMobile)
-                    .animate()
-                    .fadeIn(duration: 500.ms)
-                    .slideY(begin: -0.2, end: 0, duration: 500.ms),
-
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
-
-                // Quick Stats
-                _buildQuickStats(context, isMobile),
-
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
-
-                // Mode Filter
-                _buildModeFilter(context, isMobile),
-
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
-
-                // Quick Actions
-                _buildQuickActions(context, isMobile),
-
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
-
-                // Upcoming Journeys
-                if (_upcomingJourneys.isNotEmpty)
-                  _buildUpcomingSection(context, isMobile),
-
-                // Journey History
-                if (_completedJourneys.isNotEmpty)
-                  _buildHistorySection(context, isMobile),
-
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
-
-                // Insights Card
-                _buildInsightsCard(context, isMobile)
-                    .animate()
-                    .fadeIn(delay: 700.ms, duration: 300.ms)
-                    .slideY(begin: 0.2, end: 0, delay: 700.ms, duration: 300.ms),
-                  ],
-                ),
+                child:
+                    Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildHeader(context),
+                            const SizedBox(height: 16),
+                            _buildControlPanel(context),
+                            const SizedBox(height: 16),
+                            _buildMapCard(context),
+                            const SizedBox(height: 12),
+                            _buildEstimateCard(context),
+                            if (_latestProposal != null) ...[
+                              const SizedBox(height: 12),
+                              _buildProposalCard(context),
+                              const SizedBox(height: 12),
+                              _buildDriverInfoCard(context),
+                            ],
+                            if (_showDebugPanel) ...[
+                              const SizedBox(height: 12),
+                              _buildDebugPanel(context),
+                            ],
+                            if (_errorMessage != null) ...[
+                              const SizedBox(height: 12),
+                              _buildErrorBanner(context),
+                            ],
+                            if (_bookingStatusMessage != null) ...[
+                              const SizedBox(height: 12),
+                              _buildSuccessBanner(context),
+                            ],
+                            const SizedBox(height: 16),
+                            _buildActionCards(context),
+                          ],
+                        )
+                        .animate()
+                        .fadeIn(duration: 350.ms)
+                        .slideY(begin: 0.05, end: 0, duration: 350.ms),
               ),
-
-              // Navigation Bar
               Positioned(
                 left: 0,
                 right: 0,
@@ -261,31 +2545,244 @@ class _TravelPageState extends State<TravelPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isMobile) {
+  Widget _buildDriverInfoCard(BuildContext context) {
+    final booking = _latestBooking;
+    if (booking == null ||
+        (_normalizeStatus(booking.status) != 'ACCEPTED' &&
+            !_canUserDecideDriver())) {
+      return const SizedBox.shrink();
+    }
+
+    final driverName = booking.driverName?.isNotEmpty == true
+        ? booking.driverName!
+        : 'Driver Information Pending';
+    final rawDriverPhone = booking.driverPhone?.isNotEmpty == true
+        ? booking.driverPhone!
+        : 'N/A';
+    final driverPhone = rawDriverPhone.startsWith('+216')
+        ? rawDriverPhone.replaceFirst('+216', '+971')
+        : rawDriverPhone;
+    final rawVehiclePlate = booking.vehiclePlate?.isNotEmpty == true
+      ? booking.vehiclePlate!
+      : 'N/A';
+    final vehiclePlate = rawVehiclePlate == 'N/A'
+      ? rawVehiclePlate
+      : rawVehiclePlate.replaceAll(RegExp(r'\bTUN\b', caseSensitive: false), 'DXB');
+    final hasLocation =
+        booking.driverLatitude != null && booking.driverLongitude != null;
+    final etaMinutes = booking.etaMinutes ?? 0;
+
+    return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: AppColors.cardGradient,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.borderCyan),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Driver Details',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  color: AppColors.cyan400,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Driver Header with Icon
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.buttonGradient,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.directions_car_rounded,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          driverName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Plate: $vehiclePlate',
+                          style: TextStyle(
+                            color: AppColors.cyan400,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (etaMinutes > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Colors.green.withOpacity(0.5),
+                        ),
+                      ),
+                      child: Text(
+                        'ETA $etaMinutes min',
+                        style: const TextStyle(
+                          color: Colors.greenAccent,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Contact & Details
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryMedium.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.borderCyan),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.phone_rounded,
+                          color: AppColors.cyan400,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            driverPhone,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (hasLocation)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on_rounded,
+                            color: AppColors.cyan400,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${booking.driverLatitude?.toStringAsFixed(4)}, ${booking.driverLongitude?.toStringAsFixed(4)}',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+              if (_canUserDecideDriver()) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Please confirm this driver:',
+                  style: TextStyle(
+                    color: Colors.amberAccent.withOpacity(0.95),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: _submittingDriverDecision
+                          ? null
+                          : () =>
+                                unawaited(_submitDriverDecision(accept: true)),
+                      icon: const Icon(Icons.check, size: 16),
+                      label: const Text('Accept driver'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _submittingDriverDecision
+                          ? null
+                          : () =>
+                                unawaited(_submitDriverDecision(accept: false)),
+                      icon: const Icon(Icons.person_off, size: 16),
+                      label: const Text('Reject driver'),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        )
+        .animate()
+        .fadeIn(duration: const Duration(milliseconds: 400))
+        .slideY(
+          begin: 0.2,
+          end: 0,
+          duration: const Duration(milliseconds: 400),
+        );
+  }
+
+  Widget _buildHeader(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Travel',
+          'Travel Live',
           style: TextStyle(
             fontSize: Responsive.getResponsiveValue(
               context,
-              mobile: 26.0,
-              tablet: 28.0,
-              desktop: 32.0,
+              mobile: 30.0,
+              tablet: 34.0,
+              desktop: 40.0,
             ),
-            fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 6.0,
-          tablet: 8.0,
-          desktop: 10.0,
-        )),
+        const SizedBox(height: 6),
         Text(
-          'Your journeys and commutes',
+          'Dynamic map, live GPS, real-time route, taxi flow fully in app.',
           style: TextStyle(
             fontSize: Responsive.getResponsiveValue(
               context,
@@ -293,939 +2790,783 @@ class _TravelPageState extends State<TravelPage> {
               tablet: 14.0,
               desktop: 15.0,
             ),
-            color: AppColors.textCyan200.withOpacity(0.7),
+            color: AppColors.textCyan200.withOpacity(0.85),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildQuickStats(BuildContext context, bool isMobile) {
-    final stats = [
-      {'label': 'Today', 'value': '2', 'icon': LucideIcons.calendar, 'color': AppColors.cyan400},
-      {'label': 'Avg time', 'value': '23m', 'icon': LucideIcons.clock, 'color': AppColors.blue500},
-      {'label': 'This week', 'value': '12', 'icon': LucideIcons.trendingUp, 'color': const Color(0xFF9333EA)},
-    ];
-
-    return Row(
-      children: stats.asMap().entries.map((entry) {
-        final index = entry.key;
-        final stat = entry.value;
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(
-              right: index < stats.length - 1
-                  ? Responsive.getResponsiveValue(
-                      context,
-                      mobile: 8.0,
-                      tablet: 10.0,
-                      desktop: 12.0,
-                    )
-                  : 0,
+  Widget _buildControlPanel(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.22)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _destinationController,
+            onSubmitted: (_) => unawaited(_applyManualDestination()),
+            decoration: InputDecoration(
+              labelText: 'Destination',
+              hintText: 'Select on map or enter: lat, lng',
+              suffixIcon: IconButton(
+                tooltip: 'Use manual coordinates',
+                onPressed: () => unawaited(_applyManualDestination()),
+                icon: const Icon(Icons.check_circle_outline),
+              ),
             ),
-            child: Container(
-              padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                context,
-                mobile: 14.0,
-                tablet: 16.0,
-                desktop: 20.0,
-              )),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF1e4a66).withOpacity(0.4),
-                    const Color(0xFF16384d).withOpacity(0.4),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 12.0,
-                  tablet: 13.0,
-                  desktop: 14.0,
-                )),
-                border: Border.all(
-                  color: AppColors.cyan500.withOpacity(0.1),
-                  width: 1,
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _pickTime,
+                  icon: const Icon(Icons.schedule),
+                  label: Text('Pickup ${_plannedTime.format(context)}'),
                 ),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 12.0,
-                  tablet: 13.0,
-                  desktop: 14.0,
-                )),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        stat['icon'] as IconData,
-                        size: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 18.0,
-                          tablet: 20.0,
-                          desktop: 22.0,
-                        ),
-                        color: stat['color'] as Color,
-                      ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 6.0,
-                        tablet: 8.0,
-                        desktop: 10.0,
-                      )),
-                      Text(
-                        stat['value'] as String,
-                        style: TextStyle(
-                          fontSize: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 20.0,
-                            tablet: 22.0,
-                            desktop: 24.0,
-                          ),
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textWhite,
-                        ),
-                      ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 3.0,
-                        tablet: 4.0,
-                        desktop: 5.0,
-                      )),
-                      Text(
-                        stat['label'] as String,
-                        style: TextStyle(
-                          fontSize: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 10.0,
-                            tablet: 11.0,
-                            desktop: 12.0,
-                          ),
-                          color: AppColors.cyan400.withOpacity(0.6),
-                        ),
-                      ),
-                    ],
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () {
+                    setState(() => _selectingFromOnMap = !_selectingFromOnMap);
+                  },
+                  icon: Icon(
+                    _selectingFromOnMap ? Icons.touch_app : Icons.pin_drop,
+                  ),
+                  label: Text(
+                    _selectingFromOnMap
+                        ? 'Tap map: set A (From)'
+                        : 'Select A on map',
                   ),
                 ),
               ),
-            ),
-          )
-              .animate()
-              .fadeIn(delay: Duration(milliseconds: 100 + (index * 100)), duration: 300.ms)
-              .slideY(begin: 0.2, end: 0, delay: Duration(milliseconds: 100 + (index * 100)), duration: 300.ms),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildModeFilter(BuildContext context, bool isMobile) {
-    final filters = [
-      {'mode': null, 'icon': LucideIcons.navigation, 'label': 'All'},
-      {'mode': TravelMode.car, 'icon': LucideIcons.car, 'label': 'Car'},
-      {'mode': TravelMode.taxi, 'icon': LucideIcons.car, 'label': 'Taxi'},
-      {'mode': TravelMode.train, 'icon': LucideIcons.train, 'label': 'Train'},
-      {'mode': TravelMode.plane, 'icon': LucideIcons.plane, 'label': 'Plane'},
-    ];
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: filters.map((filter) {
-          final mode = filter['mode'] as TravelMode?;
-          final isSelected = _selectedMode == mode;
-          return Padding(
-            padding: EdgeInsets.only(
-              right: Responsive.getResponsiveValue(
-                context,
-                mobile: 6.0,
-                tablet: 8.0,
-                desktop: 10.0,
-              ),
-            ),
-            child: GestureDetector(
-              onTap: () => setState(() => _selectedMode = mode),
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 14.0,
-                    tablet: 16.0,
-                    desktop: 18.0,
-                  ),
-                  vertical: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 8.0,
-                    tablet: 9.0,
-                    desktop: 10.0,
-                  ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+                decoration: const BoxDecoration(
+                  gradient: AppColors.buttonGradient,
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
                 ),
-                decoration: BoxDecoration(
-                  gradient: isSelected
-                      ? LinearGradient(
-                          colors: [
-                            AppColors.cyan500.withOpacity(0.3),
-                            AppColors.blue500.withOpacity(0.3),
-                          ],
-                        )
-                      : null,
-                  color: isSelected ? null : AppColors.textWhite.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                    context,
-                    mobile: 12.0,
-                    tablet: 13.0,
-                    desktop: 14.0,
-                  )),
-                  border: Border.all(
-                    color: isSelected
-                        ? AppColors.cyan500.withOpacity(0.5)
-                        : AppColors.textWhite.withOpacity(0.1),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      filter['icon'] as IconData,
-                      size: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 14.0,
-                        tablet: 16.0,
-                        desktop: 18.0,
-                      ),
-                      color: isSelected
-                          ? AppColors.textCyan300
-                          : AppColors.cyan400.withOpacity(0.7),
-                    ),
-                    SizedBox(width: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 6.0,
-                      tablet: 8.0,
-                      desktop: 10.0,
-                    )),
-                    Text(
-                      filter['label'] as String,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _openSchedulePlanner,
+                    icon: const Icon(Icons.schedule),
+                    label: const Text(
+                      'Schedule & Pricing Planner',
                       style: TextStyle(
-                        fontSize: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 12.0,
-                          tablet: 13.0,
-                          desktop: 14.0,
-                        ),
-                        fontWeight: FontWeight.w500,
-                        color: isSelected
-                            ? AppColors.textCyan300
-                            : AppColors.cyan400.withOpacity(0.7),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                  ],
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              )
+              .animate()
+              .fadeIn(duration: const Duration(milliseconds: 600))
+              .slideY(
+                begin: 0.2,
+                end: 0,
+                duration: const Duration(milliseconds: 600),
+              ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _openFullMapSelection,
+              icon: const Icon(Icons.map),
+              label: const Text('Open full map for selection'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => unawaited(_applyManualDestination()),
+              icon: const Icon(Icons.edit_location_alt_outlined),
+              label: const Text('Use manual To (lat, lng)'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => unawaited(_refreshInAppData()),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Refresh live estimate and status'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _loadingRoute
+                      ? null
+                      : () {
+                          if (_destinationLatLng == null) {
+                            final manual = _parseLatLngInput(
+                              _destinationController.text.trim(),
+                            );
+                            if (manual != null) {
+                              setState(() {
+                                _destinationLatLng = manual;
+                                _destinationController.text = _coordsLabel(
+                                  manual,
+                                );
+                              });
+                            }
+                          }
+
+                          if (_destinationLatLng == null) {
+                            setState(() {
+                              _errorMessage =
+                                  'Set destination from map or type: latitude, longitude.';
+                            });
+                            return;
+                          }
+                          unawaited(_buildRoute());
+                          unawaited(_fetchMobilityEstimate());
+                        },
+                  icon: _loadingRoute
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.alt_route),
+                  label: const Text('Trace route from map'),
                 ),
               ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _pickupLatLng = null;
+                      _destinationLatLng = null;
+                      _destinationController.clear();
+                      _routePoints = const <LatLng>[];
+                      _distanceKm = null;
+                      _durationMin = null;
+                      _estimate = null;
+                      _estimateInfoMessage = null;
+                    });
+                  },
+                  icon: const Icon(Icons.clear_all),
+                  label: const Text('Clear A/B'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.my_location, size: 15, color: AppColors.cyan400),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  _loadingLocation
+                      ? 'Loading GPS...'
+                      : _currentPosition == null
+                      ? 'GPS unavailable'
+                      : 'GPS: ${_currentPosition!.latitude.toStringAsFixed(5)}, ${_currentPosition!.longitude.toStringAsFixed(5)}',
+                  style: TextStyle(
+                    color: AppColors.textCyan200.withOpacity(0.8),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: _loadLocation,
+                child: const Text('Refresh GPS'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(Icons.place, size: 15, color: AppColors.cyan400),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'From A: ${_pickupLatLng == null ? 'GPS current location' : _coordsLabel(_pickupLatLng!)}',
+                  style: TextStyle(
+                    color: AppColors.textCyan200.withOpacity(0.82),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(Icons.flag, size: 15, color: AppColors.cyan400),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'To B: ${_destinationLatLng == null ? 'tap map to set destination' : _coordsLabel(_destinationLatLng!)}',
+                  style: TextStyle(
+                    color: AppColors.textCyan200.withOpacity(0.82),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(Icons.local_taxi, size: 15, color: Colors.amberAccent),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  _loadingNearbyTaxis
+                      ? 'Searching nearby taxi stations...'
+                      : _nearbyTaxiError != null
+                      ? 'Taxi stations unavailable now (${_nearbyTaxiError!}).'
+                      : _nearbyTaxiPoints.isEmpty
+                      ? 'No nearby taxi station found near map center (${(_nearbyTaxiSearchCenter?.latitude ?? 0).toStringAsFixed(4)}, ${(_nearbyTaxiSearchCenter?.longitude ?? 0).toStringAsFixed(4)}).'
+                      : 'Nearest taxi station: ${_nearestTaxiDistanceLabel()} • points: ${_nearbyTaxiPoints.length}',
+                  style: TextStyle(
+                    color: AppColors.textCyan200.withOpacity(0.82),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Icon(Icons.alarm, size: 15, color: AppColors.cyan400),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Auto schedules: ${_scheduleSummaryLabel()}',
+                  style: TextStyle(
+                    color: AppColors.textCyan200.withOpacity(0.82),
+                  ),
+                ),
+              ),
+              if (_syncingDailyRule)
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                Switch.adaptive(
+                  value: _dailyRuleEnabled,
+                  onChanged: (value) {
+                    setState(() {
+                      _setAllScheduleEnabled(value);
+                    });
+                    unawaited(_syncDailyRule(enabled: value));
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () {
+                setState(() => _showDebugPanel = !_showDebugPanel);
+              },
+              icon: Icon(
+                _showDebugPanel ? Icons.bug_report : Icons.bug_report_outlined,
+                size: 16,
+                color: AppColors.cyan400,
+              ),
+              label: Text(
+                _showDebugPanel
+                    ? 'Hide debug diagnostics'
+                    : 'Show debug diagnostics',
+              ),
             ),
-          );
-        }).toList(),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildQuickActions(BuildContext context, bool isMobile) {
-    final actions = [
-      {'label': 'Book Uber', 'icon': LucideIcons.car, 'colors': [const Color(0xFFFFB800).withOpacity(0.2), const Color(0xFFFF9800).withOpacity(0.2)]},
-      {'label': 'Check Traffic', 'icon': LucideIcons.navigation, 'colors': [AppColors.cyan500.withOpacity(0.2), AppColors.blue500.withOpacity(0.2)]},
-    ];
+  Widget _buildDebugPanel(BuildContext context) {
+    final best = _estimate?.best;
+    final destination = _destinationLatLng == null
+        ? _destinationController.text.trim()
+        : _coordsLabel(_destinationLatLng!);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Quick Actions',
-          style: TextStyle(
-            fontSize: Responsive.getResponsiveValue(
-              context,
-              mobile: 16.0,
-              tablet: 18.0,
-              desktop: 20.0,
-            ),
-            fontWeight: FontWeight.w600,
-            color: AppColors.textWhite,
-          ),
-        ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 10.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
-        Row(
-          children: actions.asMap().entries.map((entry) {
-            final index = entry.key;
-            final action = entry.value;
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: index < actions.length - 1
-                      ? Responsive.getResponsiveValue(
-                          context,
-                          mobile: 8.0,
-                          tablet: 10.0,
-                          desktop: 12.0,
-                        )
-                      : 0,
-                ),
-                child: GestureDetector(
-                  onTap: () {
-                    // Handle action
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                      context,
-                      mobile: 14.0,
-                      tablet: 16.0,
-                      desktop: 20.0,
-                    )),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          const Color(0xFF1e4a66).withOpacity(0.4),
-                          const Color(0xFF16384d).withOpacity(0.4),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                        context,
-                        mobile: 12.0,
-                        tablet: 13.0,
-                        desktop: 14.0,
-                      )),
-                      border: Border.all(
-                        color: AppColors.cyan500.withOpacity(0.1),
-                        width: 1,
-                      ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                        context,
-                        mobile: 12.0,
-                        tablet: 13.0,
-                        desktop: 14.0,
-                      )),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 36.0,
-                                tablet: 40.0,
-                                desktop: 44.0,
-                              ),
-                              height: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 36.0,
-                                tablet: 40.0,
-                                desktop: 44.0,
-                              ),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: action['colors'] as List<Color>,
-                                ),
-                                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 10.0,
-                                  tablet: 11.0,
-                                  desktop: 12.0,
-                                )),
-                                border: Border.all(
-                                  color: AppColors.cyan500.withOpacity(0.2),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Icon(
-                                action['icon'] as IconData,
-                                size: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 18.0,
-                                  tablet: 20.0,
-                                  desktop: 22.0,
-                                ),
-                                color: AppColors.cyan400,
-                              ),
-                            ),
-                            SizedBox(height: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 10.0,
-                              tablet: 12.0,
-                              desktop: 14.0,
-                            )),
-                            Text(
-                              action['label'] as String,
-                              style: TextStyle(
-                                fontSize: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 13.0,
-                                  tablet: 14.0,
-                                  desktop: 15.0,
-                                ),
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textWhite,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                )
-                    .animate()
-                    .fadeIn(delay: Duration(milliseconds: 300 + (index * 100)), duration: 300.ms)
-                    .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), delay: Duration(milliseconds: 300 + (index * 100)), duration: 300.ms),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildUpcomingSection(BuildContext context, bool isMobile) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Upcoming',
-          style: TextStyle(
-            fontSize: Responsive.getResponsiveValue(
-              context,
-              mobile: 16.0,
-              tablet: 18.0,
-              desktop: 20.0,
-            ),
-            fontWeight: FontWeight.w600,
-            color: AppColors.textWhite,
-          ),
-        ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 10.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
-        ..._upcomingJourneys.asMap().entries.map((entry) {
-          final index = entry.key;
-          final journey = entry.value;
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: Responsive.getResponsiveValue(
-                context,
-                mobile: 10.0,
-                tablet: 12.0,
-                desktop: 16.0,
-              ),
-            ),
-            child: _buildJourneyCard(context, isMobile, journey, index, true),
-          );
-        }),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 24.0,
-          desktop: 28.0,
-        )),
-      ],
-    );
-  }
-
-  Widget _buildHistorySection(BuildContext context, bool isMobile) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'History',
-          style: TextStyle(
-            fontSize: Responsive.getResponsiveValue(
-              context,
-              mobile: 16.0,
-              tablet: 18.0,
-              desktop: 20.0,
-            ),
-            fontWeight: FontWeight.w600,
-            color: AppColors.textWhite,
-          ),
-        ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 10.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
-        ..._completedJourneys.asMap().entries.map((entry) {
-          final index = entry.key;
-          final journey = entry.value;
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: Responsive.getResponsiveValue(
-                context,
-                mobile: 6.0,
-                tablet: 8.0,
-                desktop: 10.0,
-              ),
-            ),
-            child: _buildJourneyCard(context, isMobile, journey, index, false),
-          );
-        }),
-      ],
-    );
-  }
-
-  Widget _buildJourneyCard(
-    BuildContext context,
-    bool isMobile,
-    Journey journey,
-    int index,
-    bool isUpcoming,
-  ) {
-    final modeColors = _getModeColors(journey.mode);
-    final modeIcon = _getModeIcon(journey.mode);
+    String _fmtDouble(double? value, {int digits = 5}) {
+      if (value == null) return 'n/a';
+      return value.toStringAsFixed(digits);
+    }
 
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: isUpcoming ? 14.0 : 10.0,
-        tablet: isUpcoming ? 16.0 : 12.0,
-        desktop: isUpcoming ? 20.0 : 14.0,
-      )),
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF1e4a66).withOpacity(isUpcoming ? 0.4 : 0.2),
-            const Color(0xFF16384d).withOpacity(isUpcoming ? 0.4 : 0.2),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: isUpcoming ? 16.0 : 12.0,
-          tablet: isUpcoming ? 18.0 : 13.0,
-          desktop: isUpcoming ? 20.0 : 14.0,
-        )),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(isUpcoming ? 0.1 : 0.05),
-          width: 1,
-        ),
+        color: Colors.black.withOpacity(0.22),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.terminal, size: 16, color: AppColors.cyan400),
+              const SizedBox(width: 8),
+              const Text(
+                'Travel Debug Diagnostics',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Destination: ${destination.isEmpty ? 'n/a' : destination}',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.9),
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            'From: ${_pickupLatLng == null ? '${_fmtDouble(_currentPosition?.latitude)}, ${_fmtDouble(_currentPosition?.longitude)}' : _coordsLabel(_pickupLatLng!)}',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.9),
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            'To: ${_fmtDouble(_destinationLatLng?.latitude)}, ${_fmtDouble(_destinationLatLng?.longitude)}',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.9),
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            'Route: ${_distanceKm?.toStringAsFixed(1) ?? 'n/a'} km • ${_durationMin?.round() ?? 'n/a'} min',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.9),
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            'Estimate mode: backend-live-only',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.9),
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            'Retry: attempts=$_estimateRetryAttempts pending=$_estimateRetryPending',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.9),
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            'Best provider: ${best?.provider ?? 'n/a'}',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.9),
+              fontSize: 12,
+            ),
+          ),
+          if (best != null)
+            Text(
+              'Best price: ${best.minPrice.toStringAsFixed(1)} - ${best.maxPrice.toStringAsFixed(1)} AED • ETA ${best.etaMinutes} min',
+              style: TextStyle(
+                color: AppColors.textCyan200.withOpacity(0.9),
+                fontSize: 12,
+              ),
+            ),
+          Text(
+            'Daily rules: total=${_scheduleSlots.length} enabled=${_scheduleSlots.where((slot) => slot.enabled).length} syncing=$_syncingDailyRule',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.9),
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            'Best price window: enabled=$_bestPriceWindowEnabled window=±$_bestPriceWindowMinutes min',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.9),
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            'Last backend error code: ${_lastMobilityErrorCode ?? 'n/a'}',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.9),
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            'Last backend error body: ${_lastMobilityErrorBody ?? 'n/a'}',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.9),
+              fontSize: 12,
+            ),
+            maxLines: 5,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            'Booking backend status: ${_lastBookingBackendStatus ?? 'n/a'}',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.9),
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMapCard(BuildContext context) {
+    return Container(
+      height: 340,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.22)),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: isUpcoming ? 16.0 : 12.0,
-          tablet: isUpcoming ? 18.0 : 13.0,
-          desktop: isUpcoming ? 20.0 : 14.0,
-        )),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: Responsive.getResponsiveValue(
-                      context,
-                      mobile: isUpcoming ? 36.0 : 28.0,
-                      tablet: isUpcoming ? 40.0 : 32.0,
-                      desktop: isUpcoming ? 44.0 : 36.0,
-                    ),
-                    height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: isUpcoming ? 36.0 : 28.0,
-                      tablet: isUpcoming ? 40.0 : 32.0,
-                      desktop: isUpcoming ? 44.0 : 36.0,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: modeColors,
-                      ),
-                      borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                        context,
-                        mobile: isUpcoming ? 10.0 : 8.0,
-                        tablet: isUpcoming ? 11.0 : 9.0,
-                        desktop: isUpcoming ? 12.0 : 10.0,
-                      )),
-                      border: Border.all(
-                        color: AppColors.cyan500.withOpacity(isUpcoming ? 0.2 : 0.1),
-                        width: 1,
-                      ),
-                    ),
-                    child: Icon(
-                      modeIcon,
-                      size: Responsive.getResponsiveValue(
-                        context,
-                        mobile: isUpcoming ? 18.0 : 14.0,
-                        tablet: isUpcoming ? 20.0 : 16.0,
-                        desktop: isUpcoming ? 22.0 : 18.0,
-                      ),
-                      color: AppColors.cyan400,
-                    ),
-                  ),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 8.0,
-                    tablet: 10.0,
-                    desktop: 12.0,
-                  )),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${journey.from} → ${journey.to}',
-                          style: TextStyle(
-                            fontSize: Responsive.getResponsiveValue(
-                              context,
-                              mobile: isUpcoming ? 14.0 : 13.0,
-                              tablet: isUpcoming ? 15.0 : 14.0,
-                              desktop: isUpcoming ? 16.0 : 15.0,
-                            ),
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textWhite.withOpacity(isUpcoming ? 1.0 : 0.7),
-                          ),
-                        ),
-                        SizedBox(height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 3.0,
-                          tablet: 4.0,
-                          desktop: 5.0,
-                        )),
-                        Text(
-                          journey.time,
-                          style: TextStyle(
-                            fontSize: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 11.0,
-                              tablet: 12.0,
-                              desktop: 13.0,
-                            ),
-                            color: AppColors.cyan400.withOpacity(isUpcoming ? 0.6 : 0.4),
-                          ),
-                        ),
-                        if (isUpcoming) ...[
-                          SizedBox(height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 6.0,
-                            tablet: 8.0,
-                            desktop: 10.0,
-                          )),
-                          Row(
-                            children: [
-                              Icon(
-                                LucideIcons.clock,
-                                size: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 13.0,
-                                  tablet: 14.0,
-                                  desktop: 15.0,
-                                ),
-                                color: AppColors.cyan400.withOpacity(0.7),
-                              ),
-                              SizedBox(width: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 4.0,
-                                tablet: 5.0,
-                                desktop: 6.0,
-                              )),
-                              Text(
-                                journey.duration,
-                                style: TextStyle(
-                                  fontSize: Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 11.0,
-                                    tablet: 12.0,
-                                    desktop: 13.0,
-                                  ),
-                                  color: AppColors.textCyan200.withOpacity(0.6),
-                                ),
-                              ),
-                              if (journey.traffic != null) ...[
-                                SizedBox(width: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 12.0,
-                                  tablet: 14.0,
-                                  desktop: 16.0,
-                                )),
-                                Icon(
-                                  LucideIcons.navigation,
-                                  size: Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 13.0,
-                                    tablet: 14.0,
-                                    desktop: 15.0,
-                                  ),
-                                  color: const Color(0xFFFFB800).withOpacity(0.7),
-                                ),
-                                SizedBox(width: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 4.0,
-                                  tablet: 5.0,
-                                  desktop: 6.0,
-                                )),
-                                Text(
-                                  journey.traffic!,
-                                  style: TextStyle(
-                                    fontSize: Responsive.getResponsiveValue(
-                                      context,
-                                      mobile: 11.0,
-                                      tablet: 12.0,
-                                      desktop: 13.0,
-                                    ),
-                                    color: const Color(0xFFFFD93D).withOpacity(0.6),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  if (!isUpcoming)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          journey.duration,
-                          style: TextStyle(
-                            fontSize: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 11.0,
-                              tablet: 12.0,
-                              desktop: 13.0,
-                            ),
-                            color: AppColors.cyan400.withOpacity(0.6),
-                          ),
-                        ),
-                        if (journey.traffic != null)
-                          Text(
-                            journey.traffic!,
-                            style: TextStyle(
-                              fontSize: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 10.0,
-                                tablet: 11.0,
-                                desktop: 12.0,
-                              ),
-                              color: AppColors.cyan400.withOpacity(0.4),
-                            ),
-                          ),
-                      ],
-                    ),
-                ],
+        borderRadius: BorderRadius.circular(18),
+        child: Stack(
+          children: [
+            FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: _initialCenter,
+                initialZoom: 12.8,
+                minZoom: 4,
+                maxZoom: 18,
+                onTap: (_, point) {
+                  unawaited(_onMapTapped(point));
+                },
               ),
-              // AI Insight
-              if (isUpcoming && journey.aiInsight != null) ...[
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 10.0,
-                  tablet: 12.0,
-                  desktop: 14.0,
-                )),
-                Container(
-                  padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                    context,
-                    mobile: 10.0,
-                    tablet: 12.0,
-                    desktop: 14.0,
-                  )),
-                  decoration: BoxDecoration(
-                    color: AppColors.cyan500.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                      context,
-                      mobile: 12.0,
-                      tablet: 13.0,
-                      desktop: 14.0,
-                    )),
-                    border: Border.all(
-                      color: AppColors.cyan500.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        LucideIcons.zap,
-                        size: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 14.0,
-                          tablet: 16.0,
-                          desktop: 18.0,
-                        ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'pi_dev_agentia',
+                ),
+                if (_routePoints.isNotEmpty)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: _routePoints,
+                        strokeWidth: 5,
                         color: AppColors.cyan400,
                       ),
-                      SizedBox(width: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 6.0,
-                        tablet: 8.0,
-                        desktop: 10.0,
-                      )),
-                      Expanded(
-                        child: Text(
-                          journey.aiInsight!,
-                          style: TextStyle(
-                            fontSize: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 11.0,
-                              tablet: 12.0,
-                              desktop: 13.0,
+                    ],
+                  ),
+                MarkerLayer(
+                  markers: [
+                    ..._nearbyTaxiPoints.map(
+                      (p) => Marker(
+                        point: p,
+                        width: 32,
+                        height: 32,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.92),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.black.withOpacity(0.6),
+                              width: 1,
                             ),
-                            color: AppColors.cyan400,
+                          ),
+                          child: const Icon(
+                            Icons.local_taxi,
+                            color: Colors.black,
+                            size: 18,
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    if (_driverLatLng() != null)
+                      Marker(
+                        point: _driverLatLng()!,
+                        width: 44,
+                        height: 44,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.lightGreenAccent.withOpacity(0.95),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.black.withOpacity(0.65),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.local_taxi,
+                            color: Colors.black,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    if (_currentPosition != null)
+                      Marker(
+                        point: LatLng(
+                          _currentPosition!.latitude,
+                          _currentPosition!.longitude,
+                        ),
+                        width: 44,
+                        height: 44,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.my_location,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    if (_pickupLatLng != null)
+                      Marker(
+                        point: _pickupLatLng!,
+                        width: 44,
+                        height: 44,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.orangeAccent,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.trip_origin,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    if (_destinationLatLng != null)
+                      Marker(
+                        point: _destinationLatLng!,
+                        width: 48,
+                        height: 48,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.location_on,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
-            ],
-          ),
-        ),
-      ),
-    )
-        .animate()
-        .fadeIn(delay: Duration(milliseconds: 400 + (index * 100)), duration: 300.ms)
-        .slideY(begin: 0.2, end: 0, delay: Duration(milliseconds: 400 + (index * 100)), duration: 300.ms);
-  }
-
-  Widget _buildInsightsCard(BuildContext context, bool isMobile) {
-    return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 18.0,
-        tablet: 20.0,
-        desktop: 24.0,
-      )),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF9333EA).withOpacity(0.1),
-            AppColors.blue500.withOpacity(0.1),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
-        border: Border.all(
-          color: const Color(0xFF9333EA).withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 36.0,
-                  tablet: 40.0,
-                  desktop: 44.0,
-                ),
-                height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 36.0,
-                  tablet: 40.0,
-                  desktop: 44.0,
+            ),
+            Positioned(
+              top: 10,
+              left: 10,
+              right: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF9333EA).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                    context,
-                    mobile: 10.0,
-                    tablet: 11.0,
-                    desktop: 12.0,
-                  )),
+                  color: Colors.black.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  LucideIcons.trendingUp,
-                  size: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 18.0,
-                    tablet: 20.0,
-                    desktop: 22.0,
-                  ),
-                  color: const Color(0xFFC084FC),
-                ),
-              ),
-              SizedBox(width: Responsive.getResponsiveValue(
-                context,
-                mobile: 10.0,
-                tablet: 12.0,
-                desktop: 14.0,
-              )),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Text(
-                      'Weekly Insight',
-                      style: TextStyle(
-                        fontSize: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 14.0,
-                          tablet: 15.0,
-                          desktop: 16.0,
-                        ),
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textWhite,
+                    Icon(
+                      LucideIcons.navigation,
+                      size: 16,
+                      color: AppColors.cyan400,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _loadingRoute
+                            ? 'Building live route...'
+                            : _distanceKm == null
+                            ? 'Tap map to set A/B and build route.'
+                            : '${_distanceKm!.toStringAsFixed(1)} km • ${_durationMin!.round()} min',
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 4.0,
-                      tablet: 5.0,
-                      desktop: 6.0,
-                    )),
-                    Text(
-                      'You typically commute at 8:30 AM. Traffic is usually lighter 15 minutes earlier.',
-                      style: TextStyle(
-                        fontSize: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 12.0,
-                          tablet: 13.0,
-                          desktop: 14.0,
-                        ),
-                        color: const Color(0xFFC084FC).withOpacity(0.7),
+                    IconButton(
+                      onPressed: _openFullMapSelection,
+                      icon: const Icon(Icons.open_in_full, color: Colors.white),
+                      tooltip: 'Open full map',
+                    ),
+                    IconButton(
+                      onPressed: _loadingNearbyTaxis
+                          ? null
+                          : () => unawaited(_fetchNearbyTaxiStations()),
+                      icon: Icon(
+                        Icons.local_taxi,
+                        color: _nearbyTaxiPoints.isEmpty
+                            ? Colors.white
+                            : Colors.amberAccent,
                       ),
+                      tooltip: 'Refresh nearby taxi stations',
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionCards(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _actionCard(
+            context,
+            icon: LucideIcons.car,
+            title: 'Request Taxi (In-App)',
+            subtitle: _confirmingBooking
+                ? 'Sending proposal to backend...'
+                : 'Track accepted/refused status directly in this app',
+            onTap: _confirmInAppTaxiRequest,
           ),
         ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _actionCard(
+            context,
+            icon: LucideIcons.navigation,
+            title: 'Open Dynamic Map',
+            subtitle: 'External turn-by-turn route',
+            onTap: () async {
+              final fromPoint =
+                  _pickupLatLng ??
+                  (_currentPosition == null
+                      ? null
+                      : LatLng(
+                          _currentPosition!.latitude,
+                          _currentPosition!.longitude,
+                        ));
+              if (_destinationLatLng == null || fromPoint == null) {
+                setState(
+                  () => _errorMessage =
+                      'Tap map to define A (from) and B (to) first.',
+                );
+                return;
+              }
+              final origin = '${fromPoint.latitude},${fromPoint.longitude}';
+              final uri = Uri.https('www.google.com', '/maps/dir/', {
+                'api': '1',
+                'origin': origin,
+                'destination':
+                    '${_destinationLatLng!.latitude},${_destinationLatLng!.longitude}',
+                'travelmode': 'driving',
+              });
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _actionCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF1e4a66).withOpacity(0.45),
+              const Color(0xFF16384d).withOpacity(0.45),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: AppColors.cyan400, size: 20),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: AppColors.textCyan200.withOpacity(0.85),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorBanner(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.redAccent.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.redAccent.withOpacity(0.35)),
+      ),
+      child: Text(_errorMessage!, style: const TextStyle(color: Colors.white)),
+    );
+  }
+
+  Widget _buildSuccessBanner(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.green.withOpacity(0.35)),
+      ),
+      child: Text(
+        _bookingStatusMessage!,
+        style: const TextStyle(color: Colors.white),
       ),
     );
   }

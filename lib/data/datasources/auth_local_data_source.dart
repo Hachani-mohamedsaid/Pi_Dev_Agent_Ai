@@ -55,6 +55,7 @@ class InMemoryAuthLocalDataSource implements AuthLocalDataSource {
 class SharedPreferencesAuthLocalDataSource implements AuthLocalDataSource {
   static const _keyAccessToken = 'auth_access_token';
   static const _keyCachedUser = 'auth_cached_user';
+  static const _legacySubscriptionPlanKey = 'subscription_active_plan';
 
   @override
   Future<void> cacheUser(UserModel user) async {
@@ -68,9 +69,7 @@ class SharedPreferencesAuthLocalDataSource implements AuthLocalDataSource {
     final json = prefs.getString(_keyCachedUser);
     if (json == null) return null;
     try {
-      return UserModel.fromJson(
-        jsonDecode(json) as Map<String, dynamic>,
-      );
+      return UserModel.fromJson(jsonDecode(json) as Map<String, dynamic>);
     } catch (_) {
       return null;
     }
@@ -81,6 +80,7 @@ class SharedPreferencesAuthLocalDataSource implements AuthLocalDataSource {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyAccessToken);
     await prefs.remove(_keyCachedUser);
+    await prefs.remove(_legacySubscriptionPlanKey);
   }
 
   @override
