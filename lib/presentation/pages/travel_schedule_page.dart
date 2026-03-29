@@ -328,7 +328,7 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
     final factor = _priceMultiplier(slot);
     final adjustedMin = minPrice * factor;
     final adjustedMax = maxPrice * factor;
-    return '${adjustedMin.toStringAsFixed(1)}-${adjustedMax.toStringAsFixed(1)} TND';
+    return '${adjustedMin.toStringAsFixed(1)}-${adjustedMax.toStringAsFixed(1)} AED';
   }
 
   String _estimatedEtaLabel(TravelScheduleSlot slot) {
@@ -816,7 +816,7 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'From / To (OpenWeather autocomplete)',
+                          'From / To (autocomplete)',
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             color: AppColors.cyan400,

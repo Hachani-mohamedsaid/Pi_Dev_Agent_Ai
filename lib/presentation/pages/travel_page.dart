@@ -1907,7 +1907,7 @@ out center 30;
                           border: Border.all(color: AppColors.borderCyan),
                         ),
                         child: Text(
-                          '${effectiveOption.minPrice.toStringAsFixed(1)}-${effectiveOption.maxPrice.toStringAsFixed(1)} TND',
+                          '${effectiveOption.minPrice.toStringAsFixed(1)}-${effectiveOption.maxPrice.toStringAsFixed(1)} AED',
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: AppColors.cyan200,
@@ -2562,9 +2562,12 @@ out center 30;
     final driverPhone = rawDriverPhone.startsWith('+216')
         ? rawDriverPhone.replaceFirst('+216', '+971')
         : rawDriverPhone;
-    final vehiclePlate = booking.vehiclePlate?.isNotEmpty == true
-        ? booking.vehiclePlate!
-        : 'N/A';
+    final rawVehiclePlate = booking.vehiclePlate?.isNotEmpty == true
+      ? booking.vehiclePlate!
+      : 'N/A';
+    final vehiclePlate = rawVehiclePlate == 'N/A'
+      ? rawVehiclePlate
+      : rawVehiclePlate.replaceAll(RegExp(r'\bTUN\b', caseSensitive: false), 'DXB');
     final hasLocation =
         booking.driverLatitude != null && booking.driverLongitude != null;
     final etaMinutes = booking.etaMinutes ?? 0;
@@ -3188,7 +3191,7 @@ out center 30;
           ),
           if (best != null)
             Text(
-              'Best price: ${best.minPrice.toStringAsFixed(1)} - ${best.maxPrice.toStringAsFixed(1)} TND • ETA ${best.etaMinutes} min',
+              'Best price: ${best.minPrice.toStringAsFixed(1)} - ${best.maxPrice.toStringAsFixed(1)} AED • ETA ${best.etaMinutes} min',
               style: TextStyle(
                 color: AppColors.textCyan200.withOpacity(0.9),
                 fontSize: 12,

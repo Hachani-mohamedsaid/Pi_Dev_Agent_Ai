@@ -491,7 +491,7 @@ class MobilityQuoteOption {
   String get label {
     final a = minPrice.toStringAsFixed(1);
     final b = maxPrice.toStringAsFixed(1);
-    return '$provider • $a-$b TND • $etaMinutes min';
+    return '$provider • $a-$b AED • $etaMinutes min';
   }
 }
 
