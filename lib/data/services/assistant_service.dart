@@ -71,18 +71,28 @@ class AssistantService {
   ///     "source": "backend" | "ml" | "mongo" | ...
   ///   }
   /// ]
+  /// Heure au format HH:mm (ex. "12:08") pour le calcul côté backend (ex. "réunion dans X min").
+  static String _currentTimeHHmm() {
+    final now = DateTime.now();
+    return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// POST /assistant/notifications. Si [signals] est vide ou omis, le backend
+  /// ajoute contexte + ML (réunions, pause, météo, suggestions). Pour des notifs
+  /// variées (pas que mail), envoyer signals: [].
   Future<List<AssistantNotification>> fetchNotifications({
     String? userId,
     String locale = 'fr-TN',
     String timezone = 'Africa/Tunis',
     String tone = 'professional',
     int maxItems = 5,
-    required List<Map<String, dynamic>> signals,
+    List<Map<String, dynamic>> signals = const [],
   }) async {
     final uri = Uri.parse('$apiBaseUrl/assistant/notifications');
     final body = <String, dynamic>{
       if (userId != null && userId.isNotEmpty) 'userId': userId,
       'locale': locale,
+      'currentTime': _currentTimeHHmm(),
       'timezone': timezone,
       'tone': tone,
       'maxItems': maxItems.clamp(1, 20),

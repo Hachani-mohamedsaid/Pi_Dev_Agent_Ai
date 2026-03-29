@@ -72,6 +72,8 @@ class AppStrings {
       "everythingYouNeedToday": "everything you need today!",
       "enterPromptHere": "Enter your prompt here...",
 
+      "createJobPost": "Create a job post",
+
       "back": "Back",
       "cancel": "Cancel",
       "done": "Done",
@@ -138,6 +140,9 @@ class AppStrings {
       "readyToHelp": "Prêt à vous aider pour",
       "everythingYouNeedToday": "tout ce dont vous avez besoin aujourd'hui !",
       "enterPromptHere": "Entrez votre message ici...",
+
+      "history": "Historique",
+      "createJobPost": "Créer un poste",
 
       "back": "Retour",
       "cancel": "Annuler",

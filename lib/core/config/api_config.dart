@@ -85,8 +85,8 @@ const String chatSystemInstructionMultilingual =
 /// URL WebSocket pour la voix ChatGPT originale (OpenAI Realtime API via proxy NestJS).
 /// Si non vide, l'assistant vocal peut utiliser le mode Realtime (micro → backend → OpenAI Realtime → audio).
 /// Ex. dev : ws://localhost:3000/realtime-voice ; prod : wss://ton-backend.up.railway.app/realtime-voice
+/// URL WebSocket pour Realtime API. Ex: wss://backend.up.railway.app/realtime-voice
 const String realtimeVoiceWsUrl = String.fromEnvironment(
   'REALTIME_VOICE_WS_URL',
-  defaultValue:
-      '', // URL WebSocket pour Realtime API. Ex: wss://backend.up.railway.app/realtime-voice
+  defaultValue: '',
 );

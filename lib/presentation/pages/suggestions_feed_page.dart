@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../data/models/assistant_suggestion.dart';
 import '../../data/services/assistant_service.dart';
+import '../../data/services/meeting_service.dart';
 import '../../injection_container.dart';
 import '../../services/focus_session_manager.dart';
 import '../../services/location_service.dart';
@@ -195,7 +196,24 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
               : null;
       final weather = await WeatherService.getWeatherCondition(cityName: city);
       final temperatureCelsius = await WeatherService.getTemperature(cityName: city);
-      final meetings = <Map<String, String>>[];
+      List<Map<String, String>> meetings = <Map<String, String>>[];
+      try {
+        final meetingList = await MeetingService().fetchMeetings();
+        final today = DateTime.now();
+        meetings = meetingList
+            .where((m) =>
+                m.startTime.year == today.year &&
+                m.startTime.month == today.month &&
+                m.startTime.day == today.day)
+            .map((m) => {
+                  'title': m.subject,
+                  'time':
+                      '${m.startTime.hour.toString().padLeft(2, '0')}:${m.startTime.minute.toString().padLeft(2, '0')}',
+                })
+            .toList();
+      } catch (_) {
+        // keep meetings empty
+      }
       final focusMinutes = FocusSessionManager.instance.getFocusMinutes();
       final timeInAppMinutes = focusMinutes;
       final profile = widget.controller.currentProfile;
@@ -264,13 +282,29 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
           '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
       final focusMinutes = FocusSessionManager.instance.getFocusMinutes();
       final focusHours = (focusMinutes / 60).round().clamp(0, 24);
+      List<Map<String, String>> meetingsForContext = <Map<String, String>>[];
+      try {
+        final meetingList = await MeetingService().fetchMeetings();
+        final today = DateTime.now();
+        meetingsForContext = meetingList
+            .where((m) =>
+                m.startTime.year == today.year &&
+                m.startTime.month == today.month &&
+                m.startTime.day == today.day)
+            .map((m) => {
+                  'title': m.subject,
+                  'time':
+                      '${m.startTime.hour.toString().padLeft(2, '0')}:${m.startTime.minute.toString().padLeft(2, '0')}',
+                })
+            .toList();
+      } catch (_) {}
       final payload = AssistantContextPayload(
         userId: userId,
         time: time,
         location: _contextLocation ?? 'home',
         weather: _contextWeather ?? 'sunny',
         focusHours: focusHours,
-        meetings: null,
+        meetings: meetingsForContext.isEmpty ? null : meetingsForContext,
       );
       final list = await _assistantService.sendContext(payload);
       final deduped = _deduplicateSuggestionsById(list);
@@ -457,8 +491,13 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
       desktop: 32.0,
     );
 
+    // Même bleu que le dégradé pour éviter la bande noire sous la nav (safe area).
+    const Color _scaffoldBg = Color(0xFF0f2940);
     return Scaffold(
+      backgroundColor: _scaffoldBg,
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,

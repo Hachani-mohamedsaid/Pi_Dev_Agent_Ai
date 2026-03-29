@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -18,6 +19,7 @@ import '../../core/l10n/app_strings.dart';
 import '../../core/utils/responsive.dart';
 import '../../data/datasources/chat_remote_data_source.dart';
 import '../../data/datasources/realtime_voice_client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class VoiceAssistantPage extends StatefulWidget {
   VoiceAssistantPage({super.key, ChatRemoteDataSource? chatDataSource})
@@ -35,6 +37,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
   bool isListening = false;
   bool isSpeaking = false;
   bool showChat = false;
+  bool showHistory = false;
   bool isLoadingAI = false;
   String inputText = "";
   String currentTranscript = "";
@@ -51,6 +54,9 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
   List<ChatMessage> messages = [];
   bool _initialized = false;
 
+  static const String _historyStorageKey =
+      'voice_assistant_conversation_history';
+
   // --- Animation Controllers ---
   late AnimationController _waveformController;
   late AnimationController _pulseController;
@@ -59,16 +65,65 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      messages = [
+      _initialized = true;
+      // Affiche tout de suite le message de bienvenue, puis charge l'historique sauvegardé
+      messages.add(
         ChatMessage(
           id: 1,
           text: AppStrings.tr(context, 'helloHowCanIHelp'),
           sender: MessageSender.ai,
           timestamp: DateTime.now(),
         ),
-      ];
-      _initialized = true;
+      );
+      _loadHistoryFromStorage();
     }
+  }
+
+  /// Charge l'historique depuis SharedPreferences et remplace la liste si un historique existe.
+  Future<void> _loadHistoryFromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString(_historyStorageKey);
+      if (jsonStr == null || jsonStr.isEmpty) return;
+      final list = jsonDecode(jsonStr) as List<dynamic>?;
+      if (list == null || list.isEmpty) return;
+      final loaded = <ChatMessage>[];
+      for (var i = 0; i < list.length; i++) {
+        final map = list[i] as Map<String, dynamic>?;
+        if (map == null) continue;
+        final text = map['text'] as String? ?? '';
+        final senderStr = map['sender'] as String? ?? 'ai';
+        final sender = senderStr == 'user' ? MessageSender.user : MessageSender.ai;
+        DateTime timestamp = DateTime.now();
+        try {
+          final ts = map['timestamp'] as String?;
+          if (ts != null) timestamp = DateTime.parse(ts);
+        } catch (_) {}
+        loaded.add(ChatMessage(
+          id: i + 1,
+          text: text,
+          sender: sender,
+          timestamp: timestamp,
+        ));
+      }
+      if (loaded.isEmpty) return;
+      if (!mounted) return;
+      setState(() => messages = loaded);
+    } catch (_) {}
+  }
+
+  /// Enregistre l'historique dans SharedPreferences (appelé après chaque nouveau message).
+  Future<void> _saveHistoryToStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = messages.map((m) => {
+        'id': m.id,
+        'text': m.text,
+        'sender': m.sender == MessageSender.user ? 'user' : 'ai',
+        'timestamp': m.timestamp.toIso8601String(),
+      }).toList();
+      await prefs.setString(_historyStorageKey, jsonEncode(list));
+    } catch (_) {}
   }
 
   @override
@@ -161,12 +216,13 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
     }
   }
 
-  /// Initialise le TTS : débit lent et clair (0.85) et volume max pour excellente compréhension (FR, EN, AR).
+  /// Vitesse de parole TTS : plus la valeur est basse, plus c'est lent. 0.5 = lent et clair (pas rapide).
+  static const double _ttsSpeechRate = 0.5;
+
+  /// Initialise le TTS : débit lent et clair pour excellente compréhension (FR, EN, AR).
   Future<void> _initTts() async {
     try {
-      await _flutterTts.setSpeechRate(
-        0.85,
-      ); // Vitesse lente mais claire (voix-friendly)
+      await _flutterTts.setSpeechRate(_ttsSpeechRate);
       await _flutterTts.setVolume(1.0);
       await _flutterTts.setPitch(1.0);
       _flutterTts.setErrorHandler((msg) {
@@ -244,18 +300,13 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
       // Detecte la langue pour ajuster le debit
       final detectectedLang = _detectLanguage(text);
 
-      // Tous les langues: débit lent et clair (0.85) pour compréhension optimale
-      // Arabe, Français, Anglais - même vitesse lente mais claire
-      final speechRate =
-          0.85; // Vitesse lente et claire pour toutes les langues
-
+      // Débit lent et clair pour toutes les langues (pas rapide)
       if (kDebugMode)
         print(
-          'TTS: Setting speech rate: $speechRate for language: $detectectedLang',
+          'TTS: Setting speech rate: $_ttsSpeechRate for language: $detectectedLang',
         );
 
-      // Configuration TTS optimisee
-      await _flutterTts.setSpeechRate(speechRate);
+      await _flutterTts.setSpeechRate(_ttsSpeechRate);
       await _flutterTts.setVolume(1.0); // Volume max
       await _flutterTts.setPitch(1.0); // Pitch normal
 
@@ -369,7 +420,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
       await _openaiTts!.stopPlayer();
       try {
         debugPrint(
-          '🎤🔊 USING OPENAI TTS (nova - warm female voice, 0.85 speed - slow & clear)',
+          '🎤🔊 USING OPENAI TTS (nova - warm female voice, slow & clear)',
         );
         await _openaiTts!.streamSpeak(
           text,
@@ -732,6 +783,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
         ),
       );
     });
+    _saveHistoryToStorage();
     // Scroll to bottom
     if (showChat) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -995,7 +1047,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                             ),
                             _buildGlassIconButton(
                               icon: LucideIcons.menu,
-                              onTap: () {},
+                              onTap: () => setState(() => showHistory = true),
                             ),
                           ],
                         ),
@@ -1101,8 +1153,29 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                 isLoadingAI: isLoadingAI,
                 onClose: () => setState(() => showChat = false),
                 scrollController: _scrollController,
+                textController: _textController,
+                onSend: handleSendMessage,
               ),
             ),
+
+            // --- Historique (menu) Overlay ---
+            if (showHistory)
+              GestureDetector(
+                onTap: () => setState(() => showHistory = false),
+                child: Container(
+                  color: Colors.black54,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () {},
+                      child: _HistoryOverlay(
+                        messages: messages,
+                        onClose: () => setState(() => showHistory = false),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -1546,18 +1619,182 @@ class _MicButton extends StatelessWidget {
   }
 }
 
+// --- Historique Overlay (panneau latéral) ---
+class _HistoryOverlay extends StatelessWidget {
+  final List<ChatMessage> messages;
+  final VoidCallback onClose;
+
+  const _HistoryOverlay({
+    required this.messages,
+    required this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width * 0.85;
+    return SizedBox(
+      width: width > 400 ? 400 : width,
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 20,
+              offset: Offset(-4, 0),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          left: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      AppStrings.tr(context, 'history'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: onClose,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1e4a66).withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.cyan.withOpacity(0.2)),
+                        ),
+                        child: const Icon(
+                          LucideIcons.x,
+                          color: Color(0xFF22d3ee),
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1, color: Color(0xFF1e4a66)),
+              Expanded(
+                child: messages.isEmpty
+                    ? Center(
+                        child: Text(
+                          AppStrings.tr(context, 'helloHowCanIHelp'),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 14,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        itemCount: messages.length,
+                        itemBuilder: (context, index) {
+                          final msg = messages[index];
+                          final isUser = msg.sender == MessageSender.user;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              mainAxisAlignment: isUser
+                                  ? MainAxisAlignment.end
+                                  : MainAxisAlignment.start,
+                              children: [
+                                Flexible(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(14),
+                                      gradient: isUser
+                                          ? const LinearGradient(
+                                              colors: [
+                                                Color(0xFF06b6d4),
+                                                Color(0xFF3b82f6),
+                                              ],
+                                            )
+                                          : LinearGradient(
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                              colors: [
+                                                const Color(0xFF1e4a66).withOpacity(0.6),
+                                                const Color(0xFF16384d).withOpacity(0.6),
+                                              ],
+                                            ),
+                                      border: isUser
+                                          ? null
+                                          : Border.all(
+                                              color: Colors.cyan.withOpacity(0.2),
+                                            ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          msg.text,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          "${msg.timestamp.hour.toString().padLeft(2, '0')}:${msg.timestamp.minute.toString().padLeft(2, '0')}",
+                                          style: TextStyle(
+                                            color: isUser
+                                                ? Colors.white.withOpacity(0.7)
+                                                : Colors.cyan.withOpacity(0.5),
+                                            fontSize: 10,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // --- Chat Overlay ---
 class _ChatOverlay extends StatelessWidget {
   final List<ChatMessage> messages;
   final bool isLoadingAI;
   final VoidCallback onClose;
   final ScrollController scrollController;
+  final TextEditingController? textController;
+  final VoidCallback? onSend;
 
   const _ChatOverlay({
     required this.messages,
     required this.isLoadingAI,
     required this.onClose,
     required this.scrollController,
+    this.textController,
+    this.onSend,
   });
 
   @override
@@ -1611,7 +1848,7 @@ class _ChatOverlay extends StatelessWidget {
             Expanded(
               child: ListView.builder(
                 controller: scrollController,
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                 itemCount: messages.length + (isLoadingAI ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (isLoadingAI && index == messages.length) {
@@ -1713,6 +1950,82 @@ class _ChatOverlay extends StatelessWidget {
                 },
               ),
             ),
+
+            // Barre de saisie (style page 2 : pill + bouton envoyer dégradé)
+            if (textController != null && onSend != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1e4a66).withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(
+                      color: Colors.cyan.withOpacity(0.25),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: textController,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: AppStrings.tr(context, 'enterPromptHere'),
+                            hintStyle: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 15,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 14,
+                            ),
+                          ),
+                          onSubmitted: (_) => onSend!(),
+                          textInputAction: TextInputAction.send,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6, top: 6, bottom: 6),
+                        child: GestureDetector(
+                          onTap: onSend,
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [
+                                  Color(0xFF22d3ee),
+                                  Color(0xFFa78bfa),
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.cyan.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              LucideIcons.send,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
       ),
