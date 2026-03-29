@@ -109,8 +109,8 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
       for (final stream in streamList) {
         if (stream.user.userID == widget.userID) continue; // ignore own published stream
         if (updateType == ZegoUpdateType.Add) {
-          final name = (stream.user.userName ?? '').trim();
-          final fallback = (stream.user.userID ?? '').trim();
+          final name = stream.user.userName.trim();
+          final fallback = stream.user.userID.trim();
           _participantNames.add(name.isNotEmpty ? name : (fallback.isNotEmpty ? fallback : 'Participant'));
           _addRemoteStreamView(stream);
         } else if (updateType == ZegoUpdateType.Delete) {
@@ -308,13 +308,19 @@ class _ActiveMeetingScreenState extends State<ActiveMeetingScreen> {
     _transcriptionSub?.cancel();
     _suggestionSub?.cancel();
     _suggestionErrorSub?.cancel();
-    final history = SuggestionService.instance.conversationHistory;
-    final fullTranscript = history
-        .map((text) => TranscriptLineModel(
-              speaker: widget.userName.trim().isEmpty ? 'User' : widget.userName.trim(),
-              text: text,
-              timestamp: '',
-            ))
+
+    // Use the live transcript lines captured during the meeting as the
+    // canonical transcript we persist and show later.
+    final speakerName =
+        widget.userName.trim().isEmpty ? 'User' : widget.userName.trim();
+    final fullTranscript = _liveTranscriptLines
+        .map(
+          (text) => TranscriptLineModel(
+            speaker: speakerName,
+            text: text,
+            timestamp: '',
+          ),
+        )
         .toList();
 
     if (_meetingId != null && fullTranscript.isNotEmpty) {

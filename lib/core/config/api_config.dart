@@ -57,7 +57,7 @@ const String advisorWebhookUrl =
 ///
 /// ⚠️ Ne jamais commiter une clé réelle sur GitHub.
 /// Pour activer OpenAI TTS : crée un fichier .env à la racine avec :
-///   OPENAI_API_KEY=sk-proj-xxx
+///   OPENAI_API_KEY=<your-openai-api-key>
 /// (clé valide sur https://platform.openai.com/account/api-keys)
 /// Sinon l'app utilise FlutterTts (pas de 401).
 const String _openaiKeyFromDartDefine =

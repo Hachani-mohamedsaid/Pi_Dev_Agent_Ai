@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -6,6 +7,10 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:share_plus/share_plus.dart';
 import '../../../core/config/meeting_env.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../services/meeting_api_service.dart';
@@ -247,10 +252,213 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
     });
   }
 
-  void _exportPdf() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('PDF export would be implemented here')),
-    );
+  Future<void> _exportPdf() async {
+    final keyPoints = _keyPoints;
+    final actionItems = _actionItems;
+    final decisions = _decisions;
+
+    if (keyPoints.isEmpty && actionItems.isEmpty && decisions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No AI summary available yet to export.')),
+      );
+      return;
+    }
+
+    try {
+      final doc = pw.Document();
+
+      final primary = PdfColor.fromHex('#06b6d4');
+      final accent = PdfColor.fromHex('#3b82f6');
+      final textColor = PdfColors.white;
+      final subtle = PdfColor.fromHex('#9ca3af');
+
+      pw.Widget buildSection(String title, List<String> items,
+          {PdfColor? bulletColor, bool checkStyle = false}) {
+        if (items.isEmpty) {
+          return pw.SizedBox();
+        }
+        final color = bulletColor ?? primary;
+        return pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text(
+              title,
+              style: pw.TextStyle(
+                fontSize: 16,
+                fontWeight: pw.FontWeight.bold,
+                color: accent,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            ...items.map((item) {
+              return pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 4),
+                child: pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Container(
+                      margin: const pw.EdgeInsets.only(top: 3),
+                      width: checkStyle ? 10 : 6,
+                      height: checkStyle ? 10 : 6,
+                      decoration: pw.BoxDecoration(
+                        color: checkStyle ? const PdfColor(0, 0, 0, 0) : color,
+                        borderRadius: pw.BorderRadius.circular(3),
+                        border: checkStyle
+                            ? pw.Border.all(color: color, width: 1)
+                            : null,
+                      ),
+                    ),
+                    pw.SizedBox(width: 8),
+                    pw.Expanded(
+                      child: pw.Text(
+                        item,
+                        style: pw.TextStyle(
+                          fontSize: 11,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+            pw.SizedBox(height: 12),
+          ],
+        );
+      }
+
+      final title = _title;
+      final meta = _dateAndDuration;
+      final participants = _participants;
+
+      doc.addPage(
+        pw.MultiPage(
+          pageTheme: pw.PageTheme(
+            margin: const pw.EdgeInsets.all(28),
+            buildBackground: (context) => pw.Container(
+              decoration: pw.BoxDecoration(
+                gradient: pw.LinearGradient(
+                  begin: pw.Alignment.topCenter,
+                  end: pw.Alignment.bottomCenter,
+                  colors: [
+                    PdfColor.fromHex('#0f2940'),
+                    PdfColor.fromHex('#1a3a52'),
+                    PdfColor.fromHex('#0f2940'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          build: (context) => [
+            pw.Container(
+              padding: const pw.EdgeInsets.all(16),
+              decoration: pw.BoxDecoration(
+                borderRadius: pw.BorderRadius.circular(12),
+                color: const PdfColor(0, 0, 0, 0.25),
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    'Ava – Meeting Summary',
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      color: subtle,
+                    ),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    title,
+                    style: pw.TextStyle(
+                      fontSize: 20,
+                      fontWeight: pw.FontWeight.bold,
+                      color: textColor,
+                    ),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    meta,
+                    style: pw.TextStyle(
+                      fontSize: 11,
+                      color: subtle,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 16),
+            if (participants.isNotEmpty)
+              pw.Container(
+                padding: const pw.EdgeInsets.all(12),
+                decoration: pw.BoxDecoration(
+                  borderRadius: pw.BorderRadius.circular(10),
+                  color: const PdfColor(0, 0, 0, 0.2),
+                ),
+                child: pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Container(
+                      width: 16,
+                      height: 16,
+                      decoration: pw.BoxDecoration(
+                        shape: pw.BoxShape.circle,
+                        color: primary,
+                      ),
+                    ),
+                    pw.SizedBox(width: 8),
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            'Participants',
+                            style: pw.TextStyle(
+                              fontSize: 12,
+                              fontWeight: pw.FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                          pw.SizedBox(height: 4),
+                          pw.Text(
+                            participants.join(', '),
+                            style: pw.TextStyle(
+                              fontSize: 11,
+                              color: textColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (participants.isNotEmpty) pw.SizedBox(height: 16),
+            buildSection('Key Points', keyPoints),
+            buildSection('Action Items', actionItems,
+                bulletColor: accent, checkStyle: true),
+            buildSection('Decisions Made', decisions,
+                bulletColor: PdfColor.fromHex('#22c55e')),
+          ],
+        ),
+      );
+
+      final bytes = await doc.save();
+      final dir = await getTemporaryDirectory();
+      final file = File(
+        '${dir.path}/ava_meeting_${widget.meetingId}_${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
+      await file.writeAsBytes(bytes, flush: true);
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'Ava meeting summary – $title',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not generate PDF: $e')),
+      );
+    }
   }
 
   // ── Build ────────────────────────────────────────────────────────────────

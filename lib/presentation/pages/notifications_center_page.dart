@@ -450,10 +450,17 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
       desktop: 32.0,
     );
 
-    // Même bleu que le dégradé pour éviter la bande noire sous la nav (safe area / première ouverture).
-    const Color _scaffoldBg = Color(0xFF0f2940);
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    final navBarHeight = Responsive.getResponsiveValue(
+      context,
+      mobile: 72.0,
+      tablet: 80.0,
+      desktop: 88.0,
+    );
+    final totalBottomInset = navBarHeight + bottomPadding + 16;
+
     return Scaffold(
-      backgroundColor: _scaffoldBg,
+      backgroundColor: const Color(0xFF0f2940),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -467,78 +474,95 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
         child: SafeArea(
           bottom: false,
           child: Stack(
+            fit: StackFit.expand,
             children: [
-              // Main Content
+              // Main Content — fills viewport when content is short, scrolls when tall
               SingleChildScrollView(
                 padding: EdgeInsets.only(
                   left: padding,
                   right: padding,
                   top: padding,
-                  bottom: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 100.0,
-                    tablet: 120.0,
-                    desktop: 140.0,
-                  ), // Space for navigation bar
+                  bottom: totalBottomInset,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    _buildHeader(context, isMobile)
-                        .animate()
-                        .fadeIn(duration: 500.ms)
-                        .slideY(begin: -0.2, end: 0, duration: 500.ms),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.sizeOf(context).height -
+                        MediaQuery.paddingOf(context).top -
+                        totalBottomInset,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      _buildHeader(context, isMobile)
+                          .animate()
+                          .fadeIn(duration: 500.ms)
+                          .slideY(begin: -0.2, end: 0, duration: 500.ms),
 
-                    SizedBox(
-                      height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 12.0,
-                        tablet: 14.0,
-                        desktop: 16.0,
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 12.0,
+                          tablet: 14.0,
+                          desktop: 16.0,
+                        ),
                       ),
-                    ),
 
-                    // Filter
-                    _buildFilter(context, isMobile),
+                      // Filter
+                      _buildFilter(context, isMobile),
 
-                    SizedBox(
-                      height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 20.0,
-                        tablet: 24.0,
-                        desktop: 28.0,
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 20.0,
+                          tablet: 24.0,
+                          desktop: 28.0,
+                        ),
                       ),
-                    ),
 
-                    // Notifications List
-                    _buildNotificationsSection(context, isMobile),
+                      // Notifications List
+                      _buildNotificationsSection(context, isMobile),
 
-                    SizedBox(
-                      height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 20.0,
-                        tablet: 24.0,
-                        desktop: 28.0,
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 20.0,
+                          tablet: 24.0,
+                          desktop: 28.0,
+                        ),
                       ),
-                    ),
 
-                    // Info
-                    _buildInfo(
-                      context,
-                      isMobile,
-                    ).animate().fadeIn(delay: 600.ms, duration: 300.ms),
-                  ],
+                      // Info
+                      _buildInfo(
+                        context,
+                        isMobile,
+                      ).animate().fadeIn(delay: 600.ms, duration: 300.ms),
+                    ],
+                  ),
                 ),
               ),
 
-              // Navigation Bar
+              // Navigation Bar — gradient strip to bottom so no black gap
               Positioned(
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: NavigationBarWidget(
-                  currentPath: '/notifications-center',
+                child: Container(
+                  padding: EdgeInsets.only(bottom: bottomPadding),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0xFF1a3a52),
+                        Color(0xFF0f2940),
+                      ],
+                    ),
+                  ),
+                  child: NavigationBarWidget(
+                    currentPath: '/notifications-center',
+                  ),
                 ),
               ),
             ],

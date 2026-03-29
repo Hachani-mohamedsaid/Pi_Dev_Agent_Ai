@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../features/social_media/screens/social_media_brief_screen.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../data/services/meeting_service.dart';
@@ -297,15 +298,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                         // Smart Suggestions Button
                         _buildSmartSuggestionsButton(context, isMobile),
-
-                        SizedBox(
-                          height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 20.0,
-                            tablet: 24.0,
-                            desktop: 32.0,
-                          ),
-                        ),
 
                         SizedBox(
                           height: Responsive.getResponsiveValue(
@@ -1612,6 +1604,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               desktop: 20.0,
             ),
           ),
+          child: _buildSocialMediaCampaignCard(context, isMobile),
+        ),
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: Responsive.getResponsiveValue(
+              context,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 20.0,
+            ),
+          ),
           child: _buildOngoingProjectsGrid(context, isMobile),
         ),
         ...actions.asMap().entries.map((entry) {
@@ -1874,6 +1877,109 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     )
         .animate()
         .fadeIn(delay: 200.ms, duration: 400.ms)
+        .slideX(begin: 0.02, end: 0, curve: Curves.easeOut);
+  }
+
+  Widget _buildSocialMediaCampaignCard(BuildContext context, bool isMobile) {
+    final r = Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 24.0);
+    const cardColor = Color(0xFFEC4899);
+    const cardColorLight = Color(0xFFA855F7);
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const SocialMediaBriefScreen()),
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.all(r),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF0a1f2e),
+              Color(0xFF0f2a3d),
+              Color(0xFF14354c),
+              Color(0xFF19405b),
+              Color(0xFF1e4a66),
+            ],
+            stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+          ),
+          borderRadius: BorderRadius.circular(r),
+          border: Border.all(color: cardColor.withOpacity(0.3), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: cardColor.withOpacity(0.2),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.4),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
+              height: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    cardColor.withOpacity(0.25),
+                    cardColorLight.withOpacity(0.2),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: cardColor.withOpacity(0.4)),
+              ),
+              child: const Icon(LucideIcons.megaphone, color: cardColor, size: 26),
+            ),
+            SizedBox(width: r),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Social Media Campaign',
+                    style: TextStyle(
+                      fontSize: Responsive.getResponsiveValue(context, mobile: 17.0, tablet: 18.0, desktop: 20.0),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Launch your product across all platforms',
+                    style: TextStyle(
+                      fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
+                      color: AppColors.textCyan200.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: Responsive.getResponsiveValue(context, mobile: 38.0, tablet: 40.0, desktop: 44.0),
+              height: Responsive.getResponsiveValue(context, mobile: 38.0, tablet: 40.0, desktop: 44.0),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [cardColor, cardColorLight],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(LucideIcons.chevronRight, color: Colors.white, size: 22),
+            ),
+          ],
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn(delay: 250.ms, duration: 400.ms)
         .slideX(begin: 0.02, end: 0, curve: Curves.easeOut);
   }
 
