@@ -449,6 +449,14 @@ class _MeetingHubScreenState extends State<MeetingHubScreen> {
               ),
           ],
         ),
+        const SizedBox(height: 4),
+        Text(
+          'Swipe left on a meeting to delete it.',
+          style: TextStyle(
+            color: AppColors.textCyan200.withOpacity(0.7),
+            fontSize: 11,
+          ),
+        ),
         if (loadError != null) ...[
           const SizedBox(height: 8),
           Text(
@@ -486,7 +494,8 @@ class _MeetingHubScreenState extends State<MeetingHubScreen> {
     ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.05, end: 0, curve: Curves.easeOut);
   }
 
-  Widget _buildRecentMeetingCard(BuildContext context, RecentMeetingModel m, int index) {
+  Widget _buildRecentMeetingCard(
+      BuildContext context, RecentMeetingModel m, int index) {
     const metaStyle = TextStyle(color: AppColors.textCyan200, fontSize: 13);
     final metaColor = AppColors.textCyan200.withOpacity(0.7);
 
@@ -510,13 +519,25 @@ class _MeetingHubScreenState extends State<MeetingHubScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              m.title,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: Responsive.getResponsiveValue(context, mobile: 15.0, tablet: 16.0, desktop: 17.0),
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    m.title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 15.0,
+                        tablet: 16.0,
+                        desktop: 17.0,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Wrap(

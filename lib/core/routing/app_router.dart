@@ -64,6 +64,7 @@ import '../../features/my_business/screens/business_dashboard_screen.dart';
 import '../../features/phone_agent/models/phone_call_model.dart';
 import '../../features/phone_agent/screens/phone_agent_screen.dart';
 import '../../features/phone_agent/screens/phone_agent_call_detail_screen.dart';
+import '../../features/social_media/screens/social_media_brief_screen.dart';
 
 // Custom page transition - fade and scale from center
 Page<T> _fadeScaleTransition<T extends Object?>({
@@ -666,6 +667,14 @@ final appRouter = GoRouter(
         context: context,
         state: state,
         child: const PremiumFeatureGate(child: PhoneAgentScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/social-media',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const SocialMediaBriefScreen(),
       ),
     ),
     GoRoute(

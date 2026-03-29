@@ -1,0 +1,474 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/theme/app_colors.dart';
+import '../models/campaign_brief_model.dart';
+import '../models/campaign_result_model.dart';
+import '../services/social_media_campaign_service.dart';
+import 'social_media_campaign_overview_screen.dart';
+
+enum _AgentStatus { waiting, processing, done }
+
+class _AgentCard {
+  final String name;
+  final String platform;
+  final IconData icon;
+  final Color color;
+  _AgentStatus status;
+
+  _AgentCard({
+    required this.name,
+    required this.platform,
+    required this.icon,
+    required this.color,
+    _AgentStatus status = _AgentStatus.waiting,
+  }) : status = status;
+}
+
+class SocialMediaGeneratingScreen extends StatefulWidget {
+  final CampaignBriefModel brief;
+
+  const SocialMediaGeneratingScreen({super.key, required this.brief});
+
+  @override
+  State<SocialMediaGeneratingScreen> createState() =>
+      _SocialMediaGeneratingScreenState();
+}
+
+class _SocialMediaGeneratingScreenState
+    extends State<SocialMediaGeneratingScreen> with TickerProviderStateMixin {
+  late final List<_AgentCard> _agents;
+  final List<Timer> _timers = [];
+  Timer? _pollTimer;
+  late AnimationController _pulseController;
+
+  String? _campaignId;
+  String? _errorMessage;
+  bool _navigating = false;
+
+  // Polling config
+  static const _pollInterval = Duration(seconds: 5);
+  static const _pollTimeoutSeconds = 300; // 5 minutes
+  DateTime? _pollStartTime;
+
+  static final _service = SocialMediaCampaignService.instance;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    final allAgents = [
+      _AgentCard(
+        name: 'Instagram Agent',
+        platform: 'Instagram',
+        icon: LucideIcons.instagram,
+        color: const Color(0xFFE1306C),
+      ),
+      _AgentCard(
+        name: 'Twitter/X Agent',
+        platform: 'Twitter/X',
+        icon: LucideIcons.twitter,
+        color: const Color(0xFF1DA1F2),
+      ),
+      _AgentCard(
+        name: 'Facebook Agent',
+        platform: 'Facebook',
+        icon: LucideIcons.facebook,
+        color: const Color(0xFF1877F2),
+      ),
+      _AgentCard(
+        name: 'TikTok Agent',
+        platform: 'TikTok',
+        icon: LucideIcons.music2,
+        color: const Color(0xFF69C9D0),
+      ),
+      _AgentCard(
+        name: 'YouTube Agent',
+        platform: 'YouTube',
+        icon: LucideIcons.youtube,
+        color: const Color(0xFFFF0000),
+      ),
+      _AgentCard(
+        name: 'Analytics Specialist',
+        platform: 'Analytics',
+        icon: LucideIcons.barChart2,
+        color: const Color(0xFF10B981),
+      ),
+    ];
+
+    _agents = allAgents.where((a) {
+      return a.platform == 'Analytics' ||
+          widget.brief.platforms.contains(a.platform);
+    }).toList();
+
+    _startGeneration();
+  }
+
+  // ─── API flow ───────────────────────────────────────────────────────────────
+
+  Future<void> _startGeneration() async {
+    // Stagger agents into "processing" while the API call is in flight
+    _staggerProcessing();
+
+    try {
+      final id = await _service.generateCampaign(widget.brief);
+      if (!mounted) return;
+      _campaignId = id;
+      print('[SocialCampaign] Campaign created — id: $id');
+      _startPolling();
+    } catch (e) {
+      if (!mounted) return;
+      print('[SocialCampaign] generateCampaign error: $e');
+      setState(() => _errorMessage = _friendlyError(e));
+    }
+  }
+
+  void _startPolling() {
+    _pollStartTime = DateTime.now();
+    print('[SocialCampaign] Polling started — interval: ${_pollInterval.inSeconds}s, timeout: ${_pollTimeoutSeconds}s');
+
+    _pollTimer = Timer.periodic(_pollInterval, (_) async {
+      if (_campaignId == null || _navigating) return;
+
+      // ── Timeout guard ──────────────────────────────────────────────────────
+      final elapsedSeconds =
+          DateTime.now().difference(_pollStartTime!).inSeconds;
+      if (elapsedSeconds >= _pollTimeoutSeconds) {
+        _pollTimer?.cancel();
+        print('[SocialCampaign] Polling timed out after ${elapsedSeconds}s');
+        if (!mounted) return;
+        setState(() => _errorMessage =
+            'Campaign generation is taking too long (>5 min). Please try again.');
+        return;
+      }
+
+      // ── Poll ───────────────────────────────────────────────────────────────
+      try {
+        final result = await _service.getCampaignStatus(_campaignId!);
+        if (!mounted) return;
+
+        print('[SocialCampaign] Poll — id: $_campaignId | status: ${result.status} | elapsed: ${elapsedSeconds}s');
+
+        if (result.isCompleted) {
+          _pollTimer?.cancel();
+          print('[SocialCampaign] Status = completed — navigating to overview');
+          _markAllDoneAndNavigate(result);
+        } else if (result.isFailed) {
+          _pollTimer?.cancel();
+          print('[SocialCampaign] Status = failed — showing error');
+          setState(() => _errorMessage =
+              'Campaign generation failed. Please try again.');
+        }
+        // status == "generating" → keep polling, no error shown
+      } catch (e) {
+        // Network hiccup — log and silently retry on next tick
+        print('[SocialCampaign] Poll error (will retry): $e');
+      }
+    });
+  }
+
+  // ─── Animation helpers ───────────────────────────────────────────────────────
+
+  /// Stagger agents into "processing" state (visual feedback while API runs)
+  void _staggerProcessing() {
+    for (int i = 0; i < _agents.length; i++) {
+      final t = Timer(Duration(milliseconds: 300 + i * 400), () {
+        if (!mounted) return;
+        setState(() => _agents[i].status = _AgentStatus.processing);
+      });
+      _timers.add(t);
+    }
+  }
+
+  /// When API returns "completed", stagger all agents into "done" then navigate
+  void _markAllDoneAndNavigate(CampaignResultModel result) {
+    _navigating = true;
+    for (int i = 0; i < _agents.length; i++) {
+      final t = Timer(Duration(milliseconds: i * 300), () {
+        if (!mounted) return;
+        setState(() => _agents[i].status = _AgentStatus.done);
+      });
+      _timers.add(t);
+    }
+    // Navigate after all done animations finish
+    final navDelay =
+        Duration(milliseconds: (_agents.length * 300) + 600);
+    _timers.add(Timer(navDelay, () {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => SocialMediaCampaignOverviewScreen(result: result),
+        ),
+      );
+    }));
+  }
+
+  // ─── Lifecycle ───────────────────────────────────────────────────────────────
+
+  @override
+  void dispose() {
+    for (final t in _timers) {
+      t.cancel();
+    }
+    _pollTimer?.cancel();
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  String _friendlyError(Object e) {
+    final msg = e.toString();
+    if (msg.contains('SocketException') || msg.contains('Connection')) {
+      return 'No connection. Check your internet and try again.';
+    }
+    return 'Something went wrong. Please try again.';
+  }
+
+  // ─── Build ───────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              children: [
+                const SizedBox(height: 32),
+                _buildHeader(),
+                const SizedBox(height: 40),
+                if (_errorMessage != null) _buildErrorBanner(),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.only(bottom: 32),
+                    itemCount: _agents.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, i) => _buildAgentCard(_agents[i], i),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorBanner() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.red.shade900.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.red.withOpacity(0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(LucideIcons.alertCircle, color: Colors.redAccent, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _errorMessage!,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Text(
+              'Go back',
+              style: TextStyle(
+                color: AppColors.cyan400,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Column(
+      children: [
+        AnimatedBuilder(
+          animation: _pulseController,
+          builder: (context, _) {
+            return Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFFEC4899)
+                        .withOpacity(0.8 + _pulseController.value * 0.2),
+                    const Color(0xFFA855F7)
+                        .withOpacity(0.7 + _pulseController.value * 0.2),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFEC4899)
+                        .withOpacity(0.3 + _pulseController.value * 0.3),
+                    blurRadius: 24,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child:
+                  const Icon(LucideIcons.sparkles, color: Colors.white, size: 32),
+            );
+          },
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Generating Your Campaign',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ).animate().fadeIn(duration: 400.ms),
+        const SizedBox(height: 8),
+        Text(
+          'AI agents are crafting content for ${widget.brief.productName}',
+          style: TextStyle(
+            fontSize: 13,
+            color: AppColors.textCyan200.withOpacity(0.7),
+          ),
+          textAlign: TextAlign.center,
+        ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
+      ],
+    );
+  }
+
+  Widget _buildAgentCard(_AgentCard agent, int index) {
+    final isDone = agent.status == _AgentStatus.done;
+    final isProcessing = agent.status == _AgentStatus.processing;
+    final isWaiting = agent.status == _AgentStatus.waiting;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(isDone ? 0.07 : 0.04),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDone
+              ? const Color(0xFF10B981).withOpacity(0.5)
+              : isProcessing
+                  ? agent.color.withOpacity(0.4)
+                  : AppColors.cyan500.withOpacity(0.12),
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: agent.color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: agent.color.withOpacity(0.3)),
+            ),
+            child: Icon(agent.icon, color: agent.color, size: 22),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  agent.name,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isDone
+                      ? 'Content ready ✓'
+                      : isProcessing
+                          ? 'Generating content…'
+                          : 'Waiting to start…',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDone
+                        ? const Color(0xFF10B981)
+                        : isProcessing
+                            ? agent.color.withOpacity(0.9)
+                            : Colors.white.withOpacity(0.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          _buildStatusIndicator(agent, isWaiting, isProcessing, isDone),
+        ],
+      ),
+    )
+        .animate(delay: Duration(milliseconds: index * 80))
+        .fadeIn(duration: 400.ms)
+        .slideX(begin: 0.05, end: 0, curve: Curves.easeOut);
+  }
+
+  Widget _buildStatusIndicator(
+      _AgentCard agent, bool isWaiting, bool isProcessing, bool isDone) {
+    if (isDone) {
+      return Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: const Color(0xFF10B981).withOpacity(0.2),
+          border: Border.all(color: const Color(0xFF10B981).withOpacity(0.6)),
+        ),
+        child: const Icon(LucideIcons.check, color: Color(0xFF10B981), size: 16),
+      ).animate().scale(
+            begin: const Offset(0, 0),
+            end: const Offset(1, 1),
+            curve: Curves.elasticOut,
+          );
+    }
+    if (isProcessing) {
+      return SizedBox(
+        width: 32,
+        height: 32,
+        child: CircularProgressIndicator(
+          strokeWidth: 2.5,
+          valueColor: AlwaysStoppedAnimation<Color>(agent.color),
+        ),
+      );
+    }
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(color: Colors.white.withOpacity(0.15)),
+      ),
+      child:
+          Icon(LucideIcons.clock, color: Colors.white.withOpacity(0.3), size: 16),
+    );
+  }
+}
