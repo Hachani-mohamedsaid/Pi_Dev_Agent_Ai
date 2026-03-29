@@ -45,6 +45,28 @@ const String advisorPath = '/api/advisor/analyze';
 /// GET /api/advisor/history – list of past analyses for current user. Response: { analyses: [{ id, project_text, report, createdAt }] }.
 const String advisorHistoryPath = '/api/advisor/history';
 
+/// Stripe Checkout (subscriptions) — **à implémenter sur le backend NestJS**.
+/// POST avec `Authorization: Bearer <JWT>` et body JSON `{ "plan": "monthly" | "yearly" }`.
+/// Réponse attendue : `{ "url": "https://checkout.stripe.com/..." }` (URL de la session Stripe).
+/// La clé secrète Stripe (`sk_live_…` / `sk_test_…`) reste **uniquement** côté serveur.
+const String stripeCreateCheckoutSessionPath =
+    '/billing/create-checkout-session';
+
+/// Mobility smart booking endpoints (JWT required).
+const String mobilityEstimatePath = '/mobility/quotes/estimate';
+const String mobilityRulesPath = '/mobility/rules';
+const String mobilityProposalsPath = '/mobility/proposals';
+const String mobilityPendingProposalsPath = '/mobility/proposals/pending';
+const String mobilityProposalConfirmPathTemplate =
+    '/mobility/proposals/{id}/confirm';
+const String mobilityProposalRejectPathTemplate =
+    '/mobility/proposals/{id}/reject';
+const String mobilityBookingsPath = '/mobility/bookings';
+const String mobilityBookingAcceptDriverPathTemplate =
+    '/mobility/bookings/{id}/accept-driver';
+const String mobilityBookingRejectDriverPathTemplate =
+    '/mobility/bookings/{id}/reject-driver';
+
 /// n8n webhook for financial simulation (used by backend or directly if no backend).
 const String advisorWebhookUrl =
     'https://n8n-production-1e13.up.railway.app/webhook/a0cd36ce-41f1-4ef8-8bb2-b22cbe7cad6c';
@@ -60,8 +82,10 @@ const String advisorWebhookUrl =
 ///   OPENAI_API_KEY=sk-proj-xxx
 /// (clé valide sur https://platform.openai.com/account/api-keys)
 /// Sinon l'app utilise FlutterTts (pas de 401).
-const String _openaiKeyFromDartDefine =
-    String.fromEnvironment('OPENAI_API_KEY', defaultValue: '');
+const String _openaiKeyFromDartDefine = String.fromEnvironment(
+  'OPENAI_API_KEY',
+  defaultValue: '',
+);
 
 String get openaiApiKey => _openaiKeyFromEnv ?? _openaiKeyFromDartDefine;
 

@@ -38,6 +38,11 @@ class _SettingsMenuState extends State<SettingsMenu> {
     context.push('/edit-profile');
   }
 
+  void _handleSubscription() {
+    _hideMenu();
+    context.push('/subscription');
+  }
+
   void _handleNotifications() {
     _hideMenu();
     context.push('/notifications');
@@ -72,6 +77,7 @@ class _SettingsMenuState extends State<SettingsMenu> {
           });
         },
         onEditProfile: _handleEditProfile,
+        onSubscription: _handleSubscription,
         onLanguageChange: _handleLanguageChange,
         onNotifications: _handleNotifications,
         onPrivacySecurity: _handlePrivacySecurity,
@@ -145,18 +151,20 @@ class _SettingsMenuOverlay extends StatelessWidget {
   final bool darkMode;
   final ValueChanged<bool> onDarkModeChanged;
   final VoidCallback onEditProfile;
+  final VoidCallback onSubscription;
   final VoidCallback onLanguageChange;
   final VoidCallback onNotifications;
   final VoidCallback onPrivacySecurity;
   final VoidCallback onHelpSupport;
   final VoidCallback onLogout;
 
-  const _SettingsMenuOverlay({
+  _SettingsMenuOverlay({
     required this.position,
     required this.onDismiss,
     required this.darkMode,
     required this.onDarkModeChanged,
     required this.onEditProfile,
+    required this.onSubscription,
     required this.onLanguageChange,
     required this.onNotifications,
     required this.onPrivacySecurity,
@@ -188,6 +196,7 @@ class _SettingsMenuOverlay extends StatelessWidget {
                   darkMode: darkMode,
                   onDarkModeChanged: onDarkModeChanged,
                   onEditProfile: onEditProfile,
+                  onSubscription: onSubscription,
                   onLanguageChange: onLanguageChange,
                   onNotifications: onNotifications,
                   onPrivacySecurity: onPrivacySecurity,
@@ -208,17 +217,19 @@ class _SettingsMenuContent extends StatelessWidget {
   final bool darkMode;
   final ValueChanged<bool> onDarkModeChanged;
   final VoidCallback onEditProfile;
+  final VoidCallback onSubscription;
   final VoidCallback onLanguageChange;
   final VoidCallback onNotifications;
   final VoidCallback onPrivacySecurity;
   final VoidCallback onHelpSupport;
   final VoidCallback onLogout;
 
-  const _SettingsMenuContent({
+  _SettingsMenuContent({
     required this.isMobile,
     required this.darkMode,
     required this.onDarkModeChanged,
     required this.onEditProfile,
+    required this.onSubscription,
     required this.onLanguageChange,
     required this.onNotifications,
     required this.onPrivacySecurity,
@@ -307,6 +318,26 @@ class _SettingsMenuContent extends StatelessWidget {
                 label: AppStrings.tr(context, 'editProfile'),
                 isMobile: isMobile,
                 onTap: onEditProfile,
+              ),
+
+              Divider(
+                color: AppColors.cyan500.withOpacity(0.2),
+                height: 1,
+                thickness: 1,
+              ),
+
+              // Premium / Subscription
+              _SettingsMenuItem(
+                icon: Icons.workspace_premium,
+                label: AppStrings.tr(context, 'premiumSubscription'),
+                isMobile: isMobile,
+                onTap: onSubscription,
+              ),
+
+              Divider(
+                color: AppColors.cyan500.withOpacity(0.2),
+                height: 1,
+                thickness: 1,
               ),
 
               // Change Language

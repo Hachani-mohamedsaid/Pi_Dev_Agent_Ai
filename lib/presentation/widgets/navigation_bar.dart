@@ -5,14 +5,31 @@ import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/l10n/app_strings.dart';
+import '../../core/services/subscription_access_service.dart';
 
 class NavigationBarWidget extends StatelessWidget {
   final String currentPath;
 
-  const NavigationBarWidget({
-    super.key,
-    required this.currentPath,
-  });
+  const NavigationBarWidget({super.key, required this.currentPath});
+
+  void _handleVoiceTap(BuildContext context) async {
+    final hasAccess =
+        await SubscriptionAccessService.hasActivePlanForCurrentUser();
+    if (!context.mounted) return;
+
+    if (hasAccess) {
+      context.go('/voice-assistant');
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Active subscription required for this feature.'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    context.go('/subscription');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +38,9 @@ class NavigationBarWidget extends StatelessWidget {
     final isProfileActive = currentPath == '/profile';
     final isFinanceActive = currentPath == '/finance';
     final isVoiceActive = currentPath == '/voice-assistant';
-    final isAutomationActive = currentPath == '/automation';
-    final isWorkProposalsActive = currentPath == '/work-proposals' || currentPath == '/work-proposals-dashboard';
+    final isWorkProposalsActive =
+        currentPath == '/work-proposals' ||
+        currentPath == '/work-proposals-dashboard';
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = isMobile ? 10.0 : 24.0;
 
@@ -94,20 +112,28 @@ class NavigationBarWidget extends StatelessWidget {
                   ),
                   SizedBox(width: isMobile ? 8 : 12),
                   Flexible(
-                    child: _NavButton(
-                      icon: Icons.mic,
-                      label: AppStrings.tr(context, 'voice'),
-                      isActive: isVoiceActive,
-                      onTap: () => context.go('/voice-assistant'),
-                      isMobile: isMobile,
-                      activeGradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          const Color(0xFF9333EA).withOpacity(0.3),
-                          const Color(0xFFEC4899).withOpacity(0.3),
-                        ],
-                      ),
+                    child: FutureBuilder<bool>(
+                      future:
+                          SubscriptionAccessService.hasActivePlanForCurrentUser(),
+                      builder: (context, snapshot) {
+                        final hasAccess = snapshot.data == true;
+                        return _NavButton(
+                          icon: Icons.mic,
+                          label: AppStrings.tr(context, 'voice'),
+                          isActive: isVoiceActive,
+                          onTap: () => _handleVoiceTap(context),
+                          isMobile: isMobile,
+                          showPrivateBadge: !hasAccess,
+                          activeGradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              const Color(0xFF9333EA).withOpacity(0.3),
+                              const Color(0xFFEC4899).withOpacity(0.3),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ),
                   SizedBox(width: isMobile ? 8 : 12),
@@ -154,6 +180,7 @@ class _NavButton extends StatefulWidget {
   final bool isActive;
   final VoidCallback onTap;
   final bool isMobile;
+  final bool showPrivateBadge;
   final LinearGradient? activeGradient;
 
   const _NavButton({
@@ -162,6 +189,7 @@ class _NavButton extends StatefulWidget {
     required this.isActive,
     required this.onTap,
     required this.isMobile,
+    this.showPrivateBadge = false,
     this.activeGradient,
   });
 
@@ -183,61 +211,107 @@ class _NavButtonState extends State<_NavButton> {
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            Transform.scale(
-              scale: widget.isActive ? 1.0 : (_isPressed ? 0.95 : 1.0),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: EdgeInsets.symmetric(
-                  horizontal: widget.isMobile ? 14 : 18,
-                  vertical: widget.isMobile ? 10 : 12,
-                ),
-                decoration: BoxDecoration(
-                  gradient: widget.isActive
-                      ? (widget.activeGradient ??
-                          LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppColors.cyan500.withOpacity(0.3),
-                              AppColors.blue500.withOpacity(0.3),
-                            ],
-                          ))
-                      : null,
-                  color: widget.isActive ? null : Colors.transparent,
-                  borderRadius: BorderRadius.circular(widget.isMobile ? 24 : 28),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      widget.icon,
-                      size: widget.isMobile ? 20 : 22,
-                      color: widget.isActive
-                          ? AppColors.cyan400
-                          : AppColors.textCyan200.withOpacity(0.5),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Transform.scale(
+                  scale: widget.isActive ? 1.0 : (_isPressed ? 0.95 : 1.0),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: widget.isMobile ? 14 : 18,
+                      vertical: widget.isMobile ? 10 : 12,
                     ),
-                    if (widget.isActive) ...[
-                      SizedBox(height: widget.isMobile ? 4 : 6),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          widget.label,
-                          maxLines: 1,
-                          style: TextStyle(
-                            fontSize: widget.isMobile ? 10 : 11,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.cyan400,
+                    decoration: BoxDecoration(
+                      gradient: widget.isActive
+                          ? (widget.activeGradient ??
+                                LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    AppColors.cyan500.withOpacity(0.3),
+                                    AppColors.blue500.withOpacity(0.3),
+                                  ],
+                                ))
+                          : null,
+                      color: widget.isActive ? null : Colors.transparent,
+                      borderRadius: BorderRadius.circular(
+                        widget.isMobile ? 24 : 28,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          widget.icon,
+                          size: widget.isMobile ? 20 : 22,
+                          color: widget.isActive
+                              ? AppColors.cyan400
+                              : AppColors.textCyan200.withOpacity(0.5),
+                        ),
+                        if (widget.isActive) ...[
+                          SizedBox(height: widget.isMobile ? 4 : 6),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              widget.label,
+                              maxLines: 1,
+                              style: TextStyle(
+                                fontSize: widget.isMobile ? 10 : 11,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.cyan400,
+                              ),
+                            ),
                           ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (widget.showPrivateBadge)
+              Positioned(
+                top: -6,
+                right: -4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF312E81),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.cyan400.withOpacity(0.7),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.lock_outline,
+                        size: 10,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        'Upgrade',
+                        style: TextStyle(
+                          fontSize: widget.isMobile ? 8 : 9,
+                          height: 1,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),
