@@ -2107,12 +2107,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         .slideX(begin: 0.02, end: 0, curve: Curves.easeOut);
   }
 
-  Widget _buildPriorityChip(
-    BuildContext context,
-    int count,
-    String label,
-    Color color,
-  ) {
   Widget _buildSocialMediaCampaignCard(BuildContext context, bool isMobile) {
     final r = Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 24.0);
     const cardColor = Color(0xFFEC4899);

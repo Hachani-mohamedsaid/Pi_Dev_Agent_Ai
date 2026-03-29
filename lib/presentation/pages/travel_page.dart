@@ -418,7 +418,11 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
 
   bool _shouldAutoRetryEstimate(String code) {
     final normalized = code.toLowerCase();
-    if (normalized == 'login_required') return false;
+    if (normalized == 'login_required' ||
+        normalized == 'unauthorized' ||
+        normalized == 'http_401') {
+      return false;
+    }
 
     if (normalized.startsWith('http_')) {
       final status = int.tryParse(normalized.replaceFirst('http_', ''));
@@ -434,6 +438,9 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
     switch (e.code) {
       case 'login_required':
         return 'Please log in to use live mobility backend.';
+      case 'unauthorized':
+      case 'http_401':
+        return 'Session expired or invalid token. Please log out and log in again.';
       default:
         return 'Mobility backend error (${e.code}).';
     }
