@@ -15,6 +15,7 @@ import '../../injection_container.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../data/services/mobility_api_service.dart';
+import 'travel_schedule_page.dart';
 import '../widgets/navigation_bar.dart';
 
 class TravelPage extends StatefulWidget {
@@ -30,8 +31,6 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
     25.20485,
     55.27078,
   ); // Downtown Dubai
-  static const String _defaultTestHubLabel =
-      'Downtown Dubai (Uber + high taxi density)';
 
   final TextEditingController _destinationController = TextEditingController();
   final MapController _mapController = MapController();
@@ -48,6 +47,8 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
   bool _confirmingBooking = false;
   bool _syncingDailyRule = false;
   bool _dailyRuleEnabled = false;
+  bool _bestPriceWindowEnabled = false;
+  int _bestPriceWindowMinutes = 30;
   bool _selectingFromOnMap = false;
   bool _showDebugPanel = false;
   bool _estimateRetryPending = false;
@@ -76,8 +77,25 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
   MobilityProposal? _latestProposal;
   MobilityBooking? _latestBooking;
   String? _latestProposalOfferLabel;
-  String? _dailyRuleId;
+  String _plannedFromLocation = 'Current location';
+  List<SavedTravelRequest> _savedScheduleRequests =
+      const <SavedTravelRequest>[];
   TimeOfDay _plannedTime = const TimeOfDay(hour: 8, minute: 0);
+  List<TravelScheduleSlot> _scheduleSlots = <TravelScheduleSlot>[
+    TravelScheduleSlot(
+      time: TimeOfDay(hour: 8, minute: 0),
+      weekdays: <int>{
+        DateTime.monday,
+        DateTime.tuesday,
+        DateTime.wednesday,
+        DateTime.thursday,
+        DateTime.friday,
+      },
+      enabled: false,
+      adjustedTime: null,
+      lastSyncedAt: null,
+    ),
+  ];
   int _estimateRetryAttempts = 0;
 
   StreamSubscription<Position>? _positionSubscription;
@@ -186,8 +204,17 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
       initialTime: _plannedTime,
     );
     if (picked != null) {
-      setState(() => _plannedTime = picked);
-      if (_dailyRuleEnabled && _dailyRuleId != null) {
+      setState(() {
+        _plannedTime = picked;
+        if (_scheduleSlots.isNotEmpty) {
+          _scheduleSlots[0] = _scheduleSlots[0].copyWith(
+            time: picked,
+            adjustedTime: null,
+            lastSyncedAt: null,
+          );
+        }
+      });
+      if (_dailyRuleEnabled) {
         unawaited(_syncDailyRule(enabled: true));
       }
     }
@@ -412,7 +439,261 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
     }
   }
 
-  String _toCron(TimeOfDay t) => '${t.minute} ${t.hour} * * *';
+  String _toCron(TimeOfDay t, Set<int> weekdays) {
+    if (weekdays.isEmpty || weekdays.length == 7) {
+      return '${t.minute} ${t.hour} * * *';
+    }
+
+    final dayValues =
+        weekdays.map((day) => day == DateTime.sunday ? 0 : day).toList()
+          ..sort();
+    final dayExpr = dayValues.join(',');
+    return '${t.minute} ${t.hour} * * $dayExpr';
+  }
+
+  String _weekdaysLabel(Set<int> weekdays) {
+    if (weekdays.length == 7) return 'Every day';
+    const labels = <int, String>{
+      DateTime.monday: 'Mon',
+      DateTime.tuesday: 'Tue',
+      DateTime.wednesday: 'Wed',
+      DateTime.thursday: 'Thu',
+      DateTime.friday: 'Fri',
+      DateTime.saturday: 'Sat',
+      DateTime.sunday: 'Sun',
+    };
+    final ordered = weekdays.toList()..sort();
+    return ordered.map((day) => labels[day] ?? day.toString()).join(', ');
+  }
+
+  String _scheduleSummaryLabel() {
+    if (_scheduleSlots.isEmpty) return 'No schedule';
+    final enabledSlots = _scheduleSlots.where((slot) => slot.enabled).toList();
+    if (enabledSlots.isEmpty) {
+      return '${_scheduleSlots.length} schedules configured (all disabled)';
+    }
+
+    final preview = enabledSlots
+        .take(2)
+        .map(
+          (slot) =>
+              '${slot.time.format(context)} ${_weekdaysLabel(slot.weekdays)}',
+        )
+        .join(' | ');
+    final extra = enabledSlots.length > 2
+        ? ' +${enabledSlots.length - 2} more'
+        : '';
+    final bestPriceTag = _bestPriceWindowEnabled
+        ? ' • best-price ±$_bestPriceWindowMinutes min'
+        : '';
+    return '$preview$extra$bestPriceTag';
+  }
+
+  void _syncPrimaryPickupFromSchedules() {
+    if (_scheduleSlots.isEmpty) return;
+    final preferred = _scheduleSlots.firstWhere(
+      (slot) => slot.enabled,
+      orElse: () => _scheduleSlots.first,
+    );
+    _plannedTime = preferred.time;
+  }
+
+  Set<int>? _cronDayExprToWeekdays(String dayExpr) {
+    if (dayExpr == '*') {
+      return <int>{
+        DateTime.monday,
+        DateTime.tuesday,
+        DateTime.wednesday,
+        DateTime.thursday,
+        DateTime.friday,
+        DateTime.saturday,
+        DateTime.sunday,
+      };
+    }
+
+    final parts = dayExpr.split(',').map((e) => e.trim()).toList();
+    final days = <int>{};
+    for (final part in parts) {
+      final value = int.tryParse(part);
+      if (value == null || value < 0 || value > 7) {
+        return null;
+      }
+      days.add(value == 0 || value == 7 ? DateTime.sunday : value);
+    }
+    return days.isEmpty ? null : days;
+  }
+
+  TravelScheduleSlot? _slotFromRule(MobilityRule rule) {
+    final segments = rule.cron.trim().split(RegExp(r'\s+'));
+    if (segments.length < 5) return null;
+
+    final minute = int.tryParse(segments[0]);
+    final hour = int.tryParse(segments[1]);
+    final weekdays = _cronDayExprToWeekdays(segments[4]);
+    if (minute == null || hour == null || weekdays == null) {
+      return null;
+    }
+    if (minute < 0 || minute > 59 || hour < 0 || hour > 23) {
+      return null;
+    }
+
+    return TravelScheduleSlot(
+      ruleId: rule.id,
+      time: TimeOfDay(hour: hour, minute: minute),
+      adjustedTime: TimeOfDay(hour: hour, minute: minute),
+      lastSyncedAt: null,
+      weekdays: weekdays,
+      enabled: rule.enabled,
+    );
+  }
+
+  void _setAllScheduleEnabled(bool enabled) {
+    _dailyRuleEnabled = enabled;
+    _scheduleSlots = _scheduleSlots
+        .map(
+          (slot) => slot.copyWith(
+            enabled: enabled,
+            adjustedTime: null,
+            lastSyncedAt: null,
+          ),
+        )
+        .toList(growable: true);
+    _syncPrimaryPickupFromSchedules();
+  }
+
+  TimeOfDay _offsetTime(TimeOfDay value, int deltaMinutes) {
+    final total = (value.hour * 60 + value.minute + deltaMinutes) % 1440;
+    final normalized = total < 0 ? total + 1440 : total;
+    return TimeOfDay(hour: normalized ~/ 60, minute: normalized % 60);
+  }
+
+  DateTime _slotPickupDateTime(TimeOfDay time) {
+    final now = DateTime.now();
+    var dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
+    if (dt.isBefore(now)) {
+      dt = dt.add(const Duration(days: 1));
+    }
+    return dt;
+  }
+
+  Future<TimeOfDay> _resolveBestWindowTime({
+    required TravelScheduleSlot slot,
+    required String destination,
+    required int windowMinutes,
+  }) async {
+    if (windowMinutes <= 0) return slot.time;
+
+    final candidates = <TimeOfDay>[
+      _offsetTime(slot.time, -windowMinutes),
+      slot.time,
+      _offsetTime(slot.time, windowMinutes),
+    ];
+
+    final uniqueCandidates = <TimeOfDay>[];
+    final seen = <String>{};
+    for (final candidate in candidates) {
+      final key = '${candidate.hour}:${candidate.minute}';
+      if (seen.add(key)) {
+        uniqueCandidates.add(candidate);
+      }
+    }
+
+    final fromPoint =
+        _pickupLatLng ??
+        (_currentPosition == null
+            ? null
+            : LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+
+    double? bestPrice;
+    TimeOfDay bestTime = slot.time;
+
+    for (final candidate in uniqueCandidates) {
+      try {
+        final estimate = await _mobilityApiService.estimateQuotes(
+          from: _pickupLatLng == null
+              ? 'Current location'
+              : 'Map selected pickup',
+          to: destination,
+          pickupAt: _slotPickupDateTime(candidate),
+          fromLatitude: fromPoint?.latitude,
+          fromLongitude: fromPoint?.longitude,
+          toLatitude: _destinationLatLng?.latitude,
+          toLongitude: _destinationLatLng?.longitude,
+        );
+
+        final option =
+            estimate.best ??
+            (estimate.options.isEmpty ? null : estimate.options.first);
+        if (option == null) continue;
+
+        if (bestPrice == null || option.minPrice < bestPrice) {
+          bestPrice = option.minPrice;
+          bestTime = candidate;
+        }
+      } catch (_) {
+        // Keep current best candidate when estimate fails for one window edge.
+      }
+    }
+
+    return bestTime;
+  }
+
+  Future<void> _openSchedulePlanner() async {
+    final plan = await Navigator.of(context).push<TravelSchedulePlan>(
+      MaterialPageRoute(
+        builder: (_) => TravelSchedulePage(
+          initialFromLocation: _plannedFromLocation,
+          initialToLocation: _destinationController.text.trim(),
+          initialSlots: _scheduleSlots,
+          initialBestPriceWindowEnabled: _bestPriceWindowEnabled,
+          initialBestPriceWindowMinutes: _bestPriceWindowMinutes,
+          initialSavedRequests: _savedScheduleRequests,
+          baseMinPrice: _estimate?.best?.minPrice,
+          baseMaxPrice: _estimate?.best?.maxPrice,
+          baseEtaMinutes: _estimate?.best?.etaMinutes,
+        ),
+      ),
+    );
+
+    if (plan == null || !mounted) return;
+
+    setState(() {
+      _scheduleSlots = plan.slots
+          .map(
+            (slot) => TravelScheduleSlot(
+              time: slot.time,
+              weekdays: Set<int>.from(slot.weekdays),
+              enabled: slot.enabled,
+              adjustedTime: slot.adjustedTime,
+              lastSyncedAt: slot.lastSyncedAt,
+              ruleId: slot.ruleId,
+            ),
+          )
+          .toList(growable: true);
+      _dailyRuleEnabled = _scheduleSlots.any((slot) => slot.enabled);
+      _bestPriceWindowEnabled = plan.bestPriceWindowEnabled;
+      _bestPriceWindowMinutes = plan.bestPriceWindowMinutes;
+      _savedScheduleRequests = plan.savedRequests;
+      _syncPrimaryPickupFromSchedules();
+      _plannedFromLocation = plan.fromLocation;
+      _destinationController.text = plan.toLocation;
+      _errorMessage = null;
+    });
+
+    final parsedDestination = _parseLatLngInput(plan.toLocation);
+    if (parsedDestination != null) {
+      setState(() {
+        _destinationLatLng = parsedDestination;
+      });
+      await _buildRoute();
+      await _fetchMobilityEstimate();
+    }
+
+    if (!mounted) return;
+    if (_dailyRuleEnabled) {
+      await _syncDailyRule(enabled: true);
+    }
+  }
 
   String _clientTimezone() {
     final tz = DateTime.now().timeZoneName.trim();
@@ -656,12 +937,27 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
       final rules = await _mobilityApiService.fetchRules();
       if (!mounted) return;
       final existing = rules
-          .where((r) => r.name == 'Daily commute template')
-          .toList();
+          .where((r) {
+            return r.name == 'Daily commute template' ||
+                r.name.startsWith('Daily commute template #');
+          })
+          .toList(growable: false);
       if (existing.isEmpty) return;
+
+      final loadedSlots = <TravelScheduleSlot>[];
+      for (final rule in existing) {
+        final slot = _slotFromRule(rule);
+        if (slot != null) {
+          loadedSlots.add(slot);
+        }
+      }
+
+      if (loadedSlots.isEmpty) return;
+
       setState(() {
-        _dailyRuleId = existing.first.id;
-        _dailyRuleEnabled = existing.first.enabled;
+        _scheduleSlots = loadedSlots;
+        _dailyRuleEnabled = loadedSlots.any((slot) => slot.enabled);
+        _syncPrimaryPickupFromSchedules();
       });
     } catch (_) {
       // Non-blocking: travel still works without daily rule sync.
@@ -684,36 +980,107 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
     });
 
     try {
-      if (_dailyRuleId == null) {
-        final created = await _mobilityApiService.createRule(
-          name: 'Daily commute template',
-          from: 'Current location',
-          to: destination,
-          timezone: _clientTimezone(),
-          cron: _toCron(_plannedTime),
-          enabled: enabled,
-          requireUserApproval: true,
-        );
-        if (!mounted) return;
-        setState(() {
-          _dailyRuleId = created?.id;
-          _dailyRuleEnabled = enabled;
-          _syncingDailyRule = false;
-        });
-        return;
+      final existingRules = await _mobilityApiService.fetchRules();
+      final existingByName = <String, MobilityRule>{
+        for (final rule in existingRules)
+          if (rule.name == 'Daily commute template' ||
+              rule.name.startsWith('Daily commute template #'))
+            rule.name: rule,
+      };
+
+      var slotsForSync = _scheduleSlots
+          .map(
+            (slot) => TravelScheduleSlot(
+              time: slot.time,
+              weekdays: Set<int>.from(slot.weekdays),
+              enabled: slot.enabled,
+              adjustedTime: slot.adjustedTime,
+              lastSyncedAt: slot.lastSyncedAt,
+              ruleId: slot.ruleId,
+            ),
+          )
+          .toList(growable: true);
+
+      if (enabled && _bestPriceWindowEnabled) {
+        for (var i = 0; i < slotsForSync.length; i += 1) {
+          final slot = slotsForSync[i];
+          if (!slot.enabled) continue;
+          final bestTime = await _resolveBestWindowTime(
+            slot: slot,
+            destination: destination,
+            windowMinutes: _bestPriceWindowMinutes,
+          );
+          slotsForSync[i] = slot.copyWith(adjustedTime: bestTime);
+        }
       }
 
-      await _mobilityApiService.updateRule(
-        ruleId: _dailyRuleId!,
-        patch: {
-          'enabled': enabled,
-          'to': destination,
-          'cron': _toCron(_plannedTime),
-          'requireUserApproval': true,
-        },
-      );
+      final updatedSlots = <TravelScheduleSlot>[];
+      final usedNames = <String>{};
+      final syncedAt = DateTime.now();
+
+      for (var i = 0; i < slotsForSync.length; i += 1) {
+        final slot = slotsForSync[i];
+        final name = 'Daily commute template #${i + 1}';
+        usedNames.add(name);
+
+        final effectiveTime = enabled && slot.enabled
+            ? (slot.adjustedTime ?? slot.time)
+            : slot.time;
+        final cron = _toCron(effectiveTime, slot.weekdays);
+        final existing = existingByName[name];
+        final finalAdjustedTime = enabled && slot.enabled
+            ? effectiveTime
+            : null;
+        final finalSyncedAt = enabled && slot.enabled ? syncedAt : null;
+
+        if (existing == null) {
+          final created = await _mobilityApiService.createRule(
+            name: name,
+            from: _plannedFromLocation,
+            to: destination,
+            timezone: _clientTimezone(),
+            cron: cron,
+            enabled: enabled && slot.enabled,
+            requireUserApproval: true,
+          );
+          updatedSlots.add(
+            slot.copyWith(
+              ruleId: created?.id,
+              adjustedTime: finalAdjustedTime,
+              lastSyncedAt: finalSyncedAt,
+            ),
+          );
+        } else {
+          await _mobilityApiService.updateRule(
+            ruleId: existing.id,
+            patch: {
+              'enabled': enabled && slot.enabled,
+              'to': destination,
+              'cron': cron,
+              'requireUserApproval': true,
+            },
+          );
+          updatedSlots.add(
+            slot.copyWith(
+              ruleId: existing.id,
+              adjustedTime: finalAdjustedTime,
+              lastSyncedAt: finalSyncedAt,
+            ),
+          );
+        }
+      }
+
+      for (final entry in existingByName.entries) {
+        if (usedNames.contains(entry.key)) continue;
+        await _mobilityApiService.updateRule(
+          ruleId: entry.value.id,
+          patch: {'enabled': false, 'requireUserApproval': true},
+        );
+      }
+
       if (!mounted) return;
       setState(() {
+        _scheduleSlots = updatedSlots;
         _dailyRuleEnabled = enabled;
         _syncingDailyRule = false;
       });
@@ -721,7 +1088,7 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
       if (!mounted) return;
       setState(() {
         _syncingDailyRule = false;
-        _dailyRuleEnabled = !enabled;
+        _setAllScheduleEnabled(!enabled);
         _errorMessage = _mobilityErrorMessage(e);
         _lastMobilityErrorCode = e.code;
         _lastMobilityErrorBody = _truncateForDebug(e.body);
@@ -730,7 +1097,7 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
       if (!mounted) return;
       setState(() {
         _syncingDailyRule = false;
-        _dailyRuleEnabled = !enabled;
+        _setAllScheduleEnabled(!enabled);
         _errorMessage = 'Failed to sync daily rule with backend.';
       });
     }
@@ -1393,29 +1760,6 @@ out center 30;
     return LatLng(lat, lng);
   }
 
-  String _driverInfoLabel() {
-    final booking = _latestBooking;
-    if (booking == null) return 'Driver details unavailable.';
-    final name = booking.driverName;
-    final phone = booking.driverPhone;
-    final plate = booking.vehiclePlate;
-    final model = booking.vehicleModel;
-    final eta = booking.etaMinutes;
-    final hasLocation =
-        booking.driverLatitude != null && booking.driverLongitude != null;
-
-    final chunks = <String>[];
-    if (name != null && name.isNotEmpty) chunks.add(name);
-    if (phone != null && phone.isNotEmpty) chunks.add(phone);
-    if (model != null && model.isNotEmpty) chunks.add(model);
-    if (plate != null && plate.isNotEmpty) chunks.add('plate $plate');
-    if (eta != null) chunks.add('ETA ${eta} min');
-    if (hasLocation) chunks.add('live location available');
-    return chunks.isEmpty
-        ? 'Driver accepted, but backend did not provide driver data yet (name/phone/plate/location).'
-        : chunks.join(' • ');
-  }
-
   bool _canUserDecideDriver() {
     if (_latestBooking == null) return false;
     if (_submittingDriverDecision) return false;
@@ -1462,27 +1806,205 @@ out center 30;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Confirm taxi request in app'),
-          content: Text(
-            'Destination: ${_destinationController.text.trim()}\n'
-            'Pickup time: ${_plannedTime.format(context)}\n'
-            'Provider: ${effectiveOption.provider}\n'
-            'Price: ${effectiveOption.minPrice.toStringAsFixed(1)} - ${effectiveOption.maxPrice.toStringAsFixed(1)} TND\n'
-            'Distance: ${_distanceKm!.toStringAsFixed(1)} km\n'
-            'ETA: ${_durationMin!.round()} min\n\n'
-            '${selectedOption == null ? 'Live estimate is unavailable right now. Request will still be sent to backend.\n\n' : ''}We will send the request and track acceptance/refusal in this app.',
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: AppColors.cardGradient,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.borderCyanFocus),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.28),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Request Taxi'),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.buttonGradient,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.local_taxi_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Confirm Taxi Request',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 22,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryMedium.withOpacity(0.45),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.borderCyan),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Destination: ${_destinationController.text.trim()}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Pickup time: ${_plannedTime.format(context)}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Provider: ${effectiveOption.provider}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryMedium.withOpacity(0.45),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.borderCyan),
+                        ),
+                        child: Text(
+                          '${effectiveOption.minPrice.toStringAsFixed(1)}-${effectiveOption.maxPrice.toStringAsFixed(1)} TND',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.cyan200,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryMedium.withOpacity(0.45),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.borderCyan),
+                        ),
+                        child: Text(
+                          '${_distanceKm!.toStringAsFixed(1)} km • ${_durationMin!.round()} min',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.cyan200,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (selectedOption == null) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber.withOpacity(0.45)),
+                    ),
+                    child: Text(
+                      'Live estimate is unavailable now. Request will still be sent to backend.',
+                      style: TextStyle(
+                        color: Colors.amberAccent.withOpacity(0.95),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Text(
+                  'We will send the request and track acceptance/refusal in this app.',
+                  style: TextStyle(
+                    color: AppColors.textCyan200.withOpacity(0.88),
+                    fontSize: 13,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(false),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: AppColors.borderCyanFocus),
+                          foregroundColor: AppColors.cyan200,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          gradient: AppColors.buttonGradient,
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                        child: FilledButton(
+                          onPressed: () =>
+                              Navigator.of(dialogContext).pop(true),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: const Text('Request Taxi'),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
@@ -1852,54 +2374,6 @@ out center 30;
                 fontSize: 12,
               ),
             ),
-          if (_normalizeStatus(status) == 'ACCEPTED')
-            Text(
-              'Driver: ${_driverInfoLabel()}',
-              style: TextStyle(
-                color: AppColors.textCyan200.withOpacity(0.92),
-                fontSize: 12,
-              ),
-            ),
-          if (_normalizeStatus(status) == 'ACCEPTED')
-            Text(
-              'driverName: ${_latestBooking?.driverName?.isNotEmpty == true ? _latestBooking!.driverName : 'not provided'}',
-              style: TextStyle(
-                color: AppColors.textCyan200.withOpacity(0.92),
-                fontSize: 12,
-              ),
-            ),
-          if (_normalizeStatus(status) == 'ACCEPTED')
-            Text(
-              'driverPhone: ${_latestBooking?.driverPhone?.isNotEmpty == true ? _latestBooking!.driverPhone : 'not provided'}',
-              style: TextStyle(
-                color: AppColors.textCyan200.withOpacity(0.92),
-                fontSize: 12,
-              ),
-            ),
-          if (_normalizeStatus(status) == 'ACCEPTED')
-            Text(
-              'vehiclePlate: ${_latestBooking?.vehiclePlate?.isNotEmpty == true ? _latestBooking!.vehiclePlate : 'not provided'}',
-              style: TextStyle(
-                color: AppColors.textCyan200.withOpacity(0.92),
-                fontSize: 12,
-              ),
-            ),
-          if (_normalizeStatus(status) == 'ACCEPTED')
-            Text(
-              'driverLatitude: ${_latestBooking?.driverLatitude?.toStringAsFixed(6) ?? 'not provided'}',
-              style: TextStyle(
-                color: AppColors.textCyan200.withOpacity(0.92),
-                fontSize: 12,
-              ),
-            ),
-          if (_normalizeStatus(status) == 'ACCEPTED')
-            Text(
-              'driverLongitude: ${_latestBooking?.driverLongitude?.toStringAsFixed(6) ?? 'not provided'}',
-              style: TextStyle(
-                color: AppColors.textCyan200.withOpacity(0.92),
-                fontSize: 12,
-              ),
-            ),
           if (_canUserDecideDriver())
             Text(
               'User decision required: please Accept or Reject this driver.',
@@ -1958,22 +2432,6 @@ out center 30;
                     onPressed: _cancelCurrentProposal,
                     icon: const Icon(Icons.close, size: 16),
                     label: const Text('Cancel request'),
-                  ),
-                if (_canUserDecideDriver())
-                  FilledButton.icon(
-                    onPressed: _submittingDriverDecision
-                        ? null
-                        : () => unawaited(_submitDriverDecision(accept: true)),
-                    icon: const Icon(Icons.check, size: 16),
-                    label: const Text('Accept driver'),
-                  ),
-                if (_canUserDecideDriver())
-                  OutlinedButton.icon(
-                    onPressed: _submittingDriverDecision
-                        ? null
-                        : () => unawaited(_submitDriverDecision(accept: false)),
-                    icon: const Icon(Icons.person_off, size: 16),
-                    label: const Text('Reject driver'),
                   ),
               ],
             ),
@@ -2051,6 +2509,8 @@ out center 30;
                             if (_latestProposal != null) ...[
                               const SizedBox(height: 12),
                               _buildProposalCard(context),
+                              const SizedBox(height: 12),
+                              _buildDriverInfoCard(context),
                             ],
                             if (_showDebugPanel) ...[
                               const SizedBox(height: 12),
@@ -2083,6 +2543,221 @@ out center 30;
         ),
       ),
     );
+  }
+
+  Widget _buildDriverInfoCard(BuildContext context) {
+    final booking = _latestBooking;
+    if (booking == null ||
+        (_normalizeStatus(booking.status) != 'ACCEPTED' &&
+            !_canUserDecideDriver())) {
+      return const SizedBox.shrink();
+    }
+
+    final driverName = booking.driverName?.isNotEmpty == true
+        ? booking.driverName!
+        : 'Driver Information Pending';
+    final rawDriverPhone = booking.driverPhone?.isNotEmpty == true
+        ? booking.driverPhone!
+        : 'N/A';
+    final driverPhone = rawDriverPhone.startsWith('+216')
+        ? rawDriverPhone.replaceFirst('+216', '+971')
+        : rawDriverPhone;
+    final vehiclePlate = booking.vehiclePlate?.isNotEmpty == true
+        ? booking.vehiclePlate!
+        : 'N/A';
+    final hasLocation =
+        booking.driverLatitude != null && booking.driverLongitude != null;
+    final etaMinutes = booking.etaMinutes ?? 0;
+
+    return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: AppColors.cardGradient,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.borderCyan),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Driver Details',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  color: AppColors.cyan400,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Driver Header with Icon
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.buttonGradient,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.directions_car_rounded,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          driverName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Plate: $vehiclePlate',
+                          style: TextStyle(
+                            color: AppColors.cyan400,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (etaMinutes > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Colors.green.withOpacity(0.5),
+                        ),
+                      ),
+                      child: Text(
+                        'ETA $etaMinutes min',
+                        style: const TextStyle(
+                          color: Colors.greenAccent,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Contact & Details
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryMedium.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.borderCyan),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.phone_rounded,
+                          color: AppColors.cyan400,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            driverPhone,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (hasLocation)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on_rounded,
+                            color: AppColors.cyan400,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${booking.driverLatitude?.toStringAsFixed(4)}, ${booking.driverLongitude?.toStringAsFixed(4)}',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+              if (_canUserDecideDriver()) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Please confirm this driver:',
+                  style: TextStyle(
+                    color: Colors.amberAccent.withOpacity(0.95),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: _submittingDriverDecision
+                          ? null
+                          : () =>
+                                unawaited(_submitDriverDecision(accept: true)),
+                      icon: const Icon(Icons.check, size: 16),
+                      label: const Text('Accept driver'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _submittingDriverDecision
+                          ? null
+                          : () =>
+                                unawaited(_submitDriverDecision(accept: false)),
+                      icon: const Icon(Icons.person_off, size: 16),
+                      label: const Text('Reject driver'),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        )
+        .animate()
+        .fadeIn(duration: const Duration(milliseconds: 400))
+        .slideY(
+          begin: 0.2,
+          end: 0,
+          duration: const Duration(milliseconds: 400),
+        );
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -2134,8 +2809,8 @@ out center 30;
             controller: _destinationController,
             onSubmitted: (_) => unawaited(_applyManualDestination()),
             decoration: InputDecoration(
-              labelText: 'To (map or manual lat,lng)',
-              hintText: 'Tap map or type: 36.80421, 10.17453',
+              labelText: 'Destination',
+              hintText: 'Select on map or enter: lat, lng',
               suffixIcon: IconButton(
                 tooltip: 'Use manual coordinates',
                 onPressed: () => unawaited(_applyManualDestination()),
@@ -2172,6 +2847,42 @@ out center 30;
             ],
           ),
           const SizedBox(height: 8),
+          Container(
+                decoration: const BoxDecoration(
+                  gradient: AppColors.buttonGradient,
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _openSchedulePlanner,
+                    icon: const Icon(Icons.schedule),
+                    label: const Text(
+                      'Schedule & Pricing Planner',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              )
+              .animate()
+              .fadeIn(duration: const Duration(milliseconds: 600))
+              .slideY(
+                begin: 0.2,
+                end: 0,
+                duration: const Duration(milliseconds: 600),
+              ),
+          const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -2196,25 +2907,6 @@ out center 30;
               onPressed: () => unawaited(_refreshInAppData()),
               icon: const Icon(Icons.refresh),
               label: const Text('Refresh live estimate and status'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                _mapController.move(_defaultTestHub, 13.5);
-              },
-              icon: const Icon(Icons.public),
-              label: const Text('Go to default test hub'),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Default hub: $_defaultTestHubLabel',
-            style: TextStyle(
-              color: AppColors.textCyan200.withOpacity(0.78),
-              fontSize: 12,
             ),
           ),
           const SizedBox(height: 8),
@@ -2361,7 +3053,7 @@ out center 30;
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Daily rule at ${_plannedTime.format(context)} (editable example)',
+                  'Auto schedules: ${_scheduleSummaryLabel()}',
                   style: TextStyle(
                     color: AppColors.textCyan200.withOpacity(0.82),
                   ),
@@ -2377,7 +3069,9 @@ out center 30;
                 Switch.adaptive(
                   value: _dailyRuleEnabled,
                   onChanged: (value) {
-                    setState(() => _dailyRuleEnabled = value);
+                    setState(() {
+                      _setAllScheduleEnabled(value);
+                    });
                     unawaited(_syncDailyRule(enabled: value));
                   },
                 ),
@@ -2501,7 +3195,14 @@ out center 30;
               ),
             ),
           Text(
-            'Daily rule: id=${_dailyRuleId ?? 'n/a'} enabled=$_dailyRuleEnabled syncing=$_syncingDailyRule',
+            'Daily rules: total=${_scheduleSlots.length} enabled=${_scheduleSlots.where((slot) => slot.enabled).length} syncing=$_syncingDailyRule',
+            style: TextStyle(
+              color: AppColors.textCyan200.withOpacity(0.9),
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            'Best price window: enabled=$_bestPriceWindowEnabled window=±$_bestPriceWindowMinutes min',
             style: TextStyle(
               color: AppColors.textCyan200.withOpacity(0.9),
               fontSize: 12,

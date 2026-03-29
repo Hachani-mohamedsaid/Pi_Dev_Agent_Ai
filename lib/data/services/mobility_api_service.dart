@@ -331,7 +331,11 @@ class MobilityApiService {
       bookingId,
     );
     final response = await http
-        .post(Uri.parse('$apiBaseUrl$path'), headers: await _headers())
+        .post(
+          Uri.parse('$apiBaseUrl$path'),
+          headers: await _headers(),
+          body: jsonEncode({}),
+        )
         .timeout(_timeout);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
@@ -350,7 +354,11 @@ class MobilityApiService {
       bookingId,
     );
     final response = await http
-        .post(Uri.parse('$apiBaseUrl$path'), headers: await _headers())
+        .post(
+          Uri.parse('$apiBaseUrl$path'),
+          headers: await _headers(),
+          body: jsonEncode({}),
+        )
         .timeout(_timeout);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
@@ -643,8 +651,8 @@ class MobilityBooking {
         nestedKeys: const ['longitude', 'lng', 'lon'],
       ),
       userDecisionRequired: json['userDecisionRequired'] as bool?,
-      userDriverDecision:
-          (json['userDriverDecision'] ?? json['driverDecision'])?.toString(),
+      userDriverDecision: (json['userDriverDecision'] ?? json['driverDecision'])
+          ?.toString(),
     );
   }
 
