@@ -117,3 +117,35 @@ Widget avaGoldBtn(
     ),
   );
 }
+
+/// Overrides the app-wide cyan [ColorScheme] so AVA surfaces match
+/// [MeetingSetupScreen] / briefing (no blue tint on scaffold or inputs).
+ThemeData themeForAvaFlow(BuildContext context) {
+  final base = Theme.of(context);
+  final cs = base.colorScheme;
+  return base.copyWith(
+    scaffoldBackgroundColor: AvaColors.bg,
+    canvasColor: AvaColors.bg,
+    colorScheme: cs.copyWith(
+      surface: AvaColors.card,
+      onSurface: AvaColors.text,
+      primary: AvaColors.gold,
+      onPrimary: AvaColors.bg,
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: AvaColors.bg,
+      foregroundColor: AvaColors.text,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
+      titleTextStyle: TextStyle(
+        fontFamily: 'Georgia',
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: AvaColors.text,
+      ),
+    ),
+    dividerTheme: const DividerThemeData(color: AvaColors.border),
+    iconTheme: const IconThemeData(color: AvaColors.muted),
+  );
+}

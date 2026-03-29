@@ -2,6 +2,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_shell.dart';
 import '../../core/theme/ava_theme.dart';
 import '../../data/services/meeting_intelligence_service.dart';
 import '../../injection_container.dart';
@@ -69,28 +71,31 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AvaColors.bg,
-      appBar: _appBar(),
-      body: Column(
-        children: [
-          _stepCapsule(),
-          _progressBar(),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: _stepContent(),
+    return AppShellGradient(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: _appBar(),
+        body: Column(
+          children: [
+            _stepCapsule(),
+            _progressBar(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: _stepContent(),
+              ),
             ),
-          ),
-          _bottomBar(),
-        ],
+            _bottomBar(),
+          ],
+        ),
       ),
     );
   }
 
   PreferredSizeWidget _appBar() {
     return AppBar(
-      backgroundColor: AvaColors.bg,
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
       leading: GestureDetector(
         onTap: () {
@@ -112,13 +117,16 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
           fontFamily: 'Georgia',
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: AvaColors.text,
+          color: AppColors.textWhite,
         ),
       ),
       centerTitle: true,
-      bottom: const PreferredSize(
-        preferredSize: Size.fromHeight(1),
-        child: Divider(height: 1, color: AvaColors.border),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Divider(
+          height: 1,
+          color: AppColors.cyan500.withValues(alpha: 0.22),
+        ),
       ),
     );
   }
@@ -131,14 +139,16 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AvaColors.gold.withValues(alpha: 0.45)),
+            border: Border.all(
+              color: AppColors.cyan400.withValues(alpha: 0.55),
+            ),
           ),
           child: Text(
             'STEP ${_step + 1} OF 3',
             style: const TextStyle(
               fontSize: 10,
               letterSpacing: 1.4,
-              color: AvaColors.gold,
+              color: AppColors.cyan400,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -158,7 +168,9 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
               margin: EdgeInsets.only(right: i < 2 ? 6 : 0),
               height: 3,
               decoration: BoxDecoration(
-                color: filled ? AvaColors.gold : AvaColors.border2,
+                color: filled
+                    ? AppColors.cyan400
+                    : AppColors.cyan500.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -293,11 +305,11 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A1508), Color(0xFF0F0C04)],
-        ),
+        gradient: AppColors.cardGradient,
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AvaColors.gold.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: AppColors.cyan500.withValues(alpha: 0.28),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,7 +323,7 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
                 style: TextStyle(
                   fontSize: 8,
                   letterSpacing: 2,
-                  color: AvaColors.gold,
+                  color: AppColors.cyan400,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -336,7 +348,7 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
       if (_valuation.text.trim().isNotEmpty)
         _SummaryRow('Valuation', _valuation.text.trim()),
       if (_equity.text.trim().isNotEmpty)
-        _SummaryRow('Equity', _equity.text.trim(), accent: AvaColors.gold),
+        _SummaryRow('Equity', _equity.text.trim(), accent: AppColors.cyan400),
       if (_investmentAsked.text.trim().isNotEmpty)
         _SummaryRow('Investment asked', _investmentAsked.text.trim()),
       if (_revenue.text.trim().isNotEmpty) _SummaryRow('Revenue', _revenue.text.trim()),
@@ -351,9 +363,11 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: AvaColors.card,
+        color: AppColors.primaryDarker,
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AvaColors.border2),
+        border: Border.all(
+          color: AppColors.cyan500.withValues(alpha: 0.22),
+        ),
       ),
       child: Column(
         children: rows.asMap().entries.map((e) {
@@ -378,7 +392,7 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: r.accent ?? AvaColors.text,
+                          color: r.accent ?? AppColors.textWhite,
                         ),
                       ),
                     ),
@@ -389,7 +403,7 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
                 Container(
                   height: 1,
                   margin: const EdgeInsets.symmetric(horizontal: 14),
-                  color: AvaColors.border,
+                  color: AppColors.cyan500.withValues(alpha: 0.15),
                 ),
             ],
           );
@@ -402,20 +416,22 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AvaColors.blue.withValues(alpha: 0.08),
+        color: AppColors.cyan500.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AvaColors.blue.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AppColors.cyan400.withValues(alpha: 0.28),
+        ),
       ),
       child: const Row(
         children: [
-          Icon(Icons.info_outline_rounded, color: AvaColors.blue, size: 18),
+          Icon(Icons.info_outline_rounded, color: AppColors.cyan400, size: 18),
           SizedBox(width: 9),
           Expanded(
             child: Text(
               'All 5 agents loaded. AVA is preparing your briefing.',
               style: TextStyle(
                 fontSize: 11,
-                color: AvaColors.blue,
+                color: AppColors.textCyan200,
                 height: 1.5,
               ),
             ),
@@ -428,9 +444,11 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
   Widget _bottomBar() {
     return Container(
       padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.paddingOf(context).bottom + 16),
-      decoration: const BoxDecoration(
-        color: AvaColors.bg,
-        border: Border(top: BorderSide(color: AvaColors.border)),
+      decoration: BoxDecoration(
+        color: AppColors.primaryDark.withValues(alpha: 0.94),
+        border: Border(
+          top: BorderSide(color: AppColors.cyan500.withValues(alpha: 0.25)),
+        ),
       ),
       child: Row(
         children: [
@@ -442,10 +460,18 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
                   height: 50,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AvaColors.border2),
+                    border: Border.all(
+                      color: AppColors.cyan500.withValues(alpha: 0.35),
+                    ),
                   ),
                   child: const Center(
-                    child: Text('Back', style: TextStyle(fontSize: 14, color: AvaColors.muted)),
+                    child: Text(
+                      'Back',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textCyan200,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -509,7 +535,7 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
       }
       setState(() => _loading = true);
       try {
-        final result = await _api.updateDraftDealTerms(
+        await _api.updateDraftDealTerms(
           draftId: _draftId!,
           dealTerms: {
             'dealType': _dealType,
@@ -574,7 +600,7 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: AvaColors.red,
+        backgroundColor: AppColors.statusRejected,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
@@ -604,19 +630,23 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
             hintText: hint ?? label,
             hintStyle: const TextStyle(color: AvaColors.muted, fontSize: 13),
             filled: true,
-            fillColor: AvaColors.card,
+            fillColor: AppColors.primaryDarker,
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AvaColors.border2),
+              borderSide: BorderSide(
+                color: AppColors.cyan500.withValues(alpha: 0.22),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AvaColors.border2),
+              borderSide: BorderSide(
+                color: AppColors.cyan500.withValues(alpha: 0.22),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AvaColors.gold, width: 1.5),
+              borderSide: const BorderSide(color: AppColors.cyan400, width: 1.5),
             ),
           ),
         ),
@@ -639,19 +669,23 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
             hintText: 'Paste text here…',
             hintStyle: const TextStyle(color: AvaColors.muted, fontSize: 13),
             filled: true,
-            fillColor: AvaColors.card,
+            fillColor: AppColors.primaryDarker,
             contentPadding: const EdgeInsets.all(14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AvaColors.border2),
+              borderSide: BorderSide(
+                color: AppColors.cyan500.withValues(alpha: 0.22),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AvaColors.border2),
+              borderSide: BorderSide(
+                color: AppColors.cyan500.withValues(alpha: 0.22),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AvaColors.gold, width: 1.5),
+              borderSide: const BorderSide(color: AppColors.cyan400, width: 1.5),
             ),
           ),
         ),
@@ -673,24 +707,28 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
         DropdownButtonFormField<String>(
           value: value, // ignore: deprecated_member_use
           onChanged: onChanged,
-          dropdownColor: AvaColors.card,
+          dropdownColor: AppColors.primaryDarker,
           style: AvaText.body.copyWith(fontSize: 13),
           icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AvaColors.muted),
           decoration: InputDecoration(
             filled: true,
-            fillColor: AvaColors.card,
+            fillColor: AppColors.primaryDarker,
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AvaColors.border2),
+              borderSide: BorderSide(
+                color: AppColors.cyan500.withValues(alpha: 0.22),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AvaColors.border2),
+              borderSide: BorderSide(
+                color: AppColors.cyan500.withValues(alpha: 0.22),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AvaColors.gold, width: 1.5),
+              borderSide: const BorderSide(color: AppColors.cyan400, width: 1.5),
             ),
           ),
           items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
@@ -711,10 +749,12 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             decoration: BoxDecoration(
-              color: AvaColors.card,
+              color: AppColors.primaryDarker,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: _meetingAt != null ? AvaColors.gold : AvaColors.border2,
+                color: _meetingAt != null
+                    ? AppColors.cyan400
+                    : AppColors.cyan500.withValues(alpha: 0.22),
                 width: _meetingAt != null ? 1.5 : 1,
               ),
             ),
@@ -722,7 +762,9 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
               children: [
                 Icon(
                   Icons.calendar_today_outlined,
-                  color: _meetingAt != null ? AvaColors.gold : AvaColors.muted,
+                  color: _meetingAt != null
+                      ? AppColors.cyan400
+                      : AvaColors.muted,
                   size: 16,
                 ),
                 const SizedBox(width: 10),
@@ -733,7 +775,9 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
                         : _formatDate(_meetingAt!),
                     style: TextStyle(
                       fontSize: 13,
-                      color: _meetingAt == null ? AvaColors.muted : AvaColors.text,
+                      color: _meetingAt == null
+                          ? AvaColors.muted
+                          : AppColors.textWhite,
                     ),
                   ),
                 ),
@@ -755,10 +799,10 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
       lastDate: today.add(const Duration(days: 365 * 2)),
       builder: (ctx, child) => Theme(
         data: ThemeData.dark().copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: AvaColors.gold,
-            onPrimary: AvaColors.bg,
-            surface: AvaColors.card,
+          colorScheme: ColorScheme.dark(
+            primary: AppColors.cyan400,
+            onPrimary: AppColors.primaryDark,
+            surface: AppColors.primaryDarker,
           ),
         ),
         child: child!,
@@ -771,10 +815,10 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
       initialTime: TimeOfDay.now(),
       builder: (ctx, child) => Theme(
         data: ThemeData.dark().copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: AvaColors.gold,
-            onPrimary: AvaColors.bg,
-            surface: AvaColors.card,
+          colorScheme: ColorScheme.dark(
+            primary: AppColors.cyan400,
+            onPrimary: AppColors.primaryDark,
+            surface: AppColors.primaryDarker,
           ),
         ),
         child: child!,
@@ -799,10 +843,12 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 20),
             decoration: BoxDecoration(
-              color: AvaColors.card,
+              color: AppColors.primaryDarker,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: _uploadedFile.isNotEmpty ? AvaColors.green : AvaColors.border2,
+                color: _uploadedFile.isNotEmpty
+                    ? AvaColors.green
+                    : AppColors.cyan500.withValues(alpha: 0.22),
               ),
             ),
             child: _uploadedFile.isNotEmpty

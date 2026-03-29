@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_shell.dart';
 import '../../../core/theme/ava_theme.dart';
 import '../../../data/services/meeting_intelligence_service.dart';
 import '../../../features/meeting_intelligence/briefing_culture_cache.dart';
@@ -115,8 +117,7 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AvaColors.bg,
+    return BriefingGradientScaffold(
       appBar: BriefingAvaAppBar(
         investorName: briefingInvestorShortName(widget.investorName),
         onBack: () => context.pop(),
@@ -152,7 +153,7 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(
-            color: AvaColors.gold,
+            color: AppColors.cyan400,
             strokeWidth: 2,
           ),
           SizedBox(height: 16),
@@ -189,7 +190,10 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
               style: AvaText.caption.copyWith(fontSize: 11),
             ),
             const SizedBox(height: 20),
-            avaGoldBtn('Retry', _load),
+            AppPrimaryGradientButton(
+              label: 'Retry',
+              onPressed: _load,
+            ),
           ],
         ),
       ),
@@ -261,13 +265,13 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
           child: Container(
             padding: const EdgeInsets.all(11),
             decoration: BoxDecoration(
-              color: AvaColors.card,
+              color: AppColors.primaryDarker,
               borderRadius: const BorderRadius.only(
                 topRight: Radius.circular(12),
                 bottomLeft: Radius.circular(12),
                 bottomRight: Radius.circular(12),
               ),
-              border: Border.all(color: AvaColors.border2),
+              border: Border.all(color: AppColors.cyan500.withValues(alpha: 0.22)),
             ),
             child: Text(
               text,
@@ -288,9 +292,9 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
     return Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: AvaColors.card,
+        color: AppColors.primaryDarker,
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AvaColors.border2),
+        border: Border.all(color: AppColors.cyan500.withValues(alpha: 0.22)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,9 +348,9 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
     return Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: AvaColors.card,
+        color: AppColors.primaryDarker,
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AvaColors.border2),
+        border: Border.all(color: AppColors.cyan500.withValues(alpha: 0.22)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -371,11 +375,11 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
     return Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A1508), Color(0xFF0F0C04)],
-        ),
+        gradient: AppColors.cardGradient,
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AvaColors.gold.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: AppColors.cyan500.withValues(alpha: 0.28),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,7 +393,7 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
                   fontSize: 8,
                   letterSpacing: 2.5,
                   fontWeight: FontWeight.w600,
-                  color: AvaColors.gold,
+                  color: AppColors.cyan400,
                 ),
               ),
               GestureDetector(
@@ -398,7 +402,7 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: const Text('Copied to clipboard'),
-                      backgroundColor: AvaColors.green,
+                      backgroundColor: AppColors.statusAccepted,
                       behavior: SnackBarBehavior.floating,
                       duration: const Duration(seconds: 1),
                       shape: RoundedRectangleBorder(
@@ -411,17 +415,17 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AvaColors.gold.withValues(alpha: 0.12),
+                    color: AppColors.cyan500.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(7),
                     border: Border.all(
-                      color: AvaColors.gold.withValues(alpha: 0.25),
+                      color: AppColors.cyan500.withValues(alpha: 0.28),
                     ),
                   ),
                   child: const Text(
                     'Copy',
                     style: TextStyle(
                       fontSize: 9,
-                      color: AvaColors.gold,
+                      color: AppColors.cyan400,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -446,9 +450,9 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
     return Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: AvaColors.card,
+        color: AppColors.primaryDarker,
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AvaColors.border2),
+        border: Border.all(color: AppColors.cyan500.withValues(alpha: 0.22)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -487,9 +491,9 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
                           height: 26,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AvaColors.gold.withValues(alpha: 0.12),
+                            color: AppColors.cyan500.withValues(alpha: 0.15),
                             border: Border.all(
-                              color: AvaColors.gold.withValues(alpha: 0.35),
+                              color: AppColors.cyan400.withValues(alpha: 0.45),
                             ),
                           ),
                           child: Center(
@@ -497,7 +501,7 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
                               '${i + 1}',
                               style: const TextStyle(
                                 fontSize: 10,
-                                color: AvaColors.gold,
+                                color: AppColors.cyan400,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -536,12 +540,10 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1A1508), Color(0xFF0F0C04)],
-          ),
+          gradient: AppColors.cardGradient,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: AvaColors.gold.withValues(alpha: 0.25),
+            color: AppColors.cyan500.withValues(alpha: 0.28),
           ),
         ),
         child: Row(
@@ -555,7 +557,7 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
                     style: TextStyle(
                       fontSize: 8,
                       letterSpacing: 2,
-                      color: AvaColors.gold,
+                      color: AppColors.cyan400,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -568,12 +570,12 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: AvaColors.gold,
+                gradient: AppColors.buttonGradient,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: AvaColors.bg,
+                color: Colors.white,
                 size: 12,
               ),
             ),

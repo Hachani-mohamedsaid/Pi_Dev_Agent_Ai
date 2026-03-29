@@ -21,6 +21,8 @@ import '../../presentation/pages/voice_assistant_page.dart';
 import '../../presentation/pages/chat_page.dart';
 import '../../presentation/pages/suggestions_feed_page.dart';
 import '../../presentation/pages/meeting_setup_screen.dart';
+import '../../presentation/pages/market_intelligence_form_screen.dart';
+import '../../presentation/pages/market_intel_swipe_screen.dart';
 import '../../presentation/pages/briefing_loading_screen.dart';
 import '../../presentation/pages/briefing/cultural_briefing_screen.dart';
 import '../../presentation/pages/briefing/psych_profile_screen.dart';
@@ -335,6 +337,50 @@ final appRouter = GoRouter(
         state: state,
         child: const MeetingSetupScreen(),
       ),
+    ),
+    GoRoute(
+      path: '/market-intelligence',
+      pageBuilder: (context, state) {
+        final q = state.uri.queryParameters;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: MarketIntelligenceFormScreen(
+            sessionId: q['sessionId'] ?? '',
+          ),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/market-intelligence/swipe',
+      pageBuilder: (context, state) {
+        final extra = state.extra;
+        if (extra is! Map) {
+          return _fadeScaleTransition(
+            context: context,
+            state: state,
+            child: const MarketIntelligenceFormScreen(),
+          );
+        }
+        final m = Map<String, dynamic>.from(extra);
+        final numRaw = m['proposedValuationNum'];
+        final numVal = numRaw is num ? numRaw.toDouble() : 0.0;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: MarketIntelSwipeScreen(
+            sessionId: m['sessionId']?.toString() ?? '',
+            proposedValuation: m['proposedValuation']?.toString() ?? '€ 0',
+            proposedValuationNum: numVal,
+            proposedEquity: m['proposedEquity']?.toString() ?? '15%',
+            sector: m['sector']?.toString() ?? 'FinTech',
+            stage: m['stage']?.toString() ?? 'Seed',
+            geography: m['geography']?.toString() ?? 'Europe',
+            valuationBarLabel:
+                m['valuationBarLabel']?.toString() ?? '€${numVal.round()}',
+          ),
+        );
+      },
     ),
     GoRoute(
       path: '/briefing-loading',

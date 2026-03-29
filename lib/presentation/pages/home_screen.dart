@@ -11,6 +11,7 @@ import '../../core/l10n/app_strings.dart';
 import '../../features/phone_agent/data/phone_agent_mock_data.dart';
 import '../state/auth_controller.dart';
 import '../widgets/navigation_bar.dart';
+import '../widgets/market_intel_card.dart';
 
 class HomeScreen extends StatefulWidget {
   final AuthController controller;
@@ -1532,6 +1533,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               desktop: 20.0,
             ),
           ),
+          child: MarketIntelCard(
+            onTap: () => context.push('/market-intelligence'),
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: Responsive.getResponsiveValue(
+              context,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 20.0,
+            ),
+          ),
           child: _buildRecentSessionsSection(context, isMobile),
         ),
         Padding(
@@ -1734,10 +1748,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     context.push('/investor-meeting-setup');
   }
 
-  /// Investor Meeting — static UI; tap card or gold action → setup screen (no API).
+  /// Investor Meeting — même style cyan que le reste de l’app.
   Widget _buildInvestorMeetingCard(BuildContext context, bool isMobile) {
-    const gold = Color(0xFFD4AF37);
-    const goldLight = Color(0xFFE8C547);
     final r = Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 22.0);
     return Material(
       color: Colors.transparent,
@@ -1747,19 +1759,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Ink(
           padding: EdgeInsets.all(r),
           decoration: BoxDecoration(
-            color: const Color(0xFF141c26),
+            color: AppColors.primaryDarker,
             borderRadius: BorderRadius.circular(r),
-            border: Border.all(color: gold.withOpacity(0.85), width: 1.5),
+            border: Border.all(
+              color: AppColors.cyan500.withValues(alpha: 0.35),
+              width: 1.2,
+            ),
             boxShadow: [
               BoxShadow(
-                color: gold.withOpacity(0.12),
-                blurRadius: 20,
+                color: AppColors.cyan500.withValues(alpha: 0.08),
+                blurRadius: 18,
                 offset: const Offset(0, 6),
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(0.35),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -1769,11 +1784,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 width: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
                 height: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1a2430),
+                  color: AppColors.cyan500.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: gold.withOpacity(0.35)),
+                  border: Border.all(
+                    color: AppColors.cyan400.withValues(alpha: 0.35),
+                  ),
                 ),
-                child: Icon(LucideIcons.calendar, color: goldLight, size: 28),
+                child: Icon(LucideIcons.calendar, color: AppColors.cyan400, size: 28),
               ),
               SizedBox(width: r),
               Expanded(
@@ -1785,7 +1802,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       style: TextStyle(
                         fontSize: Responsive.getResponsiveValue(context, mobile: 17.0, tablet: 18.0, desktop: 20.0),
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppColors.textWhite,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1793,23 +1810,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       'Full AI preparation briefing',
                       style: TextStyle(
                         fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
-                        color: const Color(0xFF94A3B8),
+                        color: AppColors.textCyan200.withValues(alpha: 0.85),
                       ),
                     ),
                   ],
                 ),
               ),
-              Material(
-                color: goldLight,
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: () => _goToInvestorMeetingSetup(context),
-                  child: Padding(
-                    padding: EdgeInsets.all(
-                      Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 11.0, desktop: 12.0),
+              Container(
+                width: Responsive.getResponsiveValue(context, mobile: 40.0, tablet: 42.0, desktop: 44.0),
+                height: Responsive.getResponsiveValue(context, mobile: 40.0, tablet: 42.0, desktop: 44.0),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: AppColors.buttonGradient,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.cyan500.withValues(alpha: 0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
                     ),
-                    child: Icon(LucideIcons.send, color: const Color(0xFF0f172a), size: 20),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () => _goToInvestorMeetingSetup(context),
+                    child: Icon(LucideIcons.send, color: Colors.white, size: 20),
                   ),
                 ),
               ),

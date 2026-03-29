@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/theme/ava_theme.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_shell.dart';
 
 /// e.g. "Marco Rossi" → "Marco R."
 String briefingInvestorShortName(String fullName) {
@@ -91,6 +92,32 @@ const List<String> kBriefingTabLabels = [
   '📍 Location',
 ];
 
+/// Même dégradé que Home / Meeting Setup — à utiliser pour tous les onglets briefing.
+class BriefingGradientScaffold extends StatelessWidget {
+  const BriefingGradientScaffold({
+    super.key,
+    required this.appBar,
+    required this.body,
+    this.bottomNavigationBar,
+  });
+
+  final PreferredSizeWidget appBar;
+  final Widget body;
+  final Widget? bottomNavigationBar;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppShellGradient(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: appBar,
+        body: body,
+        bottomNavigationBar: bottomNavigationBar,
+      ),
+    );
+  }
+}
+
 class BriefingAvaAppBar extends StatelessWidget implements PreferredSizeWidget {
   const BriefingAvaAppBar({
     super.key,
@@ -107,13 +134,14 @@ class BriefingAvaAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: AvaColors.bg,
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
       leading: GestureDetector(
         onTap: onBack ?? () => context.pop(),
         child: const Icon(
           Icons.arrow_back_ios_new_rounded,
-          color: AvaColors.muted,
+          color: AppColors.textCyan200,
           size: 18,
         ),
       ),
@@ -123,7 +151,7 @@ class BriefingAvaAppBar extends StatelessWidget implements PreferredSizeWidget {
           fontFamily: 'Georgia',
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: AvaColors.text,
+          color: AppColors.textWhite,
         ),
       ),
       centerTitle: true,
@@ -135,16 +163,19 @@ class BriefingAvaAppBar extends StatelessWidget implements PreferredSizeWidget {
               investorName,
               style: const TextStyle(
                 fontSize: 13,
-                color: AvaColors.gold,
+                color: AppColors.cyan400,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
         ),
       ],
-      bottom: const PreferredSize(
-        preferredSize: Size.fromHeight(1),
-        child: Divider(height: 1, color: AvaColors.border),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Divider(
+          height: 1,
+          color: AppColors.cyan500.withValues(alpha: 0.22),
+        ),
       ),
     );
   }
@@ -178,14 +209,19 @@ class BriefingHorizontalTabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 44,
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AvaColors.border)),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.cyan500.withValues(alpha: 0.2),
+          ),
+        ),
       ),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         itemCount: kBriefingTabLabels.length,
         itemBuilder: (context, i) {
+          final active = i == activeIndex;
           return GestureDetector(
             onTap: () => goBriefingTab(
                   context,
@@ -204,10 +240,13 @@ class BriefingHorizontalTabBar extends StatelessWidget {
               margin: const EdgeInsets.only(right: 8),
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
-                color: i == activeIndex ? AvaColors.gold : AvaColors.card,
+                gradient: active ? AppColors.buttonGradient : null,
+                color: active ? null : AppColors.primaryDarker,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: i == activeIndex ? AvaColors.gold : AvaColors.border2,
+                  color: active
+                      ? Colors.transparent
+                      : AppColors.cyan500.withValues(alpha: 0.28),
                 ),
               ),
               child: Center(
@@ -216,7 +255,7 @@ class BriefingHorizontalTabBar extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: i == activeIndex ? AvaColors.bg : AvaColors.muted,
+                    color: active ? Colors.white : AppColors.textCyan200,
                   ),
                 ),
               ),

@@ -11,6 +11,7 @@ import '../../features/meeting_intelligence/models/location_result.dart';
 import '../../features/meeting_intelligence/models/image_result.dart';
 import '../../features/meeting_intelligence/models/offer_result.dart';
 import '../../features/meeting_intelligence/models/simulation_result.dart';
+import '../../features/market_intelligence/models/market_intel_models.dart';
 import '../datasources/auth_local_data_source.dart';
 
 /// Meeting intelligence draft flow (NestJS).
@@ -373,6 +374,59 @@ class MeetingIntelligenceService {
     } catch (_) {
       return const StartBriefingResult();
     }
+  }
+
+  /// POST /market-intelligence — comparables (Nest `MarketIntelligenceModule`).
+  Future<MarketIntelData> postMarketIntelligence({
+    required double valuationNum,
+    required String valuationDisplay,
+    required String equity,
+    required String sector,
+    required String stage,
+    required String geography,
+    required String sectorLine,
+    String? investorName,
+  }) async {
+    final equityNum = num.tryParse(
+          equity.replaceAll(RegExp(r'[^0-9.]'), ''),
+        )?.toDouble() ??
+        15;
+    final uri = Uri.parse('$apiRootUrl/market-intelligence');
+    final body = <String, dynamic>{
+      'valuation': valuationNum.round(),
+      'equity': equityNum.round(),
+      'sector': sector,
+      'stage': stage,
+      'geography': geography,
+    };
+    if (investorName != null && investorName.trim().isNotEmpty) {
+      body['investorName'] = investorName.trim();
+    }
+    final res = await http
+        .post(
+          uri,
+          headers: await _headers(),
+          body: jsonEncode(body),
+        )
+        .timeout(_timeout);
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      throw _parseError(res);
+    }
+    final decoded = jsonDecode(res.body);
+    if (decoded is! Map) {
+      throw Exception('Invalid market intelligence response');
+    }
+    final map = Map<String, dynamic>.from(decoded);
+    final data = MarketIntelData.fromBackendJson(map);
+    if (data.comps.isEmpty) {
+      return MarketIntelData.mockForUser(
+        yourValuation: valuationDisplay,
+        yourValuationNum: valuationNum,
+        yourEquity: equity,
+        sectorLine: sectorLine,
+      );
+    }
+    return data;
   }
 
   bool _reportPayloadReady(Map<String, dynamic> data) {
