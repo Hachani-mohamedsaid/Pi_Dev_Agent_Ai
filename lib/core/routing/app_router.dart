@@ -22,6 +22,18 @@ import '../../presentation/pages/change_password_page.dart';
 import '../../presentation/pages/voice_assistant_page.dart';
 import '../../presentation/pages/chat_page.dart';
 import '../../presentation/pages/suggestions_feed_page.dart';
+import '../../presentation/pages/meeting_setup_screen.dart';
+import '../../presentation/pages/market_intelligence_form_screen.dart';
+import '../../presentation/pages/market_intel_swipe_screen.dart';
+import '../../presentation/pages/briefing_loading_screen.dart';
+import '../../presentation/pages/briefing/cultural_briefing_screen.dart';
+import '../../presentation/pages/briefing/psych_profile_screen.dart';
+import '../../presentation/pages/briefing/negotiation_simulator_screen.dart';
+import '../../presentation/pages/briefing/offer_strategy_screen.dart';
+import '../../presentation/pages/briefing/executive_image_screen.dart';
+import '../../presentation/pages/briefing/location_advisor_screen.dart';
+import '../../presentation/pages/briefing/executive_briefing_screen.dart';
+import '../../features/meeting_intelligence/models/ava_session.dart';
 import '../../presentation/pages/meeting_detail_page.dart';
 import '../../presentation/pages/agenda_page.dart';
 import '../../features/meeting_hub/screens/meeting_hub_screen.dart';
@@ -308,6 +320,17 @@ final appRouter = GoRouter(
         child: const ChatPage(),
       ),
     ),
+    GoRoute(
+      path: '/chat-hub',
+      pageBuilder: (context, state) {
+        final session = state.extra as AvaSession?;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: ChatPage(avaSession: session),
+        );
+      },
+    ),
     // Notifications Center (from home screen bell)
     GoRoute(
       path: '/notifications-center',
@@ -334,6 +357,223 @@ final appRouter = GoRouter(
         state: state,
         child: const AgendaPage(),
       ),
+    ),
+    GoRoute(
+      path: '/investor-meeting-setup',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const MeetingSetupScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/market-intelligence',
+      pageBuilder: (context, state) {
+        final q = state.uri.queryParameters;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: MarketIntelligenceFormScreen(
+            sessionId: q['sessionId'] ?? '',
+          ),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/market-intelligence/swipe',
+      pageBuilder: (context, state) {
+        final extra = state.extra;
+        if (extra is! Map) {
+          return _fadeScaleTransition(
+            context: context,
+            state: state,
+            child: const MarketIntelligenceFormScreen(),
+          );
+        }
+        final m = Map<String, dynamic>.from(extra);
+        final numRaw = m['proposedValuationNum'];
+        final numVal = numRaw is num ? numRaw.toDouble() : 0.0;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: MarketIntelSwipeScreen(
+            sessionId: m['sessionId']?.toString() ?? '',
+            proposedValuation: m['proposedValuation']?.toString() ?? '€ 0',
+            proposedValuationNum: numVal,
+            proposedEquity: m['proposedEquity']?.toString() ?? '15%',
+            sector: m['sector']?.toString() ?? 'FinTech',
+            stage: m['stage']?.toString() ?? 'Seed',
+            geography: m['geography']?.toString() ?? 'Europe',
+            valuationBarLabel:
+                m['valuationBarLabel']?.toString() ?? '€${numVal.round()}',
+          ),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/briefing-loading',
+      pageBuilder: (context, state) {
+        final q = state.uri.queryParameters;
+        final sessionId = q['sessionId'] ?? '';
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: BriefingLoadingScreen(
+            sessionId: sessionId,
+            investorName: q['investorName'] ?? '',
+            investorCompany: q['investorCompany'] ?? '',
+            investorCity: q['investorCity'] ?? '',
+            investorCountry: q['investorCountry'] ?? '',
+            userEquity: q['userEquity'] ?? '',
+            userValuation: q['userValuation'] ?? '',
+            meetingFormat: q['meetingFormat'] ?? '',
+          ),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/briefing/culture',
+      pageBuilder: (context, state) {
+        final q = state.uri.queryParameters;
+        final extra = state.extra as AvaSession?;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: CulturalBriefingScreen(
+            sessionId: q['sessionId'] ?? extra?.sessionId ?? '',
+            investorName: q['investorName'] ?? extra?.investorName ?? 'Investor',
+            investorCompany:
+                q['investorCompany'] ?? extra?.investorCompany ?? '',
+            investorCity: q['investorCity'] ?? extra?.city ?? '',
+            investorCountry: q['investorCountry'] ?? extra?.country ?? '',
+            userEquity: q['userEquity'] ?? extra?.userEquity ?? '',
+            userValuation: q['userValuation'] ?? extra?.userValuation ?? '',
+            meetingFormat: q['meetingFormat'] ?? extra?.meetingFormat ?? '',
+          ),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/briefing/psych',
+      pageBuilder: (context, state) {
+        final q = state.uri.queryParameters;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: PsychProfileScreen(
+            sessionId: q['sessionId'] ?? '',
+            investorName: q['investorName'] ?? 'Investor',
+            investorCompany: q['investorCompany'] ?? '',
+            investorCity: q['investorCity'] ?? '',
+            investorCountry: q['investorCountry'] ?? '',
+            userEquity: q['userEquity'] ?? '',
+            userValuation: q['userValuation'] ?? '',
+            meetingFormat: q['meetingFormat'] ?? '',
+          ),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/briefing/negotiation',
+      pageBuilder: (context, state) {
+        final q = state.uri.queryParameters;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: NegotiationSimulatorScreen(
+            sessionId: q['sessionId'] ?? '',
+            investorName: q['investorName'] ?? 'Investor',
+            personalityType: q['personalityType'],
+            investorCompany: q['investorCompany'] ?? '',
+            investorCity: q['investorCity'] ?? '',
+            investorCountry: q['investorCountry'] ?? '',
+            userEquity: q['userEquity'] ?? '',
+            userValuation: q['userValuation'] ?? '',
+            meetingFormat: q['meetingFormat'] ?? '',
+          ),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/briefing/offer',
+      pageBuilder: (context, state) {
+        final q = state.uri.queryParameters;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: OfferStrategyScreen(
+            sessionId: q['sessionId'] ?? '',
+            investorName: q['investorName'] ?? 'Investor',
+            investorCompany: q['investorCompany'] ?? '',
+            investorCity: q['investorCity'] ?? '',
+            investorCountry: q['investorCountry'] ?? '',
+            userEquity: q['userEquity'] ?? '',
+            userValuation: q['userValuation'] ?? '',
+            meetingFormat: q['meetingFormat'] ?? '',
+          ),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/briefing/image',
+      pageBuilder: (context, state) {
+        final q = state.uri.queryParameters;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: ExecutiveImageScreen(
+            sessionId: q['sessionId'] ?? '',
+            investorName: q['investorName'] ?? 'Investor',
+            investorCompany: q['investorCompany'] ?? '',
+            investorCity: q['investorCity'] ?? '',
+            investorCountry: q['investorCountry'] ?? '',
+            userEquity: q['userEquity'] ?? '',
+            userValuation: q['userValuation'] ?? '',
+            meetingFormat: q['meetingFormat'] ?? '',
+          ),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/briefing/location',
+      pageBuilder: (context, state) {
+        final q = state.uri.queryParameters;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: LocationAdvisorScreen(
+            sessionId: q['sessionId'] ?? '',
+            investorName: q['investorName'] ?? 'Investor',
+            investorCompany: q['investorCompany'] ?? '',
+            investorCity: q['investorCity'] ?? '',
+            investorCountry: q['investorCountry'] ?? '',
+            userEquity: q['userEquity'] ?? '',
+            userValuation: q['userValuation'] ?? '',
+            city: q['city'],
+            meetingType: q['meetingFormat'] ?? q['meetingType'] ?? 'Formal',
+          ),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/report',
+      pageBuilder: (context, state) {
+        final q = state.uri.queryParameters;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: ExecutiveBriefingScreen(
+            sessionId: q['sessionId'] ?? '',
+            investorName: q['investorName'] ?? 'Investor',
+            investorCompany: q['investorCompany'] ?? '',
+            investorCity: q['investorCity'] ?? '',
+            investorCountry: q['investorCountry'] ?? '',
+            userEquity: q['userEquity'] ?? '',
+            userValuation: q['userValuation'] ?? '',
+            meetingFormat: q['meetingFormat'] ?? '',
+          ),
+        );
+      },
     ),
     GoRoute(
       path: '/meetings',

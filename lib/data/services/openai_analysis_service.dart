@@ -12,7 +12,7 @@ class OpenAIAnalysisService {
   Future<ProjectAnalysis?> getAnalysisFromMongo(int rowNumber) async {
     try {
       final response = await http
-          .get(Uri.parse('$apiBaseUrl$projectAnalysesPath/$rowNumber'))
+          .get(Uri.parse('$apiRootUrl$projectAnalysesPath/$rowNumber'))
           .timeout(_timeout);
       if (response.statusCode != 200) return null;
       final json = jsonDecode(response.body) as Map<String, dynamic>?;
@@ -27,7 +27,7 @@ class OpenAIAnalysisService {
   Future<bool> saveAnalysisToMongo(int rowNumber, ProjectAnalysis analysis) async {
     try {
       final response = await http.post(
-        Uri.parse('$apiBaseUrl$projectAnalysesPath'),
+        Uri.parse('$apiRootUrl$projectAnalysesPath'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'row_number': rowNumber,

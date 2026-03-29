@@ -11,7 +11,7 @@ class AdvisorRemoteDataSource {
 
   /// Tries backend first; on 404/5xx or no backend, can fallback to n8n (caller choice).
   Future<String> sendToBackend(String projectText) async {
-    final uri = Uri.parse('$apiBaseUrl$advisorPath');
+    final uri = Uri.parse('$apiRootUrl$advisorPath');
     final response = await http
         .post(
           uri,

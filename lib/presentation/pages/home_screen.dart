@@ -15,6 +15,7 @@ import '../../services/n8n_email_service.dart';
 import '../../features/phone_agent/data/phone_agent_mock_data.dart';
 import '../state/auth_controller.dart';
 import '../widgets/navigation_bar.dart';
+import '../widgets/market_intel_card.dart';
 
 class HomeScreen extends StatefulWidget {
   final AuthController controller;
@@ -140,7 +141,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     for (var controller in _ringControllers) {
       controller.dispose();
     }
-    _meetingService.dispose();
     super.dispose();
   }
 
@@ -1621,16 +1621,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          AppStrings.tr(context, 'quickActions'),
+          AppStrings.tr(context, 'quickActions').toUpperCase(),
           style: TextStyle(
             fontSize: Responsive.getResponsiveValue(
               context,
-              mobile: 17.0,
-              tablet: 19.0,
-              desktop: 20.0,
+              mobile: 11.0,
+              tablet: 12.0,
+              desktop: 13.0,
             ),
             fontWeight: FontWeight.w600,
-            color: AppColors.textWhite,
+            letterSpacing: 1.4,
+            color: const Color(0xFF94A3B8),
           ),
         ),
         SizedBox(
@@ -1645,12 +1646,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           padding: EdgeInsets.only(
             bottom: Responsive.getResponsiveValue(
               context,
-              mobile: 10.0,
-              tablet: 12.0,
-              desktop: 16.0,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 20.0,
             ),
           ),
-          child: _buildSummarizedEmailsCard(context, isMobile),
+          child: _buildInvestorMeetingCard(context, isMobile),
         ),
         Padding(
           padding: EdgeInsets.only(
@@ -1661,7 +1662,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               desktop: 20.0,
             ),
           ),
-          child: _buildMeetingHubCard(context, isMobile),
+          child: MarketIntelCard(
+            onTap: () => context.push('/market-intelligence'),
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: Responsive.getResponsiveValue(
+              context,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 20.0,
+            ),
+          ),
+          child: _buildRecentSessionsSection(context, isMobile),
+        ),
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: Responsive.getResponsiveValue(
+              context,
+              mobile: 10.0,
+              tablet: 12.0,
+              desktop: 16.0,
+            ),
+          ),
+          child: _buildSummarizedEmailsCard(context, isMobile),
         ),
         Padding(
           padding: EdgeInsets.only(
@@ -1962,6 +1987,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  void _goToInvestorMeetingSetup(BuildContext context) {
+    context.push('/investor-meeting-setup');
+  }
+
+  /// Investor Meeting — même style cyan que le reste de l’app.
+  Widget _buildInvestorMeetingCard(BuildContext context, bool isMobile) {
+    final r = Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 22.0);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _goToInvestorMeetingSetup(context),
+        borderRadius: BorderRadius.circular(r),
+        child: Ink(
+          padding: EdgeInsets.all(r),
+          decoration: BoxDecoration(
+            color: AppColors.primaryDarker,
+            borderRadius: BorderRadius.circular(r),
+            border: Border.all(
+              color: AppColors.cyan500.withValues(alpha: 0.35),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.cyan500.withValues(alpha: 0.08),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
   /// Meeting Hub card (React-style): Video icon, title, subtitle, arrow → /meetings.
   Widget _buildMeetingHubCard(BuildContext context, bool isMobile) {
     final r = Responsive.getResponsiveValue(
@@ -2130,8 +2187,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               Color(0xFF19405b),
               Color(0xFF1e4a66),
             ],
-            stops: [0.0, 0.25, 0.5, 0.75, 1.0],
           ),
+          child: Row(
+            children: [
+              Container(
+                width: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
+                height: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
+                decoration: BoxDecoration(
+                  color: AppColors.cyan500.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppColors.cyan400.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Icon(LucideIcons.calendar, color: AppColors.cyan400, size: 28),
+              ),
+              SizedBox(width: r),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Investor Meeting',
+                      style: TextStyle(
+                        fontSize: Responsive.getResponsiveValue(context, mobile: 17.0, tablet: 18.0, desktop: 20.0),
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textWhite,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Full AI preparation briefing',
+                      style: TextStyle(
+                        fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
+                        color: AppColors.textCyan200.withValues(alpha: 0.85),
+                      ),
           borderRadius: BorderRadius.circular(r),
           border: Border.all(color: cardColor.withOpacity(0.3), width: 1),
           boxShadow: [
@@ -2186,9 +2276,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
                       color: AppColors.textCyan200.withOpacity(0.8),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              Container(
+                width: Responsive.getResponsiveValue(context, mobile: 40.0, tablet: 42.0, desktop: 44.0),
+                height: Responsive.getResponsiveValue(context, mobile: 40.0, tablet: 42.0, desktop: 44.0),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: AppColors.buttonGradient,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.cyan500.withValues(alpha: 0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () => _goToInvestorMeetingSetup(context),
+                    child: Icon(LucideIcons.send, color: Colors.white, size: 20),
+                  ),
+                ),
+              ),
+            ],
+          ),
             ),
             Container(
               width: Responsive.getResponsiveValue(context, mobile: 38.0, tablet: 40.0, desktop: 44.0),
@@ -2208,6 +2323,76 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         .animate()
         .fadeIn(delay: 250.ms, duration: 400.ms)
         .slideX(begin: 0.02, end: 0, curve: Curves.easeOut);
+  }
+
+  /// Mock only — history API in v2.
+  Widget _buildRecentSessionsSection(BuildContext context, bool isMobile) {
+    const sessions = <Map<String, String>>[
+      {'title': 'Q1 Investor Review', 'meta': 'Mar 12 · Completed'},
+      {'title': 'Seed follow-up call', 'meta': 'Mar 10 · Draft'},
+      {'title': 'Pitch dry run', 'meta': 'Mar 8 · Completed'},
+    ];
+    final gap = Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'RECENT SESSIONS',
+          style: TextStyle(
+            fontSize: Responsive.getResponsiveValue(context, mobile: 11.0, tablet: 12.0, desktop: 13.0),
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.4,
+            color: const Color(0xFF94A3B8),
+          ),
+        ),
+        SizedBox(height: gap),
+        ...sessions.map((s) {
+          return Padding(
+            padding: EdgeInsets.only(bottom: gap * 0.8),
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 16.0, desktop: 18.0),
+                vertical: Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 14.0, desktop: 16.0),
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0f2940).withOpacity(0.65),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.cyan500.withOpacity(0.15)),
+              ),
+              child: Row(
+                children: [
+                  Icon(LucideIcons.clock, size: 18, color: AppColors.cyan400.withOpacity(0.9)),
+                  SizedBox(width: gap),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          s['title']!,
+                          style: const TextStyle(
+                            color: AppColors.textWhite,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          s['meta']!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textCyan200.withOpacity(0.75),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
+    );
   }
 
   Widget _buildPriorityChip(BuildContext context, int count, String label, Color color) {
@@ -2339,9 +2524,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final phoneCalls = mockPhoneCalls;
     final phoneTotal = phoneCalls.length;
     final phoneImportant = phoneCalls.where((c) => c.priority == 'high').length;
-    final meetingsText = _meetingsTodayCount != null
-        ? '$_meetingsTodayCount meeting${_meetingsTodayCount == 1 ? '' : 's'} today'
-        : null;
+    const meetingsText = '2 meetings today';
     return [
       {
         'title': 'Review Agenda',

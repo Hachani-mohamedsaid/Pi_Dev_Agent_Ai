@@ -15,7 +15,7 @@ class MeetingApiService {
 
   String get _baseUrl {
     final fromEnv = getMeetingEnv('BASE_URL');
-    return fromEnv.isNotEmpty ? fromEnv : apiBaseUrl;
+    return fromEnv.isNotEmpty ? fromEnv : apiRootUrl;
   }
 
   /// Create a new meeting record. Returns the meeting id.
