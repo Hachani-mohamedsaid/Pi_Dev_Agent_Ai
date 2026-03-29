@@ -55,9 +55,11 @@ const String advisorWebhookUrl =
 /// Tant que cette valeur n'est **pas vide**, la voix utilisera **OpenAI TTS**
 /// et ne tombera sur `flutter_tts` qu'en cas d'erreur OpenAI.
 ///
-/// ⚠️ Ne jamais commiter la clé sur GitHub. Elle n'est utilisée que si elle est présente.
-/// Chargée au démarrage depuis le fichier .env (si présent) ou depuis --dart-define.
-/// String.fromEnvironment doit rester en const (compile-time uniquement).
+/// ⚠️ Ne jamais commiter une clé réelle sur GitHub.
+/// Pour activer OpenAI TTS : crée un fichier .env à la racine avec :
+///   OPENAI_API_KEY=<your-openai-api-key>
+/// (clé valide sur https://platform.openai.com/account/api-keys)
+/// Sinon l'app utilise FlutterTts (pas de 401).
 const String _openaiKeyFromDartDefine =
     String.fromEnvironment('OPENAI_API_KEY', defaultValue: '');
 
