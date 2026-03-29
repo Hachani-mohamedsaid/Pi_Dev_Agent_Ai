@@ -1,6 +1,10 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:uni_links/uni_links.dart';
 
 import '../core/routing/app_router.dart';
 import '../core/services/locale_service.dart';
@@ -18,16 +22,20 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> with WidgetsBindingObserver {
+  StreamSubscription<Uri?>? _linkSubscription;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     FocusSessionManager.instance.onResume();
+    _initDeepLinkListener();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _linkSubscription?.cancel();
     super.dispose();
   }
 
@@ -40,6 +48,65 @@ class _AppState extends State<App> with WidgetsBindingObserver {
       // so the counter doesn't stay at 0 on web where inactive can fire at startup.
       FocusSessionManager.instance.onPause();
     }
+  }
+
+  Future<void> _initDeepLinkListener() async {
+    if (kIsWeb) {
+      return;
+    }
+
+    try {
+      final initialUri = await getInitialUri();
+      _handleDeepLink(initialUri);
+    } catch (_) {
+      // Some platforms may fail URI parsing for initial links.
+      // Fallback to raw link string parsing.
+      try {
+        final initialLink = await getInitialLink();
+        if (initialLink != null && initialLink.isNotEmpty) {
+          _handleDeepLink(Uri.tryParse(initialLink));
+        }
+      } catch (_) {
+        // Ignore invalid initial link.
+      }
+    }
+
+    _linkSubscription = uriLinkStream.listen(
+      _handleDeepLink,
+      onError: (_) {
+        // Ignore deep link stream errors.
+      },
+    );
+  }
+
+  void _handleDeepLink(Uri? uri) {
+    if (!mounted || uri == null) {
+      return;
+    }
+
+    // Stripe can return either a full path or a custom-scheme URL with host/path.
+    final path = uri.path.endsWith('/') && uri.path.length > 1
+        ? uri.path.substring(0, uri.path.length - 1)
+        : uri.path;
+    final host = uri.host.toLowerCase();
+    final isSuccessRoute =
+        path == '/subscription/success' ||
+        path == '/billing/success' ||
+        path == '/success' ||
+        (host == 'subscription' && path == '/success') ||
+        (host == 'billing' && path == '/success') ||
+        (host == 'success' && path.isEmpty);
+
+    if (!isSuccessRoute) {
+      return;
+    }
+
+    final plan =
+        uri.queryParameters['plan'] ?? uri.queryParameters['activePlan'];
+    final location = plan != null && plan.isNotEmpty
+        ? '/subscription/success?plan=$plan'
+        : '/subscription';
+    appRouter.go(location);
   }
 
   @override

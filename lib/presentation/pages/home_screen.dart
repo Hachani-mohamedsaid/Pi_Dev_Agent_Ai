@@ -6,8 +6,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../features/social_media/screens/social_media_brief_screen.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/l10n/app_strings.dart';
+import '../../core/services/subscription_access_service.dart';
+import '../../data/services/meeting_service.dart';
+import '../../services/n8n_email_service.dart';
 import '../../features/phone_agent/data/phone_agent_mock_data.dart';
 import '../state/auth_controller.dart';
 import '../widgets/navigation_bar.dart';
@@ -23,12 +27,22 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  /// Home screen: static mock only — no API calls on this screen (product spec).
-  static const int _mockEmailHigh = 4;
-  static const int _mockEmailMedium = 2;
-  static const int _mockEmailLow = 1;
-  static const int _mockEmailDeadlines = 3;
-  static const int _mockEmailActionsRequired = 2;
+  final _emailService = N8nEmailService();
+  int _emailTotal = 0;
+  int _emailHigh = 0;
+  int _emailMedium = 0;
+  int _emailLow = 0;
+  int _emailDeadlines = 0;
+  int _emailActionsRequired = 0;
+  bool _emailSummaryLoading = true;
+
+  /// Number of meetings today (null = loading).
+  int? _meetingsTodayCount;
+  final _meetingService = MeetingService();
+
+  /// Tracks if we were the current route; used to reload when home becomes visible again.
+  bool _wasCurrentRoute = false;
+  bool _hasPremiumAccess = false;
 
   late AnimationController _glowController1;
   late AnimationController _glowController2;
@@ -45,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (widget.controller.currentUser == null) {
       widget.controller.loadCurrentUser();
     }
+    _refreshPremiumAccess();
     // Email summary is loaded in didChangeDependencies when home becomes visible
     // (runs on first open and every time user navigates back to home)
 
@@ -92,6 +107,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload email summary whenever home becomes the current route (e.g. user switched back from another tab)
+    final isCurrent = ModalRoute.of(context)?.isCurrent ?? false;
+    if (isCurrent && !_wasCurrentRoute) {
+      _wasCurrentRoute = true;
+      _loadEmailSummary();
+      _loadMeetingsToday();
+      _refreshPremiumAccess();
+    } else if (!isCurrent) {
+      _wasCurrentRoute = false;
+    }
+  }
+
+  Future<void> _refreshPremiumAccess() async {
+    final hasAccess =
+        await SubscriptionAccessService.hasActivePlanForCurrentUser();
+    if (!mounted) return;
+    setState(() => _hasPremiumAccess = hasAccess);
+  }
+
+  @override
   void dispose() {
     _glowController1.dispose();
     _glowController2.dispose();
@@ -105,6 +142,94 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  /// Loads dashboard counts from GET email-summary-stats only.
+  /// Does NOT call email-summaries — that runs only when the Emails page is opened.
+  Future<void> _loadEmailSummary() async {
+    try {
+      final stats = await _emailService.getEmailSummaryStats();
+      if (!mounted) return;
+      setState(() {
+        _emailTotal = _toInt(stats['totalEmails']);
+        _emailHigh = _toInt(stats['highPriority']);
+        _emailMedium = _toInt(stats['mediumPriority']);
+        _emailLow = _toInt(stats['lowPriority']);
+        _emailDeadlines = _toInt(stats['deadlines']);
+        _emailActionsRequired = _toInt(stats['requiredActions']);
+        _emailSummaryLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _emailSummaryLoading = false);
+    }
+  }
+
+  Future<void> _loadMeetingsToday() async {
+    try {
+      final meetings = await _meetingService.fetchMeetings();
+      if (!mounted) return;
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final count = meetings.where((m) {
+        final start = m.startTime;
+        final startDay = DateTime(start.year, start.month, start.day);
+        return startDay == today;
+      }).length;
+      setState(() => _meetingsTodayCount = count);
+    } catch (_) {
+      if (mounted) setState(() => _meetingsTodayCount = 0);
+    }
+  }
+
+  static int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString()) ?? 0;
+  }
+
+  void _showPremiumRequiredMessage() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Active subscription required for this feature.'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _openMeetingHubPremiumOnly() async {
+    final hasAccess =
+        await SubscriptionAccessService.hasActivePlanForCurrentUser();
+    if (!mounted) return;
+
+    if (hasAccess) {
+      context.push('/meetings');
+      return;
+    }
+
+    _showPremiumRequiredMessage();
+    context.push('/subscription');
+  }
+
+  Future<void> _openRouteWithPremiumCheck(String route) async {
+    final premiumRoutes = {'/meetings', '/phone-agent', '/phone-agent-call'};
+    if (!premiumRoutes.contains(route)) {
+      context.go(route);
+      return;
+    }
+
+    final hasAccess =
+        await SubscriptionAccessService.hasActivePlanForCurrentUser();
+    if (!mounted) return;
+
+    if (hasAccess) {
+      context.go(route);
+      return;
+    }
+
+    _showPremiumRequiredMessage();
+    context.push('/subscription');
   }
 
   String _getGreeting(BuildContext context) {
@@ -145,7 +270,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String _getShortDate() {
     final now = DateTime.now();
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${days[now.weekday - 1]} ${now.day} ${months[now.month - 1]} ${now.year}';
   }
 
@@ -228,15 +366,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                         // Smart Suggestions Button
                         _buildSmartSuggestionsButton(context, isMobile),
-
-                        SizedBox(
-                          height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 20.0,
-                            tablet: 24.0,
-                            desktop: 32.0,
-                          ),
-                        ),
 
                         SizedBox(
                           height: Responsive.getResponsiveValue(
@@ -694,31 +823,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       builder: (context, child) {
                         return Positioned.fill(
                           child: Transform.translate(
-                        offset: Offset(
-                          -constraints.maxWidth +
-                              (_shimmerController.value *
-                                  constraints.maxWidth *
-                                  2),
-                          0,
-                        ),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              stops: const [0.0, 0.5, 1.0],
-                              colors: [
-                                Colors.transparent,
-                                Colors.white.withOpacity(0.03),
-                                Colors.transparent,
-                              ],
+                            offset: Offset(
+                              -constraints.maxWidth +
+                                  (_shimmerController.value *
+                                      constraints.maxWidth *
+                                      2),
+                              0,
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  stops: const [0.0, 0.5, 1.0],
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.white.withOpacity(0.03),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                    );
-                    },
-                  ),
+                        );
+                      },
+                    ),
                   ],
                 );
               },
@@ -1049,36 +1178,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       bottom: 16,
                       left: constraints.maxWidth / 2 - 72,
                       child: AnimatedBuilder(
-                    animation: _pulseController,
-                    builder: (context, child) {
-                      return Container(
-                        width: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 115.0,
-                          tablet: 130.0,
-                          desktop: 144.0,
-                        ),
-                        height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 51.0,
-                          tablet: 57.0,
-                          desktop: 64.0,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            colors: [
-                              const Color(0xFF060C14).withOpacity(
-                                (0.6 * (0.4 + _pulseController.value * 0.3))
-                                    .clamp(0.0, 1.0),
+                        animation: _pulseController,
+                        builder: (context, child) {
+                          return Container(
+                            width: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 115.0,
+                              tablet: 130.0,
+                              desktop: 144.0,
+                            ),
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 51.0,
+                              tablet: 57.0,
+                              desktop: 64.0,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                colors: [
+                                  const Color(0xFF060C14).withOpacity(
+                                    (0.6 * (0.4 + _pulseController.value * 0.3))
+                                        .clamp(0.0, 1.0),
+                                  ),
+                                  Colors.transparent,
+                                ],
                               ),
-                              Colors.transparent,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                      );
-                    },
-                  ),
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ],
                 );
@@ -1568,11 +1697,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               desktop: 20.0,
             ),
           ),
+          child: _buildSocialMediaCampaignCard(context, isMobile),
+        ),
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: Responsive.getResponsiveValue(
+              context,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 20.0,
+            ),
+          ),
           child: _buildOngoingProjectsGrid(context, isMobile),
         ),
         ...actions.asMap().entries.map((entry) {
           if (entry.key == 1) return const SizedBox.shrink();
-          if (entry.key == 0 || entry.key == 5 || entry.key == 6 || entry.key == 7) return const SizedBox.shrink();
+          if (entry.key == 0 ||
+              entry.key == 5 ||
+              entry.key == 6 ||
+              entry.key == 7)
+            return const SizedBox.shrink();
           final index = entry.key;
           final action = entry.value;
           return Padding(
@@ -1601,7 +1745,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildSummarizedEmailsCard(BuildContext context, bool isMobile) {
-    final r = Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0);
+    final r = Responsive.getResponsiveValue(
+      context,
+      mobile: 16.0,
+      tablet: 18.0,
+      desktop: 20.0,
+    );
     return GestureDetector(
       onTap: () => context.push('/emails'),
       child: Container(
@@ -1620,7 +1769,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             stops: [0.0, 0.25, 0.5, 0.75, 1.0],
           ),
           borderRadius: BorderRadius.circular(r),
-          border: Border.all(color: AppColors.cyan500.withOpacity(0.2), width: 1),
+          border: Border.all(
+            color: AppColors.cyan500.withOpacity(0.2),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.4),
@@ -1644,7 +1796,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Text(
                         'Summarized Emails',
                         style: TextStyle(
-                          fontSize: Responsive.getResponsiveValue(context, mobile: 17.0, tablet: 18.0, desktop: 20.0),
+                          fontSize: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 17.0,
+                            tablet: 18.0,
+                            desktop: 20.0,
+                          ),
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
@@ -1665,7 +1822,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
             SizedBox(height: r),
             Container(
-              padding: EdgeInsets.all(Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 14.0, desktop: 16.0)),
+              padding: EdgeInsets.all(
+                Responsive.getResponsiveValue(
+                  context,
+                  mobile: 12.0,
+                  tablet: 14.0,
+                  desktop: 16.0,
+                ),
+              ),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(12),
@@ -1676,36 +1840,101 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Text(
                     'Priority',
                     style: TextStyle(
-                      fontSize: Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 15.0, desktop: 16.0),
+                      fontSize: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 14.0,
+                        tablet: 15.0,
+                        desktop: 16.0,
+                      ),
                       fontWeight: FontWeight.w600,
                       color: AppColors.cyan400,
                     ),
                   ),
-                  SizedBox(height: Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0)),
+                  SizedBox(
+                    height: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 10.0,
+                      tablet: 12.0,
+                      desktop: 14.0,
+                    ),
+                  ),
                   Row(
                     children: [
                       Expanded(
-                        child: _buildPriorityChip(context, _mockEmailHigh, 'High', const Color(0xFFEF4444)),
+                        child: _buildPriorityChip(
+                          context,
+                          _emailHigh,
+                          'High',
+                          const Color(0xFFEF4444),
+                        ),
                       ),
-                      SizedBox(width: Responsive.getResponsiveValue(context, mobile: 8.0, tablet: 10.0, desktop: 12.0)),
-                      Expanded(
-                        child: _buildPriorityChip(context, _mockEmailMedium, 'Medium', const Color(0xFFFACC15)),
+                      SizedBox(
+                        width: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 8.0,
+                          tablet: 10.0,
+                          desktop: 12.0,
+                        ),
                       ),
-                      SizedBox(width: Responsive.getResponsiveValue(context, mobile: 8.0, tablet: 10.0, desktop: 12.0)),
                       Expanded(
-                        child: _buildPriorityChip(context, _mockEmailLow, 'Low', const Color(0xFF22C55E)),
+                        child: _buildPriorityChip(
+                          context,
+                          _emailMedium,
+                          'Medium',
+                          const Color(0xFFFACC15),
+                        ),
+                      ),
+                      SizedBox(
+                        width: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 8.0,
+                          tablet: 10.0,
+                          desktop: 12.0,
+                        ),
+                      ),
+                      Expanded(
+                        child: _buildPriorityChip(
+                          context,
+                          _emailLow,
+                          'Low',
+                          const Color(0xFF22C55E),
+                        ),
                       ),
                     ],
                   ),
-                  SizedBox(height: Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0)),
+                  SizedBox(
+                    height: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 10.0,
+                      tablet: 12.0,
+                      desktop: 14.0,
+                    ),
+                  ),
                   Row(
                     children: [
                       Expanded(
-                        child: _buildStatRow(context, 'Deadlines', _mockEmailDeadlines, const Color(0xFFF97316)),
+                        child: _buildStatRow(
+                          context,
+                          'Deadlines',
+                          _emailDeadlines,
+                          const Color(0xFFF97316),
+                        ),
                       ),
-                      SizedBox(width: Responsive.getResponsiveValue(context, mobile: 8.0, tablet: 10.0, desktop: 12.0)),
+                      SizedBox(
+                        width: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 8.0,
+                          tablet: 10.0,
+                          desktop: 12.0,
+                        ),
+                      ),
                       Expanded(
-                        child: _buildStatRow(context, 'Actions', _mockEmailActionsRequired, const Color(0xFF10B981)),
+                        child: _buildStatRow(
+                          context,
+                          'Actions',
+                          _emailActionsRequired,
+                          const Color(0xFF10B981),
+                        ),
                       ),
                     ],
                   ),
@@ -1715,7 +1944,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             SizedBox(height: r),
             Container(
               padding: EdgeInsets.symmetric(
-                vertical: Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0),
+                vertical: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 10.0,
+                  tablet: 12.0,
+                  desktop: 14.0,
+                ),
               ),
               decoration: BoxDecoration(
                 color: AppColors.cyan500.withOpacity(0.2),
@@ -1728,13 +1962,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Text(
                     'View All Emails',
                     style: TextStyle(
-                      fontSize: Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 15.0, desktop: 16.0),
+                      fontSize: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 14.0,
+                        tablet: 15.0,
+                        desktop: 16.0,
+                      ),
                       fontWeight: FontWeight.w500,
                       color: AppColors.textCyan200,
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Icon(LucideIcons.arrowRight, size: 16, color: AppColors.cyan400),
+                  Icon(
+                    LucideIcons.arrowRight,
+                    size: 16,
+                    color: AppColors.cyan400,
+                  ),
                 ],
               ),
             ),
@@ -1776,6 +2019,173 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 blurRadius: 14,
                 offset: const Offset(0, 6),
               ),
+  /// Meeting Hub card (React-style): Video icon, title, subtitle, arrow → /meetings.
+  Widget _buildMeetingHubCard(BuildContext context, bool isMobile) {
+    final r = Responsive.getResponsiveValue(
+      context,
+      mobile: 18.0,
+      tablet: 20.0,
+      desktop: 24.0,
+    );
+    return GestureDetector(
+          onTap: _openMeetingHubPremiumOnly,
+          child: Container(
+            padding: EdgeInsets.all(r),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0a1f2e),
+                  Color(0xFF0f2a3d),
+                  Color(0xFF14354c),
+                  Color(0xFF19405b),
+                  Color(0xFF1e4a66),
+                ],
+                stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+              ),
+              borderRadius: BorderRadius.circular(r),
+              border: Border.all(
+                color: AppColors.cyan500.withOpacity(0.3),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.cyan500.withOpacity(0.2),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.4),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 52.0,
+                    tablet: 56.0,
+                    desktop: 60.0,
+                  ),
+                  height: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 52.0,
+                    tablet: 56.0,
+                    desktop: 60.0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.cyan500.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.cyan400.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Icon(
+                    LucideIcons.video,
+                    color: AppColors.cyan400,
+                    size: 28,
+                  ),
+                ),
+                SizedBox(width: r),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            'Meeting Hub',
+                            style: TextStyle(
+                              fontSize: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 17.0,
+                                tablet: 18.0,
+                                desktop: 20.0,
+                              ),
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          if (!_hasPremiumAccess) _buildUpgradeBadge(),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Start or join with AI assistance',
+                        style: TextStyle(
+                          fontSize: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 13.0,
+                            tablet: 14.0,
+                            desktop: 15.0,
+                          ),
+                          color: AppColors.textCyan200.withOpacity(0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 38.0,
+                    tablet: 40.0,
+                    desktop: 44.0,
+                  ),
+                  height: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 38.0,
+                    tablet: 40.0,
+                    desktop: 44.0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.cyan500,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    LucideIcons.chevronRight,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )
+        .animate()
+        .fadeIn(delay: 200.ms, duration: 400.ms)
+        .slideX(begin: 0.02, end: 0, curve: Curves.easeOut);
+  }
+
+  Widget _buildSocialMediaCampaignCard(BuildContext context, bool isMobile) {
+    final r = Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 24.0);
+    const cardColor = Color(0xFFEC4899);
+    const cardColorLight = Color(0xFFA855F7);
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const SocialMediaBriefScreen()),
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.all(r),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF0a1f2e),
+              Color(0xFF0f2a3d),
+              Color(0xFF14354c),
+              Color(0xFF19405b),
+              Color(0xFF1e4a66),
             ],
           ),
           child: Row(
@@ -1812,6 +2222,59 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
                         color: AppColors.textCyan200.withValues(alpha: 0.85),
                       ),
+          borderRadius: BorderRadius.circular(r),
+          border: Border.all(color: cardColor.withOpacity(0.3), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: cardColor.withOpacity(0.2),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.4),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
+              height: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    cardColor.withOpacity(0.25),
+                    cardColorLight.withOpacity(0.2),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: cardColor.withOpacity(0.4)),
+              ),
+              child: const Icon(LucideIcons.megaphone, color: cardColor, size: 26),
+            ),
+            SizedBox(width: r),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Social Media Campaign',
+                    style: TextStyle(
+                      fontSize: Responsive.getResponsiveValue(context, mobile: 17.0, tablet: 18.0, desktop: 20.0),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Launch your product across all platforms',
+                    style: TextStyle(
+                      fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
+                      color: AppColors.textCyan200.withOpacity(0.8),
                     ),
                   ],
                 ),
@@ -1841,11 +2304,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ],
           ),
+            ),
+            Container(
+              width: Responsive.getResponsiveValue(context, mobile: 38.0, tablet: 40.0, desktop: 44.0),
+              height: Responsive.getResponsiveValue(context, mobile: 38.0, tablet: 40.0, desktop: 44.0),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [cardColor, cardColorLight],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(LucideIcons.chevronRight, color: Colors.white, size: 22),
+            ),
+          ],
         ),
       ),
     )
         .animate()
-        .fadeIn(delay: 200.ms, duration: 400.ms)
+        .fadeIn(delay: 250.ms, duration: 400.ms)
         .slideX(begin: 0.02, end: 0, curve: Curves.easeOut);
   }
 
@@ -1921,7 +2397,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildPriorityChip(BuildContext context, int count, String label, Color color) {
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0)),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 10.0,
+          tablet: 12.0,
+          desktop: 14.0,
+        ),
+      ),
       decoration: BoxDecoration(
         color: AppColors.cyan500.withOpacity(0.2),
         borderRadius: BorderRadius.circular(10),
@@ -1932,15 +2415,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Container(
             width: 10,
             height: 10,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle, boxShadow: [
-              BoxShadow(color: color.withOpacity(0.7), blurRadius: 6),
-            ]),
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: color.withOpacity(0.7), blurRadius: 6),
+              ],
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             '$count',
             style: TextStyle(
-              fontSize: Responsive.getResponsiveValue(context, mobile: 20.0, tablet: 22.0, desktop: 24.0),
+              fontSize: Responsive.getResponsiveValue(
+                context,
+                mobile: 20.0,
+                tablet: 22.0,
+                desktop: 24.0,
+              ),
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -1948,7 +2440,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -1958,9 +2454,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildStatRow(BuildContext context, String label, int value, Color color) {
+  Widget _buildStatRow(
+    BuildContext context,
+    String label,
+    int value,
+    Color color,
+  ) {
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0)),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 10.0,
+          tablet: 12.0,
+          desktop: 14.0,
+        ),
+      ),
       decoration: BoxDecoration(
         color: AppColors.cyan500.withOpacity(0.2),
         borderRadius: BorderRadius.circular(10),
@@ -1975,18 +2483,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               Container(
                 width: 10,
                 height: 10,
-                decoration: BoxDecoration(color: color, shape: BoxShape.circle, boxShadow: [
-                  BoxShadow(color: color.withOpacity(0.7), blurRadius: 6),
-                ]),
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(color: color.withOpacity(0.7), blurRadius: 6),
+                  ],
+                ),
               ),
               const SizedBox(width: 8),
-              Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
             ],
           ),
           Text(
             '$value',
             style: TextStyle(
-              fontSize: Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0),
+              fontSize: Responsive.getResponsiveValue(
+                context,
+                mobile: 16.0,
+                tablet: 18.0,
+                desktop: 20.0,
+              ),
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -2002,15 +2526,44 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final phoneImportant = phoneCalls.where((c) => c.priority == 'high').length;
     const meetingsText = '2 meetings today';
     return [
-      {'title': 'Review Agenda', 'subtitle': meetingsText, 'icon': LucideIcons.calendar, 'route': '/agenda', 'color': const Color(0xFFA855F7)},
-      {'title': 'AI Financial Simulation', 'subtitle': null, 'icon': LucideIcons.calculator, 'route': '/advisor', 'color': const Color(0xFF10B981)},
-      {'title': 'Mon business', 'subtitle': null, 'icon': LucideIcons.briefcase, 'route': '/my-business', 'color': const Color(0xFF8B5CF6)},
-      {'title': 'Phone Agent', 'subtitle': '$phoneTotal calls • $phoneImportant important', 'icon': LucideIcons.phone, 'route': '/phone-agent', 'color': const Color(0xFF06B6D4)},
+      {
+        'title': 'Review Agenda',
+        'subtitle': meetingsText,
+        'icon': LucideIcons.calendar,
+        'route': '/agenda',
+        'color': const Color(0xFFA855F7),
+      },
+      {
+        'title': 'AI Financial Simulation',
+        'subtitle': null,
+        'icon': LucideIcons.calculator,
+        'route': '/advisor',
+        'color': const Color(0xFF10B981),
+      },
+      {
+        'title': 'Mon business',
+        'subtitle': null,
+        'icon': LucideIcons.briefcase,
+        'route': '/my-business',
+        'color': const Color(0xFF8B5CF6),
+      },
+      {
+        'title': 'Phone Agent',
+        'subtitle': '$phoneTotal calls • $phoneImportant important',
+        'icon': LucideIcons.phone,
+        'route': '/phone-agent',
+        'color': const Color(0xFF06B6D4),
+      },
     ];
   }
 
   Widget _buildOngoingProjectsGrid(BuildContext context, bool isMobile) {
-    final spacing = Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0);
+    final spacing = Responsive.getResponsiveValue(
+      context,
+      mobile: 10.0,
+      tablet: 12.0,
+      desktop: 14.0,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2020,7 +2573,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Text(
               'Ongoing Projects',
               style: TextStyle(
-                fontSize: Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 17.0, desktop: 18.0),
+                fontSize: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 16.0,
+                  tablet: 17.0,
+                  desktop: 18.0,
+                ),
                 fontWeight: FontWeight.bold,
                 color: AppColors.textWhite,
               ),
@@ -2138,9 +2696,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     required Color color,
     required bool isHighlighted,
   }) {
-    final r = Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 16.0, desktop: 18.0);
+    final r = Responsive.getResponsiveValue(
+      context,
+      mobile: 14.0,
+      tablet: 16.0,
+      desktop: 18.0,
+    );
+    final isPremiumPhoneAgent = route == '/phone-agent';
     return GestureDetector(
-      onTap: () => context.go(route),
+      onTap: () => _openRouteWithPremiumCheck(route),
       child: Container(
         padding: EdgeInsets.all(r),
         decoration: BoxDecoration(
@@ -2157,10 +2721,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     const Color(0xFF1e4a66).withOpacity(0.35),
                     const Color(0xFF16384d).withOpacity(0.35),
                   ],
-            ),
+          ),
           borderRadius: BorderRadius.circular(r),
           border: Border.all(
-            color: isHighlighted ? AppColors.cyan500.withOpacity(0.35) : AppColors.cyan500.withOpacity(0.12),
+            color: isHighlighted
+                ? AppColors.cyan500.withOpacity(0.35)
+                : AppColors.cyan500.withOpacity(0.12),
             width: 1,
           ),
         ),
@@ -2175,26 +2741,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 color: color.withOpacity(isHighlighted ? 0.35 : 0.25),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: isHighlighted ? Colors.white : color, size: 22),
+              child: Icon(
+                icon,
+                color: isHighlighted ? Colors.white : color,
+                size: 22,
+              ),
             ),
             SizedBox(height: r * 0.5),
             Text(
               title,
               style: TextStyle(
-                fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
+                fontSize: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 13.0,
+                  tablet: 14.0,
+                  desktop: 15.0,
+                ),
                 fontWeight: FontWeight.bold,
                 color: isHighlighted ? Colors.white : AppColors.textWhite,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            if (isPremiumPhoneAgent && !_hasPremiumAccess) ...[
+              const SizedBox(height: 6),
+              _buildUpgradeBadge(),
+            ],
             if (subtitle != null && subtitle.isNotEmpty) ...[
               const SizedBox(height: 2),
               Text(
                 subtitle,
                 style: TextStyle(
                   fontSize: 10,
-                  color: isHighlighted ? AppColors.textCyan200.withOpacity(0.85) : AppColors.textCyan200.withOpacity(0.7),
+                  color: isHighlighted
+                      ? AppColors.textCyan200.withOpacity(0.85)
+                      : AppColors.textCyan200.withOpacity(0.7),
                 ),
               ),
             ],
@@ -2214,106 +2795,111 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     Color colorLight,
     int index,
   ) {
+    final isPremiumPhoneAgent = route == '/phone-agent';
     return GestureDetector(
-          onTap: () => context.go(route),
-          child: Container(
-            padding: EdgeInsets.all(
-              Responsive.getResponsiveValue(
-                context,
-                mobile: 14.0,
-                tablet: 16.0,
-                desktop: 20.0,
-              ),
+      onTap: () => _openRouteWithPremiumCheck(route),
+      child: Container(
+        padding: EdgeInsets.all(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 14.0,
+            tablet: 16.0,
+            desktop: 20.0,
+          ),
+        ),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF1e4a66).withOpacity(0.4),
+              const Color(0xFF16384d).withOpacity(0.4),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 11.0,
+              tablet: 12.0,
+              desktop: 14.0,
             ),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF1e4a66).withOpacity(0.4),
-                  const Color(0xFF16384d).withOpacity(0.4),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(
-                Responsive.getResponsiveValue(
-                  context,
-                  mobile: 11.0,
-                  tablet: 12.0,
-                  desktop: 14.0,
-                ),
-              ),
-              border: Border.all(
-                color: AppColors.cyan500.withOpacity(0.1),
-                width: 1,
-              ),
+          ),
+          border: Border.all(
+            color: AppColors.cyan500.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 11.0,
+              tablet: 12.0,
+              desktop: 14.0,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(
-                Responsive.getResponsiveValue(
-                  context,
-                  mobile: 11.0,
-                  tablet: 12.0,
-                  desktop: 14.0,
-                ),
-              ),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Row(
-                  children: [
-                    Container(
-                      width: Responsive.getResponsiveValue(
+          ),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 44.0,
+                    tablet: 48.0,
+                    desktop: 52.0,
+                  ),
+                  height: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 44.0,
+                    tablet: 48.0,
+                    desktop: 52.0,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        color.withOpacity(0.2),
+                        colorLight.withOpacity(0.2),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(
+                      Responsive.getResponsiveValue(
                         context,
-                        mobile: 44.0,
-                        tablet: 48.0,
-                        desktop: 52.0,
-                      ),
-                      height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 44.0,
-                        tablet: 48.0,
-                        desktop: 52.0,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            color.withOpacity(0.2),
-                            colorLight.withOpacity(0.2),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(
-                          Responsive.getResponsiveValue(
-                            context,
-                            mobile: 11.0,
-                            tablet: 12.0,
-                            desktop: 14.0,
-                          ),
-                        ),
-                        border: Border.all(
-                          color: AppColors.cyan500.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: Icon(
-                        icon,
-                        color: color,
-                        size: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 22.0,
-                          tablet: 24.0,
-                          desktop: 26.0,
-                        ),
+                        mobile: 11.0,
+                        tablet: 12.0,
+                        desktop: 14.0,
                       ),
                     ),
-                    SizedBox(
-                      width: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 12.0,
-                        tablet: 14.0,
-                        desktop: 16.0,
-                      ),
+                    border: Border.all(
+                      color: AppColors.cyan500.withOpacity(0.2),
+                      width: 1,
                     ),
-                    Expanded(
-                      child: Text(
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 22.0,
+                      tablet: 24.0,
+                      desktop: 26.0,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 12.0,
+                    tablet: 14.0,
+                    desktop: 16.0,
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
                         title,
                         style: TextStyle(
                           fontSize: Responsive.getResponsiveValue(
@@ -2326,22 +2912,58 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           color: AppColors.textWhite,
                         ),
                       ),
-                    ),
-                    Icon(
-                      LucideIcons.chevronRight,
-                      color: AppColors.cyan400,
-                      size: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 18.0,
-                        tablet: 20.0,
-                        desktop: 22.0,
-                      ),
-                    ),
-                  ],
+                      if (isPremiumPhoneAgent && !_hasPremiumAccess) ...[
+                        const SizedBox(height: 6),
+                        _buildUpgradeBadge(),
+                      ],
+                    ],
+                  ),
                 ),
-              ),
+                Icon(
+                  LucideIcons.chevronRight,
+                  color: AppColors.cyan400,
+                  size: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 18.0,
+                    tablet: 20.0,
+                    desktop: 22.0,
+                  ),
+                ),
+              ],
             ),
           ),
-        );
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUpgradeBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFF312E81),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.cyan400.withOpacity(0.7),
+          width: 0.8,
+        ),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.lock_outline, size: 12, color: Colors.white),
+          SizedBox(width: 4),
+          Text(
+            'Upgrade',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

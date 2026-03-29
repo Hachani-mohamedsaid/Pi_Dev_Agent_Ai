@@ -16,6 +16,51 @@ class AppStrings {
       "privacySecurity": "Privacy & Security",
       "helpSupport": "Help & Support",
       "logOut": "Log Out",
+      "premiumSubscription": "Premium & Subscription",
+      "subscriptionSubtitle":
+          "Manage your plan, billing, and premium features.",
+      "subscriptionPlaceholder":
+          "Subscription and payment options will be available here soon.",
+      "subscriptionPlansIntro":
+          "Unlock every Premium feature. Pick a billing cycle that fits you.",
+      "subscriptionMonthly": "Monthly",
+      "subscriptionYearly": "Yearly",
+      "subscriptionBilledMonthly": "Billed monthly · cancel anytime",
+      "subscriptionBilledYearly": "Billed yearly · cancel anytime",
+      "subscriptionPromoBadge": "PROMO",
+      "subscriptionBestValue": "Best value",
+      "subscriptionYearlyPromoLine": "~17% less than paying monthly",
+      "subscriptionPriceMonth": "9.99",
+      "subscriptionPriceYear": "99.99",
+      "subscriptionPriceYearWas": "119.88",
+      "subscriptionPerMonthSuffix": "/ month",
+      "subscriptionPerYearSuffix": "/ year",
+      "subscriptionCurrencySuffix": " €",
+      "subscriptionWhatsIncluded": "What's included",
+      "subscriptionFeature1": "Unlimited AI chat & voice assistant",
+      "subscriptionFeature2": "Meeting hub & advanced transcripts",
+      "subscriptionFeature3": "Priority support & early features",
+      "subscriptionContinue": "Continue",
+      "subscriptionPaymentNote":
+          "Payment opens inside the app via Stripe Checkout (secure).",
+      "subscriptionConfirmPaymentTitle": "Confirm payment",
+      "subscriptionConfirmPaymentMessage":
+          "Do you want to pay for the {PLAN} plan inside the app?",
+      "payNow": "Pay now",
+      "subscriptionOpeningStripe": "Opening secure payment…",
+      "subscriptionLoginRequired": "Please sign in to subscribe.",
+      "subscriptionCheckoutFailed":
+          "Could not start checkout. Check your connection or try again later.",
+      "subscriptionBackendMissing":
+          "Payment server not ready yet. Add POST /billing/create-checkout-session on your API.",
+      "subscriptionSuccessTitle": "Payment successful",
+      "subscriptionSuccessDescriptionMonthly":
+          "Your monthly plan is now active. Your premium features are enabled and your account is updated.",
+      "subscriptionSuccessDescriptionYearly":
+          "Your yearly plan is now active. Enjoy premium access and the best annual value.",
+      "subscriptionSuccessBackToProfile": "Go to profile",
+      "subscriptionSuccessBackToHome": "Back to home",
+      "subscriptionActiveBadge": "Active plan",
 
       "goodMorning": "Good morning",
       "goodAfternoon": "Good afternoon",
@@ -91,6 +136,54 @@ class AppStrings {
       "privacySecurity": "Confidentialité et sécurité",
       "helpSupport": "Aide et support",
       "logOut": "Déconnexion",
+      "premiumSubscription": "Premium & Abonnement",
+      "subscriptionSubtitle":
+          "Gérez votre offre, la facturation et les fonctionnalités premium.",
+      "subscriptionPlaceholder":
+          "L'abonnement et les moyens de paiement seront bientôt disponibles ici.",
+      "subscriptionPlansIntro":
+          "Profitez de toutes les fonctionnalités Premium. Choisissez votre rythme.",
+      "subscriptionMonthly": "Mensuel",
+      "subscriptionYearly": "Annuel",
+      "subscriptionBilledMonthly":
+          "Facturé chaque mois · résiliation à tout moment",
+      "subscriptionBilledYearly":
+          "Facturé une fois par an · résiliation à tout moment",
+      "subscriptionPromoBadge": "PROMO",
+      "subscriptionBestValue": "Meilleure offre",
+      "subscriptionYearlyPromoLine": "~17% d'économie vs le mensuel",
+      "subscriptionPriceMonth": "9.99",
+      "subscriptionPriceYear": "99.99",
+      "subscriptionPriceYearWas": "119.88",
+      "subscriptionPerMonthSuffix": "/ mois",
+      "subscriptionPerYearSuffix": "/ an",
+      "subscriptionCurrencySuffix": " €",
+      "subscriptionWhatsIncluded": "Inclus",
+      "subscriptionFeature1": "Assistant IA & vocal illimités",
+      "subscriptionFeature2": "Réunions & transcriptions avancées",
+      "subscriptionFeature3":
+          "Support prioritaire & nouveautés en avant-première",
+      "subscriptionContinue": "Continuer",
+      "subscriptionPaymentNote":
+          "Le paiement s’ouvre dans l’application via Stripe Checkout (sécurisé).",
+      "subscriptionConfirmPaymentTitle": "Confirmer le paiement",
+      "subscriptionConfirmPaymentMessage":
+          "Souhaitez-vous payer le forfait {PLAN} dans l’application ?",
+      "payNow": "Payer maintenant",
+      "subscriptionOpeningStripe": "Ouverture du paiement sécurisé…",
+      "subscriptionLoginRequired": "Connectez-vous pour vous abonner.",
+      "subscriptionCheckoutFailed":
+          "Impossible de démarrer le paiement. Réessayez plus tard.",
+      "subscriptionBackendMissing":
+          "Le serveur de paiement n’est pas prêt. Ajoutez POST /billing/create-checkout-session sur l’API.",
+      "subscriptionSuccessTitle": "Paiement réussi",
+      "subscriptionSuccessDescriptionMonthly":
+          "Votre forfait mensuel est activé. Les fonctionnalités premium sont accessibles et votre compte est mis à jour.",
+      "subscriptionSuccessDescriptionYearly":
+          "Votre forfait annuel est activé. Profitez de l’accès premium et de la meilleure valeur annuelle.",
+      "subscriptionSuccessBackToProfile": "Aller au profil",
+      "subscriptionSuccessBackToHome": "Retour à l’accueil",
+      "subscriptionActiveBadge": "Forfait actif",
 
       "goodMorning": "Bonjour",
       "goodAfternoon": "Bon après-midi",

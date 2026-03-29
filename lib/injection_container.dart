@@ -35,6 +35,8 @@ import 'presentation/state/chat_provider.dart';
 // Goals API (avec JWT pour stockage backend)
 import 'data/services/goals_api_service.dart';
 import 'data/services/meeting_intelligence_service.dart';
+import 'data/services/stripe_checkout_service.dart';
+import 'data/services/mobility_api_service.dart';
 
 /// Very small manual DI container (no external packages).
 class InjectionContainer {
@@ -134,7 +136,8 @@ class InjectionContainer {
 
   // N8N Chat dependencies
   late final N8nChatService _n8nChatService = N8nChatService(
-    webhookUrl: 'https://n8n-production-1e13.up.railway.app/webhook/2429d011-049b-424b-9708-bf415bc682e1',
+    webhookUrl:
+        'https://n8n-production-1e13.up.railway.app/webhook/2429d011-049b-424b-9708-bf415bc682e1',
   );
 
   ChatProvider? _chatProvider;
@@ -150,8 +153,9 @@ class InjectionContainer {
   N8nChatService getN8nChatService() => _n8nChatService;
 
   // Goals API (envoie le JWT pour que le backend stocke les objectifs par utilisateur)
-  late final GoalsApiService _goalsApiService =
-      GoalsApiService(authLocalDataSource: _authLocalDataSource);
+  late final GoalsApiService _goalsApiService = GoalsApiService(
+    authLocalDataSource: _authLocalDataSource,
+  );
 
   GoalsApiService get goalsApiService => _goalsApiService;
 
@@ -160,4 +164,9 @@ class InjectionContainer {
 
   MeetingIntelligenceService get meetingIntelligenceService =>
       _meetingIntelligenceService;
+  StripeCheckoutService buildStripeCheckoutService() =>
+      StripeCheckoutService(authLocalDataSource: _authLocalDataSource);
+
+  MobilityApiService buildMobilityApiService() =>
+      MobilityApiService(authLocalDataSource: _authLocalDataSource);
 }

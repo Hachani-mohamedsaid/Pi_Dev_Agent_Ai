@@ -21,8 +21,7 @@ function resolveSecretKey(secret) {
   return Buffer.from(secret, "utf8");
 }
 
-function makeRandomIv() {cd /Users/macbook/Desktop/backend_AgentAi
-  git push
+function makeRandomIv() {
   const chars = "0123456789abcdefghijklmnopqrstuvwxyz";
   let iv = "";
   for (let i = 0; i < 16; i += 1) {

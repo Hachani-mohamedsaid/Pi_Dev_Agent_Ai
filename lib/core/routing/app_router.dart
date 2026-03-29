@@ -16,6 +16,8 @@ import '../../presentation/pages/notifications_page.dart';
 import '../../presentation/pages/notifications_center_page.dart';
 import '../../presentation/pages/privacy_security_page.dart';
 import '../../presentation/pages/help_support_page.dart';
+import '../../presentation/pages/subscription_page.dart';
+import '../../presentation/pages/subscription_success_page.dart';
 import '../../presentation/pages/change_password_page.dart';
 import '../../presentation/pages/voice_assistant_page.dart';
 import '../../presentation/pages/chat_page.dart';
@@ -60,6 +62,7 @@ import '../../presentation/pages/candidatures_page.dart';
 import '../../presentation/pages/evaluation_detail_page.dart';
 import '../../data/models/evaluation.dart';
 import '../../presentation/pages/work_proposal_details_page.dart';
+import '../../presentation/widgets/premium_feature_gate.dart';
 import '../../data/models/work_proposal_model.dart';
 import '../../injection_container.dart';
 import '../../features/financial_advisor/models/advisor_report_model.dart';
@@ -73,6 +76,7 @@ import '../../features/my_business/screens/business_dashboard_screen.dart';
 import '../../features/phone_agent/models/phone_call_model.dart';
 import '../../features/phone_agent/screens/phone_agent_screen.dart';
 import '../../features/phone_agent/screens/phone_agent_call_detail_screen.dart';
+import '../../features/social_media/screens/social_media_brief_screen.dart';
 
 // Custom page transition - fade and scale from center
 Page<T> _fadeScaleTransition<T extends Object?>({
@@ -265,6 +269,28 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/subscription',
+      pageBuilder: (context, state) {
+        final activePlan = state.uri.queryParameters['activePlan'];
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: SubscriptionPage(activePlan: activePlan),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/subscription/success',
+      pageBuilder: (context, state) {
+        final plan = state.uri.queryParameters['plan'] ?? '';
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: SubscriptionSuccessPage(plan: plan),
+        );
+      },
+    ),
+    GoRoute(
       path: '/change-password',
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
@@ -279,8 +305,10 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: VoiceAssistantPage(
-          chatDataSource: InjectionContainer.instance.buildChatDataSource(),
+        child: PremiumFeatureGate(
+          child: VoiceAssistantPage(
+            chatDataSource: InjectionContainer.instance.buildChatDataSource(),
+          ),
         ),
       ),
     ),
@@ -552,7 +580,7 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: const MeetingHubScreen(),
+        child: const PremiumFeatureGate(child: MeetingHubScreen()),
       ),
     ),
     GoRoute(
@@ -878,7 +906,15 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: const PhoneAgentScreen(),
+        child: const PremiumFeatureGate(child: PhoneAgentScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/social-media',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const SocialMediaBriefScreen(),
       ),
     ),
     GoRoute(
@@ -889,13 +925,15 @@ final appRouter = GoRouter(
           return _fadeScaleTransition(
             context: context,
             state: state,
-            child: const PhoneAgentScreen(),
+            child: const PremiumFeatureGate(child: PhoneAgentScreen()),
           );
         }
         return _fadeScaleTransition(
           context: context,
           state: state,
-          child: PhoneAgentCallDetailScreen(call: call),
+          child: PremiumFeatureGate(
+            child: PhoneAgentCallDetailScreen(call: call),
+          ),
         );
       },
     ),
@@ -903,6 +941,7 @@ final appRouter = GoRouter(
 );
 
 // Placeholder page for routes that will be implemented later
+// ignore: unused_element
 class _PlaceholderPage extends StatelessWidget {
   final String title;
 

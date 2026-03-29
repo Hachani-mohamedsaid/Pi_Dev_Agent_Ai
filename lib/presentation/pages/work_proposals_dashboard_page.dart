@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:go_router/go_router.dart';
@@ -124,6 +125,7 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                     );
                   }
                   if (snapshot.hasError) {
+                    final err = snapshot.error.toString();
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -138,6 +140,20 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          if (kDebugMode)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(
+                                err,
+                                style: TextStyle(
+                                  color: AppColors.textCyan200.withOpacity(0.8),
+                                  fontSize: 12,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 6,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                         ],
                       ),
                     );

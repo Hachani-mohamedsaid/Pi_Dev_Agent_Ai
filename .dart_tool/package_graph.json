@@ -14,6 +14,7 @@
         "flutter_animate",
         "flutter_dotenv",
         "flutter_localizations",
+        "flutter_map",
         "flutter_svg",
         "flutter_tts",
         "geolocator",
@@ -23,16 +24,20 @@
         "http",
         "image_picker",
         "intl",
+        "latlong2",
         "lottie",
         "lucide_icons",
         "openai_tts",
+        "pdf",
         "permission_handler",
+        "printing",
         "provider",
         "share_plus",
         "shared_preferences",
         "sign_in_with_apple",
         "speech_to_text",
         "syncfusion_flutter_calendar",
+        "uni_links",
         "url_launcher",
         "web_socket_channel",
         "zego_express_engine"
@@ -79,6 +84,43 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "uni_links",
+      "version": "0.5.1",
+      "dependencies": [
+        "flutter",
+        "uni_links_platform_interface",
+        "uni_links_web"
+      "name": "printing",
+      "version": "5.14.3",
+      "dependencies": [
+        "ffi",
+        "flutter",
+        "flutter_web_plugins",
+        "http",
+        "image",
+        "meta",
+        "pdf",
+        "pdf_widget_wrapper",
+        "plugin_platform_interface",
+        "web"
+      ]
+    },
+    {
+      "name": "pdf",
+      "version": "3.11.3",
+      "dependencies": [
+        "archive",
+        "barcode",
+        "bidi",
+        "crypto",
+        "image",
+        "meta",
+        "path_parsing",
+        "vector_math",
+        "xml"
       ]
     },
     {
@@ -253,6 +295,30 @@
         "flutter",
         "flutter_web_plugins",
         "js"
+      ]
+    },
+    {
+      "name": "latlong2",
+      "version": "0.9.1",
+      "dependencies": [
+        "intl"
+      ]
+    },
+    {
+      "name": "flutter_map",
+      "version": "7.0.2",
+      "dependencies": [
+        "async",
+        "collection",
+        "dart_earcut",
+        "flutter",
+        "http",
+        "latlong2",
+        "logger",
+        "meta",
+        "polylabel",
+        "proj4dart",
+        "vector_math"
       ]
     },
     {
@@ -534,6 +600,23 @@
       ]
     },
     {
+      "name": "uni_links_web",
+      "version": "0.1.0",
+      "dependencies": [
+        "flutter",
+        "flutter_web_plugins",
+        "uni_links_platform_interface"
+      ]
+    },
+    {
+      "name": "uni_links_platform_interface",
+      "version": "1.0.0",
+      "dependencies": [
+        "flutter",
+        "plugin_platform_interface"
+      ]
+    },
+    {
       "name": "win32",
       "version": "5.15.0",
       "dependencies": [
@@ -541,8 +624,23 @@
       ]
     },
     {
-      "name": "web",
-      "version": "1.1.1",
+      "name": "pdf_widget_wrapper",
+      "version": "1.0.4",
+      "dependencies": [
+        "flutter",
+        "pdf"
+      ]
+    },
+    {
+      "name": "flutter_web_plugins",
+      "version": "0.0.0",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "ffi",
+      "version": "2.1.5",
       "dependencies": []
     },
     {
@@ -553,6 +651,76 @@
     {
       "name": "url_launcher_platform_interface",
       "version": "2.3.2",
+      "name": "xml",
+      "version": "6.6.1",
+      "dependencies": [
+        "collection",
+        "meta",
+        "petitparser"
+      ]
+    },
+    {
+      "name": "path_parsing",
+      "version": "1.1.0",
+      "dependencies": [
+        "meta",
+        "vector_math"
+      ]
+    },
+    {
+      "name": "crypto",
+      "version": "3.0.7",
+      "dependencies": [
+        "typed_data"
+      ]
+    },
+    {
+      "name": "bidi",
+      "version": "2.0.13",
+      "dependencies": []
+    },
+    {
+      "name": "barcode",
+      "version": "2.2.9",
+      "dependencies": [
+        "meta",
+        "qr"
+      ]
+    },
+    {
+      "name": "archive",
+      "version": "4.0.7",
+      "dependencies": [
+        "crypto",
+        "path",
+        "posix"
+      ]
+    },
+    {
+      "name": "win32",
+      "version": "5.15.0",
+      "dependencies": [
+        "ffi"
+      ]
+    },
+    {
+      "name": "url_launcher_platform_interface",
+      "version": "2.3.2",
+      "dependencies": [
+        "flutter",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "url_launcher_linux",
+      "version": "3.2.2",
+      "dependencies": [
+        "typed_data"
+      ]
+    },
+    {
+      "name": "async",
+      "version": "2.13.0",
       "dependencies": [
         "flutter",
         "plugin_platform_interface"
@@ -581,6 +749,15 @@
         "flutter",
         "flutter_web_plugins",
         "url_launcher_platform_interface",
+      "name": "mime",
+      "version": "2.0.0",
+      "dependencies": []
+    },
+    {
+      "name": "cross_file",
+      "version": "0.3.5+2",
+      "dependencies": [
+        "meta",
         "web"
       ]
     },
@@ -595,6 +772,15 @@
     {
       "name": "share_plus_platform_interface",
       "version": "6.1.0",
+      "name": "web_socket",
+      "version": "1.0.1",
+      "dependencies": [
+        "web"
+      ]
+    },
+    {
+      "name": "async",
+      "version": "2.13.0",
       "dependencies": [
         "cross_file",
         "flutter",
@@ -682,20 +868,6 @@
         "flutter",
         "meta",
         "plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "plugin_platform_interface",
-      "version": "2.1.8",
-      "dependencies": [
-        "meta"
-      ]
-    },
-    {
-      "name": "flutter_plugin_android_lifecycle",
-      "version": "2.0.33",
-      "dependencies": [
-        "flutter"
       ]
     },
     {
@@ -890,6 +1062,34 @@
       ]
     },
     {
+      "name": "proj4dart",
+      "version": "2.1.0",
+      "dependencies": [
+        "meta",
+        "mgrs_dart",
+        "wkt_parser"
+      ]
+    },
+    {
+      "name": "polylabel",
+      "version": "1.0.1",
+      "dependencies": [
+        "collection"
+      ]
+    },
+    {
+      "name": "logger",
+      "version": "2.6.2",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
+      "name": "dart_earcut",
+      "version": "1.2.0",
+      "dependencies": []
+    },
+    {
       "name": "geolocator_windows",
       "version": "0.2.5",
       "dependencies": [
@@ -1080,15 +1280,6 @@
       ]
     },
     {
-      "name": "archive",
-      "version": "4.0.7",
-      "dependencies": [
-        "crypto",
-        "path",
-        "posix"
-      ]
-    },
-    {
       "name": "flutter_shaders",
       "version": "0.1.3",
       "dependencies": [
@@ -1177,6 +1368,47 @@
       ]
     },
     {
+      "name": "plugin_platform_interface",
+      "version": "2.1.8",
+      "name": "petitparser",
+      "version": "7.0.1",
+      "dependencies": [
+        "collection",
+        "meta"
+      ]
+    },
+    {
+      "name": "typed_data",
+      "version": "1.4.0",
+      "dependencies": [
+        "collection"
+      ]
+    },
+    {
+      "name": "qr",
+      "version": "3.0.2",
+      "dependencies": [
+        "crypto",
+        "fixnum"
+      ]
+    },
+    {
+      "name": "posix",
+      "version": "6.0.3",
+      "dependencies": [
+        "ffi",
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "uuid",
+      "version": "4.5.3",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
       "name": "uuid",
       "version": "4.5.3",
       "dependencies": [
@@ -1199,6 +1431,8 @@
     {
       "name": "typed_data",
       "version": "1.4.0",
+      "name": "flutter_sound_web",
+      "version": "9.30.0",
       "dependencies": [
         "collection"
       ]
@@ -1221,13 +1455,6 @@
         "flutter",
         "logger",
         "plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "logger",
-      "version": "2.6.2",
-      "dependencies": [
-        "meta"
       ]
     },
     {
@@ -1270,6 +1497,25 @@
         "cross_file",
         "file_selector_platform_interface",
         "flutter"
+      ]
+    },
+    {
+      "name": "flutter_plugin_android_lifecycle",
+      "version": "2.0.33",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "wkt_parser",
+      "version": "2.0.0",
+      "dependencies": []
+    },
+    {
+      "name": "mgrs_dart",
+      "version": "2.0.0",
+      "dependencies": [
+        "unicode"
       ]
     },
     {
@@ -1354,6 +1600,13 @@
       ]
     },
     {
+      "name": "unicode",
+      "version": "0.3.1",
+      "dependencies": [
+        "lists"
+      ]
+    },
+    {
       "name": "platform",
       "version": "3.1.6",
       "dependencies": []
@@ -1364,6 +1617,13 @@
       "dependencies": [
         "meta",
         "path"
+      ]
+    },
+    {
+      "name": "lists",
+      "version": "1.0.1",
+      "dependencies": [
+        "meta"
       ]
     }
   ],

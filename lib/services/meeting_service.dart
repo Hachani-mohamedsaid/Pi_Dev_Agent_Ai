@@ -11,8 +11,10 @@ class MeetingService {
   static final MeetingService instance = MeetingService._();
 
   static const _silenceThresholdDuration = Duration(milliseconds: 1500);
-  static const _silenceRmsThreshold = 900; // higher threshold to avoid noise-only chunks
-  static const _minChunkBytes = 24000; // avoid tiny chunks that confuse transcription
+  static const _silenceRmsThreshold =
+      900; // higher threshold to avoid noise-only chunks
+  static const _minChunkBytes =
+      24000; // avoid tiny chunks that confuse transcription
 
   final _audioChunkController = StreamController<Uint8List>.broadcast();
   Stream<Uint8List> get audioChunkStream => _audioChunkController.stream;
@@ -29,7 +31,8 @@ class MeetingService {
   int _appId = 0;
   String _appSign = '';
 
-  bool get hasActiveMeeting => _currentRoomId != null && _currentStreamId != null;
+  bool get hasActiveMeeting =>
+      _currentRoomId != null && _currentStreamId != null;
   String? get currentRoomId => _currentRoomId;
   String? get currentUserId => _currentUserId;
   String? get currentUserName => _currentUserName;
@@ -53,7 +56,11 @@ class MeetingService {
   }
 
   /// Start a new meeting (create room and publish).
-  Future<bool> startMeeting(String roomID, String userID, String userName) async {
+  Future<bool> startMeeting(
+    String roomID,
+    String userID,
+    String userName,
+  ) async {
     if (!await ensureInit()) return false;
     _currentRoomId = roomID;
     _currentStreamId = '${userID}_${DateTime.now().millisecondsSinceEpoch}';
@@ -84,7 +91,11 @@ class MeetingService {
   }
 
   /// Join an existing meeting (subscribe to existing streams).
-  Future<bool> joinMeeting(String roomID, String userID, String userName) async {
+  Future<bool> joinMeeting(
+    String roomID,
+    String userID,
+    String userName,
+  ) async {
     if (!await ensureInit()) return false;
     _currentRoomId = roomID;
     _currentStreamId = '${userID}_${DateTime.now().millisecondsSinceEpoch}';
@@ -126,7 +137,11 @@ class MeetingService {
     _observerStarted = true;
   }
 
-  void _onMixedAudioData(Uint8List data, int dataLength, ZegoAudioFrameParam param) {
+  void _onMixedAudioData(
+    Uint8List data,
+    int dataLength,
+    ZegoAudioFrameParam param,
+  ) {
     if (dataLength <= 0) return;
     final bytes = dataLength < data.length ? data.sublist(0, dataLength) : data;
     final rms = _computeRms(bytes);
@@ -179,7 +194,9 @@ class MeetingService {
         _observerStarted = false;
       }
       if (_currentStreamId != null) {
-        await ZegoExpressEngine.instance.stopPublishingStream(channel: ZegoPublishChannel.Main);
+        await ZegoExpressEngine.instance.stopPublishingStream(
+          channel: ZegoPublishChannel.Main,
+        );
         _currentStreamId = null;
       }
       if (_currentRoomId != null) {
@@ -196,17 +213,24 @@ class MeetingService {
 
   /// Call when user toggles mute (optional, for UI sync).
   Future<void> setMute(bool mute) async {
-    await ZegoExpressEngine.instance.mutePublishStreamAudio(mute, channel: ZegoPublishChannel.Main);
+    await ZegoExpressEngine.instance.mutePublishStreamAudio(
+      mute,
+      channel: ZegoPublishChannel.Main,
+    );
   }
 
   /// Call when user toggles video (optional).
   Future<void> setVideoOn(bool on) async {
-    await ZegoExpressEngine.instance.enableCamera(on,
-        channel: ZegoPublishChannel.Main);
+    await ZegoExpressEngine.instance.enableCamera(
+      on,
+      channel: ZegoPublishChannel.Main,
+    );
     // Muting the video track in sync ensures UIKit on the web sees the correct
     // camera state and switches between avatar and live video immediately.
-    await ZegoExpressEngine.instance.mutePublishStreamVideo(!on,
-        channel: ZegoPublishChannel.Main);
+    await ZegoExpressEngine.instance.mutePublishStreamVideo(
+      !on,
+      channel: ZegoPublishChannel.Main,
+    );
   }
 
   void dispose() {
