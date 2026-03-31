@@ -9,14 +9,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../../injection_container.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/utils/responsive.dart';
 import '../../data/services/mobility_api_service.dart';
 import 'travel_schedule_page.dart';
-import '../widgets/navigation_bar.dart';
 
 class TravelPage extends StatefulWidget {
   const TravelPage({super.key});
@@ -50,7 +46,6 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
   bool _bestPriceWindowEnabled = false;
   int _bestPriceWindowMinutes = 30;
   bool _selectingFromOnMap = false;
-  bool _showDebugPanel = false;
   bool _estimateRetryPending = false;
   String? _errorMessage;
   String? _bookingStatusMessage;
@@ -66,8 +61,6 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
   final List<String> _proposalStatusHistory = <String>[];
   List<LatLng> _nearbyTaxiPoints = const <LatLng>[];
   bool _loadingNearbyTaxis = false;
-  String? _nearbyTaxiError;
-  LatLng? _nearbyTaxiSearchCenter;
   final Distance _distanceCalc = const Distance();
 
   List<LatLng> _routePoints = const <LatLng>[];
@@ -173,7 +166,10 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
       });
 
       _startLiveLocationStream();
-      _mapController.move(_defaultTestHub, 13.5);
+      _mapController.move(
+        LatLng(position.latitude, position.longitude),
+        15.0,
+      );
       unawaited(_fetchNearbyTaxiStations());
     } catch (_) {
       if (!mounted) return;
@@ -471,29 +467,6 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
     };
     final ordered = weekdays.toList()..sort();
     return ordered.map((day) => labels[day] ?? day.toString()).join(', ');
-  }
-
-  String _scheduleSummaryLabel() {
-    if (_scheduleSlots.isEmpty) return 'No schedule';
-    final enabledSlots = _scheduleSlots.where((slot) => slot.enabled).toList();
-    if (enabledSlots.isEmpty) {
-      return '${_scheduleSlots.length} schedules configured (all disabled)';
-    }
-
-    final preview = enabledSlots
-        .take(2)
-        .map(
-          (slot) =>
-              '${slot.time.format(context)} ${_weekdaysLabel(slot.weekdays)}',
-        )
-        .join(' | ');
-    final extra = enabledSlots.length > 2
-        ? ' +${enabledSlots.length - 2} more'
-        : '';
-    final bestPriceTag = _bestPriceWindowEnabled
-        ? ' • best-price ±$_bestPriceWindowMinutes min'
-        : '';
-    return '$preview$extra$bestPriceTag';
   }
 
   void _syncPrimaryPickupFromSchedules() {
@@ -1578,21 +1551,6 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _refreshInAppData() async {
-    setState(() {
-      _errorMessage = null;
-      _bookingStatusMessage = null;
-    });
-
-    if (_destinationLatLng != null && !_loadingRoute) {
-      await _buildRoute();
-    }
-
-    await _fetchMobilityEstimate();
-    await _refreshLatestProposalStatus(silent: true);
-    await _fetchNearbyTaxiStations();
-  }
-
   Future<void> _fetchNearbyTaxiStations() async {
     LatLng? center;
     try {
@@ -1613,8 +1571,6 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
 
     setState(() {
       _loadingNearbyTaxis = true;
-      _nearbyTaxiError = null;
-      _nearbyTaxiSearchCenter = center;
     });
 
     try {
@@ -1717,14 +1673,12 @@ out center 30;
       setState(() {
         _nearbyTaxiPoints = points;
         _loadingNearbyTaxis = false;
-        _nearbyTaxiError = null;
       });
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
       setState(() {
         _loadingNearbyTaxis = false;
         _nearbyTaxiPoints = const <LatLng>[];
-        _nearbyTaxiError = e.toString();
       });
     }
   }
@@ -1747,15 +1701,6 @@ out center 30;
       }
     }
     return best;
-  }
-
-  String _nearestTaxiDistanceLabel() {
-    final meters = _nearestTaxiDistanceMeters();
-    if (meters == null) return 'n/a';
-    if (meters >= 1000) {
-      return '${(meters / 1000).toStringAsFixed(2)} km';
-    }
-    return '${meters.round()} m';
   }
 
   LatLng? _driverLatLng() {
@@ -2126,122 +2071,6 @@ out center 30;
     });
   }
 
-  Widget _buildEstimateCard(BuildContext context) {
-    if (_loadingEstimate) {
-      return _buildStatusCard(
-        context,
-        title: 'Live Backend Estimate',
-        message: 'Fetching mobility quotes from Railway backend...',
-        loading: true,
-      );
-    }
-
-    final estimate = _estimate;
-    if (estimate == null || estimate.options.isEmpty) {
-      return _buildStatusCard(
-        context,
-        title: 'Live Backend Estimate',
-        message: 'Trace a route to request cheapest provider options.',
-      );
-    }
-
-    final best = estimate.best ?? estimate.options.first;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.04),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(LucideIcons.sparkles, color: AppColors.cyan400, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'Best live offer',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '${(best.confidence * 100).round()}% confidence',
-                style: TextStyle(
-                  color: AppColors.textCyan200.withOpacity(0.86),
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            best.label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (best.reasons.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              best.reasons.join(' • '),
-              style: TextStyle(
-                color: AppColors.textCyan200.withOpacity(0.84),
-                fontSize: 12,
-              ),
-            ),
-          ],
-          if (estimate.options.length > 1) ...[
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: estimate.options
-                  .skip(1)
-                  .map(
-                    (option) => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.1),
-                        ),
-                      ),
-                      child: Text(
-                        option.label,
-                        style: TextStyle(
-                          color: AppColors.textCyan200.withOpacity(0.86),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(growable: false),
-            ),
-          ],
-          if (_estimateInfoMessage != null) ...[
-            const SizedBox(height: 10),
-            Text(
-              _estimateInfoMessage!,
-              style: TextStyle(
-                color: AppColors.textCyan200.withOpacity(0.8),
-                fontSize: 11,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
   Widget _buildStatusCard(
     BuildContext context, {
     required String title,
@@ -2468,86 +2297,846 @@ out center 30;
     );
   }
 
-  LatLng get _initialCenter {
-    return _defaultTestHub;
-  }
+  LatLng get _initialCenter => _defaultTestHub;
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = Responsive.isMobile(context);
-    final padding = Responsive.getResponsiveValue(
-      context,
-      mobile: 20.0,
-      tablet: 28.0,
-      desktop: 36.0,
-    );
-
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+      backgroundColor: const Color(0xFF0A1628),
+      body: Stack(
+        children: [
+          // Full-screen map
+          Positioned.fill(child: _buildFullScreenMap(context)),
+
+          // Fade gradient at top for readability
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 140,
+            child: IgnorePointer(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      const Color(0xFF0A1628).withValues(alpha: 0.85),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Top bar (back + title)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _buildTopBar(context),
+          ),
+
+          // Map action FABs (center-on-me + set pickup)
+          Positioned(
+            right: 16,
+            bottom: 340,
+            child: _buildMapFabs(context),
+          ),
+
+          // Bottom booking panel
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: _buildBookingPanel(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFullScreenMap(BuildContext context) {
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        initialCenter: _initialCenter,
+        initialZoom: 14.0,
+        minZoom: 4,
+        maxZoom: 18,
+        onTap: (_, point) => unawaited(_onMapTapped(point)),
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'pi_dev_agentia',
+        ),
+        if (_routePoints.isNotEmpty)
+          PolylineLayer(
+            polylines: [
+              Polyline(
+                points: _routePoints,
+                strokeWidth: 5,
+                color: AppColors.cyan400,
+              ),
+            ],
+          ),
+        MarkerLayer(
+          markers: [
+            ..._nearbyTaxiPoints.map(
+              (p) => Marker(
+                point: p,
+                width: 28,
+                height: 28,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.92),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      width: 1,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.local_taxi,
+                    color: Colors.black,
+                    size: 14,
+                  ),
+                ),
+              ),
+            ),
+            if (_driverLatLng() != null)
+              Marker(
+                point: _driverLatLng()!,
+                width: 44,
+                height: 44,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.lightGreenAccent,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.local_taxi,
+                    color: Colors.black,
+                    size: 20,
+                  ),
+                ),
+              ),
+            if (_currentPosition != null)
+              Marker(
+                point: LatLng(
+                  _currentPosition!.latitude,
+                  _currentPosition!.longitude,
+                ),
+                width: 48,
+                height: 48,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (_pickupLatLng != null)
+              Marker(
+                point: _pickupLatLng!,
+                width: 44,
+                height: 44,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.cyan400,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: const Icon(
+                    Icons.circle,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                ),
+              ),
+            if (_destinationLatLng != null)
+              Marker(
+                point: _destinationLatLng!,
+                width: 40,
+                height: 48,
+                child: const Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Icon(Icons.location_on, color: Colors.redAccent, size: 38),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTopBar(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Book a Ride',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
+              ),
+            ),
+            const Spacer(),
+            if (_loadingLocation)
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapFabs(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Center on my location
+        GestureDetector(
+          onTap: () {
+            if (_currentPosition != null) {
+              _mapController.move(
+                LatLng(
+                  _currentPosition!.latitude,
+                  _currentPosition!.longitude,
+                ),
+                15.5,
+              );
+            }
+          },
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.22),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.my_location,
+              color: Color(0xFF0A1628),
+              size: 22,
+            ),
           ),
         ),
-        child: SafeArea(
-          bottom: false,
-          child: Stack(
-            children: [
-              SingleChildScrollView(
-                padding: EdgeInsets.only(
-                  left: padding,
-                  right: padding,
-                  top: padding,
-                  bottom: isMobile ? 110 : 130,
+        const SizedBox(height: 10),
+        // Toggle pickup-on-map mode
+        GestureDetector(
+          onTap: () => setState(() => _selectingFromOnMap = !_selectingFromOnMap),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: _selectingFromOnMap ? AppColors.cyan400 : Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.22),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
-                child:
-                    Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildHeader(context),
-                            const SizedBox(height: 16),
-                            _buildControlPanel(context),
-                            const SizedBox(height: 16),
-                            _buildMapCard(context),
-                            const SizedBox(height: 12),
-                            _buildEstimateCard(context),
-                            if (_latestProposal != null) ...[
-                              const SizedBox(height: 12),
-                              _buildProposalCard(context),
-                              const SizedBox(height: 12),
-                              _buildDriverInfoCard(context),
-                            ],
-                            if (_showDebugPanel) ...[
-                              const SizedBox(height: 12),
-                              _buildDebugPanel(context),
-                            ],
-                            if (_errorMessage != null) ...[
-                              const SizedBox(height: 12),
-                              _buildErrorBanner(context),
-                            ],
-                            if (_bookingStatusMessage != null) ...[
-                              const SizedBox(height: 12),
-                              _buildSuccessBanner(context),
-                            ],
-                            const SizedBox(height: 16),
-                            _buildActionCards(context),
-                          ],
-                        )
-                        .animate()
-                        .fadeIn(duration: 350.ms)
-                        .slideY(begin: 0.05, end: 0, duration: 350.ms),
+              ],
+            ),
+            child: Icon(
+              Icons.pin_drop,
+              color: _selectingFromOnMap ? Colors.white : const Color(0xFF0A1628),
+              size: 22,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        // Open full-screen destination picker
+        GestureDetector(
+          onTap: _openFullMapSelection,
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.22),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: _loadingNearbyTaxis
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFF0A1628),
+                    ),
+                  )
+                : const Icon(
+                    Icons.open_in_full,
+                    color: Color(0xFF0A1628),
+                    size: 20,
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBookingPanel(BuildContext context) {
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final hasRoute = _distanceKm != null && _durationMin != null;
+    final estimate = _estimate;
+    final hasProposal = _latestProposal != null;
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF0A1628).withValues(alpha: 0.94),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border(
+              top: BorderSide(color: AppColors.cyan500.withValues(alpha: 0.22)),
+            ),
+          ),
+          padding: EdgeInsets.fromLTRB(20, 14, 20, bottomInset + 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: NavigationBarWidget(currentPath: '/travel'),
+              const SizedBox(height: 16),
+
+              // A → B location row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Dot connector
+                  Column(
+                    children: [
+                      const SizedBox(height: 10),
+                      Container(
+                        width: 11,
+                        height: 11,
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Container(
+                        width: 2,
+                        height: 28,
+                        color: Colors.white.withValues(alpha: 0.18),
+                      ),
+                      Container(
+                        width: 11,
+                        height: 11,
+                        decoration: const BoxDecoration(
+                          color: Colors.redAccent,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        // Pickup
+                        GestureDetector(
+                          onTap: () {
+                            if (_currentPosition != null) {
+                              _mapController.move(
+                                LatLng(
+                                  _currentPosition!.latitude,
+                                  _currentPosition!.longitude,
+                                ),
+                                15.5,
+                              );
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _pickupLatLng != null
+                                        ? 'Custom pickup (${_pickupLatLng!.latitude.toStringAsFixed(4)}, ${_pickupLatLng!.longitude.toStringAsFixed(4)})'
+                                        : _loadingLocation
+                                        ? 'Getting your location...'
+                                        : 'Your location',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (_selectingFromOnMap)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.cyan400.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      'Tap map',
+                                      style: TextStyle(
+                                        color: AppColors.cyan400,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Destination
+                        TextField(
+                          controller: _destinationController,
+                          onSubmitted: (_) =>
+                              unawaited(_applyManualDestination()),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Where to?',
+                            hintStyle: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              fontSize: 14,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: Colors.white.withValues(alpha: 0.45),
+                              size: 20,
+                            ),
+                            suffixIcon: _destinationLatLng != null
+                                ? IconButton(
+                                    icon: Icon(
+                                      Icons.clear,
+                                      size: 16,
+                                      color: Colors.white.withValues(alpha: 0.5),
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _destinationController.clear();
+                                        _destinationLatLng = null;
+                                        _routePoints = const <LatLng>[];
+                                        _distanceKm = null;
+                                        _durationMin = null;
+                                        _estimate = null;
+                                        _estimateInfoMessage = null;
+                                        _errorMessage = null;
+                                      });
+                                    },
+                                  )
+                                : null,
+                            filled: true,
+                            fillColor: Colors.white.withValues(alpha: 0.06),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                color: AppColors.cyan400.withValues(alpha: 0.5),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 14),
+
+              // Time chip + Find Ride button
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: _pickTime,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 11,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 16,
+                            color: AppColors.cyan400,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _plannedTime.format(context),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        if (_destinationLatLng == null) {
+                          final manual = _parseLatLngInput(
+                            _destinationController.text.trim(),
+                          );
+                          if (manual != null) {
+                            setState(() {
+                              _destinationLatLng = manual;
+                              _destinationController.text =
+                                  _coordsLabel(manual);
+                            });
+                          }
+                        }
+                        if (_destinationLatLng == null) {
+                          setState(
+                            () => _errorMessage =
+                                'Tap the map to set your destination.',
+                          );
+                          return;
+                        }
+                        unawaited(_buildRoute());
+                        unawaited(_fetchMobilityEstimate());
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        decoration: BoxDecoration(
+                          gradient: AppColors.buttonGradient,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: _loadingRoute || _loadingEstimate
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Find Ride',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Route info chips
+              if (hasRoute) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    _infoChip(
+                      icon: Icons.route,
+                      label: '${_distanceKm!.toStringAsFixed(1)} km',
+                      color: AppColors.cyan400,
+                      bg: AppColors.cyan500.withValues(alpha: 0.15),
+                      border: AppColors.cyan500.withValues(alpha: 0.3),
+                    ),
+                    _infoChip(
+                      icon: Icons.access_time,
+                      label: '${_durationMin!.round()} min',
+                      color: Colors.white.withValues(alpha: 0.8),
+                      bg: Colors.white.withValues(alpha: 0.06),
+                      border: Colors.white.withValues(alpha: 0.12),
+                    ),
+                    if (estimate?.best != null)
+                      _infoChip(
+                        icon: Icons.payments_outlined,
+                        label:
+                            '${estimate!.best!.minPrice.toStringAsFixed(0)}–${estimate.best!.maxPrice.toStringAsFixed(0)} AED',
+                        color: Colors.greenAccent,
+                        bg: Colors.green.withValues(alpha: 0.12),
+                        border: Colors.green.withValues(alpha: 0.3),
+                      ),
+                  ],
+                ),
+              ],
+
+              // Request ride button (shown after route is built)
+              if (hasRoute) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: GestureDetector(
+                    onTap: _confirmingBooking ? null : _confirmInAppTaxiRequest,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.buttonGradient,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.cyan400.withValues(alpha: 0.25),
+                            blurRadius: 14,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: _confirmingBooking
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.local_taxi_rounded,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Request Ride',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  if (estimate?.best != null) ...[
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '· ${estimate!.best!.minPrice.toStringAsFixed(0)} AED',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.65,
+                                        ),
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+
+              // Proposal status card
+              if (hasProposal) ...[
+                const SizedBox(height: 10),
+                _buildProposalCard(context),
+              ],
+
+              // Driver info card
+              if (_latestBooking != null) ...[
+                const SizedBox(height: 8),
+                _buildDriverInfoCard(context),
+              ],
+
+              // Error banner
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 8),
+                _buildErrorBanner(context),
+              ],
+
+              // Success banner (only when no proposal card already shown)
+              if (_bookingStatusMessage != null && !hasProposal) ...[
+                const SizedBox(height: 8),
+                _buildSuccessBanner(context),
+              ],
+
+              // Schedule planner link
+              const SizedBox(height: 14),
+              GestureDetector(
+                onTap: _openSchedulePlanner,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.schedule,
+                      size: 14,
+                      color: Colors.white.withValues(alpha: 0.35),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Schedule & Pricing Planner',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.35),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _infoChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required Color bg,
+    required Color border,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2768,785 +3357,6 @@ out center 30;
           end: 0,
           duration: const Duration(milliseconds: 400),
         );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Travel Live',
-          style: TextStyle(
-            fontSize: Responsive.getResponsiveValue(
-              context,
-              mobile: 30.0,
-              tablet: 34.0,
-              desktop: 40.0,
-            ),
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Dynamic map, live GPS, real-time route, taxi flow fully in app.',
-          style: TextStyle(
-            fontSize: Responsive.getResponsiveValue(
-              context,
-              mobile: 13.0,
-              tablet: 14.0,
-              desktop: 15.0,
-            ),
-            color: AppColors.textCyan200.withOpacity(0.85),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildControlPanel(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.22)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: _destinationController,
-            onSubmitted: (_) => unawaited(_applyManualDestination()),
-            decoration: InputDecoration(
-              labelText: 'Destination',
-              hintText: 'Select on map or enter: lat, lng',
-              suffixIcon: IconButton(
-                tooltip: 'Use manual coordinates',
-                onPressed: () => unawaited(_applyManualDestination()),
-                icon: const Icon(Icons.check_circle_outline),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _pickTime,
-                  icon: const Icon(Icons.schedule),
-                  label: Text('Pickup ${_plannedTime.format(context)}'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: () {
-                    setState(() => _selectingFromOnMap = !_selectingFromOnMap);
-                  },
-                  icon: Icon(
-                    _selectingFromOnMap ? Icons.touch_app : Icons.pin_drop,
-                  ),
-                  label: Text(
-                    _selectingFromOnMap
-                        ? 'Tap map: set A (From)'
-                        : 'Select A on map',
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Container(
-                decoration: const BoxDecoration(
-                  gradient: AppColors.buttonGradient,
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: _openSchedulePlanner,
-                    icon: const Icon(Icons.schedule),
-                    label: const Text(
-                      'Schedule & Pricing Planner',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 14,
-                      ),
-                    ),
-                  ),
-                ),
-              )
-              .animate()
-              .fadeIn(duration: const Duration(milliseconds: 600))
-              .slideY(
-                begin: 0.2,
-                end: 0,
-                duration: const Duration(milliseconds: 600),
-              ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _openFullMapSelection,
-              icon: const Icon(Icons.map),
-              label: const Text('Open full map for selection'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => unawaited(_applyManualDestination()),
-              icon: const Icon(Icons.edit_location_alt_outlined),
-              label: const Text('Use manual To (lat, lng)'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => unawaited(_refreshInAppData()),
-              icon: const Icon(Icons.refresh),
-              label: const Text('Refresh live estimate and status'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: _loadingRoute
-                      ? null
-                      : () {
-                          if (_destinationLatLng == null) {
-                            final manual = _parseLatLngInput(
-                              _destinationController.text.trim(),
-                            );
-                            if (manual != null) {
-                              setState(() {
-                                _destinationLatLng = manual;
-                                _destinationController.text = _coordsLabel(
-                                  manual,
-                                );
-                              });
-                            }
-                          }
-
-                          if (_destinationLatLng == null) {
-                            setState(() {
-                              _errorMessage =
-                                  'Set destination from map or type: latitude, longitude.';
-                            });
-                            return;
-                          }
-                          unawaited(_buildRoute());
-                          unawaited(_fetchMobilityEstimate());
-                        },
-                  icon: _loadingRoute
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.alt_route),
-                  label: const Text('Trace route from map'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _pickupLatLng = null;
-                      _destinationLatLng = null;
-                      _destinationController.clear();
-                      _routePoints = const <LatLng>[];
-                      _distanceKm = null;
-                      _durationMin = null;
-                      _estimate = null;
-                      _estimateInfoMessage = null;
-                    });
-                  },
-                  icon: const Icon(Icons.clear_all),
-                  label: const Text('Clear A/B'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.my_location, size: 15, color: AppColors.cyan400),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  _loadingLocation
-                      ? 'Loading GPS...'
-                      : _currentPosition == null
-                      ? 'GPS unavailable'
-                      : 'GPS: ${_currentPosition!.latitude.toStringAsFixed(5)}, ${_currentPosition!.longitude.toStringAsFixed(5)}',
-                  style: TextStyle(
-                    color: AppColors.textCyan200.withOpacity(0.8),
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: _loadLocation,
-                child: const Text('Refresh GPS'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Icon(Icons.place, size: 15, color: AppColors.cyan400),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'From A: ${_pickupLatLng == null ? 'GPS current location' : _coordsLabel(_pickupLatLng!)}',
-                  style: TextStyle(
-                    color: AppColors.textCyan200.withOpacity(0.82),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Icon(Icons.flag, size: 15, color: AppColors.cyan400),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'To B: ${_destinationLatLng == null ? 'tap map to set destination' : _coordsLabel(_destinationLatLng!)}',
-                  style: TextStyle(
-                    color: AppColors.textCyan200.withOpacity(0.82),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Icon(Icons.local_taxi, size: 15, color: Colors.amberAccent),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  _loadingNearbyTaxis
-                      ? 'Searching nearby taxi stations...'
-                      : _nearbyTaxiError != null
-                      ? 'Taxi stations unavailable now (${_nearbyTaxiError!}).'
-                      : _nearbyTaxiPoints.isEmpty
-                      ? 'No nearby taxi station found near map center (${(_nearbyTaxiSearchCenter?.latitude ?? 0).toStringAsFixed(4)}, ${(_nearbyTaxiSearchCenter?.longitude ?? 0).toStringAsFixed(4)}).'
-                      : 'Nearest taxi station: ${_nearestTaxiDistanceLabel()} • points: ${_nearbyTaxiPoints.length}',
-                  style: TextStyle(
-                    color: AppColors.textCyan200.withOpacity(0.82),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Icon(Icons.alarm, size: 15, color: AppColors.cyan400),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'Auto schedules: ${_scheduleSummaryLabel()}',
-                  style: TextStyle(
-                    color: AppColors.textCyan200.withOpacity(0.82),
-                  ),
-                ),
-              ),
-              if (_syncingDailyRule)
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                Switch.adaptive(
-                  value: _dailyRuleEnabled,
-                  onChanged: (value) {
-                    setState(() {
-                      _setAllScheduleEnabled(value);
-                    });
-                    unawaited(_syncDailyRule(enabled: value));
-                  },
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () {
-                setState(() => _showDebugPanel = !_showDebugPanel);
-              },
-              icon: Icon(
-                _showDebugPanel ? Icons.bug_report : Icons.bug_report_outlined,
-                size: 16,
-                color: AppColors.cyan400,
-              ),
-              label: Text(
-                _showDebugPanel
-                    ? 'Hide debug diagnostics'
-                    : 'Show debug diagnostics',
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDebugPanel(BuildContext context) {
-    final best = _estimate?.best;
-    final destination = _destinationLatLng == null
-        ? _destinationController.text.trim()
-        : _coordsLabel(_destinationLatLng!);
-
-    String _fmtDouble(double? value, {int digits = 5}) {
-      if (value == null) return 'n/a';
-      return value.toStringAsFixed(digits);
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.22),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.terminal, size: 16, color: AppColors.cyan400),
-              const SizedBox(width: 8),
-              const Text(
-                'Travel Debug Diagnostics',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Destination: ${destination.isEmpty ? 'n/a' : destination}',
-            style: TextStyle(
-              color: AppColors.textCyan200.withOpacity(0.9),
-              fontSize: 12,
-            ),
-          ),
-          Text(
-            'From: ${_pickupLatLng == null ? '${_fmtDouble(_currentPosition?.latitude)}, ${_fmtDouble(_currentPosition?.longitude)}' : _coordsLabel(_pickupLatLng!)}',
-            style: TextStyle(
-              color: AppColors.textCyan200.withOpacity(0.9),
-              fontSize: 12,
-            ),
-          ),
-          Text(
-            'To: ${_fmtDouble(_destinationLatLng?.latitude)}, ${_fmtDouble(_destinationLatLng?.longitude)}',
-            style: TextStyle(
-              color: AppColors.textCyan200.withOpacity(0.9),
-              fontSize: 12,
-            ),
-          ),
-          Text(
-            'Route: ${_distanceKm?.toStringAsFixed(1) ?? 'n/a'} km • ${_durationMin?.round() ?? 'n/a'} min',
-            style: TextStyle(
-              color: AppColors.textCyan200.withOpacity(0.9),
-              fontSize: 12,
-            ),
-          ),
-          Text(
-            'Estimate mode: backend-live-only',
-            style: TextStyle(
-              color: AppColors.textCyan200.withOpacity(0.9),
-              fontSize: 12,
-            ),
-          ),
-          Text(
-            'Retry: attempts=$_estimateRetryAttempts pending=$_estimateRetryPending',
-            style: TextStyle(
-              color: AppColors.textCyan200.withOpacity(0.9),
-              fontSize: 12,
-            ),
-          ),
-          Text(
-            'Best provider: ${best?.provider ?? 'n/a'}',
-            style: TextStyle(
-              color: AppColors.textCyan200.withOpacity(0.9),
-              fontSize: 12,
-            ),
-          ),
-          if (best != null)
-            Text(
-              'Best price: ${best.minPrice.toStringAsFixed(1)} - ${best.maxPrice.toStringAsFixed(1)} AED • ETA ${best.etaMinutes} min',
-              style: TextStyle(
-                color: AppColors.textCyan200.withOpacity(0.9),
-                fontSize: 12,
-              ),
-            ),
-          Text(
-            'Daily rules: total=${_scheduleSlots.length} enabled=${_scheduleSlots.where((slot) => slot.enabled).length} syncing=$_syncingDailyRule',
-            style: TextStyle(
-              color: AppColors.textCyan200.withOpacity(0.9),
-              fontSize: 12,
-            ),
-          ),
-          Text(
-            'Best price window: enabled=$_bestPriceWindowEnabled window=±$_bestPriceWindowMinutes min',
-            style: TextStyle(
-              color: AppColors.textCyan200.withOpacity(0.9),
-              fontSize: 12,
-            ),
-          ),
-          Text(
-            'Last backend error code: ${_lastMobilityErrorCode ?? 'n/a'}',
-            style: TextStyle(
-              color: AppColors.textCyan200.withOpacity(0.9),
-              fontSize: 12,
-            ),
-          ),
-          Text(
-            'Last backend error body: ${_lastMobilityErrorBody ?? 'n/a'}',
-            style: TextStyle(
-              color: AppColors.textCyan200.withOpacity(0.9),
-              fontSize: 12,
-            ),
-            maxLines: 5,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            'Booking backend status: ${_lastBookingBackendStatus ?? 'n/a'}',
-            style: TextStyle(
-              color: AppColors.textCyan200.withOpacity(0.9),
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMapCard(BuildContext context) {
-    return Container(
-      height: 340,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.22)),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: Stack(
-          children: [
-            FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: _initialCenter,
-                initialZoom: 12.8,
-                minZoom: 4,
-                maxZoom: 18,
-                onTap: (_, point) {
-                  unawaited(_onMapTapped(point));
-                },
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'pi_dev_agentia',
-                ),
-                if (_routePoints.isNotEmpty)
-                  PolylineLayer(
-                    polylines: [
-                      Polyline(
-                        points: _routePoints,
-                        strokeWidth: 5,
-                        color: AppColors.cyan400,
-                      ),
-                    ],
-                  ),
-                MarkerLayer(
-                  markers: [
-                    ..._nearbyTaxiPoints.map(
-                      (p) => Marker(
-                        point: p,
-                        width: 32,
-                        height: 32,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.amber.withOpacity(0.92),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.black.withOpacity(0.6),
-                              width: 1,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.local_taxi,
-                            color: Colors.black,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (_driverLatLng() != null)
-                      Marker(
-                        point: _driverLatLng()!,
-                        width: 44,
-                        height: 44,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.lightGreenAccent.withOpacity(0.95),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.black.withOpacity(0.65),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.local_taxi,
-                            color: Colors.black,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    if (_currentPosition != null)
-                      Marker(
-                        point: LatLng(
-                          _currentPosition!.latitude,
-                          _currentPosition!.longitude,
-                        ),
-                        width: 44,
-                        height: 44,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.blue,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: const Icon(
-                            Icons.my_location,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    if (_pickupLatLng != null)
-                      Marker(
-                        point: _pickupLatLng!,
-                        width: 44,
-                        height: 44,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.orangeAccent,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: const Icon(
-                            Icons.trip_origin,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    if (_destinationLatLng != null)
-                      Marker(
-                        point: _destinationLatLng!,
-                        width: 48,
-                        height: 48,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: const Icon(
-                            Icons.location_on,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-            Positioned(
-              top: 10,
-              left: 10,
-              right: 10,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      LucideIcons.navigation,
-                      size: 16,
-                      color: AppColors.cyan400,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _loadingRoute
-                            ? 'Building live route...'
-                            : _distanceKm == null
-                            ? 'Tap map to set A/B and build route.'
-                            : '${_distanceKm!.toStringAsFixed(1)} km • ${_durationMin!.round()} min',
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: _openFullMapSelection,
-                      icon: const Icon(Icons.open_in_full, color: Colors.white),
-                      tooltip: 'Open full map',
-                    ),
-                    IconButton(
-                      onPressed: _loadingNearbyTaxis
-                          ? null
-                          : () => unawaited(_fetchNearbyTaxiStations()),
-                      icon: Icon(
-                        Icons.local_taxi,
-                        color: _nearbyTaxiPoints.isEmpty
-                            ? Colors.white
-                            : Colors.amberAccent,
-                      ),
-                      tooltip: 'Refresh nearby taxi stations',
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionCards(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _actionCard(
-            context,
-            icon: LucideIcons.car,
-            title: 'Request Taxi (In-App)',
-            subtitle: _confirmingBooking
-                ? 'Sending proposal to backend...'
-                : 'Track accepted/refused status directly in this app',
-            onTap: _confirmInAppTaxiRequest,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _actionCard(
-            context,
-            icon: LucideIcons.navigation,
-            title: 'Open Dynamic Map',
-            subtitle: 'External turn-by-turn route',
-            onTap: () async {
-              final fromPoint =
-                  _pickupLatLng ??
-                  (_currentPosition == null
-                      ? null
-                      : LatLng(
-                          _currentPosition!.latitude,
-                          _currentPosition!.longitude,
-                        ));
-              if (_destinationLatLng == null || fromPoint == null) {
-                setState(
-                  () => _errorMessage =
-                      'Tap map to define A (from) and B (to) first.',
-                );
-                return;
-              }
-              final origin = '${fromPoint.latitude},${fromPoint.longitude}';
-              final uri = Uri.https('www.google.com', '/maps/dir/', {
-                'api': '1',
-                'origin': origin,
-                'destination':
-                    '${_destinationLatLng!.latitude},${_destinationLatLng!.longitude}',
-                'travelmode': 'driving',
-              });
-              await launchUrl(uri, mode: LaunchMode.externalApplication);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _actionCard(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFF1e4a66).withOpacity(0.45),
-              const Color(0xFF16384d).withOpacity(0.45),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: AppColors.cyan400, size: 20),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: AppColors.textCyan200.withOpacity(0.85),
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildErrorBanner(BuildContext context) {

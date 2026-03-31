@@ -4,8 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/services/pre_onboarding_storage.dart';
-import '../../core/l10n/app_strings.dart';
-import '../widgets/logo_widget.dart';
 import '../../injection_container.dart';
 
 class SplashPage extends StatefulWidget {
@@ -16,6 +14,9 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
+  static const String _launcherIconPath = 'assets/app_icon.png';
+  static const String _legacyLogoPath = 'assets/images/app_logo.png';
+
   @override
   void initState() {
     super.initState();
@@ -71,7 +72,7 @@ class _SplashPageState extends State<SplashPage> {
                           desktop: 400,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.cyan500.withOpacity(0.1),
+                          color: AppColors.cyan500.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                       )
@@ -97,7 +98,7 @@ class _SplashPageState extends State<SplashPage> {
                           desktop: 400,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.blue500.withOpacity(0.1),
+                          color: AppColors.blue500.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                       )
@@ -111,7 +112,7 @@ class _SplashPageState extends State<SplashPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Robot Icon
-                  const LogoWidget()
+                  _buildSplashLogo(context)
                       .animate()
                       .scale(
                         begin: const Offset(0, 0),
@@ -123,12 +124,22 @@ class _SplashPageState extends State<SplashPage> {
                       .then(delay: 200.ms),
                   SizedBox(height: isMobile ? 24 : 32),
                   // App Name
-                  Text(
-                        AppStrings.tr(context, 'ava'),
+                  const Text(
+                        'AVA',
                         style: TextStyle(
-                          fontSize: isMobile ? 32 : 40,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textWhite,
+                          fontSize: 44,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 10,
+                          height: 1,
+                          fontFamily: 'Georgia',
+                          shadows: [
+                            Shadow(
+                              color: Color(0x6622D3EE),
+                              blurRadius: 22,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                          color: Colors.white,
                         ),
                       )
                       .animate()
@@ -139,14 +150,18 @@ class _SplashPageState extends State<SplashPage> {
                         delay: 500.ms,
                         duration: 600.ms,
                       ),
-                  SizedBox(height: isMobile ? 8 : 12),
+                  SizedBox(height: isMobile ? 10 : 14),
                   // Subtitle
                   Text(
-                        AppStrings.tr(context, 'yourPersonalAIAssistant'),
+                        'Your Personal AI Assistant',
                         style: TextStyle(
-                          fontSize: isMobile ? 16 : 18,
-                          color: AppColors.textCyan200.withOpacity(0.8),
+                          fontSize: isMobile ? 13 : 15,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 1.8,
+                          height: 1.4,
+                          color: AppColors.textCyan200.withValues(alpha: 0.75),
                         ),
+                        textAlign: TextAlign.center,
                       )
                       .animate()
                       .fadeIn(delay: 700.ms, duration: 600.ms)
@@ -203,6 +218,59 @@ class _SplashPageState extends State<SplashPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSplashLogo(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
+    final size = isMobile ? 92.0 : 108.0;
+    final radius = isMobile ? 26.0 : 30.0;
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.cyan400.withValues(alpha: 0.22),
+            blurRadius: 24,
+            spreadRadius: 2,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: Image.asset(
+          _launcherIconPath,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Image.asset(
+            _legacyLogoPath,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => _fallbackMonogram(radius),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _fallbackMonogram(double radius) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppColors.logoGradient,
+        borderRadius: BorderRadius.circular(radius),
+      ),
+      child: const Center(
+        child: Text(
+          'A',
+          style: TextStyle(
+            fontSize: 40,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
         ),
       ),
     );

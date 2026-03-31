@@ -124,6 +124,17 @@ class _BriefingLoadingScreenState extends State<BriefingLoadingScreen>
     unawaited(_checkStatus());
   }
 
+  void _handleBack() {
+    _pollTimer?.cancel();
+    _msgTimer?.cancel();
+    _dotTimer?.cancel();
+    if (Navigator.of(context).canPop()) {
+      context.pop();
+    } else {
+      context.go('/investor-meeting-setup');
+    }
+  }
+
   Future<void> _checkStatus() async {
     final id = widget.sessionId.trim();
     if (id.isEmpty) return;
@@ -187,8 +198,11 @@ class _BriefingLoadingScreenState extends State<BriefingLoadingScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AvaColors.bg,
+    return BriefingGradientScaffold(
+      appBar: BriefingAvaAppBar(
+        investorName: briefingInvestorShortName(widget.investorName),
+        onBack: _handleBack,
+      ),
       body: Stack(
         children: [
           Positioned.fill(
@@ -197,31 +211,6 @@ class _BriefingLoadingScreenState extends State<BriefingLoadingScreen>
           SafeArea(
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        TimeOfDay.now().format(context),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AvaColors.text,
-                        ),
-                      ),
-                      Text(
-                        'AVA',
-                        style: TextStyle(
-                          fontSize: 11,
-                          letterSpacing: 2,
-                          color: AvaColors.muted.withValues(alpha: 0.9),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 Expanded(
                   child: Center(
                     child: Padding(

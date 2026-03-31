@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_shell.dart';
@@ -120,7 +119,18 @@ class _CulturalBriefingScreenState extends State<CulturalBriefingScreen> {
     return BriefingGradientScaffold(
       appBar: BriefingAvaAppBar(
         investorName: briefingInvestorShortName(widget.investorName),
-        onBack: () => context.pop(),
+        onBack: () => goBriefingBack(
+          context,
+          _cultureTabIndex,
+          widget.sessionId,
+          widget.investorName,
+          investorCompany: widget.investorCompany,
+          investorCity: widget.investorCity,
+          investorCountry: widget.investorCountry,
+          userEquity: widget.userEquity,
+          userValuation: widget.userValuation,
+          meetingFormat: widget.meetingFormat,
+        ),
       ),
       body: Column(
         children: [

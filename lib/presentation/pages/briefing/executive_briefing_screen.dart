@@ -269,32 +269,20 @@ class _ExecutiveBriefingScreenState extends State<ExecutiveBriefingScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AvaColors.bg,
-      appBar: AppBar(
-        backgroundColor: AvaColors.bg,
-        elevation: 0,
-        leading: GestureDetector(
-          onTap: () => context.pop(),
-          child: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: AvaColors.muted,
-            size: 18,
-          ),
-        ),
-        title: const Text(
-          'Executive Briefing',
-          style: TextStyle(
-            fontFamily: 'Georgia',
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AvaColors.text,
-          ),
-        ),
-        centerTitle: true,
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: AvaColors.border),
+    return BriefingGradientScaffold(
+      appBar: BriefingAvaAppBar(
+        investorName: briefingInvestorShortName(widget.investorName),
+        onBack: () => goBriefingBack(
+          context,
+          5,
+          widget.sessionId,
+          widget.investorName,
+          investorCompany: widget.investorCompany,
+          investorCity: widget.investorCity,
+          investorCountry: widget.investorCountry,
+          userEquity: widget.userEquity,
+          userValuation: widget.userValuation,
+          meetingFormat: widget.meetingFormat,
         ),
       ),
       body: _body(),

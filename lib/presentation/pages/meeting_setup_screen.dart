@@ -102,7 +102,11 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
           if (_step > 0) {
             setState(() => _step--);
           } else {
-            context.pop();
+            if (Navigator.of(context).canPop()) {
+              context.pop();
+            } else {
+              context.go('/home');
+            }
           }
         },
         child: const Icon(
