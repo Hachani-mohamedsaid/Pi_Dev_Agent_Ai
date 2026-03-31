@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/ava_theme.dart';
 import '../../../data/services/meeting_intelligence_service.dart';
@@ -135,11 +134,21 @@ class _ExecutiveImageScreenState extends State<ExecutiveImageScreen>
   Widget build(BuildContext context) {
     final bottom = MediaQuery.paddingOf(context).bottom;
 
-    return Scaffold(
-      backgroundColor: AvaColors.bg,
+    return BriefingGradientScaffold(
       appBar: BriefingAvaAppBar(
         investorName: briefingInvestorShortName(widget.investorName),
-        onBack: () => context.pop(),
+        onBack: () => goBriefingBack(
+          context,
+          _imageTabIndex,
+          widget.sessionId,
+          widget.investorName,
+          investorCompany: widget.investorCompany,
+          investorCity: widget.investorCity,
+          investorCountry: widget.investorCountry,
+          userEquity: widget.userEquity,
+          userValuation: widget.userValuation,
+          meetingFormat: widget.meetingFormat,
+        ),
       ),
       body: Column(
         children: [

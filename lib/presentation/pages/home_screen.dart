@@ -15,7 +15,6 @@ import '../../services/n8n_email_service.dart';
 import '../../features/phone_agent/data/phone_agent_mock_data.dart';
 import '../state/auth_controller.dart';
 import '../widgets/navigation_bar.dart';
-import '../widgets/market_intel_card.dart';
 
 class HomeScreen extends StatefulWidget {
   final AuthController controller;
@@ -1574,18 +1573,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'colorLight': const Color(0xFFFF9800),
       },
       {
-        'title': AppStrings.tr(context, 'createJobPost'),
+        'title': 'Mon business',
         'icon': LucideIcons.briefcase,
-        'route': '/create-job',
-        'color': const Color(0xFF10B981),
-        'colorLight': const Color(0xFF06B6D4),
+        'route': '/my-business',
+        'color': const Color(0xFF8B5CF6),
+        'colorLight': const Color(0xFFA78BFA),
       },
       {
-        'title': AppStrings.tr(context, 'travelAndJourneys'),
-        'icon': LucideIcons.car,
-        'route': '/travel',
-        'color': const Color(0xFFFF9800),
-        'colorLight': const Color(0xFFFFC107),
+        'title': 'AI Financial Simulation',
+        'icon': LucideIcons.calculator,
+        'route': '/advisor',
+        'color': const Color(0xFF10B981),
+        'colorLight': const Color(0xFF34D399),
       },
       {
         'title': AppStrings.tr(context, 'smartActionsHub'),
@@ -1602,11 +1601,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'colorLight': const Color(0xFF34D399),
       },
       {
-        'title': 'Mon business',
-        'icon': LucideIcons.briefcase,
-        'route': '/my-business',
-        'color': const Color(0xFF8B5CF6),
-        'colorLight': const Color(0xFFA78BFA),
+        'title': 'Post on LinkedIn',
+        'icon': LucideIcons.linkedin,
+        'route': '/create-job',
+        'color': const Color(0xFF0A66C2),
+        'colorLight': const Color(0xFF0E86E6),
       },
       {
         'title': 'Phone Agent',
@@ -1646,47 +1645,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           padding: EdgeInsets.only(
             bottom: Responsive.getResponsiveValue(
               context,
-              mobile: 14.0,
-              tablet: 16.0,
-              desktop: 20.0,
-            ),
-          ),
-          child: _buildInvestorMeetingCard(context, isMobile),
-        ),
-        Padding(
-          padding: EdgeInsets.only(
-            bottom: Responsive.getResponsiveValue(
-              context,
-              mobile: 14.0,
-              tablet: 16.0,
-              desktop: 20.0,
-            ),
-          ),
-          child: MarketIntelCard(
-            onTap: () => context.push('/market-intelligence'),
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.only(
-            bottom: Responsive.getResponsiveValue(
-              context,
-              mobile: 14.0,
-              tablet: 16.0,
-              desktop: 20.0,
-            ),
-          ),
-          child: _buildRecentSessionsSection(context, isMobile),
-        ),
-        Padding(
-          padding: EdgeInsets.only(
-            bottom: Responsive.getResponsiveValue(
-              context,
               mobile: 10.0,
               tablet: 12.0,
               desktop: 16.0,
             ),
           ),
           child: _buildSummarizedEmailsCard(context, isMobile),
+        ),
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: Responsive.getResponsiveValue(
+              context,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 20.0,
+            ),
+          ),
+          child: _buildMeetingHubCard(context, isMobile),
         ),
         Padding(
           padding: EdgeInsets.only(
@@ -1710,12 +1685,53 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
           child: _buildOngoingProjectsGrid(context, isMobile),
         ),
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: Responsive.getResponsiveValue(
+              context,
+              mobile: 10.0,
+              tablet: 12.0,
+              desktop: 16.0,
+            ),
+          ),
+          child: _buildQuickActionItem(
+            context,
+            isMobile,
+            'Investor Meeting',
+            LucideIcons.calendar,
+            '/investor-meeting-setup',
+            AppColors.cyan500,
+            const Color(0xFF3B82F6),
+            90,
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: Responsive.getResponsiveValue(
+              context,
+              mobile: 10.0,
+              tablet: 12.0,
+              desktop: 16.0,
+            ),
+          ),
+          child: _buildQuickActionItem(
+            context,
+            isMobile,
+            'Market Intelligence',
+            LucideIcons.briefcase,
+            '/market-intelligence',
+            AppColors.cyan500,
+            const Color(0xFF3B82F6),
+            91,
+          ),
+        ),
         ...actions.asMap().entries.map((entry) {
           if (entry.key == 1) return const SizedBox.shrink();
           if (entry.key == 0 ||
               entry.key == 5 ||
               entry.key == 6 ||
-              entry.key == 7)
+              entry.key == 7 ||
+              entry.key == 8)
             return const SizedBox.shrink();
           final index = entry.key;
           final action = entry.value;
@@ -1993,7 +2009,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   /// Investor Meeting — même style cyan que le reste de l’app.
   Widget _buildInvestorMeetingCard(BuildContext context, bool isMobile) {
-    final r = Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 22.0);
+    final r = Responsive.getResponsiveValue(
+      context,
+      mobile: 18.0,
+      tablet: 20.0,
+      desktop: 22.0,
+    );
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -2019,6 +2040,114 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 blurRadius: 14,
                 offset: const Offset(0, 6),
               ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 48.0,
+                  tablet: 52.0,
+                  desktop: 56.0,
+                ),
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 48.0,
+                  tablet: 52.0,
+                  desktop: 56.0,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.cyan500.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppColors.cyan400.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Icon(
+                  LucideIcons.calendar,
+                  color: AppColors.cyan400,
+                  size: 28,
+                ),
+              ),
+              SizedBox(width: r),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Investor Meeting',
+                      style: TextStyle(
+                        fontSize: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 17.0,
+                          tablet: 18.0,
+                          desktop: 20.0,
+                        ),
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textWhite,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Full AI preparation briefing',
+                      style: TextStyle(
+                        fontSize: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 13.0,
+                          tablet: 14.0,
+                          desktop: 15.0,
+                        ),
+                        color: AppColors.textCyan200.withValues(alpha: 0.85),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 40.0,
+                  tablet: 42.0,
+                  desktop: 44.0,
+                ),
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 40.0,
+                  tablet: 42.0,
+                  desktop: 44.0,
+                ),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: AppColors.buttonGradient,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.cyan500.withValues(alpha: 0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () => _goToInvestorMeetingSetup(context),
+                    child: const Icon(
+                      LucideIcons.send,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Meeting Hub card (React-style): Video icon, title, subtitle, arrow → /meetings.
   Widget _buildMeetingHubCard(BuildContext context, bool isMobile) {
     final r = Responsive.getResponsiveValue(
@@ -2165,7 +2294,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildSocialMediaCampaignCard(BuildContext context, bool isMobile) {
-    final r = Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 24.0);
+    final r = Responsive.getResponsiveValue(
+      context,
+      mobile: 18.0,
+      tablet: 20.0,
+      desktop: 24.0,
+    );
     const cardColor = Color(0xFFEC4899);
     const cardColorLight = Color(0xFFA855F7);
     return GestureDetector(
@@ -2187,41 +2321,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               Color(0xFF19405b),
               Color(0xFF1e4a66),
             ],
+            stops: [0.0, 0.25, 0.5, 0.75, 1.0],
           ),
-          child: Row(
-            children: [
-              Container(
-                width: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
-                height: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
-                decoration: BoxDecoration(
-                  color: AppColors.cyan500.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: AppColors.cyan400.withValues(alpha: 0.35),
-                  ),
-                ),
-                child: Icon(LucideIcons.calendar, color: AppColors.cyan400, size: 28),
-              ),
-              SizedBox(width: r),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Investor Meeting',
-                      style: TextStyle(
-                        fontSize: Responsive.getResponsiveValue(context, mobile: 17.0, tablet: 18.0, desktop: 20.0),
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textWhite,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Full AI preparation briefing',
-                      style: TextStyle(
-                        fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
-                        color: AppColors.textCyan200.withValues(alpha: 0.85),
-                      ),
           borderRadius: BorderRadius.circular(r),
           border: Border.all(color: cardColor.withOpacity(0.3), width: 1),
           boxShadow: [
@@ -2240,8 +2341,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Row(
           children: [
             Container(
-              width: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
-              height: Responsive.getResponsiveValue(context, mobile: 52.0, tablet: 56.0, desktop: 60.0),
+              width: Responsive.getResponsiveValue(
+                context,
+                mobile: 52.0,
+                tablet: 56.0,
+                desktop: 60.0,
+              ),
+              height: Responsive.getResponsiveValue(
+                context,
+                mobile: 52.0,
+                tablet: 56.0,
+                desktop: 60.0,
+              ),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -2254,7 +2365,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: cardColor.withOpacity(0.4)),
               ),
-              child: const Icon(LucideIcons.megaphone, color: cardColor, size: 26),
+              child: const Icon(
+                LucideIcons.megaphone,
+                color: cardColor,
+                size: 26,
+              ),
             ),
             SizedBox(width: r),
             Expanded(
@@ -2264,7 +2379,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Text(
                     'Social Media Campaign',
                     style: TextStyle(
-                      fontSize: Responsive.getResponsiveValue(context, mobile: 17.0, tablet: 18.0, desktop: 20.0),
+                      fontSize: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 17.0,
+                        tablet: 18.0,
+                        desktop: 20.0,
+                      ),
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
@@ -2273,125 +2393,48 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Text(
                     'Launch your product across all platforms',
                     style: TextStyle(
-                      fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
+                      fontSize: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 13.0,
+                        tablet: 14.0,
+                        desktop: 15.0,
+                      ),
                       color: AppColors.textCyan200.withOpacity(0.8),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                width: Responsive.getResponsiveValue(context, mobile: 40.0, tablet: 42.0, desktop: 44.0),
-                height: Responsive.getResponsiveValue(context, mobile: 40.0, tablet: 42.0, desktop: 44.0),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: AppColors.buttonGradient,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.cyan500.withValues(alpha: 0.35),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: () => _goToInvestorMeetingSetup(context),
-                    child: Icon(LucideIcons.send, color: Colors.white, size: 20),
-                  ),
-                ),
-              ),
-            ],
-          ),
-            ),
-            Container(
-              width: Responsive.getResponsiveValue(context, mobile: 38.0, tablet: 40.0, desktop: 44.0),
-              height: Responsive.getResponsiveValue(context, mobile: 38.0, tablet: 40.0, desktop: 44.0),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [cardColor, cardColorLight],
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(LucideIcons.chevronRight, color: Colors.white, size: 22),
-            ),
-          ],
-        ),
-      ),
-    )
-        .animate()
-        .fadeIn(delay: 250.ms, duration: 400.ms)
-        .slideX(begin: 0.02, end: 0, curve: Curves.easeOut);
-  }
-
-  /// Mock only — history API in v2.
-  Widget _buildRecentSessionsSection(BuildContext context, bool isMobile) {
-    const sessions = <Map<String, String>>[
-      {'title': 'Q1 Investor Review', 'meta': 'Mar 12 · Completed'},
-      {'title': 'Seed follow-up call', 'meta': 'Mar 10 · Draft'},
-      {'title': 'Pitch dry run', 'meta': 'Mar 8 · Completed'},
-    ];
-    final gap = Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'RECENT SESSIONS',
-          style: TextStyle(
-            fontSize: Responsive.getResponsiveValue(context, mobile: 11.0, tablet: 12.0, desktop: 13.0),
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.4,
-            color: const Color(0xFF94A3B8),
-          ),
-        ),
-        SizedBox(height: gap),
-        ...sessions.map((s) {
-          return Padding(
-            padding: EdgeInsets.only(bottom: gap * 0.8),
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 16.0, desktop: 18.0),
-                vertical: Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 14.0, desktop: 16.0),
-              ),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0f2940).withOpacity(0.65),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.cyan500.withOpacity(0.15)),
-              ),
-              child: Row(
-                children: [
-                  Icon(LucideIcons.clock, size: 18, color: AppColors.cyan400.withOpacity(0.9)),
-                  SizedBox(width: gap),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          s['title']!,
-                          style: const TextStyle(
-                            color: AppColors.textWhite,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          s['meta']!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textCyan200.withOpacity(0.75),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ],
               ),
             ),
-          );
-        }),
-      ],
+            Container(
+              width: Responsive.getResponsiveValue(
+                context,
+                mobile: 38.0,
+                tablet: 40.0,
+                desktop: 44.0,
+              ),
+              height: Responsive.getResponsiveValue(
+                context,
+                mobile: 38.0,
+                tablet: 40.0,
+                desktop: 44.0,
+              ),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [cardColor, cardColorLight]),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                LucideIcons.chevronRight,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(delay: 250.ms, duration: 400.ms).slideX(
+      begin: 0.02,
+      end: 0,
+      curve: Curves.easeOut,
     );
   }
 
@@ -2534,18 +2577,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'color': const Color(0xFFA855F7),
       },
       {
-        'title': 'AI Financial Simulation',
+        'title': 'Book an Uber',
         'subtitle': null,
-        'icon': LucideIcons.calculator,
-        'route': '/advisor',
-        'color': const Color(0xFF10B981),
+        'icon': LucideIcons.car,
+        'route': '/travel',
+        'color': const Color(0xFFFF9800),
       },
       {
-        'title': 'Mon business',
+        'title': 'Post on LinkedIn',
         'subtitle': null,
-        'icon': LucideIcons.briefcase,
-        'route': '/my-business',
-        'color': const Color(0xFF8B5CF6),
+        'icon': LucideIcons.linkedin,
+        'route': '/create-job',
+        'color': const Color(0xFF0A66C2),
       },
       {
         'title': 'Phone Agent',
@@ -2571,7 +2614,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Ongoing Projects',
+              'Quick Actions',
               style: TextStyle(
                 fontSize: Responsive.getResponsiveValue(
                   context,

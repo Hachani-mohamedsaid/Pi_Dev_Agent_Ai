@@ -83,6 +83,42 @@ void goBriefingTab(
   }
 }
 
+void goBriefingBack(
+  BuildContext context,
+  int activeIndex,
+  String sessionId,
+  String investorName, {
+  String investorCompany = '',
+  String investorCity = '',
+  String investorCountry = '',
+  String userEquity = '',
+  String userValuation = '',
+  String meetingFormat = '',
+}) {
+  if (activeIndex > 0) {
+    goBriefingTab(
+      context,
+      activeIndex - 1,
+      sessionId,
+      investorName,
+      investorCompany: investorCompany,
+      investorCity: investorCity,
+      investorCountry: investorCountry,
+      userEquity: userEquity,
+      userValuation: userValuation,
+      meetingFormat: meetingFormat,
+    );
+    return;
+  }
+
+  if (Navigator.of(context).canPop()) {
+    context.pop();
+    return;
+  }
+
+  context.go('/home');
+}
+
 const List<String> kBriefingTabLabels = [
   '🌍 Culture',
   '🧠 Profile',

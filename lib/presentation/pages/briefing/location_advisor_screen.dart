@@ -137,11 +137,21 @@ class _LocationAdvisorScreenState extends State<LocationAdvisorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AvaColors.bg,
+    return BriefingGradientScaffold(
       appBar: BriefingAvaAppBar(
         investorName: briefingInvestorShortName(widget.investorName),
-        onBack: () => context.pop(),
+        onBack: () => goBriefingBack(
+          context,
+          _locationTabIndex,
+          widget.sessionId,
+          widget.investorName,
+          investorCompany: widget.investorCompany,
+          investorCity: widget.investorCity,
+          investorCountry: widget.investorCountry,
+          userEquity: widget.userEquity,
+          userValuation: widget.userValuation,
+          meetingFormat: widget.meetingType,
+        ),
       ),
       body: Column(
         children: [
