@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_shell.dart';
 import '../../../core/theme/ava_theme.dart';
 import '../../../data/services/meeting_intelligence_service.dart';
 import '../../../features/meeting_intelligence/briefing_psych_cache.dart';
@@ -103,11 +100,21 @@ class _PsychProfileScreenState extends State<PsychProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AvaColors.bg,
+    return BriefingGradientScaffold(
       appBar: BriefingAvaAppBar(
         investorName: briefingInvestorShortName(widget.investorName),
-        onBack: () => context.pop(),
+        onBack: () => goBriefingBack(
+          context,
+          _psychTabIndex,
+          widget.sessionId,
+          widget.investorName,
+          investorCompany: widget.investorCompany,
+          investorCity: widget.investorCity,
+          investorCountry: widget.investorCountry,
+          userEquity: widget.userEquity,
+          userValuation: widget.userValuation,
+          meetingFormat: widget.meetingFormat,
+        ),
       ),
       body: Column(
         children: [

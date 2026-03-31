@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/ava_theme.dart';
 import '../../../data/services/meeting_intelligence_service.dart';
@@ -256,21 +255,18 @@ class _NegotiationSimulatorScreenState extends State<NegotiationSimulatorScreen>
   Future<void> _handleBack() async {
     await _postEndOnce();
     if (!mounted) return;
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      final q = briefingTabsQuery(
-        widget.sessionId,
-        widget.investorName,
-        investorCompany: widget.investorCompany,
-        investorCity: widget.investorCity,
-        investorCountry: widget.investorCountry,
-        userEquity: widget.userEquity,
-        userValuation: widget.userValuation,
-        meetingFormat: widget.meetingFormat,
-      );
-      context.go('/briefing/psych?$q');
-    }
+    goBriefingBack(
+      context,
+      2,
+      widget.sessionId,
+      widget.investorName,
+      investorCompany: widget.investorCompany,
+      investorCity: widget.investorCity,
+      investorCountry: widget.investorCountry,
+      userEquity: widget.userEquity,
+      userValuation: widget.userValuation,
+      meetingFormat: widget.meetingFormat,
+    );
   }
 
   @override
@@ -290,48 +286,30 @@ class _NegotiationSimulatorScreenState extends State<NegotiationSimulatorScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AvaColors.bg,
-      appBar: _appBar(),
+    return BriefingGradientScaffold(
+      appBar: BriefingAvaAppBar(
+        investorName: briefingInvestorShortName(widget.investorName),
+        onBack: () => unawaited(_handleBack()),
+      ),
       body: Column(
         children: [
+          BriefingHorizontalTabBar(
+            activeIndex: 2,
+            sessionId: widget.sessionId,
+            investorName: widget.investorName,
+            investorCompany: widget.investorCompany,
+            investorCity: widget.investorCity,
+            investorCountry: widget.investorCountry,
+            userEquity: widget.userEquity,
+            userValuation: widget.userValuation,
+            meetingFormat: widget.meetingFormat,
+          ),
           _liveStatusBar(),
           if (_lastResult != null) _scorePanel(),
           Expanded(child: _chatArea()),
           if (_lastResult != null) _feedbackBubble(),
           _inputBar(),
         ],
-      ),
-    );
-  }
-
-  PreferredSizeWidget _appBar() {
-    return AppBar(
-      backgroundColor: AvaColors.bg,
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(
-          Icons.arrow_back_ios_new_rounded,
-          color: AvaColors.muted,
-          size: 18,
-        ),
-        onPressed: () => unawaited(_handleBack()),
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-      ),
-      title: const Text(
-        'Negotiation Simulator',
-        style: TextStyle(
-          fontFamily: 'Georgia',
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: AvaColors.text,
-        ),
-      ),
-      centerTitle: true,
-      bottom: const PreferredSize(
-        preferredSize: Size.fromHeight(1),
-        child: Divider(height: 1, color: AvaColors.border),
       ),
     );
   }
