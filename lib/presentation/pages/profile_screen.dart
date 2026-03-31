@@ -314,6 +314,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'iconColor': const Color(0xFFFFD93D),
         'description': 'Manage your AI automation rules',
       },
+      {
+        'icon': LucideIcons.award,
+        'label': 'Challenges',
+        'route': '/challenges',
+        'gradient': [
+          const Color(0xFF06B6D4).withOpacity(0.2),
+          const Color(0xFF0891B2).withOpacity(0.2),
+        ],
+        'iconColor': const Color(0xFF06B6D4),
+        'description': 'Complete challenges, earn points & climb the leaderboard',
+      },
     ];
 
     return features.asMap().entries.map((entry) {

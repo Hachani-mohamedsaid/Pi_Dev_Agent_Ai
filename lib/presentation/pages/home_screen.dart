@@ -27,13 +27,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final _emailService = N8nEmailService();
-  int _emailTotal = 0;
   int _emailHigh = 0;
   int _emailMedium = 0;
   int _emailLow = 0;
   int _emailDeadlines = 0;
   int _emailActionsRequired = 0;
-  bool _emailSummaryLoading = true;
 
   /// Number of meetings today (null = loading).
   int? _meetingsTodayCount;
@@ -140,6 +138,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     for (var controller in _ringControllers) {
       controller.dispose();
     }
+    _meetingService.dispose();
     super.dispose();
   }
 
@@ -150,17 +149,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final stats = await _emailService.getEmailSummaryStats();
       if (!mounted) return;
       setState(() {
-        _emailTotal = _toInt(stats['totalEmails']);
         _emailHigh = _toInt(stats['highPriority']);
         _emailMedium = _toInt(stats['mediumPriority']);
         _emailLow = _toInt(stats['lowPriority']);
         _emailDeadlines = _toInt(stats['deadlines']);
         _emailActionsRequired = _toInt(stats['requiredActions']);
-        _emailSummaryLoading = false;
       });
-    } catch (_) {
-      if (mounted) setState(() => _emailSummaryLoading = false);
-    }
+    } catch (_) {}
   }
 
   Future<void> _loadMeetingsToday() async {
@@ -1573,18 +1568,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'colorLight': const Color(0xFFFF9800),
       },
       {
-        'title': 'Mon business',
+        'title': AppStrings.tr(context, 'createJobPost'),
         'icon': LucideIcons.briefcase,
-        'route': '/my-business',
-        'color': const Color(0xFF8B5CF6),
-        'colorLight': const Color(0xFFA78BFA),
+        'route': '/create-job',
+        'color': const Color(0xFF10B981),
+        'colorLight': const Color(0xFF06B6D4),
       },
       {
-        'title': 'AI Financial Simulation',
-        'icon': LucideIcons.calculator,
-        'route': '/advisor',
-        'color': const Color(0xFF10B981),
-        'colorLight': const Color(0xFF34D399),
+        'title': AppStrings.tr(context, 'travelAndJourneys'),
+        'icon': LucideIcons.car,
+        'route': '/travel',
+        'color': const Color(0xFFFF9800),
+        'colorLight': const Color(0xFFFFC107),
       },
       {
         'title': AppStrings.tr(context, 'smartActionsHub'),
@@ -1601,11 +1596,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'colorLight': const Color(0xFF34D399),
       },
       {
-        'title': 'Post on LinkedIn',
-        'icon': LucideIcons.linkedin,
-        'route': '/create-job',
-        'color': const Color(0xFF0A66C2),
-        'colorLight': const Color(0xFF0E86E6),
+        'title': 'Mon business',
+        'icon': LucideIcons.briefcase,
+        'route': '/my-business',
+        'color': const Color(0xFF8B5CF6),
+        'colorLight': const Color(0xFFA78BFA),
       },
       {
         'title': 'Phone Agent',
@@ -1620,17 +1615,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          AppStrings.tr(context, 'quickActions').toUpperCase(),
+          AppStrings.tr(context, 'quickActions'),
           style: TextStyle(
             fontSize: Responsive.getResponsiveValue(
               context,
-              mobile: 11.0,
-              tablet: 12.0,
-              desktop: 13.0,
+              mobile: 17.0,
+              tablet: 19.0,
+              desktop: 20.0,
             ),
             fontWeight: FontWeight.w600,
-            letterSpacing: 1.4,
-            color: const Color(0xFF94A3B8),
+            color: AppColors.textWhite,
           ),
         ),
         SizedBox(
@@ -1685,53 +1679,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
           child: _buildOngoingProjectsGrid(context, isMobile),
         ),
-        Padding(
-          padding: EdgeInsets.only(
-            bottom: Responsive.getResponsiveValue(
-              context,
-              mobile: 10.0,
-              tablet: 12.0,
-              desktop: 16.0,
-            ),
-          ),
-          child: _buildQuickActionItem(
-            context,
-            isMobile,
-            'Investor Meeting',
-            LucideIcons.calendar,
-            '/investor-meeting-setup',
-            AppColors.cyan500,
-            const Color(0xFF3B82F6),
-            90,
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.only(
-            bottom: Responsive.getResponsiveValue(
-              context,
-              mobile: 10.0,
-              tablet: 12.0,
-              desktop: 16.0,
-            ),
-          ),
-          child: _buildQuickActionItem(
-            context,
-            isMobile,
-            'Market Intelligence',
-            LucideIcons.briefcase,
-            '/market-intelligence',
-            AppColors.cyan500,
-            const Color(0xFF3B82F6),
-            91,
-          ),
-        ),
         ...actions.asMap().entries.map((entry) {
           if (entry.key == 1) return const SizedBox.shrink();
           if (entry.key == 0 ||
               entry.key == 5 ||
               entry.key == 6 ||
-              entry.key == 7 ||
-              entry.key == 8)
+              entry.key == 7)
             return const SizedBox.shrink();
           final index = entry.key;
           final action = entry.value;
@@ -2003,151 +1956,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _goToInvestorMeetingSetup(BuildContext context) {
-    context.push('/investor-meeting-setup');
-  }
-
-  /// Investor Meeting — même style cyan que le reste de l’app.
-  Widget _buildInvestorMeetingCard(BuildContext context, bool isMobile) {
-    final r = Responsive.getResponsiveValue(
-      context,
-      mobile: 18.0,
-      tablet: 20.0,
-      desktop: 22.0,
-    );
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _goToInvestorMeetingSetup(context),
-        borderRadius: BorderRadius.circular(r),
-        child: Ink(
-          padding: EdgeInsets.all(r),
-          decoration: BoxDecoration(
-            color: AppColors.primaryDarker,
-            borderRadius: BorderRadius.circular(r),
-            border: Border.all(
-              color: AppColors.cyan500.withValues(alpha: 0.35),
-              width: 1.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.cyan500.withValues(alpha: 0.08),
-                blurRadius: 18,
-                offset: const Offset(0, 6),
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 48.0,
-                  tablet: 52.0,
-                  desktop: 56.0,
-                ),
-                height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 48.0,
-                  tablet: 52.0,
-                  desktop: 56.0,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.cyan500.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: AppColors.cyan400.withValues(alpha: 0.35),
-                  ),
-                ),
-                child: Icon(
-                  LucideIcons.calendar,
-                  color: AppColors.cyan400,
-                  size: 28,
-                ),
-              ),
-              SizedBox(width: r),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Investor Meeting',
-                      style: TextStyle(
-                        fontSize: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 17.0,
-                          tablet: 18.0,
-                          desktop: 20.0,
-                        ),
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textWhite,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Full AI preparation briefing',
-                      style: TextStyle(
-                        fontSize: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 13.0,
-                          tablet: 14.0,
-                          desktop: 15.0,
-                        ),
-                        color: AppColors.textCyan200.withValues(alpha: 0.85),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                width: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 40.0,
-                  tablet: 42.0,
-                  desktop: 44.0,
-                ),
-                height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 40.0,
-                  tablet: 42.0,
-                  desktop: 44.0,
-                ),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: AppColors.buttonGradient,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.cyan500.withValues(alpha: 0.35),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: () => _goToInvestorMeetingSetup(context),
-                    child: const Icon(
-                      LucideIcons.send,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   /// Meeting Hub card (React-style): Video icon, title, subtitle, arrow → /meetings.
   Widget _buildMeetingHubCard(BuildContext context, bool isMobile) {
     final r = Responsive.getResponsiveValue(
@@ -2303,142 +2111,148 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     const cardColor = Color(0xFFEC4899);
     const cardColorLight = Color(0xFFA855F7);
     return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const SocialMediaBriefScreen()),
-        );
-      },
-      child: Container(
-        padding: EdgeInsets.all(r),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0a1f2e),
-              Color(0xFF0f2a3d),
-              Color(0xFF14354c),
-              Color(0xFF19405b),
-              Color(0xFF1e4a66),
-            ],
-            stops: [0.0, 0.25, 0.5, 0.75, 1.0],
-          ),
-          borderRadius: BorderRadius.circular(r),
-          border: Border.all(color: cardColor.withOpacity(0.3), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: cardColor.withOpacity(0.2),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-            BoxShadow(
-              color: Colors.black.withOpacity(0.4),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: Responsive.getResponsiveValue(
-                context,
-                mobile: 52.0,
-                tablet: 56.0,
-                desktop: 60.0,
-              ),
-              height: Responsive.getResponsiveValue(
-                context,
-                mobile: 52.0,
-                tablet: 56.0,
-                desktop: 60.0,
-              ),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    cardColor.withOpacity(0.25),
-                    cardColorLight.withOpacity(0.2),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: cardColor.withOpacity(0.4)),
-              ),
-              child: const Icon(
-                LucideIcons.megaphone,
-                color: cardColor,
-                size: 26,
-              ),
-            ),
-            SizedBox(width: r),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Social Media Campaign',
-                    style: TextStyle(
-                      fontSize: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 17.0,
-                        tablet: 18.0,
-                        desktop: 20.0,
-                      ),
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Launch your product across all platforms',
-                    style: TextStyle(
-                      fontSize: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 13.0,
-                        tablet: 14.0,
-                        desktop: 15.0,
-                      ),
-                      color: AppColors.textCyan200.withOpacity(0.8),
-                    ),
-                  ),
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SocialMediaBriefScreen()),
+            );
+          },
+          child: Container(
+            padding: EdgeInsets.all(r),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0a1f2e),
+                  Color(0xFF0f2a3d),
+                  Color(0xFF14354c),
+                  Color(0xFF19405b),
+                  Color(0xFF1e4a66),
                 ],
+                stops: [0.0, 0.25, 0.5, 0.75, 1.0],
               ),
+              borderRadius: BorderRadius.circular(r),
+              border: Border.all(color: cardColor.withOpacity(0.3), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: cardColor.withOpacity(0.2),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.4),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-            Container(
-              width: Responsive.getResponsiveValue(
-                context,
-                mobile: 38.0,
-                tablet: 40.0,
-                desktop: 44.0,
-              ),
-              height: Responsive.getResponsiveValue(
-                context,
-                mobile: 38.0,
-                tablet: 40.0,
-                desktop: 44.0,
-              ),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [cardColor, cardColorLight]),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                LucideIcons.chevronRight,
-                color: Colors.white,
-                size: 22,
-              ),
+            child: Row(
+              children: [
+                Container(
+                  width: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 52.0,
+                    tablet: 56.0,
+                    desktop: 60.0,
+                  ),
+                  height: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 52.0,
+                    tablet: 56.0,
+                    desktop: 60.0,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        cardColor.withOpacity(0.25),
+                        cardColorLight.withOpacity(0.2),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: cardColor.withOpacity(0.4)),
+                  ),
+                  child: const Icon(
+                    LucideIcons.megaphone,
+                    color: cardColor,
+                    size: 26,
+                  ),
+                ),
+                SizedBox(width: r),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Social Media Campaign',
+                        style: TextStyle(
+                          fontSize: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 17.0,
+                            tablet: 18.0,
+                            desktop: 20.0,
+                          ),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Launch your product across all platforms',
+                        style: TextStyle(
+                          fontSize: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 13.0,
+                            tablet: 14.0,
+                            desktop: 15.0,
+                          ),
+                          color: AppColors.textCyan200.withOpacity(0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 38.0,
+                    tablet: 40.0,
+                    desktop: 44.0,
+                  ),
+                  height: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 38.0,
+                    tablet: 40.0,
+                    desktop: 44.0,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [cardColor, cardColorLight],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    LucideIcons.chevronRight,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    ).animate().fadeIn(delay: 250.ms, duration: 400.ms).slideX(
-      begin: 0.02,
-      end: 0,
-      curve: Curves.easeOut,
-    );
+          ),
+        )
+        .animate()
+        .fadeIn(delay: 250.ms, duration: 400.ms)
+        .slideX(begin: 0.02, end: 0, curve: Curves.easeOut);
   }
 
-  Widget _buildPriorityChip(BuildContext context, int count, String label, Color color) {
+  Widget _buildPriorityChip(
+    BuildContext context,
+    int count,
+    String label,
+    Color color,
+  ) {
     return Container(
       padding: EdgeInsets.all(
         Responsive.getResponsiveValue(
@@ -2567,7 +2381,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final phoneCalls = mockPhoneCalls;
     final phoneTotal = phoneCalls.length;
     final phoneImportant = phoneCalls.where((c) => c.priority == 'high').length;
-    const meetingsText = '2 meetings today';
+    final meetingsText = _meetingsTodayCount != null
+        ? '$_meetingsTodayCount meeting${_meetingsTodayCount == 1 ? '' : 's'} today'
+        : null;
     return [
       {
         'title': 'Review Agenda',
@@ -2577,18 +2393,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'color': const Color(0xFFA855F7),
       },
       {
-        'title': 'Book an Uber',
+        'title': 'AI Financial Simulation',
         'subtitle': null,
-        'icon': LucideIcons.car,
-        'route': '/travel',
-        'color': const Color(0xFFFF9800),
+        'icon': LucideIcons.calculator,
+        'route': '/advisor',
+        'color': const Color(0xFF10B981),
       },
       {
-        'title': 'Post on LinkedIn',
+        'title': 'Mon business',
         'subtitle': null,
-        'icon': LucideIcons.linkedin,
-        'route': '/create-job',
-        'color': const Color(0xFF0A66C2),
+        'icon': LucideIcons.briefcase,
+        'route': '/my-business',
+        'color': const Color(0xFF8B5CF6),
       },
       {
         'title': 'Phone Agent',
@@ -2614,7 +2430,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Quick Actions',
+              'Ongoing Projects',
               style: TextStyle(
                 fontSize: Responsive.getResponsiveValue(
                   context,

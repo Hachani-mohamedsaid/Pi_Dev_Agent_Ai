@@ -18,6 +18,7 @@ import '../../presentation/pages/privacy_security_page.dart';
 import '../../presentation/pages/help_support_page.dart';
 import '../../presentation/pages/subscription_page.dart';
 import '../../presentation/pages/subscription_success_page.dart';
+import '../../presentation/pages/challenges_screen.dart';
 import '../../presentation/pages/change_password_page.dart';
 import '../../presentation/pages/voice_assistant_page.dart';
 import '../../presentation/pages/chat_page.dart';
@@ -266,6 +267,14 @@ final appRouter = GoRouter(
         context: context,
         state: state,
         child: const HelpSupportPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/challenges',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const ChallengesScreen(),
       ),
     ),
     GoRoute(

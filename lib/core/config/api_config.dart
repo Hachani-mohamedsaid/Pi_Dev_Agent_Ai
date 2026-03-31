@@ -5,18 +5,22 @@ import 'package:flutter/foundation.dart';
 ///
 /// Résolution (dans l’ordre) :
 /// 1. `--dart-define=API_BASE_URL=...` si non vide
-/// 2. **Debug** : machine locale (évite l’erreur « Cannot POST /meetings/... » sur Railway non déployé)
-///    - Web / iOS / desktop : `http://127.0.0.1:3000`
-///    - Android émulateur : `http://10.0.2.2:3000`
-/// 3. **Release / profile** : Railway
+/// 2. `--dart-define=DEBUG_LOCAL_API_BASE_URL=...` en debug (optionnel)
+/// 3. Railway (par défaut)
 ///
-/// Pour forcer la prod en local debug :
-///   flutter run -d chrome --dart-define=API_BASE_URL=https://backendagentai-production.up.railway.app
+/// Pour forcer une API locale en debug :
+///   flutter run -d ios --dart-define=DEBUG_LOCAL_API_BASE_URL=http://127.0.0.1:3000
+///   flutter run -d android --dart-define=DEBUG_LOCAL_API_BASE_URL=http://10.0.2.2:3000
 ///
 /// Si Nest utilise `setGlobalPrefix('api')`, ajoute :
 ///   --dart-define=API_PATH_PREFIX=api
 const String _apiBaseUrlFromEnvironment = String.fromEnvironment(
   'API_BASE_URL',
+  defaultValue: '',
+);
+
+const String _debugLocalApiBaseUrlFromEnvironment = String.fromEnvironment(
+  'DEBUG_LOCAL_API_BASE_URL',
   defaultValue: '',
 );
 
@@ -29,12 +33,9 @@ String get apiBaseUrl {
     return fromEnv.replaceAll(RegExp(r'/$'), '');
   }
   if (kDebugMode) {
-    if (kIsWeb) return 'http://127.0.0.1:3000';
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        return 'http://10.0.2.2:3000';
-      default:
-        return 'http://127.0.0.1:3000';
+    final local = _debugLocalApiBaseUrlFromEnvironment.trim();
+    if (local.isNotEmpty) {
+      return local.replaceAll(RegExp(r'/$'), '');
     }
   }
   return _productionApiBaseUrl;
