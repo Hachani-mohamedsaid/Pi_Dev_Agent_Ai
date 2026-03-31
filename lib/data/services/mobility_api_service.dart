@@ -14,13 +14,38 @@ class MobilityApiService {
 
   Future<Map<String, String>> _headers({bool requireAuth = true}) async {
     final headers = <String, String>{'Content-Type': 'application/json'};
-    final token = await _auth.getAccessToken();
-    if (token != null && token.isNotEmpty) {
+    final rawToken = await _auth.getAccessToken();
+    final token = _normalizeToken(rawToken);
+    if (token != null) {
       headers['Authorization'] = 'Bearer $token';
     } else if (requireAuth) {
       throw const MobilityApiException('login_required');
     }
     return headers;
+  }
+
+  String? _normalizeToken(String? token) {
+    if (token == null) return null;
+    final trimmed = token.trim();
+    if (trimmed.isEmpty) return null;
+    if (trimmed.toLowerCase().startsWith('bearer ')) {
+      final stripped = trimmed.substring(7).trim();
+      return stripped.isEmpty ? null : stripped;
+    }
+    return trimmed;
+  }
+
+  Never _throwHttpError(http.Response response) {
+    if (response.statusCode == 401) {
+      throw MobilityApiException(
+        'unauthorized',
+        body: response.body.isNotEmpty ? response.body : null,
+      );
+    }
+    throw MobilityApiException(
+      'http_${response.statusCode}',
+      body: response.body.isNotEmpty ? response.body : null,
+    );
   }
 
   Future<MobilityEstimateResponse> estimateQuotes({
@@ -64,10 +89,7 @@ class MobilityApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw MobilityApiException(
-        'http_${response.statusCode}',
-        body: response.body.isNotEmpty ? response.body : null,
-      );
+      _throwHttpError(response);
     }
 
     final json = _decodeJsonObject(response);
@@ -84,10 +106,7 @@ class MobilityApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200) {
-      throw MobilityApiException(
-        'http_${response.statusCode}',
-        body: response.body.isNotEmpty ? response.body : null,
-      );
+      _throwHttpError(response);
     }
 
     final body = response.body.trim();
@@ -144,10 +163,7 @@ class MobilityApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw MobilityApiException(
-        'http_${response.statusCode}',
-        body: response.body.isNotEmpty ? response.body : null,
-      );
+      _throwHttpError(response);
     }
 
     final json = _decodeJsonObject(response);
@@ -167,10 +183,7 @@ class MobilityApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw MobilityApiException(
-        'http_${response.statusCode}',
-        body: response.body.isNotEmpty ? response.body : null,
-      );
+      _throwHttpError(response);
     }
 
     final json = _decodeJsonObject(response);
@@ -232,10 +245,7 @@ class MobilityApiService {
     }
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw MobilityApiException(
-        'http_${response.statusCode}',
-        body: response.body.isNotEmpty ? response.body : null,
-      );
+      _throwHttpError(response);
     }
 
     final body = response.body.trim();
@@ -260,10 +270,7 @@ class MobilityApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200) {
-      throw MobilityApiException(
-        'http_${response.statusCode}',
-        body: response.body.isNotEmpty ? response.body : null,
-      );
+      _throwHttpError(response);
     }
 
     final body = response.body.trim();
@@ -297,10 +304,7 @@ class MobilityApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw MobilityApiException(
-        'http_${response.statusCode}',
-        body: response.body.isNotEmpty ? response.body : null,
-      );
+      _throwHttpError(response);
     }
 
     return _decodeJsonObject(response);
@@ -318,10 +322,7 @@ class MobilityApiService {
     if (response.statusCode != 200 &&
         response.statusCode != 201 &&
         response.statusCode != 204) {
-      throw MobilityApiException(
-        'http_${response.statusCode}',
-        body: response.body.isNotEmpty ? response.body : null,
-      );
+      _throwHttpError(response);
     }
   }
 
@@ -339,10 +340,7 @@ class MobilityApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw MobilityApiException(
-        'http_${response.statusCode}',
-        body: response.body.isNotEmpty ? response.body : null,
-      );
+      _throwHttpError(response);
     }
 
     return _decodeJsonObject(response);
@@ -362,10 +360,7 @@ class MobilityApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw MobilityApiException(
-        'http_${response.statusCode}',
-        body: response.body.isNotEmpty ? response.body : null,
-      );
+      _throwHttpError(response);
     }
 
     return _decodeJsonObject(response);
@@ -380,10 +375,7 @@ class MobilityApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200) {
-      throw MobilityApiException(
-        'http_${response.statusCode}',
-        body: response.body.isNotEmpty ? response.body : null,
-      );
+      _throwHttpError(response);
     }
 
     final body = response.body.trim();

@@ -20,6 +20,18 @@
             ]
         },
         {
+            "name": "Flutter web (Chrome) + backend local :3000",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "args": [
+                "-d",
+                "chrome",
+                "--dart-define",
+                "API_BASE_URL=http://127.0.0.1:3000"
+            ]
+        },
+        {
             "name": "Pi_Dev_Agent_Ai (profile mode)",
             "request": "launch",
             "type": "dart",

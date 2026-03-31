@@ -30,7 +30,7 @@ class AdvisorHistoryDataSource {
     try {
       final response = await http
           .get(
-            Uri.parse('$apiBaseUrl$advisorHistoryPath'),
+            Uri.parse('$apiRootUrl$advisorHistoryPath'),
             headers: await _headers(),
           )
           .timeout(_timeout);

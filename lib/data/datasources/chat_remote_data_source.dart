@@ -19,13 +19,13 @@ abstract class ChatRemoteDataSource {
   });
 }
 
-/// Implémentation HTTP : POST [apiBaseUrl][chatPath].
+/// Implémentation HTTP : POST [apiRootUrl][chatPath].
 /// Envoie le JWT du compte connecté (Authorization: Bearer) si [authLocalDataSource] est fourni.
 /// Backend attend : { "messages": [ ... ] } et peut lire le header Authorization pour identifier l'utilisateur.
 /// Backend renvoie : { "message": "..." } ou { "content": "..." }.
 class ApiChatRemoteDataSource implements ChatRemoteDataSource {
   ApiChatRemoteDataSource({String? baseUrl, AuthLocalDataSource? authLocalDataSource})
-      : _baseUrl = baseUrl ?? apiBaseUrl,
+      : _baseUrl = baseUrl ?? apiRootUrl,
         _authLocalDataSource = authLocalDataSource;
 
   final String _baseUrl;

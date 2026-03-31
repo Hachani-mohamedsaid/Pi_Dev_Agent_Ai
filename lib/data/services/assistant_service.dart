@@ -88,7 +88,7 @@ class AssistantService {
     int maxItems = 5,
     List<Map<String, dynamic>> signals = const [],
   }) async {
-    final uri = Uri.parse('$apiBaseUrl/assistant/notifications');
+    final uri = Uri.parse('$apiRootUrl/assistant/notifications');
     final body = <String, dynamic>{
       if (userId != null && userId.isNotEmpty) 'userId': userId,
       'locale': locale,
@@ -125,7 +125,7 @@ class AssistantService {
 
   /// POST /assistant/context – envoie le contexte et récupère les suggestions générées.
   Future<List<Suggestion>> sendContext(AssistantContextPayload payload) async {
-    final uri = Uri.parse('$apiBaseUrl/assistant/context');
+    final uri = Uri.parse('$apiRootUrl/assistant/context');
     final response = await http.post(
       uri,
       headers: await _headers(),
@@ -164,7 +164,7 @@ class AssistantService {
   }
 
   Future<List<Suggestion>> fetchSuggestions({required String userId}) async {
-    final uri = Uri.parse('$apiBaseUrl/assistant/suggestions/$userId');
+    final uri = Uri.parse('$apiRootUrl/assistant/suggestions/$userId');
     final response = await http.get(uri, headers: await _headers());
 
     if (response.statusCode == 401) throw AssistantUnauthorizedException();
@@ -197,7 +197,7 @@ class AssistantService {
     String? message,
     String? type,
   }) async {
-    final uri = Uri.parse('$apiBaseUrl/assistant/feedback');
+    final uri = Uri.parse('$apiRootUrl/assistant/feedback');
     final body = <String, dynamic>{
       'suggestionId': suggestionId,
       'action': action,

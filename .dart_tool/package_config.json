@@ -116,6 +116,12 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "file_picker",
+      "rootUri": "file:///C:/Users/chern/AppData/Local/Pub/Cache/hosted/pub.dev/file_picker-8.3.7",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "file_selector_linux",
       "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.4",
       "packageUri": "lib/",
@@ -155,7 +161,7 @@
       "name": "flutter",
       "rootUri": "file:///Users/mohamedsaidhachani/development/flutter/packages/flutter",
       "packageUri": "lib/",
-      "languageVersion": "3.8"
+      "languageVersion": "3.9"
     },
     {
       "name": "flutter_animate",
@@ -185,7 +191,7 @@
       "name": "flutter_localizations",
       "rootUri": "file:///Users/mohamedsaidhachani/development/flutter/packages/flutter_localizations",
       "packageUri": "lib/",
-      "languageVersion": "3.8"
+      "languageVersion": "3.9"
     },
     {
       "name": "flutter_map",
@@ -233,7 +239,7 @@
       "name": "flutter_test",
       "rootUri": "file:///Users/mohamedsaidhachani/development/flutter/packages/flutter_test",
       "packageUri": "lib/",
-      "languageVersion": "3.8"
+      "languageVersion": "3.9"
     },
     {
       "name": "flutter_tts",
@@ -245,7 +251,43 @@
       "name": "flutter_web_plugins",
       "rootUri": "file:///Users/mohamedsaidhachani/development/flutter/packages/flutter_web_plugins",
       "packageUri": "lib/",
-      "languageVersion": "3.8"
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "geolocator",
+      "rootUri": "file:///C:/Users/chern/AppData/Local/Pub/Cache/hosted/pub.dev/geolocator-13.0.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "geolocator_android",
+      "rootUri": "file:///C:/Users/chern/AppData/Local/Pub/Cache/hosted/pub.dev/geolocator_android-4.6.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "geolocator_apple",
+      "rootUri": "file:///C:/Users/chern/AppData/Local/Pub/Cache/hosted/pub.dev/geolocator_apple-2.3.13",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "geolocator_platform_interface",
+      "rootUri": "file:///C:/Users/chern/AppData/Local/Pub/Cache/hosted/pub.dev/geolocator_platform_interface-4.2.6",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "geolocator_web",
+      "rootUri": "file:///C:/Users/chern/AppData/Local/Pub/Cache/hosted/pub.dev/geolocator_web-4.1.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "geolocator_windows",
+      "rootUri": "file:///C:/Users/chern/AppData/Local/Pub/Cache/hosted/pub.dev/geolocator_windows-0.2.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
     },
     {
       "name": "geolocator",
@@ -473,13 +515,13 @@
       "name": "matcher",
       "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/matcher-0.12.17",
       "packageUri": "lib/",
-      "languageVersion": "3.4"
+      "languageVersion": "3.7"
     },
     {
       "name": "material_color_utilities",
       "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/material_color_utilities-0.11.1",
       "packageUri": "lib/",
-      "languageVersion": "2.17"
+      "languageVersion": "3.5"
     },
     {
       "name": "meta",
@@ -731,7 +773,7 @@
       "name": "sky_engine",
       "rootUri": "file:///Users/mohamedsaidhachani/development/flutter/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
-      "languageVersion": "3.8"
+      "languageVersion": "3.9"
     },
     {
       "name": "source_span",
@@ -815,7 +857,7 @@
       "name": "test_api",
       "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/test_api-0.7.7",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.7"
     },
     {
       "name": "timezone",

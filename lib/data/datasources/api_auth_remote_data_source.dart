@@ -8,9 +8,9 @@ import '../models/profile_model.dart';
 import '../models/user_model.dart';
 import 'auth_remote_data_source.dart';
 
-/// Implémentation HTTP des endpoints auth (NestJS). Utilise [apiBaseUrl].
+/// Implémentation HTTP des endpoints auth (NestJS). Utilise [apiRootUrl].
 class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
-  ApiAuthRemoteDataSource({String? baseUrl}) : _baseUrl = baseUrl ?? apiBaseUrl;
+  ApiAuthRemoteDataSource({String? baseUrl}) : _baseUrl = baseUrl ?? apiRootUrl;
 
   final String _baseUrl;
 

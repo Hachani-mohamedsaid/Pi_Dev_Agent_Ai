@@ -76,6 +76,7 @@ dependencies:
 
   # Photo de profil (ImgBB)
   image_picker: ^1.0.7
+  file_picker: ^8.1.4
 
   # Talk to buddy – voix : reconnaissance vocale (STT) + synthèse vocale (TTS)
   speech_to_text: ^7.0.0
@@ -86,6 +87,8 @@ dependencies:
   web_socket_channel: ^3.0.1
   share_plus: ^12.0.1
   uni_links: ^0.5.1
+  pdf: ^3.12.0
+  printing: ^5.14.3
 
 dev_dependencies:
   flutter_test:

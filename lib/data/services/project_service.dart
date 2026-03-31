@@ -27,7 +27,7 @@ class ProjectService {
   Future<Map<String, String>> fetchProjectDecisions() async {
     try {
       final response = await http
-          .get(Uri.parse('$apiBaseUrl$projectDecisionsPath'))
+          .get(Uri.parse('$apiRootUrl$projectDecisionsPath'))
           .timeout(_timeout);
       if (response.statusCode != 200) return {};
       final list = jsonDecode(response.body) as List<dynamic>?;
@@ -97,7 +97,7 @@ class ProjectService {
     try {
       // 1) NestJS → MongoDB
       final nestFuture = http.post(
-        Uri.parse('$apiBaseUrl$projectDecisionsPath'),
+        Uri.parse('$apiRootUrl$projectDecisionsPath'),
         headers: headers,
         body: jsonEncode(bodyNest),
       ).timeout(_timeout);

@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../features/meeting_intelligence/models/ava_session.dart';
 import '../../presentation/state/chat_provider.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+  const ChatPage({super.key, this.avaSession});
+
+  /// Set when opening from meeting intelligence briefing flow (`/chat-hub`).
+  final AvaSession? avaSession;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -22,11 +26,12 @@ class _ChatPageState extends State<ChatPage> {
     _messageController = TextEditingController();
     _scrollController = ScrollController();
 
-    // Initialize chat on first load (French welcome for n8n AI assistant)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ChatProvider>().initializeChat(
-        welcomeMessage: 'Bonjour ! Comment puis-je vous aider aujourd\'hui ?',
-      );
+      final session = widget.avaSession;
+      final welcome = session != null && session.investorName != null
+          ? 'Bonjour ! Briefing prêt pour ${session.investorName}. Comment puis-je vous aider ?'
+          : 'Bonjour ! Comment puis-je vous aider aujourd\'hui ?';
+      context.read<ChatProvider>().initializeChat(welcomeMessage: welcome);
     });
   }
 
