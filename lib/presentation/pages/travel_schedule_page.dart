@@ -132,6 +132,7 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
   late bool _bestPriceWindowEnabled;
   late int _bestPriceWindowMinutes;
   late List<SavedTravelRequest> _savedRequests;
+  late bool _fromUsesCurrentLocationPlaceholder;
 
   bool _loadingFromSuggestions = false;
   bool _loadingToSuggestions = false;
@@ -141,7 +142,14 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
   @override
   void initState() {
     super.initState();
-    _fromController = TextEditingController(text: widget.initialFromLocation);
+    final initialFrom = widget.initialFromLocation.trim();
+    _fromUsesCurrentLocationPlaceholder =
+        initialFrom.toLowerCase() == 'current location';
+    _fromController = TextEditingController(
+      text: _fromUsesCurrentLocationPlaceholder
+          ? ''
+          : widget.initialFromLocation,
+    );
     _toController = TextEditingController(text: widget.initialToLocation);
     _slots = widget.initialSlots.isEmpty
         ? <TravelScheduleSlot>[
@@ -318,11 +326,11 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
     return multiplier;
   }
 
-  String _estimatedPriceLabel(TravelScheduleSlot slot) {
+  String? _estimatedPriceLabel(TravelScheduleSlot slot) {
     final minPrice = widget.baseMinPrice;
     final maxPrice = widget.baseMaxPrice;
     if (minPrice == null || maxPrice == null) {
-      return 'Estimate unavailable (trace route first on Travel page).';
+      return null;
     }
 
     final factor = _priceMultiplier(slot);
@@ -331,9 +339,9 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
     return '${adjustedMin.toStringAsFixed(1)}-${adjustedMax.toStringAsFixed(1)} AED';
   }
 
-  String _estimatedEtaLabel(TravelScheduleSlot slot) {
+  String? _estimatedEtaLabel(TravelScheduleSlot slot) {
     final eta = widget.baseEtaMinutes;
-    if (eta == null) return 'n/a';
+    if (eta == null) return null;
 
     final hour = slot.time.hour;
     final trafficPenalty =
@@ -431,7 +439,11 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
   }
 
   void _saveSchedule() {
-    final from = _fromController.text.trim();
+    final from =
+        _fromController.text.trim().isEmpty &&
+            _fromUsesCurrentLocationPlaceholder
+        ? widget.initialFromLocation.trim()
+        : _fromController.text.trim();
     final to = _toController.text.trim();
     if (from.isEmpty || to.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -467,6 +479,13 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
         savedRequests: nextSaved,
       ),
     );
+  }
+
+  void _handleBackPressed() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    }
   }
 
   Widget _buildSuggestions(
@@ -620,14 +639,26 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
 
   Widget _buildSlotCard(int index) {
     final slot = _slots[index];
+    final estimatedPrice = _estimatedPriceLabel(slot);
+    final estimatedEta = _estimatedEtaLabel(slot);
+    final activeBorderColor = slot.enabled
+        ? AppColors.cyan400.withOpacity(0.65)
+        : AppColors.borderCyan;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: AppColors.cardGradient,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderCyan),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: activeBorderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -635,13 +666,68 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  'Schedule ${index + 1}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.cyan400,
-                  ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.cyan500.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: AppColors.borderCyan),
+                      ),
+                      child: Text(
+                        '${index + 1}',
+                        style: const TextStyle(
+                          color: AppColors.cyan400,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Schedule',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.cyan400,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _daySummary(slot.weekdays),
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.72),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
+              ),
+              Column(
+                children: [
+                  Text(
+                    slot.enabled ? 'Active' : 'Paused',
+                    style: TextStyle(
+                      color: slot.enabled
+                          ? Colors.lightGreenAccent
+                          : Colors.white.withOpacity(0.7),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Switch.adaptive(
+                    value: slot.enabled,
+                    onChanged: (value) => _setSlotEnabled(index, value),
+                  ),
+                ],
               ),
               if (_slots.length > 1)
                 IconButton(
@@ -654,68 +740,123 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
                 ),
             ],
           ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _pickScheduleTime(index),
-                  icon: const Icon(Icons.schedule, color: AppColors.cyan400),
-                  label: Text(
-                    'At ${slot.time.format(context)}',
-                    style: const TextStyle(color: AppColors.cyan400),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.cyan400),
-                  ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _pickScheduleTime(index),
+              icon: const Icon(Icons.schedule, color: AppColors.cyan400),
+              label: Text(
+                'Departure at ${slot.time.format(context)}',
+                style: const TextStyle(
+                  color: AppColors.cyan400,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(width: 8),
-              Switch.adaptive(
-                value: slot.enabled,
-                onChanged: (value) => _setSlotEnabled(index, value),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.cyan400),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: _weekdayShortLabel.entries
-                .map(
-                  (entry) => FilterChip(
-                    label: Text(entry.value),
-                    selected: slot.weekdays.contains(entry.key),
-                    selectedColor: AppColors.cyan500.withOpacity(0.6),
+                .map((entry) {
+                  final selected = slot.weekdays.contains(entry.key);
+                  return FilterChip(
+                    label: Text(
+                      entry.value,
+                      style: TextStyle(
+                        color: selected
+                            ? Colors.white
+                            : Colors.white.withOpacity(0.85),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    selected: selected,
+                    selectedColor: AppColors.cyan500.withOpacity(0.52),
+                    backgroundColor: Colors.black.withOpacity(0.22),
                     side: BorderSide(
-                      color: slot.weekdays.contains(entry.key)
+                      color: selected
                           ? AppColors.cyan400
                           : AppColors.borderCyan,
                     ),
-                    onSelected: (selected) =>
-                        _toggleWeekday(index, entry.key, selected),
-                  ),
-                )
+                    showCheckmark: false,
+                    onSelected: (isSelected) =>
+                        _toggleWeekday(index, entry.key, isSelected),
+                  );
+                })
                 .toList(growable: false),
           ),
-          const SizedBox(height: 8),
+          if (estimatedPrice != null || estimatedEta != null) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                if (estimatedPrice != null)
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.borderCyan),
+                      ),
+                      child: Text(
+                        'Est. price\n$estimatedPrice',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.88),
+                          fontSize: 12,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (estimatedPrice != null && estimatedEta != null)
+                  const SizedBox(width: 10),
+                if (estimatedEta != null)
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.borderCyan),
+                      ),
+                      child: Text(
+                        'ETA\n$estimatedEta',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.88),
+                          fontSize: 12,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
           Text(
             'Days: ${_daySummary(slot.weekdays)}',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.86),
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Est. price: ${_estimatedPriceLabel(slot)} • ETA: ${_estimatedEtaLabel(slot)}',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.86),
-              fontSize: 13,
+              color: Colors.white.withOpacity(0.72),
+              fontSize: 12,
             ),
           ),
           if (slot.adjustedTime != null) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
@@ -749,12 +890,14 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
                   children: [
                     Icon(Icons.cloud_done, size: 16, color: freshnessColor),
                     const SizedBox(width: 6),
-                    Text(
-                      'Synced ${_formatSyncedDateTime(slot.lastSyncedAt!)}',
-                      style: TextStyle(
-                        color: freshnessColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                    Expanded(
+                      child: Text(
+                        'Synced ${_formatSyncedDateTime(slot.lastSyncedAt!)}',
+                        style: TextStyle(
+                          color: freshnessColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -793,7 +936,17 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Taxi Clock Planner'),
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          onPressed: _handleBackPressed,
+          tooltip: 'Back',
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          color: Colors.white,
+        ),
+        title: const Text(
+          'Taxi Clock Planner',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
         flexibleSpace: Container(
           decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
         ),
@@ -803,50 +956,77 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
         decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
         child: SafeArea(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
             children: [
               Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       gradient: AppColors.cardGradient,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: AppColors.borderCyan),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.route_outlined,
+                              color: AppColors.cyan400,
+                              size: 18,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Route details',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.cyan400,
+                                fontSize: 20,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
                         Text(
-                          'From / To (autocomplete)',
+                          'Choose pickup and destination. Suggestions appear as you type.',
                           style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.cyan400,
+                            color: Colors.white.withOpacity(0.72),
+                            fontSize: 12,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 14),
+                        const Text(
+                          'From',
+                          style: TextStyle(
+                            color: AppColors.cyan400,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
                         TextField(
                           controller: _fromController,
                           onChanged: (value) => _loadFromSuggestions(value),
                           decoration: InputDecoration(
-                            labelText: 'From',
-                            hintText: 'Type city name (ex: Tunis, Dubai)',
-                            labelStyle: const TextStyle(
-                              color: AppColors.cyan400,
-                            ),
+                            hintText: _fromUsesCurrentLocationPlaceholder
+                                ? widget.initialFromLocation
+                                : 'Type city name (ex: Tunis, Dubai)',
                             hintStyle: TextStyle(
                               color: Colors.white.withOpacity(0.5),
                             ),
+                            filled: true,
+                            fillColor: Colors.black.withOpacity(0.14),
                             enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                 color: AppColors.borderCyan,
                               ),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderSide: const BorderSide(
                                 color: AppColors.cyan400,
                                 width: 2,
                               ),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                         ),
@@ -855,31 +1035,37 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
                           _loadingFromSuggestions,
                           _selectFromSuggestion,
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'To',
+                          style: TextStyle(
+                            color: AppColors.cyan400,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
                         TextField(
                           controller: _toController,
                           onChanged: (value) => _loadToSuggestions(value),
                           decoration: InputDecoration(
-                            labelText: 'To',
                             hintText: 'Type city name (ex: Dubai Marina)',
-                            labelStyle: const TextStyle(
-                              color: AppColors.cyan400,
-                            ),
                             hintStyle: TextStyle(
                               color: Colors.white.withOpacity(0.5),
                             ),
+                            filled: true,
+                            fillColor: Colors.black.withOpacity(0.14),
                             enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                 color: AppColors.borderCyan,
                               ),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderSide: const BorderSide(
                                 color: AppColors.cyan400,
                                 width: 2,
                               ),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                         ),
@@ -898,38 +1084,67 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
                     end: 0,
                     duration: const Duration(milliseconds: 400),
                   ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       gradient: AppColors.cardGradient,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: AppColors.borderCyan),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_month_outlined,
+                              color: AppColors.cyan400,
+                              size: 18,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Departure rules',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.cyan400,
+                                fontSize: 20,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
                         Text(
-                          'Schedules list',
+                          'Create one or more schedules for your regular taxi rides.',
                           style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.cyan400,
+                            color: Colors.white.withOpacity(0.72),
+                            fontSize: 12,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         ...List<Widget>.generate(_slots.length, _buildSlotCard),
-                        OutlinedButton.icon(
-                          onPressed: _addSlot,
-                          icon: const Icon(
-                            Icons.add_alarm,
-                            color: AppColors.cyan400,
-                          ),
-                          label: const Text(
-                            'Add another schedule',
-                            style: TextStyle(color: AppColors.cyan400),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.cyan400),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _addSlot,
+                            icon: const Icon(
+                              Icons.add_alarm,
+                              color: AppColors.cyan400,
+                            ),
+                            label: const Text(
+                              'Add another schedule',
+                              style: TextStyle(
+                                color: AppColors.cyan400,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: AppColors.cyan400),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -946,45 +1161,64 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
                     duration: const Duration(milliseconds: 400),
                     delay: const Duration(milliseconds: 100),
                   ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       gradient: AppColors.cardGradient,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: AppColors.borderCyanFocus),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Best price window mode',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.cyan400,
-                          ),
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.tune_outlined,
+                              color: AppColors.cyan400,
+                              size: 18,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Best price window',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.cyan400,
+                                fontSize: 20,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 8),
-                        SwitchListTile.adaptive(
-                          contentPadding: EdgeInsets.zero,
-                          value: _bestPriceWindowEnabled,
-                          onChanged: (value) {
-                            setState(() => _bestPriceWindowEnabled = value);
-                          },
-                          title: const Text(
-                            'Enable cost optimization',
-                            style: TextStyle(color: Colors.white),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.borderCyan),
                           ),
-                          subtitle: Text(
-                            'Try nearby times before saving rules to reduce estimated cost.',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                              fontSize: 12,
+                          child: SwitchListTile.adaptive(
+                            contentPadding: EdgeInsets.zero,
+                            value: _bestPriceWindowEnabled,
+                            onChanged: (value) {
+                              setState(() => _bestPriceWindowEnabled = value);
+                            },
+                            title: const Text(
+                              'Enable cost optimization',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            subtitle: Text(
+                              'Try nearby times before saving rules to reduce estimated cost.',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ),
                         if (_bestPriceWindowEnabled) ...[
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 12),
                           Wrap(
                             spacing: 8,
                             children: [15, 30, 45]
@@ -995,6 +1229,18 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
                                         _bestPriceWindowMinutes == minutes,
                                     selectedColor: AppColors.cyan500
                                         .withOpacity(0.7),
+                                    labelStyle: TextStyle(
+                                      color: _bestPriceWindowMinutes == minutes
+                                          ? Colors.white
+                                          : Colors.white.withOpacity(0.85),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      side: BorderSide(
+                                        color: AppColors.borderCyan,
+                                      ),
+                                    ),
                                     onSelected: (_) {
                                       setState(
                                         () => _bestPriceWindowMinutes = minutes,
@@ -1019,27 +1265,38 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
                     duration: const Duration(milliseconds: 400),
                     delay: const Duration(milliseconds: 200),
                   ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       gradient: AppColors.cardGradient,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: AppColors.borderCyan),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Smart estimate logic',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.cyan400,
-                          ),
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.lightbulb_outline,
+                              color: AppColors.cyan400,
+                              size: 18,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'How estimates work',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.cyan400,
+                                fontSize: 20,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Each schedule has its own estimated price and ETA based on selected time and days.',
+                          'Price and ETA are computed per schedule based on selected time and days.',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.78),
                             fontSize: 12,
@@ -1069,21 +1326,24 @@ class _TravelSchedulePageState extends State<TravelSchedulePage> {
                     duration: const Duration(milliseconds: 400),
                     delay: const Duration(milliseconds: 300),
                   ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               Container(
                     decoration: const BoxDecoration(
                       gradient: AppColors.buttonGradient,
-                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                      borderRadius: BorderRadius.all(Radius.circular(14)),
                     ),
                     child: FilledButton.icon(
                       onPressed: _saveSchedule,
                       icon: const Icon(Icons.alarm_on),
-                      label: const Text('Save all schedules'),
+                      label: const Text(
+                        'Save all schedules',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
-                          vertical: 12,
+                          vertical: 15,
                         ),
                       ),
                     ),

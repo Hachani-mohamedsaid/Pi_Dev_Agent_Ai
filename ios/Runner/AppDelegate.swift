@@ -1,4 +1,5 @@
 import Flutter
+import GoogleSignIn
 import UIKit
 
 @main
@@ -16,7 +17,9 @@ import UIKit
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey : Any] = [:]
   ) -> Bool {
-    // Google Sign-In and other URL schemes are handled by plugins
+    if GIDSignIn.sharedInstance.handle(url) {
+      return true
+    }
     return super.application(app, open: url, options: options)
   }
 }

@@ -185,7 +185,24 @@ class AuthController extends ChangeNotifier {
       return true;
     } catch (e) {
       final msg = e.toString();
-      if (msg.contains('client_id') || msg.contains('invalid_client')) {
+      if (msg.contains('providerConfigurationError') ||
+          msg.contains('keychain error')) {
+        _error =
+            'Google Sign-In iOS: keychain error. Ferme le simulateur, execute "xcrun simctl erase all", puis relance. '
+            'Si possible, teste aussi sur un appareil iPhone physique.';
+      } else if (msg.contains('custom scheme uris are not allowed') ||
+          msg.contains('invalid_request') ||
+          msg.contains("'WEB' client type")) {
+        _error =
+            'Google iOS mal configuré: tu utilises un client WEB au lieu du client iOS. '
+            'Utilise CLIENT_ID et REVERSED_CLIENT_ID du GoogleService-Info.plist iOS.';
+      } else if (msg.contains('No active configuration') ||
+          msg.contains('GIDClientID') ||
+          msg.contains('Info.plist')) {
+        _error =
+            'Erreur iOS Google Sign-In (frontend): GIDClientID/Reversed client ID manquant. '
+            'Renseigne GOOGLE_IOS_CLIENT_ID et GOOGLE_REVERSED_CLIENT_ID dans ios/Flutter/*.xcconfig.';
+      } else if (msg.contains('client_id') || msg.contains('invalid_client')) {
         _error =
             'Google Sign-In non configuré. Ajoute ton Web Client ID dans '
             'lib/core/config/google_oauth_config.dart et web/index.html.';
@@ -220,7 +237,24 @@ class AuthController extends ChangeNotifier {
       return true;
     } catch (e) {
       final msg = e.toString();
-      if (msg.contains('client_id') || msg.contains('invalid_client')) {
+      if (msg.contains('providerConfigurationError') ||
+          msg.contains('keychain error')) {
+        _error =
+            'Google Sign-In iOS: keychain error. Ferme le simulateur, execute "xcrun simctl erase all", puis relance. '
+            'Si possible, teste aussi sur un appareil iPhone physique.';
+      } else if (msg.contains('custom scheme uris are not allowed') ||
+          msg.contains('invalid_request') ||
+          msg.contains("'WEB' client type")) {
+        _error =
+            'Google iOS mal configuré: tu utilises un client WEB au lieu du client iOS. '
+            'Utilise CLIENT_ID et REVERSED_CLIENT_ID du GoogleService-Info.plist iOS.';
+      } else if (msg.contains('No active configuration') ||
+          msg.contains('GIDClientID') ||
+          msg.contains('Info.plist')) {
+        _error =
+            'Erreur iOS Google Sign-In (frontend): GIDClientID/Reversed client ID manquant. '
+            'Renseigne GOOGLE_IOS_CLIENT_ID et GOOGLE_REVERSED_CLIENT_ID dans ios/Flutter/*.xcconfig.';
+      } else if (msg.contains('client_id') || msg.contains('invalid_client')) {
         _error =
             'Google Sign-In non configuré. Ajoute ton Web Client ID dans '
             'lib/core/config/google_oauth_config.dart et web/index.html.';
