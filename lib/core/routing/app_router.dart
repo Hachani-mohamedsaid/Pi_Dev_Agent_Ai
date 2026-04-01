@@ -314,10 +314,8 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: PremiumFeatureGate(
-          child: VoiceAssistantPage(
-            chatDataSource: InjectionContainer.instance.buildChatDataSource(),
-          ),
+        child: VoiceAssistantPage(
+          chatDataSource: InjectionContainer.instance.buildChatDataSource(),
         ),
       ),
     ),
