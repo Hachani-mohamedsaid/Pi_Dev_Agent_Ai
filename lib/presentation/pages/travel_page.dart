@@ -2498,10 +2498,14 @@ out center 30;
           ),
 
           // Map FABs — right side, above minimum sheet position
+          // Material wrapper ensures hit-testing wins over DraggableScrollableSheet
           Positioned(
             right: 16,
             bottom: MediaQuery.sizeOf(context).height * 0.12 + 16,
-            child: _buildMapFabs(context),
+            child: Material(
+              color: Colors.transparent,
+              child: _buildMapFabs(context),
+            ),
           ),
 
           // Navigation bar — always on top
@@ -3408,6 +3412,7 @@ out center 30;
       children: [
         // Center on my location
         GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () {
             if (_currentPosition != null) {
               _mapController.move(
@@ -3417,32 +3422,48 @@ out center 30;
                 ),
                 15.5,
               );
+            } else {
+              // GPS not ready yet — request it now
+              unawaited(_loadLocation());
             }
           },
           child: Container(
-            width: 44,
-            height: 44,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: _loadingLocation ? Colors.white.withValues(alpha: 0.85) : Colors.white,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.22),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withValues(alpha: 0.28),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.my_location,
-              color: Color(0xFF0A1628),
-              size: 22,
-            ),
+            child: _loadingLocation
+                ? const Padding(
+                    padding: EdgeInsets.all(13),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Color(0xFF0A1628),
+                    ),
+                  )
+                : Icon(
+                    _currentPosition != null
+                        ? Icons.my_location
+                        : Icons.location_searching,
+                    color: _currentPosition != null
+                        ? const Color(0xFF0A66C2)
+                        : const Color(0xFF0A1628),
+                    size: 22,
+                  ),
           ),
         ),
         const SizedBox(height: 10),
         // Toggle pickup-on-map mode
         GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () => setState(() => _selectingFromOnMap = !_selectingFromOnMap),
           child: Container(
             width: 44,
@@ -3468,6 +3489,7 @@ out center 30;
         const SizedBox(height: 10),
         // Open full-screen destination picker
         GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: _openFullMapSelection,
           child: Container(
             width: 44,
