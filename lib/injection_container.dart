@@ -75,7 +75,10 @@ class InjectionContainer {
       ApiAuthRemoteDataSource(); // ou MockAuthRemoteDataSource() pour tests sans backend
 
   late final domain.SocialAuthCredentialsProvider _socialCredentialsProvider =
-      DefaultSocialAuthCredentialsProvider(webClientId: googleOAuthWebClientId);
+      DefaultSocialAuthCredentialsProvider(
+        webClientId: googleOAuthWebClientId,
+        iosClientId: googleOAuthIosClientId,
+      );
 
   late final AuthRepository _authRepository = AuthRepositoryImpl(
     remoteDataSource: _authRemoteDataSource,

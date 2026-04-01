@@ -4,7 +4,7 @@
 Implémenter un système complet de validation de coupons pour les récompenses mensuelles et les upgrades de souscription. Le système doit:
 - Valider les coupons avant le checkout (vérifier validité, propriétaire, expiration)
 - Marquer les coupons comme utilisés après paiement réussi
-- Générer automatiquement des coupons pour le champion mensuel
+- Générer des coupons pour le champion mensuel
 - Envoyer des emails de confirmation
 
 ---
@@ -283,7 +283,7 @@ async consumeCoupon(
 
 ## 4) Webhook Stripe - Payment Success
 
-Intégrer avec le webhook Stripe pour consommer automatiquement le coupon.
+Intégrer avec le webhook Stripe pour consommer le coupon.
 
 ```typescript
 // src/billing/billing.controller.ts
@@ -670,7 +670,7 @@ curl -X POST http://localhost:3000/coupons/validate \
 - [ ] CouponsService implémenté avec `validateCoupon()` et `consumeCoupon()`
 - [ ] CouponsController avec endpoint `POST /coupons/validate`
 - [ ] Consommation via endpoint `POST /coupons/consume`
-- [ ] Webhook Stripe intégré pour consommer automatiquement
+- [ ] Webhook Stripe intégré pour consommer
 - [ ] Tâche cron mensuelle configurée (génération du 1er du mois)
 - [ ] Service email configuré et testé
 - [ ] Variables d'environnement (.env) complétées

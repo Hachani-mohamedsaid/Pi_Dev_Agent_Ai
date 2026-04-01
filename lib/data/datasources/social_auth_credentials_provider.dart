@@ -1,6 +1,7 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -10,9 +11,24 @@ class DefaultSocialAuthCredentialsProvider
     implements domain.SocialAuthCredentialsProvider {
   DefaultSocialAuthCredentialsProvider({
     String? webClientId,
-  }) : _webClientId = webClientId;
+    String? iosClientId,
+  }) : _webClientId = webClientId,
+       _iosClientId = iosClientId;
 
   final String? _webClientId;
+  final String? _iosClientId;
+
+  Future<String> _authenticateAndGetIdToken() async {
+    final account = await GoogleSignIn.instance.authenticate();
+    final auth = account.authentication;
+    final idToken = auth.idToken;
+    if (idToken == null || idToken.isEmpty) {
+      throw Exception(
+        'Google Sign-In n\'a pas retourne de idToken. Verifie la config OAuth.',
+      );
+    }
+    return idToken;
+  }
 
   @override
   Future<String?> getGoogleIdToken() async {
@@ -23,13 +39,46 @@ class DefaultSocialAuthCredentialsProvider
         '(meta google-signin-client_id). Voir la console Google Cloud.',
       );
     }
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.iOS &&
+        (_iosClientId?.trim().isEmpty ?? true)) {
+      throw Exception(
+        'Google iOS mal configuré: CLIENT_ID iOS manquant. '
+        'Ajoute le CLIENT_ID iOS (pas Web) dans lib/core/config/google_oauth_config.dart '
+        'et GOOGLE_IOS_CLIENT_ID / GOOGLE_REVERSED_CLIENT_ID dans ios/Flutter/*.xcconfig.',
+      );
+    }
     // 7.x : authenticate() au lieu de signIn() ; sur le web on utilise renderButton + authenticationEvents.
     try {
-      final account = await GoogleSignIn.instance.authenticate();
-      final auth = account.authentication;
-      return auth.idToken;
-    } catch (_) {
-      return null; // annulation ou erreur
+      return await _authenticateAndGetIdToken();
+    } catch (e) {
+      final msg = e.toString().toLowerCase();
+      final isUserCancel =
+          msg.contains('cancel') ||
+          msg.contains('canceled') ||
+          msg.contains('cancelled');
+      if (isUserCancel) {
+        return null;
+      }
+      final isKeychainProviderConfigError =
+          msg.contains('providerconfigurationerror') ||
+          msg.contains('keychain error') ||
+          msg.contains('nslocalizeddescription: keychain error');
+      if (!kIsWeb &&
+          defaultTargetPlatform == TargetPlatform.iOS &&
+          isKeychainProviderConfigError) {
+        try {
+          await GoogleSignIn.instance.signOut();
+          await Future<void>.delayed(const Duration(milliseconds: 250));
+          return await _authenticateAndGetIdToken();
+        } catch (_) {
+          throw Exception(
+            'Google Sign-In iOS: keychain error. Sur simulateur, execute '
+            '"xcrun simctl erase all" puis relance l\'app. Si possible, teste sur appareil physique.',
+          );
+        }
+      }
+      rethrow;
     }
   }
 
@@ -53,10 +102,7 @@ class DefaultSocialAuthCredentialsProvider
       );
     }
 
-    return domain.AppleAuthCredentials(
-      identityToken: token,
-      user: userJson,
-    );
+    return domain.AppleAuthCredentials(identityToken: token, user: userJson);
   }
 
   static String _encodeAppleUser({

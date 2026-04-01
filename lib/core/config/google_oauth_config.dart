@@ -9,4 +9,10 @@
 ///    https://console.cloud.google.com/apis/library/people.googleapis.com
 ///
 /// Si vide → erreur 401 invalid_client / "The OAuth client was not found".
-const String googleOAuthWebClientId = '1089118476895-a3snhfrv0lhbinp5409ikibpvdp1ke3j.apps.googleusercontent.com';
+const String googleOAuthWebClientId =
+    '1089118476895-a3snhfrv0lhbinp5409ikibpvdp1ke3j.apps.googleusercontent.com';
+
+/// iOS OAuth client (type iOS) used by GoogleSignIn.initialize(clientId: ...).
+/// Keep this value aligned with GoogleService-Info.plist CLIENT_ID.
+const String googleOAuthIosClientId =
+    '1089118476895-l7tpufe1lpd9muof13gtc0upnh58j4nr.apps.googleusercontent.com';

@@ -188,7 +188,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         crossAxisCount: 3,
                         crossAxisSpacing: isMobile ? 12 : 16,
                         mainAxisSpacing: isMobile ? 12 : 16,
-                        childAspectRatio: isMobile ? 1.1 : 1.2,
+                        childAspectRatio: isMobile ? 0.92 : 1.2,
                       ),
                       itemCount: stats.length,
                       itemBuilder: (context, index) {
@@ -391,9 +391,6 @@ class _ProfileCard extends StatelessWidget {
     // Données dynamiques : priorité au profil (GET /auth/me), sinon user (login)
     final userName = profile?.name ?? user?.name ?? '—';
     final userEmail = profile?.email ?? user?.email ?? '—';
-    final role = isLoading && profile == null
-        ? AppStrings.tr(context, 'loading')
-        : (profile?.role ?? '—');
     final initials = userName
         .split(' ')
         .map((n) => n.isNotEmpty ? n[0].toUpperCase() : '')
@@ -617,14 +614,20 @@ class _ContactInfoItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, size: isMobile ? 16 : 18, color: AppColors.cyan400),
         SizedBox(width: isMobile ? 12 : 16),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: isMobile ? 13 : 14,
-            color: AppColors.textCyan200.withOpacity(0.7),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: isMobile ? 13 : 14,
+              color: AppColors.textCyan200.withOpacity(0.7),
+              height: 1.3,
+            ),
           ),
         ),
       ],
@@ -663,9 +666,10 @@ class _StatCard extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Padding(
-            padding: EdgeInsets.all(isMobile ? 16 : 20),
+            padding: EdgeInsets.all(isMobile ? 12 : 20),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   value,
@@ -678,8 +682,10 @@ class _StatCard extends StatelessWidget {
                 SizedBox(height: 4),
                 Text(
                   label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: isMobile ? 11 : 12,
+                    fontSize: isMobile ? 10 : 12,
                     color: AppColors.textCyan200.withOpacity(0.6),
                   ),
                   textAlign: TextAlign.center,

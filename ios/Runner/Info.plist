@@ -52,7 +52,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+				<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
 			</array>
 		</dict>
 		<dict>
@@ -64,6 +64,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>GIDClientID</key>
+	<string>$(GOOGLE_IOS_CLIENT_ID)</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera access is required for video meetings</string>
 	<key>NSMicrophoneUsageDescription</key>

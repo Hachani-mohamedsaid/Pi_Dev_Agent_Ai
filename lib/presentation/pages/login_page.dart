@@ -37,6 +37,30 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   bool _rememberMe = false;
 
+  bool _isGoogleCancelMessage(String message) {
+    final normalized = message.toLowerCase();
+    return normalized.contains('annul') ||
+        normalized.contains('cancelled') ||
+        normalized.contains('no idtoken');
+  }
+
+  void _showAuthFeedback(String message, {bool isError = true}) {
+    if (!mounted || message.trim().isEmpty) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: isError ? Colors.red.shade600 : Colors.orange.shade700,
+        duration: Duration(milliseconds: isError ? 3200 : 2400),
+        content: Text(message, maxLines: 3, overflow: TextOverflow.ellipsis),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -122,21 +146,11 @@ class _LoginPageState extends State<LoginPage> {
           await _navigateAfterAuth();
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(widget.controller.error ?? 'Login failed'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showAuthFeedback(widget.controller.error ?? 'Login failed');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showAuthFeedback('Error: ${e.toString()}');
       }
     }
   }
@@ -148,12 +162,12 @@ class _LoginPageState extends State<LoginPage> {
         if (mounted) await _navigateAfterAuth();
       });
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(widget.controller.error ?? 'Login failed'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      final message = widget.controller.error ?? 'Login failed';
+      if (_isGoogleCancelMessage(message)) {
+        // User cancelled Google flow: this is not an actionable error.
+        return;
+      }
+      _showAuthFeedback(message);
     }
   }
 
@@ -165,12 +179,11 @@ class _LoginPageState extends State<LoginPage> {
         if (mounted) await _navigateAfterAuth();
       });
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(widget.controller.error ?? 'Login failed'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      final message = widget.controller.error ?? 'Login failed';
+      if (_isGoogleCancelMessage(message)) {
+        return;
+      }
+      _showAuthFeedback(message);
     }
   }
 

@@ -30,7 +30,13 @@ void main() async {
   if (kIsWeb && googleOAuthWebClientId.isNotEmpty) {
     await GoogleSignIn.instance.initialize(clientId: googleOAuthWebClientId);
   } else if (!kIsWeb) {
-    await GoogleSignIn.instance.initialize();
+    await GoogleSignIn.instance.initialize(
+      clientId: googleOAuthIosClientId.isNotEmpty
+          ? googleOAuthIosClientId
+          : null,
+      // serverClientId is disabled to prevent WEB redirect scheme requirement on iOS
+      serverClientId: null,
+    );
   }
   await LocaleService.instance.load();
   runApp(const App());
