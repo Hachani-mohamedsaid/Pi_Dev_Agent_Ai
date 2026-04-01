@@ -83,7 +83,7 @@ class MobilityApiService {
       };
     }
 
-    final uri = Uri.parse('$apiBaseUrl$mobilityEstimatePath');
+    final uri = Uri.parse('$apiRootUrl$mobilityEstimatePath');
     final response = await http
         .post(uri, headers: await _headers(), body: jsonEncode(payload))
         .timeout(_timeout);
@@ -100,7 +100,7 @@ class MobilityApiService {
   Future<List<MobilityRule>> fetchRules() async {
     final response = await http
         .get(
-          Uri.parse('$apiBaseUrl$mobilityRulesPath'),
+          Uri.parse('$apiRootUrl$mobilityRulesPath'),
           headers: await _headers(),
         )
         .timeout(_timeout);
@@ -144,7 +144,7 @@ class MobilityApiService {
   }) async {
     final response = await http
         .post(
-          Uri.parse('$apiBaseUrl$mobilityRulesPath'),
+          Uri.parse('$apiRootUrl$mobilityRulesPath'),
           headers: await _headers(),
           body: jsonEncode({
             'name': name,
@@ -176,7 +176,7 @@ class MobilityApiService {
   }) async {
     final response = await http
         .patch(
-          Uri.parse('$apiBaseUrl$mobilityRulesPath/$ruleId'),
+          Uri.parse('$apiRootUrl$mobilityRulesPath/$ruleId'),
           headers: await _headers(),
           body: jsonEncode(patch),
         )
@@ -234,7 +234,7 @@ class MobilityApiService {
 
     final response = await http
         .post(
-          Uri.parse('$apiBaseUrl$mobilityProposalsPath'),
+          Uri.parse('$apiRootUrl$mobilityProposalsPath'),
           headers: await _headers(),
           body: jsonEncode(payload),
         )
@@ -264,7 +264,7 @@ class MobilityApiService {
   Future<List<MobilityProposal>> fetchPendingProposals() async {
     final response = await http
         .get(
-          Uri.parse('$apiBaseUrl$mobilityPendingProposalsPath'),
+          Uri.parse('$apiRootUrl$mobilityPendingProposalsPath'),
           headers: await _headers(),
         )
         .timeout(_timeout);
@@ -300,7 +300,7 @@ class MobilityApiService {
       proposalId,
     );
     final response = await http
-        .post(Uri.parse('$apiBaseUrl$path'), headers: await _headers())
+        .post(Uri.parse('$apiRootUrl$path'), headers: await _headers())
         .timeout(_timeout);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
@@ -316,7 +316,7 @@ class MobilityApiService {
       proposalId,
     );
     final response = await http
-        .post(Uri.parse('$apiBaseUrl$path'), headers: await _headers())
+        .post(Uri.parse('$apiRootUrl$path'), headers: await _headers())
         .timeout(_timeout);
 
     if (response.statusCode != 200 &&
@@ -333,7 +333,7 @@ class MobilityApiService {
     );
     final response = await http
         .post(
-          Uri.parse('$apiBaseUrl$path'),
+          Uri.parse('$apiRootUrl$path'),
           headers: await _headers(),
           body: jsonEncode({}),
         )
@@ -353,7 +353,7 @@ class MobilityApiService {
     );
     final response = await http
         .post(
-          Uri.parse('$apiBaseUrl$path'),
+          Uri.parse('$apiRootUrl$path'),
           headers: await _headers(),
           body: jsonEncode({}),
         )
@@ -369,7 +369,7 @@ class MobilityApiService {
   Future<List<MobilityBooking>> fetchBookings() async {
     final response = await http
         .get(
-          Uri.parse('$apiBaseUrl$mobilityBookingsPath'),
+          Uri.parse('$apiRootUrl$mobilityBookingsPath'),
           headers: await _headers(),
         )
         .timeout(_timeout);

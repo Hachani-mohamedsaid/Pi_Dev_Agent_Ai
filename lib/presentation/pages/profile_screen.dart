@@ -13,10 +13,7 @@ import '../widgets/navigation_bar.dart';
 class ProfileScreen extends StatefulWidget {
   final AuthController controller;
 
-  const ProfileScreen({
-    super.key,
-    required this.controller,
-  });
+  const ProfileScreen({super.key, required this.controller});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -49,22 +46,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final profile = widget.controller.currentProfile;
 
     final stats = [
-      {'label': AppStrings.tr(context, 'conversations'), 'value': '${profile?.conversationsCount ?? 0}'},
-      {'label': AppStrings.tr(context, 'daysActive'), 'value': '${profile?.daysActive ?? 0}'},
-      {'label': AppStrings.tr(context, 'hoursSaved'), 'value': '${profile?.hoursSaved ?? 0}'},
+      {
+        'label': AppStrings.tr(context, 'conversations'),
+        'value': '${profile?.conversationsCount ?? 0}',
+      },
+      {
+        'label': AppStrings.tr(context, 'daysActive'),
+        'value': '${profile?.daysActive ?? 0}',
+      },
+      {
+        'label': AppStrings.tr(context, 'hoursSaved'),
+        'value': '${profile?.hoursSaved ?? 0}',
+      },
     ];
 
     final recentActivities = [
-      {'action': AppStrings.tr(context, 'startedConversation'), 'time': '2 hours ago'},
-      {'action': AppStrings.tr(context, 'updatedProfilePicture'), 'time': '1 day ago'},
-      {'action': AppStrings.tr(context, 'joinedPersonalAIBuddy'), 'time': '5 days ago'},
+      {
+        'action': AppStrings.tr(context, 'startedConversation'),
+        'time': '2 hours ago',
+      },
+      {
+        'action': AppStrings.tr(context, 'updatedProfilePicture'),
+        'time': '1 day ago',
+      },
+      {
+        'action': AppStrings.tr(context, 'joinedPersonalAIBuddy'),
+        'time': '5 days ago',
+      },
     ];
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.primaryGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
         child: SafeArea(
           bottom: false,
           child: Stack(
@@ -102,7 +115,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             // Dashboard button
                             GestureDetector(
-                              onTap: () => context.go('/work-proposals-dashboard'),
+                              onTap: () =>
+                                  context.go('/work-proposals-dashboard'),
                               child: Container(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: isMobile ? 12 : 16,
@@ -117,7 +131,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       AppColors.blue500.withOpacity(0.3),
                                     ],
                                   ),
-                                  borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
+                                  borderRadius: BorderRadius.circular(
+                                    isMobile ? 12 : 14,
+                                  ),
                                   border: Border.all(
                                     color: AppColors.cyan500.withOpacity(0.4),
                                     width: 1,
@@ -154,11 +170,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     // Profile Card (données dynamiques GET /auth/me)
                     _ProfileCard(
-                      user: user,
-                      profile: profile,
-                      isMobile: isMobile,
-                      isLoading: widget.controller.isLoading,
-                    )
+                          user: user,
+                          profile: profile,
+                          isMobile: isMobile,
+                          isLoading: widget.controller.isLoading,
+                        )
                         .animate()
                         .fadeIn(duration: 500.ms)
                         .slideY(begin: 0.2, end: 0, duration: 500.ms),
@@ -180,9 +196,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           value: stats[index]['value']!,
                           label: stats[index]['label']!,
                           isMobile: isMobile,
-                        )
-                            .animate()
-                            .fadeIn(delay: Duration(milliseconds: 100 + (index * 50)), duration: 500.ms);
+                        ).animate().fadeIn(
+                          delay: Duration(milliseconds: 100 + (index * 50)),
+                          duration: 500.ms,
+                        );
                       },
                     ),
                     SizedBox(height: isMobile ? 24 : 32),
@@ -195,18 +212,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontWeight: FontWeight.w600,
                         color: AppColors.textWhite,
                       ),
-                    )
-                        .animate()
-                        .fadeIn(delay: 300.ms, duration: 500.ms),
+                    ).animate().fadeIn(delay: 300.ms, duration: 500.ms),
                     SizedBox(height: isMobile ? 12 : 16),
                     ...List.generate(recentActivities.length, (index) {
                       return _ProfileActivityItem(
                         action: recentActivities[index]['action']!,
                         time: recentActivities[index]['time']!,
                         isMobile: isMobile,
-                      )
-                          .animate()
-                          .fadeIn(delay: Duration(milliseconds: 400 + (index * 100)), duration: 500.ms);
+                      ).animate().fadeIn(
+                        delay: Duration(milliseconds: 400 + (index * 100)),
+                        duration: 500.ms,
+                      );
                     }),
                     SizedBox(height: isMobile ? 24 : 32),
 
@@ -223,22 +239,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontWeight: FontWeight.w600,
                         color: AppColors.textWhite,
                       ),
-                    )
-                        .animate()
-                        .fadeIn(delay: 400.ms, duration: 500.ms),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 12.0,
-                      tablet: 14.0,
-                      desktop: 16.0,
-                    )),
+                    ).animate().fadeIn(delay: 400.ms, duration: 500.ms),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 12.0,
+                        tablet: 14.0,
+                        desktop: 16.0,
+                      ),
+                    ),
                     ..._buildAIFeatures(context, isMobile),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 24.0,
-                      tablet: 28.0,
-                      desktop: 32.0,
-                    )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 24.0,
+                        tablet: 28.0,
+                        desktop: 32.0,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -314,23 +332,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'iconColor': const Color(0xFFFFD93D),
         'description': 'Manage your AI automation rules',
       },
+      {
+        'icon': LucideIcons.award,
+        'label': 'Challenges',
+        'route': '/challenges',
+        'gradient': [
+          const Color(0xFF06B6D4).withOpacity(0.2),
+          const Color(0xFF0891B2).withOpacity(0.2),
+        ],
+        'iconColor': const Color(0xFF06B6D4),
+        'description':
+            'Complete challenges, earn points & climb the leaderboard',
+      },
     ];
 
     return features.asMap().entries.map((entry) {
       final index = entry.key;
       final feature = entry.value;
       return _AIFeatureCard(
-        icon: feature['icon'] as IconData,
-        label: feature['label'] as String,
-        route: feature['route'] as String,
-        gradient: feature['gradient'] as List<Color>,
-        iconColor: feature['iconColor'] as Color,
-        description: feature['description'] as String,
-        isMobile: isMobile,
-      )
+            icon: feature['icon'] as IconData,
+            label: feature['label'] as String,
+            route: feature['route'] as String,
+            gradient: feature['gradient'] as List<Color>,
+            iconColor: feature['iconColor'] as Color,
+            description: feature['description'] as String,
+            isMobile: isMobile,
+          )
           .animate()
-          .fadeIn(delay: Duration(milliseconds: 500 + (index * 50)), duration: 500.ms)
-          .slideX(begin: -0.2, end: 0, delay: Duration(milliseconds: 500 + (index * 50)), duration: 500.ms);
+          .fadeIn(
+            delay: Duration(milliseconds: 500 + (index * 50)),
+            duration: 500.ms,
+          )
+          .slideX(
+            begin: -0.2,
+            end: 0,
+            delay: Duration(milliseconds: 500 + (index * 50)),
+            duration: 500.ms,
+          );
     }).toList();
   }
 }
@@ -373,10 +411,7 @@ class _ProfileCard extends StatelessWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.2), width: 1),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
@@ -407,18 +442,17 @@ class _ProfileCard extends StatelessWidget {
                             ? LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
-                                colors: [
-                                  AppColors.cyan500,
-                                  AppColors.blue500,
-                                ],
+                                colors: [AppColors.cyan500, AppColors.blue500],
                               )
                             : null,
-                        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                          context,
-                          mobile: 16.0,
-                          tablet: 18.0,
-                          desktop: 20.0,
-                        )),
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 16.0,
+                            tablet: 18.0,
+                            desktop: 20.0,
+                          ),
+                        ),
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: (profile?.avatarUrl ?? '').isEmpty
@@ -494,7 +528,9 @@ class _ProfileCard extends StatelessWidget {
                         padding: EdgeInsets.all(isMobile ? 8 : 10),
                         decoration: BoxDecoration(
                           color: AppColors.cyan500.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
+                          borderRadius: BorderRadius.circular(
+                            isMobile ? 10 : 12,
+                          ),
                           border: Border.all(
                             color: AppColors.cyan500.withOpacity(0.3),
                             width: 1,
@@ -582,11 +618,7 @@ class _ContactInfoItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: isMobile ? 16 : 18,
-          color: AppColors.cyan400,
-        ),
+        Icon(icon, size: isMobile ? 16 : 18, color: AppColors.cyan400),
         SizedBox(width: isMobile ? 12 : 16),
         Text(
           text,
@@ -624,10 +656,7 @@ class _StatCard extends StatelessWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.1), width: 1),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
@@ -687,10 +716,7 @@ class _ProfileActivityItem extends StatelessWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.1), width: 1),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
@@ -779,12 +805,14 @@ class _AIFeatureCardState extends State<_AIFeatureCard> {
                 const Color(0xFF16384d).withOpacity(0.4),
               ],
             ),
-            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-              context,
-              mobile: 12.0,
-              tablet: 13.0,
-              desktop: 14.0,
-            )),
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 12.0,
+                tablet: 13.0,
+                desktop: 14.0,
+              ),
+            ),
             border: Border.all(
               color: _isHovered
                   ? AppColors.cyan500.withOpacity(0.3)
@@ -793,12 +821,14 @@ class _AIFeatureCardState extends State<_AIFeatureCard> {
             ),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-              context,
-              mobile: 12.0,
-              tablet: 13.0,
-              desktop: 14.0,
-            )),
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 12.0,
+                tablet: 13.0,
+                desktop: 14.0,
+              ),
+            ),
             child: Stack(
               children: [
                 // Hover glow effect
@@ -820,12 +850,14 @@ class _AIFeatureCardState extends State<_AIFeatureCard> {
                 BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Padding(
-                    padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                      context,
-                      mobile: 14.0,
-                      tablet: 16.0,
-                      desktop: 20.0,
-                    )),
+                    padding: EdgeInsets.all(
+                      Responsive.getResponsiveValue(
+                        context,
+                        mobile: 14.0,
+                        tablet: 16.0,
+                        desktop: 20.0,
+                      ),
+                    ),
                     child: Row(
                       children: [
                         Container(
@@ -847,12 +879,14 @@ class _AIFeatureCardState extends State<_AIFeatureCard> {
                               end: Alignment.bottomRight,
                               colors: widget.gradient,
                             ),
-                            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                              context,
-                              mobile: 10.0,
-                              tablet: 11.0,
-                              desktop: 12.0,
-                            )),
+                            borderRadius: BorderRadius.circular(
+                              Responsive.getResponsiveValue(
+                                context,
+                                mobile: 10.0,
+                                tablet: 11.0,
+                                desktop: 12.0,
+                              ),
+                            ),
                             border: Border.all(
                               color: AppColors.cyan500.withOpacity(0.2),
                               width: 1,
@@ -869,12 +903,14 @@ class _AIFeatureCardState extends State<_AIFeatureCard> {
                             color: widget.iconColor,
                           ),
                         ),
-                        SizedBox(width: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 12.0,
-                          tablet: 14.0,
-                          desktop: 16.0,
-                        )),
+                        SizedBox(
+                          width: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 12.0,
+                            tablet: 14.0,
+                            desktop: 16.0,
+                          ),
+                        ),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -892,12 +928,14 @@ class _AIFeatureCardState extends State<_AIFeatureCard> {
                                   color: AppColors.textWhite,
                                 ),
                               ),
-                              SizedBox(height: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 3.0,
-                                tablet: 4.0,
-                                desktop: 5.0,
-                              )),
+                              SizedBox(
+                                height: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 3.0,
+                                  tablet: 4.0,
+                                  desktop: 5.0,
+                                ),
+                              ),
                               Text(
                                 widget.description,
                                 style: TextStyle(

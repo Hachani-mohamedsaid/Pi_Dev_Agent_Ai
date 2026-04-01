@@ -3,14 +3,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
+import '../../features/meeting_intelligence/models/cultural_result.dart';
 import '../briefing_session_cache.dart';
 import '../datasources/auth_local_data_source.dart';
-import '../models/culture_briefing_model.dart';
 
 /// POST /meetings/:id/briefing/culture — Page 4 Cultural Briefing.
 class BriefingCultureService {
   BriefingCultureService({required AuthLocalDataSource authLocalDataSource})
-      : _auth = authLocalDataSource;
+    : _auth = authLocalDataSource;
 
   final AuthLocalDataSource _auth;
 
@@ -29,7 +29,7 @@ class BriefingCultureService {
   }
 
   /// Uses cache when [useCache] is true and data exists.
-  Future<CultureBriefingModel> loadCultureBriefing(
+  Future<CulturalResult> loadCultureBriefing(
     String meetingId, {
     bool useCache = true,
   }) async {
@@ -46,7 +46,7 @@ class BriefingCultureService {
       throw Exception('Culture briefing failed (${res.statusCode})');
     }
     final data = jsonDecode(res.body) as Map<String, dynamic>;
-    final model = CultureBriefingModel.fromJson(data);
+    final model = CulturalResult.fromJson(data);
     BriefingSessionCache.instance.setCulture(meetingId, model);
     return model;
   }

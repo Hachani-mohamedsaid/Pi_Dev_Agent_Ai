@@ -87,12 +87,22 @@
       ]
     },
     {
-      "name": "uni_links",
-      "version": "0.5.1",
+      "name": "file_picker",
+      "version": "10.3.10",
       "dependencies": [
+        "cross_file",
+        "dbus",
+        "ffi",
         "flutter",
-        "uni_links_platform_interface",
-        "uni_links_web"
+        "flutter_plugin_android_lifecycle",
+        "flutter_web_plugins",
+        "path",
+        "plugin_platform_interface",
+        "web",
+        "win32"
+      ]
+    },
+    {
       "name": "printing",
       "version": "5.14.3",
       "dependencies": [
@@ -110,7 +120,7 @@
     },
     {
       "name": "pdf",
-      "version": "3.11.3",
+      "version": "3.12.0",
       "dependencies": [
         "archive",
         "barcode",
@@ -121,6 +131,15 @@
         "path_parsing",
         "vector_math",
         "xml"
+      ]
+    },
+    {
+      "name": "uni_links",
+      "version": "0.5.1",
+      "dependencies": [
+        "flutter",
+        "uni_links_platform_interface",
+        "uni_links_web"
       ]
     },
     {
@@ -184,21 +203,6 @@
         "speech_to_text_platform_interface",
         "speech_to_text_windows",
         "web"
-      ]
-    },
-    {
-      "name": "file_picker",
-      "version": "8.3.7",
-      "dependencies": [
-        "cross_file",
-        "ffi",
-        "flutter",
-        "flutter_plugin_android_lifecycle",
-        "flutter_web_plugins",
-        "path",
-        "plugin_platform_interface",
-        "web",
-        "win32"
       ]
     },
     {
@@ -486,7 +490,7 @@
     },
     {
       "name": "image",
-      "version": "4.8.0",
+      "version": "4.5.4",
       "dependencies": [
         "archive",
         "meta",
@@ -575,7 +579,7 @@
     },
     {
       "name": "matcher",
-      "version": "0.12.19",
+      "version": "0.12.17",
       "dependencies": [
         "async",
         "meta",
@@ -586,7 +590,7 @@
     },
     {
       "name": "test_api",
-      "version": "0.7.10",
+      "version": "0.7.7",
       "dependencies": [
         "async",
         "boolean_selector",
@@ -600,20 +604,26 @@
       ]
     },
     {
-      "name": "uni_links_web",
-      "version": "0.1.0",
+      "name": "dbus",
+      "version": "0.7.12",
       "dependencies": [
-        "flutter",
-        "flutter_web_plugins",
-        "uni_links_platform_interface"
+        "args",
+        "ffi",
+        "meta",
+        "xml"
       ]
     },
     {
-      "name": "uni_links_platform_interface",
-      "version": "1.0.0",
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "cross_file",
+      "version": "0.3.5+2",
       "dependencies": [
-        "flutter",
-        "plugin_platform_interface"
+        "meta",
+        "web"
       ]
     },
     {
@@ -621,6 +631,32 @@
       "version": "5.15.0",
       "dependencies": [
         "ffi"
+      ]
+    },
+    {
+      "name": "ffi",
+      "version": "2.1.5",
+      "dependencies": []
+    },
+    {
+      "name": "plugin_platform_interface",
+      "version": "2.1.8",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
+      "name": "flutter_plugin_android_lifecycle",
+      "version": "2.0.33",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "flutter_web_plugins",
+      "version": "0.0.0",
+      "dependencies": [
+        "flutter"
       ]
     },
     {
@@ -632,25 +668,6 @@
       ]
     },
     {
-      "name": "flutter_web_plugins",
-      "version": "0.0.0",
-      "dependencies": [
-        "flutter"
-      ]
-    },
-    {
-      "name": "ffi",
-      "version": "2.1.5",
-      "dependencies": []
-    },
-    {
-      "name": "ffi",
-      "version": "2.1.5",
-      "dependencies": []
-    },
-    {
-      "name": "url_launcher_platform_interface",
-      "version": "2.3.2",
       "name": "xml",
       "version": "6.6.1",
       "dependencies": [
@@ -697,30 +714,25 @@
       ]
     },
     {
-      "name": "win32",
-      "version": "5.15.0",
+      "name": "uni_links_web",
+      "version": "0.1.0",
       "dependencies": [
-        "ffi"
+        "flutter",
+        "flutter_web_plugins",
+        "uni_links_platform_interface"
       ]
     },
     {
-      "name": "url_launcher_platform_interface",
-      "version": "2.3.2",
+      "name": "uni_links_platform_interface",
+      "version": "1.0.0",
       "dependencies": [
         "flutter",
         "plugin_platform_interface"
       ]
     },
     {
-      "name": "url_launcher_linux",
-      "version": "3.2.2",
-      "dependencies": [
-        "typed_data"
-      ]
-    },
-    {
-      "name": "async",
-      "version": "2.13.0",
+      "name": "url_launcher_platform_interface",
+      "version": "2.3.2",
       "dependencies": [
         "flutter",
         "plugin_platform_interface"
@@ -749,15 +761,6 @@
         "flutter",
         "flutter_web_plugins",
         "url_launcher_platform_interface",
-      "name": "mime",
-      "version": "2.0.0",
-      "dependencies": []
-    },
-    {
-      "name": "cross_file",
-      "version": "0.3.5+2",
-      "dependencies": [
-        "meta",
         "web"
       ]
     },
@@ -772,15 +775,6 @@
     {
       "name": "share_plus_platform_interface",
       "version": "6.1.0",
-      "name": "web_socket",
-      "version": "1.0.1",
-      "dependencies": [
-        "web"
-      ]
-    },
-    {
-      "name": "async",
-      "version": "2.13.0",
       "dependencies": [
         "cross_file",
         "flutter",
@@ -792,37 +786,15 @@
       ]
     },
     {
-      "name": "flutter_web_plugins",
-      "version": "0.0.0",
-      "dependencies": [
-        "flutter"
-      ]
-    },
-    {
       "name": "mime",
       "version": "2.0.0",
       "dependencies": []
-    },
-    {
-      "name": "cross_file",
-      "version": "0.3.5+2",
-      "dependencies": [
-        "meta",
-        "web"
-      ]
     },
     {
       "name": "web_socket",
       "version": "1.0.1",
       "dependencies": [
         "web"
-      ]
-    },
-    {
-      "name": "crypto",
-      "version": "3.0.7",
-      "dependencies": [
-        "typed_data"
       ]
     },
     {
@@ -1299,14 +1271,14 @@
     },
     {
       "name": "material_color_utilities",
-      "version": "0.13.0",
+      "version": "0.11.1",
       "dependencies": [
         "collection"
       ]
     },
     {
       "name": "characters",
-      "version": "1.4.1",
+      "version": "1.4.0",
       "dependencies": []
     },
     {
@@ -1323,15 +1295,6 @@
         "collection",
         "path",
         "term_glyph"
-      ]
-    },
-    {
-      "name": "xml",
-      "version": "6.6.1",
-      "dependencies": [
-        "collection",
-        "meta",
-        "petitparser"
       ]
     },
     {
@@ -1368,8 +1331,6 @@
       ]
     },
     {
-      "name": "plugin_platform_interface",
-      "version": "2.1.8",
       "name": "petitparser",
       "version": "7.0.1",
       "dependencies": [
@@ -1388,8 +1349,7 @@
       "name": "qr",
       "version": "3.0.2",
       "dependencies": [
-        "crypto",
-        "fixnum"
+        "meta"
       ]
     },
     {
@@ -1399,13 +1359,6 @@
         "ffi",
         "meta",
         "path"
-      ]
-    },
-    {
-      "name": "uuid",
-      "version": "4.5.3",
-      "dependencies": [
-        "meta"
       ]
     },
     {
@@ -1426,15 +1379,6 @@
         "path_provider_linux",
         "path_provider_platform_interface",
         "path_provider_windows"
-      ]
-    },
-    {
-      "name": "typed_data",
-      "version": "1.4.0",
-      "name": "flutter_sound_web",
-      "version": "9.30.0",
-      "dependencies": [
-        "collection"
       ]
     },
     {
@@ -1500,13 +1444,6 @@
       ]
     },
     {
-      "name": "flutter_plugin_android_lifecycle",
-      "version": "2.0.33",
-      "dependencies": [
-        "flutter"
-      ]
-    },
-    {
       "name": "wkt_parser",
       "version": "2.0.0",
       "dependencies": []
@@ -1546,31 +1483,6 @@
         "path",
         "path_provider_platform_interface",
         "xdg_directories"
-      ]
-    },
-    {
-      "name": "path_parsing",
-      "version": "1.1.0",
-      "dependencies": [
-        "meta",
-        "vector_math"
-      ]
-    },
-    {
-      "name": "posix",
-      "version": "6.0.3",
-      "dependencies": [
-        "ffi",
-        "meta",
-        "path"
-      ]
-    },
-    {
-      "name": "petitparser",
-      "version": "7.0.1",
-      "dependencies": [
-        "collection",
-        "meta"
       ]
     },
     {
