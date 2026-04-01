@@ -382,9 +382,7 @@ final appRouter = GoRouter(
         return _fadeScaleTransition(
           context: context,
           state: state,
-          child: MarketIntelligenceFormScreen(
-            sessionId: q['sessionId'] ?? '',
-          ),
+          child: MarketIntelligenceFormScreen(sessionId: q['sessionId'] ?? ''),
         );
       },
     ),
@@ -450,7 +448,8 @@ final appRouter = GoRouter(
           state: state,
           child: CulturalBriefingScreen(
             sessionId: q['sessionId'] ?? extra?.sessionId ?? '',
-            investorName: q['investorName'] ?? extra?.investorName ?? 'Investor',
+            investorName:
+                q['investorName'] ?? extra?.investorName ?? 'Investor',
             investorCompany:
                 q['investorCompany'] ?? extra?.investorCompany ?? '',
             investorCity: q['investorCity'] ?? extra?.city ?? '',

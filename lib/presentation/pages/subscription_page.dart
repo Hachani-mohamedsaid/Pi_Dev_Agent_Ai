@@ -32,11 +32,24 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   _BillingPlan _selected = _BillingPlan.yearly;
   String? _activePlan;
   bool _checkoutLoading = false;
+  bool _couponLoading = false;
+  final TextEditingController _couponController = TextEditingController();
+  String? _appliedCoupon;
+  int _discountPercent = 0;
+
+  static const double _monthlyBasePriceValue = 9.99;
+  static const double _yearlyBasePriceValue = 99.99;
 
   @override
   void initState() {
     super.initState();
     _loadActivePlan();
+  }
+
+  @override
+  void dispose() {
+    _couponController.dispose();
+    super.dispose();
   }
 
   @override
@@ -110,7 +123,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     final plan = _selected == _BillingPlan.yearly ? 'yearly' : 'monthly';
     try {
       final service = InjectionContainer.instance.buildStripeCheckoutService();
-      final url = await service.createCheckoutSessionUrl(plan: plan);
+      final url = await service.createCheckoutSessionUrl(
+        plan: plan,
+        couponCode: _appliedCoupon,
+      );
       final uri = Uri.parse(url);
       final launched = await _launchCheckoutUrl(uri);
       if (!mounted) return;
@@ -138,6 +154,61 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       return await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
     return await launchUrl(uri, mode: LaunchMode.inAppWebView);
+  }
+
+  Future<void> _applyCoupon() async {
+    final value = _couponController.text.trim().toUpperCase();
+    if (value.isEmpty) {
+      _showCheckoutSnackBar('subscriptionCheckoutFailed');
+      return;
+    }
+
+    if (_couponLoading) return;
+    setState(() => _couponLoading = true);
+
+    try {
+      final plan = _selected == _BillingPlan.yearly ? 'yearly' : 'monthly';
+      final service = InjectionContainer.instance.buildStripeCheckoutService();
+      final result = await service.validateCoupon(
+        couponCode: value,
+        plan: plan,
+      );
+
+      if (!result.valid || !result.active) {
+        if (!mounted) return;
+        setState(() {
+          _appliedCoupon = null;
+          _discountPercent = 0;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message ?? 'Coupon inactive or invalid.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _appliedCoupon = value;
+        _discountPercent = result.discountPercent ?? 30;
+      });
+    } on StripeCheckoutException catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _appliedCoupon = null;
+        _discountPercent = 0;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Coupon validation failed. Check backend coupon status.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _couponLoading = false);
+    }
   }
 
   void _handleBackTap(BuildContext context) {
@@ -279,6 +350,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                           _selected == _BillingPlan.monthly,
                                       isActive: _activePlan == 'monthly',
                                       isYearly: false,
+                                      discountPercent: _discountPercent,
+                                      couponApplied: _appliedCoupon != null,
+                                      basePrice: _monthlyBasePriceValue,
                                       onTap: () => setState(
                                         () => _selected = _BillingPlan.monthly,
                                       ),
@@ -300,6 +374,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                           _selected == _BillingPlan.yearly,
                                       isActive: _activePlan == 'yearly',
                                       isYearly: true,
+                                      discountPercent: _discountPercent,
+                                      couponApplied: _appliedCoupon != null,
+                                      basePrice: _yearlyBasePriceValue,
                                       promoLine: AppStrings.tr(
                                         context,
                                         'subscriptionYearlyPromoLine',
@@ -327,6 +404,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                   selected: _selected == _BillingPlan.monthly,
                                   isActive: _activePlan == 'monthly',
                                   isYearly: false,
+                                  discountPercent: _discountPercent,
+                                  couponApplied: _appliedCoupon != null,
+                                  basePrice: _monthlyBasePriceValue,
                                   onTap: () => setState(
                                     () => _selected = _BillingPlan.monthly,
                                   ),
@@ -345,6 +425,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                   selected: _selected == _BillingPlan.yearly,
                                   isActive: _activePlan == 'yearly',
                                   isYearly: true,
+                                  discountPercent: _discountPercent,
+                                  couponApplied: _appliedCoupon != null,
+                                  basePrice: _yearlyBasePriceValue,
                                   promoLine: AppStrings.tr(
                                     context,
                                     'subscriptionYearlyPromoLine',
@@ -365,6 +448,18 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                           delay: 100.ms,
                           duration: 380.ms,
                         ),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 14.0,
+                        tablet: 16.0,
+                        desktop: 18.0,
+                      ),
+                    ),
+                    _buildCouponCard(
+                      context,
+                      isMobile,
+                    ).animate().fadeIn(delay: 130.ms, duration: 320.ms),
                     SizedBox(
                       height: Responsive.getResponsiveValue(
                         context,
@@ -691,6 +786,127 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
+  Widget _buildCouponCard(BuildContext context, bool isMobile) {
+    final showSavings =
+        _discountPercent > 0 && _selected == _BillingPlan.yearly;
+    const yearlyBase = 99.99;
+    final discounted = yearlyBase * (1 - (_discountPercent / 100));
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.cyan500.withValues(alpha: 0.12),
+            AppColors.blue500.withValues(alpha: 0.08),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.cyan500.withValues(alpha: 0.24)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Champion Coupon',
+            style: TextStyle(
+              color: AppColors.textWhite,
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Monthly #1 can use a one-time coupon for upgrade discount.',
+            style: TextStyle(color: AppColors.textCyan200, fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _couponController,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: InputDecoration(
+                    hintText: 'Enter coupon (ex: CHAMP-APR-2026)',
+                    hintStyle: TextStyle(
+                      color: AppColors.textCyan200.withValues(alpha: 0.5),
+                      fontSize: 12,
+                    ),
+                    filled: true,
+                    fillColor: AppColors.primaryDarker.withValues(alpha: 0.35),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.cyan500.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.cyan500.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    focusedBorder: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide: BorderSide(color: AppColors.cyan400),
+                    ),
+                  ),
+                  style: const TextStyle(color: AppColors.textWhite),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _couponLoading ? null : () => _applyCoupon(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.cyan500,
+                  foregroundColor: AppColors.primaryDark,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _couponLoading
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Apply'),
+              ),
+            ],
+          ),
+          if (_appliedCoupon != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Coupon $_appliedCoupon applied: $_discountPercent% off',
+              style: const TextStyle(
+                color: AppColors.statusAccepted,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+          ],
+          if (showSavings) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Yearly after discount: ${discounted.toStringAsFixed(2)} €',
+              style: const TextStyle(
+                color: AppColors.textWhite,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildCta(BuildContext context, bool isMobile) {
     return SizedBox(
       width: double.infinity,
@@ -776,6 +992,9 @@ class _PlanCard extends StatelessWidget {
     required this.isActive,
     required this.isYearly,
     required this.onTap,
+    this.discountPercent = 0,
+    this.couponApplied = false,
+    this.basePrice = 9.99,
     this.promoLine,
   });
 
@@ -786,6 +1005,9 @@ class _PlanCard extends StatelessWidget {
   final bool isActive;
   final bool isYearly;
   final VoidCallback onTap;
+  final int discountPercent;
+  final bool couponApplied;
+  final double basePrice;
   final String? promoLine;
 
   @override
@@ -798,8 +1020,13 @@ class _PlanCard extends StatelessWidget {
     );
     final curr = AppStrings.tr(context, 'subscriptionCurrencySuffix');
     final monthPrice = AppStrings.tr(context, 'subscriptionPriceMonth');
-    final yearPrice = AppStrings.tr(context, 'subscriptionPriceYear');
     final yearWas = AppStrings.tr(context, 'subscriptionPriceYearWas');
+    final hasCouponDiscount = couponApplied && discountPercent > 0;
+    final effectivePrice = hasCouponDiscount
+      ? basePrice * (1 - (discountPercent / 100))
+      : basePrice;
+    final effectivePriceLabel = effectivePrice.toStringAsFixed(2);
+    final basePriceLabel = basePrice.toStringAsFixed(2);
 
     final borderGradient = selected
         ? const LinearGradient(
@@ -889,7 +1116,7 @@ class _PlanCard extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                if (isYearly)
+                                if (isYearly || hasCouponDiscount)
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 8,
@@ -917,10 +1144,12 @@ class _PlanCard extends StatelessWidget {
                                       ],
                                     ),
                                     child: Text(
-                                      AppStrings.tr(
-                                        context,
-                                        'subscriptionBestValue',
-                                      ),
+                                      hasCouponDiscount
+                                          ? 'Coupon -$discountPercent%'
+                                          : AppStrings.tr(
+                                              context,
+                                              'subscriptionBestValue',
+                                            ),
                                       style: const TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w800,
@@ -973,7 +1202,9 @@ class _PlanCard extends StatelessWidget {
                                   if (promoLine != null)
                                     Expanded(
                                       child: Text(
-                                        promoLine!,
+                                        hasCouponDiscount
+                                            ? 'New promo applied from your coupon.'
+                                            : promoLine!,
                                         style: TextStyle(
                                           fontSize: 12,
                                           height: 1.25,
@@ -1009,7 +1240,11 @@ class _PlanCard extends StatelessWidget {
                                     height: 1.1,
                                   ),
                                   children: [
-                                    TextSpan(text: monthPrice),
+                                    TextSpan(
+                                      text: hasCouponDiscount
+                                          ? effectivePriceLabel
+                                          : monthPrice,
+                                    ),
                                     TextSpan(
                                       text: curr,
                                       style: TextStyle(
@@ -1048,7 +1283,7 @@ class _PlanCard extends StatelessWidget {
                                             height: 1.1,
                                           ),
                                           children: [
-                                            TextSpan(text: yearPrice),
+                                            TextSpan(text: effectivePriceLabel),
                                             TextSpan(
                                               text: curr,
                                               style: TextStyle(
@@ -1072,7 +1307,7 @@ class _PlanCard extends StatelessWidget {
                                           bottom: 6,
                                         ),
                                         child: Text(
-                                          '$yearWas${AppStrings.tr(context, 'subscriptionCurrencySuffix')}',
+                                          '${hasCouponDiscount ? basePriceLabel : yearWas}${AppStrings.tr(context, 'subscriptionCurrencySuffix')}',
                                           style: TextStyle(
                                             fontSize: 14,
                                             decoration:
@@ -1089,6 +1324,18 @@ class _PlanCard extends StatelessWidget {
                                     ],
                                   ),
                                 ],
+                              ),
+                            if (!isYearly && hasCouponDiscount)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 6),
+                                child: Text(
+                                  'Promo applied from coupon',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.statusAccepted,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
                             SizedBox(
                               height: Responsive.getResponsiveValue(

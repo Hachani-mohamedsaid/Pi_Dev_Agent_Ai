@@ -19,22 +19,23 @@ import '../datasources/auth_local_data_source.dart';
 /// appeler `stripe.checkout.sessions.create({ mode: 'subscription', line_items: [...], success_url, cancel_url, customer_email? })`.
 class StripeCheckoutService {
   StripeCheckoutService({required AuthLocalDataSource authLocalDataSource})
-      : _auth = authLocalDataSource;
+    : _auth = authLocalDataSource;
 
   final AuthLocalDataSource _auth;
 
   static const Duration _timeout = Duration(seconds: 25);
 
-  /// [plan] : `monthly` ou `yearly` — doit correspondre à ce que ton API attend.
-  Future<String> createCheckoutSessionUrl({required String plan}) async {
+  /// Validate coupon status from backend before applying it in UI.
+  Future<CouponValidationResult> validateCoupon({
+    required String couponCode,
+    required String plan,
+  }) async {
     final token = await _auth.getAccessToken();
     if (token == null || token.isEmpty) {
       throw const StripeCheckoutException('login_required');
     }
 
-    final uri = Uri.parse(
-      '$apiBaseUrl$stripeCreateCheckoutSessionPath',
-    );
+    final uri = Uri.parse('$apiBaseUrl/coupons/validate');
     final response = await http
         .post(
           uri,
@@ -42,7 +43,59 @@ class StripeCheckoutService {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
           },
-          body: jsonEncode({'plan': plan}),
+          body: jsonEncode({
+            'couponCode': couponCode,
+            'plan': plan,
+          }),
+        )
+        .timeout(_timeout);
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw StripeCheckoutException(
+        'http_${response.statusCode}',
+        body: response.body.isNotEmpty ? response.body : null,
+      );
+    }
+
+    final trimmed = response.body.trim();
+    if (trimmed.isEmpty) {
+      throw const StripeCheckoutException('empty_body');
+    }
+
+    final Map<String, dynamic> json;
+    try {
+      json = jsonDecode(trimmed) as Map<String, dynamic>;
+    } catch (_) {
+      throw const StripeCheckoutException('invalid_json');
+    }
+
+    return CouponValidationResult.fromJson(json);
+  }
+
+  /// [plan] : `monthly` ou `yearly` — doit correspondre à ce que ton API attend.
+  /// [couponCode] : optionnel, pour appliquer une promo serveur (ex: champion mensuel).
+  Future<String> createCheckoutSessionUrl({
+    required String plan,
+    String? couponCode,
+  }) async {
+    final token = await _auth.getAccessToken();
+    if (token == null || token.isEmpty) {
+      throw const StripeCheckoutException('login_required');
+    }
+
+    final uri = Uri.parse('$apiBaseUrl$stripeCreateCheckoutSessionPath');
+    final response = await http
+        .post(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            'plan': plan,
+            if (couponCode != null && couponCode.trim().isNotEmpty)
+              'couponCode': couponCode.trim(),
+          }),
         )
         .timeout(_timeout);
 
@@ -82,4 +135,27 @@ class StripeCheckoutException implements Exception {
 
   @override
   String toString() => 'StripeCheckoutException($code)';
+}
+
+class CouponValidationResult {
+  const CouponValidationResult({
+    required this.active,
+    required this.valid,
+    this.discountPercent,
+    this.message,
+  });
+
+  final bool active;
+  final bool valid;
+  final int? discountPercent;
+  final String? message;
+
+  factory CouponValidationResult.fromJson(Map<String, dynamic> json) {
+    return CouponValidationResult(
+      active: json['active'] as bool? ?? false,
+      valid: json['valid'] as bool? ?? false,
+      discountPercent: (json['discountPercent'] as num?)?.toInt(),
+      message: json['message'] as String?,
+    );
+  }
 }
