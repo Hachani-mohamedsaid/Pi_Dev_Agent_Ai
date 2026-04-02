@@ -93,18 +93,22 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
         if (map == null) continue;
         final text = map['text'] as String? ?? '';
         final senderStr = map['sender'] as String? ?? 'ai';
-        final sender = senderStr == 'user' ? MessageSender.user : MessageSender.ai;
+        final sender = senderStr == 'user'
+            ? MessageSender.user
+            : MessageSender.ai;
         DateTime timestamp = DateTime.now();
         try {
           final ts = map['timestamp'] as String?;
           if (ts != null) timestamp = DateTime.parse(ts);
         } catch (_) {}
-        loaded.add(ChatMessage(
-          id: i + 1,
-          text: text,
-          sender: sender,
-          timestamp: timestamp,
-        ));
+        loaded.add(
+          ChatMessage(
+            id: i + 1,
+            text: text,
+            sender: sender,
+            timestamp: timestamp,
+          ),
+        );
       }
       if (loaded.isEmpty) return;
       if (!mounted) return;
@@ -116,12 +120,16 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
   Future<void> _saveHistoryToStorage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final list = messages.map((m) => {
-        'id': m.id,
-        'text': m.text,
-        'sender': m.sender == MessageSender.user ? 'user' : 'ai',
-        'timestamp': m.timestamp.toIso8601String(),
-      }).toList();
+      final list = messages
+          .map(
+            (m) => {
+              'id': m.id,
+              'text': m.text,
+              'sender': m.sender == MessageSender.user ? 'user' : 'ai',
+              'timestamp': m.timestamp.toIso8601String(),
+            },
+          )
+          .toList();
       await prefs.setString(_historyStorageKey, jsonEncode(list));
     } catch (_) {}
   }
@@ -514,9 +522,13 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
         final wantsToConfirm = RegExp(
           r"\b(oui|confirme|confirmer|envoye|envoie|ok|ab3th|ab3at|ab3t)\b",
         ).hasMatch(lower);
-        final wantsToCancel = RegExp(r"\b(non|annule|stop|cancel)\b").hasMatch(lower);
+        final wantsToCancel = RegExp(
+          r"\b(non|annule|stop|cancel)\b",
+        ).hasMatch(lower);
 
-        debugPrint('📧 Email detection - hasPendingEmail: ${chatProv.hasPendingEmail}');
+        debugPrint(
+          '📧 Email detection - hasPendingEmail: ${chatProv.hasPendingEmail}',
+        );
         debugPrint('📧 Email detection - wantsToConfirm: $wantsToConfirm');
         debugPrint('📧 Email detection - wantsToCancel: $wantsToCancel');
 
@@ -554,7 +566,8 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
               return;
             } catch (e) {
               debugPrint('❌ Error confirming email: $e');
-              final errorSpoken = "Désolé, une erreur s'est produite lors de l'envoi du mail.";
+              final errorSpoken =
+                  "Désolé, une erreur s'est produite lors de l'envoi du mail.";
               _addMessage(errorSpoken, MessageSender.ai);
               simulateAISpeaking(errorSpoken);
               setState(() => isLoadingAI = false);
@@ -572,8 +585,11 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
             return;
           }
           // If there's a pending email but user didn't confirm/cancel, remind them
-          debugPrint('⚠️ Pending email exists but no clear confirmation/cancellation detected');
-          final reminderSpoken = "Je t'attends pour confirmer l'envoi du mail à $to. Dis 'oui' pour envoyer ou 'non' pour annuler.";
+          debugPrint(
+            '⚠️ Pending email exists but no clear confirmation/cancellation detected',
+          );
+          final reminderSpoken =
+              "Je t'attends pour confirmer l'envoi du mail à $to. Dis 'oui' pour envoyer ou 'non' pour annuler.";
           _addMessage(reminderSpoken, MessageSender.ai);
           simulateAISpeaking(reminderSpoken);
           return;
@@ -587,32 +603,44 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
             lower.contains('e-mail') ||
             lower.contains('ab3th');
         final emailMatch = emailRegex.firstMatch(transcript);
-        
-        debugPrint('📧 Email intent detection - containsMailWord: $containsMailWord');
-        debugPrint('📧 Email intent detection - emailMatch: ${emailMatch?.group(0)}');
+
+        debugPrint(
+          '📧 Email intent detection - containsMailWord: $containsMailWord',
+        );
+        debugPrint(
+          '📧 Email intent detection - emailMatch: ${emailMatch?.group(0)}',
+        );
 
         // Always use ChatProvider (n8n) for voice messages, not the AI backend
         debugPrint('💬 Routing voice transcript to ChatProvider (n8n)');
         debugPrint('💬 Transcript: "$transcript"');
-        debugPrint('💬 ChatProvider messages before: ${chatProv.messages.length}');
-        
+        debugPrint(
+          '💬 ChatProvider messages before: ${chatProv.messages.length}',
+        );
+
         try {
           setState(() => isLoadingAI = true);
-          
+
           // Store message count before sending to detect new messages
           final messageCountBefore = chatProv.messages.length;
-          
+
           debugPrint('💬 Calling chatProv.sendMessage()...');
           await chatProv.sendMessage(transcript);
           debugPrint('💬 chatProv.sendMessage() completed');
-          debugPrint('💬 ChatProvider messages after: ${chatProv.messages.length}');
-          debugPrint('💬 hasPendingEmail after sendMessage: ${chatProv.hasPendingEmail}');
-          
+          debugPrint(
+            '💬 ChatProvider messages after: ${chatProv.messages.length}',
+          );
+          debugPrint(
+            '💬 hasPendingEmail after sendMessage: ${chatProv.hasPendingEmail}',
+          );
+
           // If provider created a pending email, ask confirmation via voice
           if (chatProv.hasPendingEmail) {
             final to = chatProv.pendingEmail?['to'] ?? '';
             final subject = chatProv.pendingEmail?['subject'] ?? '';
-            debugPrint('📧 Pending email created - to: $to, subject: ${subject.substring(0, math.min(30, subject.length))}...');
+            debugPrint(
+              '📧 Pending email created - to: $to, subject: ${subject.substring(0, math.min(30, subject.length))}...',
+            );
             final confirmText =
                 'Je vais envoyer un mail à $to. Veux‑tu que je l\'envoie maintenant ?';
             debugPrint('🔊 Speaking confirmation request: "$confirmText"');
@@ -621,15 +649,21 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
             setState(() => isLoadingAI = false);
             return;
           }
-          
+
           // Get new assistant messages from ChatProvider (n8n response)
           // Find messages added after sendMessage was called
           if (chatProv.messages.length > messageCountBefore) {
             // Get all new assistant messages
-            final newMessages = chatProv.messages.skip(messageCountBefore).toList();
+            final newMessages = chatProv.messages
+                .skip(messageCountBefore)
+                .toList();
             for (final msg in newMessages) {
-              if (msg.role == 'assistant' && msg.content.isNotEmpty && !msg.isLoading) {
-                debugPrint('💬 Got n8n response: "${msg.content.substring(0, math.min(50, msg.content.length))}..."');
+              if (msg.role == 'assistant' &&
+                  msg.content.isNotEmpty &&
+                  !msg.isLoading) {
+                debugPrint(
+                  '💬 Got n8n response: "${msg.content.substring(0, math.min(50, msg.content.length))}..."',
+                );
                 _addMessage(msg.content, MessageSender.ai);
                 simulateAISpeaking(msg.content);
                 setState(() => isLoadingAI = false);
@@ -637,25 +671,30 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
               }
             }
           }
-          
+
           // Fallback: check last message if no new messages detected
           if (chatProv.messages.isNotEmpty) {
             final lastMessage = chatProv.messages.last;
-            if (lastMessage.role == 'assistant' && lastMessage.content.isNotEmpty && !lastMessage.isLoading) {
-              debugPrint('💬 Got last n8n response: "${lastMessage.content.substring(0, math.min(50, lastMessage.content.length))}..."');
+            if (lastMessage.role == 'assistant' &&
+                lastMessage.content.isNotEmpty &&
+                !lastMessage.isLoading) {
+              debugPrint(
+                '💬 Got last n8n response: "${lastMessage.content.substring(0, math.min(50, lastMessage.content.length))}..."',
+              );
               _addMessage(lastMessage.content, MessageSender.ai);
               simulateAISpeaking(lastMessage.content);
               setState(() => isLoadingAI = false);
               return;
             }
           }
-          
+
           // Fallback if no response
           debugPrint('⚠️ No response from ChatProvider');
           setState(() => isLoadingAI = false);
         } catch (e) {
           debugPrint('❌ Voice->ChatProvider sendMessage error: $e');
-          final errorSpoken = "Désolé, je n'ai pas pu traiter votre demande. Veuillez réessayer.";
+          final errorSpoken =
+              "Désolé, je n'ai pas pu traiter votre demande. Veuillez réessayer.";
           _addMessage(errorSpoken, MessageSender.ai);
           simulateAISpeaking(errorSpoken);
           setState(() => isLoadingAI = false);
@@ -740,7 +779,10 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
       if (chatProv.messages.length > messageCountBefore) {
         final newList = chatProv.messages
             .skip(messageCountBefore)
-            .where((m) => m.role == 'assistant' && m.content.isNotEmpty && !m.isLoading)
+            .where(
+              (m) =>
+                  m.role == 'assistant' && m.content.isNotEmpty && !m.isLoading,
+            )
             .toList();
         if (newList.isNotEmpty) {
           final reply = newList.last.content;
@@ -758,7 +800,8 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
         }
       }
 
-      const fallback = "J'ai bien reçu votre message. Comment puis-je vous aider ?";
+      const fallback =
+          "J'ai bien reçu votre message. Comment puis-je vous aider ?";
       _addMessage(fallback, MessageSender.ai);
       simulateAISpeaking(fallback);
     } catch (e) {
@@ -1624,10 +1667,7 @@ class _HistoryOverlay extends StatelessWidget {
   final List<ChatMessage> messages;
   final VoidCallback onClose;
 
-  const _HistoryOverlay({
-    required this.messages,
-    required this.onClose,
-  });
+  const _HistoryOverlay({required this.messages, required this.onClose});
 
   @override
   Widget build(BuildContext context) {
@@ -1655,7 +1695,10 @@ class _HistoryOverlay extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1674,7 +1717,9 @@ class _HistoryOverlay extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: const Color(0xFF1e4a66).withOpacity(0.6),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.cyan.withOpacity(0.2)),
+                          border: Border.all(
+                            color: Colors.cyan.withOpacity(0.2),
+                          ),
                         ),
                         child: const Icon(
                           LucideIcons.x,
@@ -1700,7 +1745,10 @@ class _HistoryOverlay extends StatelessWidget {
                         ),
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         itemCount: messages.length,
                         itemBuilder: (context, index) {
                           final msg = messages[index];
@@ -1731,18 +1779,25 @@ class _HistoryOverlay extends StatelessWidget {
                                               begin: Alignment.topLeft,
                                               end: Alignment.bottomRight,
                                               colors: [
-                                                const Color(0xFF1e4a66).withOpacity(0.6),
-                                                const Color(0xFF16384d).withOpacity(0.6),
+                                                const Color(
+                                                  0xFF1e4a66,
+                                                ).withOpacity(0.6),
+                                                const Color(
+                                                  0xFF16384d,
+                                                ).withOpacity(0.6),
                                               ],
                                             ),
                                       border: isUser
                                           ? null
                                           : Border.all(
-                                              color: Colors.cyan.withOpacity(0.2),
+                                              color: Colors.cyan.withOpacity(
+                                                0.2,
+                                              ),
                                             ),
                                     ),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           msg.text,
@@ -1990,7 +2045,11 @@ class _ChatOverlay extends StatelessWidget {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.only(right: 6, top: 6, bottom: 6),
+                        padding: const EdgeInsets.only(
+                          right: 6,
+                          top: 6,
+                          bottom: 6,
+                        ),
                         child: GestureDetector(
                           onTap: onSend,
                           child: Container(
@@ -2001,10 +2060,7 @@ class _ChatOverlay extends StatelessWidget {
                               gradient: const LinearGradient(
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
-                                colors: [
-                                  Color(0xFF22d3ee),
-                                  Color(0xFFa78bfa),
-                                ],
+                                colors: [Color(0xFF22d3ee), Color(0xFFa78bfa)],
                               ),
                               boxShadow: [
                                 BoxShadow(

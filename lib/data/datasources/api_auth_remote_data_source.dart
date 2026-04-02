@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import '../../core/config/api_config.dart';
 import '../models/auth_response.dart';
 import '../models/profile_model.dart';
-import '../models/user_model.dart';
 import 'auth_remote_data_source.dart';
 
 /// Implémentation HTTP des endpoints auth (NestJS). Utilise [apiRootUrl].

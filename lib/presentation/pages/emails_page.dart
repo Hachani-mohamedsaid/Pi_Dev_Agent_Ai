@@ -144,7 +144,7 @@ class _EmailsPageState extends State<EmailsPage> {
       print('📧 Received emailsData count: ${emailsData.length}');
       if (!mounted) return;
       setState(() {
-        _emails = (emailsData as List).map((e) {
+        _emails = (emailsData).map((e) {
           try {
             return Email.fromJson(Map<String, dynamic>.from(e as Map));
           } catch (error) {
