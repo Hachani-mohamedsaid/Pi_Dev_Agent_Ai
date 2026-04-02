@@ -32,7 +32,7 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
-
+Dockerfile
 # Symbolication related
 app.*.symbols
 
