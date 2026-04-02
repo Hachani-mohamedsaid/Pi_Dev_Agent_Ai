@@ -1,6 +1,5 @@
 import 'dart:ui';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -14,8 +13,6 @@ import '../../domain/usecases/social_login_usecase.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/logo_widget.dart';
-import '../widgets/social_button.dart';
-import '../widgets/apple_icon.dart';
 import '../state/auth_controller.dart';
 import '../../core/l10n/app_strings.dart';
 
@@ -453,7 +450,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                       duration: 500.ms,
                                     ),
                                     SizedBox(height: isMobile ? 24 : 32),
-                                    // Social Register Buttons (Google Account + Apple)
+                                    // Social Register Buttons (Google Account)
                                     Stack(
                                       alignment: Alignment.center,
                                       children: [
@@ -484,41 +481,6 @@ class _RegisterPageState extends State<RegisterPage> {
                                                           duration: 500.ms,
                                                         ),
                                               ),
-                                              if (!kIsWeb) ...[
-                                                SizedBox(
-                                                  width: isMobile ? 12 : 16,
-                                                ),
-                                                Expanded(
-                                                  child:
-                                                      SocialButton(
-                                                            icon: AppleIcon(
-                                                              size: isMobile
-                                                                  ? 24
-                                                                  : 26,
-                                                            ),
-                                                            text: AppStrings.tr(
-                                                              context,
-                                                              'appleAccount',
-                                                            ),
-                                                            onPressed: () =>
-                                                                _handleSocialRegister(
-                                                                  SocialProvider
-                                                                      .apple,
-                                                                ),
-                                                          )
-                                                          .animate()
-                                                          .fadeIn(
-                                                            delay: 1100.ms,
-                                                            duration: 500.ms,
-                                                          )
-                                                          .slideX(
-                                                            begin: 0.1,
-                                                            end: 0,
-                                                            delay: 1100.ms,
-                                                            duration: 500.ms,
-                                                          ),
-                                                ),
-                                              ],
                                             ],
                                           ),
                                         ),

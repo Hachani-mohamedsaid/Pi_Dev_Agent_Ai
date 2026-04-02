@@ -8,6 +8,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../injection_container.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/services/mobility_api_service.dart';
@@ -139,17 +140,22 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
         '&viewbox=${center.longitude - 0.5},${center.latitude + 0.5},${center.longitude + 0.5},${center.latitude - 0.5}'
         '&bounded=0',
       );
-      final response = await http.get(
-        uri,
-        headers: const {'Accept-Language': 'en', 'User-Agent': 'pi_dev_agentia'},
-      ).timeout(const Duration(seconds: 6));
+      final response = await http
+          .get(
+            uri,
+            headers: const {
+              'Accept-Language': 'en',
+              'User-Agent': 'pi_dev_agentia',
+            },
+          )
+          .timeout(const Duration(seconds: 6));
       if (!mounted) return;
       if (response.statusCode == 200) {
         final list = jsonDecode(response.body) as List<dynamic>;
         setState(() {
-          _placeSuggestions = list
-              .whereType<Map<String, dynamic>>()
-              .toList(growable: false);
+          _placeSuggestions = list.whereType<Map<String, dynamic>>().toList(
+            growable: false,
+          );
           _loadingSuggestions = false;
         });
       } else {
@@ -170,7 +176,10 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
   void _selectSuggestion(Map<String, dynamic> place) {
     final lat = double.tryParse(place['lat']?.toString() ?? '');
     final lon = double.tryParse(place['lon']?.toString() ?? '');
-    final name = (place['display_name'] as String? ?? '').split(',').take(2).join(', ');
+    final name = (place['display_name'] as String? ?? '')
+        .split(',')
+        .take(2)
+        .join(', ');
     if (lat == null || lon == null) return;
     setState(() {
       _destinationLatLng = LatLng(lat, lon);
@@ -180,6 +189,57 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
     _mapController.move(LatLng(lat, lon), 14.0);
     unawaited(_buildRoute());
     unawaited(_fetchMobilityEstimate());
+  }
+
+  Future<void> _useCurrentLocationAsPickup() async {
+    await _loadLocation();
+
+    if (!mounted) return;
+
+    final current = _currentPosition;
+    if (current == null) {
+      final errorMessage =
+          _errorMessage ?? 'Impossible de récupérer ta localisation.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          action: SnackBarAction(
+            label: 'Réglages',
+            textColor: Colors.white,
+            onPressed: () => openAppSettings(),
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _pickupLatLng = LatLng(current.latitude, current.longitude);
+      _selectingFromOnMap = false;
+      _errorMessage = null;
+    });
+
+    _mapController.move(_pickupLatLng!, 15.5);
+    unawaited(_buildRoute());
+    unawaited(_fetchMobilityEstimate());
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Ta position actuelle a été utilisée comme pickup.',
+        ),
+        backgroundColor: AppColors.cyan400.withValues(alpha: 0.95),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   DateTime _effectivePickupDateTime() {
@@ -219,7 +279,10 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
 
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        setState(() => _loadingLocation = false);
+        setState(() {
+          _loadingLocation = false;
+          _errorMessage = 'Active la localisation sur ton téléphone.';
+        });
         return;
       }
 
@@ -230,7 +293,12 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
 
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        setState(() => _loadingLocation = false);
+        setState(() {
+          _loadingLocation = false;
+          _errorMessage = permission == LocationPermission.deniedForever
+              ? 'La localisation est bloquée. Ouvre les réglages iPhone pour autoriser l’app.'
+              : 'Autorise la localisation pour utiliser "My location" ou ouvre les réglages iPhone.';
+        });
         return;
       }
 
@@ -242,17 +310,19 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
       setState(() {
         _currentPosition = position;
         _loadingLocation = false;
+        _errorMessage = null;
       });
 
       _startLiveLocationStream();
-      _mapController.move(
-        LatLng(position.latitude, position.longitude),
-        15.0,
-      );
+      _mapController.move(LatLng(position.latitude, position.longitude), 15.0);
       unawaited(_fetchNearbyTaxiStations());
     } catch (_) {
       if (!mounted) return;
-      setState(() => _loadingLocation = false);
+      setState(() {
+        _loadingLocation = false;
+        _errorMessage =
+            'Impossible de récupérer ta localisation sur iPhone. Vérifie les réglages de localisation.';
+      });
     }
   }
 
@@ -2186,7 +2256,6 @@ out center 30;
     );
   }
 
-
   LatLng get _initialCenter => _defaultTestHub;
 
   Widget _buildProposalCard(BuildContext context) {
@@ -2336,7 +2405,11 @@ out center 30;
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: const [
-                          Icon(Icons.check, color: Colors.greenAccent, size: 16),
+                          Icon(
+                            Icons.check,
+                            color: Colors.greenAccent,
+                            size: 16,
+                          ),
                           SizedBox(width: 6),
                           Text(
                             'Accept',
@@ -2489,12 +2562,7 @@ out center 30;
           ),
 
           // Top bar — always on top of sheet
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: _buildTopBar(context),
-          ),
+          Positioned(top: 0, left: 0, right: 0, child: _buildTopBar(context)),
 
           // Map FABs — right side, above minimum sheet position
           // Material wrapper ensures hit-testing wins over DraggableScrollableSheet
@@ -2537,8 +2605,9 @@ out center 30;
           child: Container(
             decoration: BoxDecoration(
               color: const Color(0xFF0A1628).withValues(alpha: 0.97),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(26)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(26),
+              ),
               border: Border(
                 top: BorderSide(
                   color: AppColors.cyan500.withValues(alpha: 0.22),
@@ -2648,6 +2717,29 @@ out center 30;
                                     ),
                                   ),
                                   const SizedBox(width: 6),
+                                  TextButton.icon(
+                                    onPressed: _useCurrentLocationAsPickup,
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: AppColors.cyan400,
+                                      visualDensity: VisualDensity.compact,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    icon: const Icon(
+                                      Icons.my_location,
+                                      size: 15,
+                                    ),
+                                    label: const Text(
+                                      'My location',
+                                      style: TextStyle(fontSize: 11),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
                                   if (_selectingFromOnMap)
                                     Container(
                                       padding: const EdgeInsets.symmetric(
@@ -2756,7 +2848,9 @@ out center 30;
                                         )
                                       : null,
                                   filled: true,
-                                  fillColor: Colors.white.withValues(alpha: 0.06),
+                                  fillColor: Colors.white.withValues(
+                                    alpha: 0.06,
+                                  ),
                                   contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 12,
                                     vertical: 12,
@@ -2792,76 +2886,87 @@ out center 30;
                                     ),
                                   ),
                                   child: Column(
-                                    children: _placeSuggestions.map((place) {
-                                      final raw =
-                                          place['display_name'] as String? ??
-                                          '';
-                                      final parts = raw.split(',');
-                                      final short = parts.first.trim();
-                                      final sub = parts.length > 1
-                                          ? parts
-                                              .skip(1)
-                                              .take(2)
-                                              .join(',')
-                                              .trim()
-                                          : '';
-                                      return InkWell(
-                                        onTap: () => _selectSuggestion(place),
-                                        borderRadius:
-                                            BorderRadius.circular(12),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 14,
-                                            vertical: 10,
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.place_outlined,
-                                                size: 16,
-                                                color: AppColors.cyan400,
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      short,
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 13,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                    if (sub.isNotEmpty)
-                                                      Text(
-                                                        sub,
-                                                        style: TextStyle(
-                                                          color: Colors.white
-                                                              .withValues(
-                                                            alpha: 0.4,
-                                                          ),
-                                                          fontSize: 11,
+                                    children: _placeSuggestions
+                                        .map((place) {
+                                          final raw =
+                                              place['display_name']
+                                                  as String? ??
+                                              '';
+                                          final parts = raw.split(',');
+                                          final short = parts.first.trim();
+                                          final sub = parts.length > 1
+                                              ? parts
+                                                    .skip(1)
+                                                    .take(2)
+                                                    .join(',')
+                                                    .trim()
+                                              : '';
+                                          return InkWell(
+                                            onTap: () =>
+                                                _selectSuggestion(place),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 14,
+                                                    vertical: 10,
+                                                  ),
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.place_outlined,
+                                                    size: 16,
+                                                    color: AppColors.cyan400,
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          short,
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 13,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                              ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
                                                         ),
-                                                        maxLines: 1,
-                                                        overflow:
-                                                            TextOverflow
-                                                                .ellipsis,
-                                                      ),
-                                                  ],
-                                                ),
+                                                        if (sub.isNotEmpty)
+                                                          Text(
+                                                            sub,
+                                                            style: TextStyle(
+                                                              color: Colors
+                                                                  .white
+                                                                  .withValues(
+                                                                    alpha: 0.4,
+                                                                  ),
+                                                              fontSize: 11,
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(growable: false),
+                                            ),
+                                          );
+                                        })
+                                        .toList(growable: false),
                                   ),
                                 ),
                             ],
@@ -2979,8 +3084,9 @@ out center 30;
                           if (manual != null) {
                             setState(() {
                               _destinationLatLng = manual;
-                              _destinationController.text =
-                                  _coordsLabel(manual);
+                              _destinationController.text = _coordsLabel(
+                                manual,
+                              );
                             });
                           }
                         }
@@ -3405,6 +3511,7 @@ out center 30;
       ),
     );
   }
+
   Widget _buildMapFabs(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -3412,25 +3519,14 @@ out center 30;
         // Center on my location
         GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () {
-            if (_currentPosition != null) {
-              _mapController.move(
-                LatLng(
-                  _currentPosition!.latitude,
-                  _currentPosition!.longitude,
-                ),
-                15.5,
-              );
-            } else {
-              // GPS not ready yet — request it now
-              unawaited(_loadLocation());
-            }
-          },
+          onTap: () => unawaited(_loadLocation()),
           child: Container(
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: _loadingLocation ? Colors.white.withValues(alpha: 0.85) : Colors.white,
+              color: _loadingLocation
+                  ? Colors.white.withValues(alpha: 0.85)
+                  : Colors.white,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
@@ -3463,7 +3559,8 @@ out center 30;
         // Toggle pickup-on-map mode
         GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () => setState(() => _selectingFromOnMap = !_selectingFromOnMap),
+          onTap: () =>
+              setState(() => _selectingFromOnMap = !_selectingFromOnMap),
           child: Container(
             width: 44,
             height: 44,
@@ -3480,7 +3577,9 @@ out center 30;
             ),
             child: Icon(
               Icons.pin_drop,
-              color: _selectingFromOnMap ? Colors.white : const Color(0xFF0A1628),
+              color: _selectingFromOnMap
+                  ? Colors.white
+                  : const Color(0xFF0A1628),
               size: 22,
             ),
           ),
@@ -3541,11 +3640,14 @@ out center 30;
         ? rawDriverPhone.replaceFirst('+216', '+971')
         : rawDriverPhone;
     final rawVehiclePlate = booking.vehiclePlate?.isNotEmpty == true
-      ? booking.vehiclePlate!
-      : 'N/A';
+        ? booking.vehiclePlate!
+        : 'N/A';
     final vehiclePlate = rawVehiclePlate == 'N/A'
-      ? rawVehiclePlate
-      : rawVehiclePlate.replaceAll(RegExp(r'\bTUN\b', caseSensitive: false), 'DXB');
+        ? rawVehiclePlate
+        : rawVehiclePlate.replaceAll(
+            RegExp(r'\bTUN\b', caseSensitive: false),
+            'DXB',
+          );
     final hasLocation =
         booking.driverLatitude != null && booking.driverLongitude != null;
     final etaMinutes = booking.etaMinutes ?? 0;

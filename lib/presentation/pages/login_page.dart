@@ -593,7 +593,7 @@ class _LoginPageState extends State<LoginPage> {
                                       duration: 500.ms,
                                     ),
                                     SizedBox(height: isMobile ? 24 : 32),
-                                    // Social Login Buttons (Google Account + Apple)
+                                    // Social Login Buttons (Google Account)
                                     Stack(
                                       alignment: Alignment.center,
                                       children: [
@@ -651,7 +651,6 @@ class _LoginPageState extends State<LoginPage> {
                                                             duration: 500.ms,
                                                           ),
                                               ),
-                                              // Apple Sign-In hidden — personal team doesn't support the capability
                                             ],
                                           ),
                                         ),
