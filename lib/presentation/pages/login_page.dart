@@ -17,7 +17,8 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/social_button.dart';
-import '../widgets/apple_icon.dart';
+// Apple sign-in disabled for personal-team builds
+// import '../widgets/apple_icon.dart';
 import '../widgets/google_icon.dart';
 import '../state/auth_controller.dart';
 
@@ -650,41 +651,7 @@ class _LoginPageState extends State<LoginPage> {
                                                             duration: 500.ms,
                                                           ),
                                               ),
-                                              if (!kIsWeb) ...[
-                                                SizedBox(
-                                                  width: isMobile ? 12 : 16,
-                                                ),
-                                                Expanded(
-                                                  child:
-                                                      SocialButton(
-                                                            icon: AppleIcon(
-                                                              size: isMobile
-                                                                  ? 24
-                                                                  : 26,
-                                                            ),
-                                                            text: AppStrings.tr(
-                                                              context,
-                                                              'appleAccount',
-                                                            ),
-                                                            onPressed: () =>
-                                                                _handleSocialLogin(
-                                                                  SocialProvider
-                                                                      .apple,
-                                                                ),
-                                                          )
-                                                          .animate()
-                                                          .fadeIn(
-                                                            delay: 1000.ms,
-                                                            duration: 500.ms,
-                                                          )
-                                                          .slideX(
-                                                            begin: 0.1,
-                                                            end: 0,
-                                                            delay: 1000.ms,
-                                                            duration: 500.ms,
-                                                          ),
-                                                ),
-                                              ],
+                                              // Apple Sign-In hidden — personal team doesn't support the capability
                                             ],
                                           ),
                                         ),

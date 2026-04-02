@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+// Sign In with Apple disabled — personal team doesn't support the capability
+// import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../models/auth_response.dart';
 import '../models/profile_model.dart';
 import '../models/user_model.dart';
@@ -117,32 +118,9 @@ class MockAuthRemoteDataSource implements AuthRemoteDataSource {
     String identityToken, {
     String? user,
   }) async {
-    if (kIsWeb) {
-      throw Exception(
-        'Sign in with Apple is not available on web. Please use Google Sign-In or email/password.',
-      );
-    }
-    try {
-      final credential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-      );
-      final userId =
-          credential.userIdentifier ??
-          'apple_user_${DateTime.now().millisecondsSinceEpoch}';
-      final profileUser = UserModel(
-        id: userId,
-        name: credential.givenName != null && credential.familyName != null
-            ? '${credential.givenName} ${credential.familyName}'
-            : credential.email?.split('@').first ?? 'Apple User',
-        email: credential.email ?? '$userId@privaterelay.appleid.com',
-      );
-      return AuthResponse(user: profileUser, accessToken: '');
-    } catch (e) {
-      throw Exception('Apple sign-in failed: $e');
-    }
+    throw UnsupportedError(
+      'Sign In with Apple is not available on this build.',
+    );
   }
 
   @override
