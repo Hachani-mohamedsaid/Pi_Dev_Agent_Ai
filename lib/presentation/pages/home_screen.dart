@@ -1575,7 +1575,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'colorLight': const Color(0xFFA78BFA),
       },
       {
-        'title': AppStrings.tr(context, 'travelAndJourneys'),
+        'title': 'Book a Ride',
         'icon': LucideIcons.car,
         'route': '/travel',
         'color': const Color(0xFFFF9800),
@@ -1615,13 +1615,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'route': '/market-intelligence',
         'color': const Color(0xFF0EA5E9),
         'colorLight': const Color(0xFF38BDF8),
-      },
-      {
-        'title': 'Phone Agent',
-        'icon': LucideIcons.phone,
-        'route': '/phone-agent',
-        'color': const Color(0xFF06B6D4),
-        'colorLight': const Color(0xFF22D3EE),
       },
     ];
 
