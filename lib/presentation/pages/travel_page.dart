@@ -8,7 +8,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import '../../injection_container.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/services/mobility_api_service.dart';
