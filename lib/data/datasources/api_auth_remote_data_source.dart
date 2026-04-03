@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
@@ -15,9 +16,61 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
 
   static const _headers = {'Content-Type': 'application/json'};
 
+  Future<http.Response> _post(
+    Uri url, {
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    try {
+      return await http.post(url, headers: headers, body: body);
+    } on http.ClientException catch (_) {
+      if (kIsWeb) {
+        throw Exception(
+          'Connexion impossible au backend ($url). '
+          'Sur Flutter Web, le navigateur bloque souvent les appels vers un autre port sans CORS. '
+          'Dans Nest : app.enableCors({ origin: true, credentials: true }). '
+          'Vérifiez aussi que le serveur tourne (ex. port 3000).',
+        );
+      }
+      rethrow;
+    }
+  }
+
+  Future<http.Response> _get(Uri url, {Map<String, String>? headers}) async {
+    try {
+      return await http.get(url, headers: headers);
+    } on http.ClientException catch (_) {
+      if (kIsWeb) {
+        throw Exception(
+          'Connexion impossible au backend ($url). '
+          'Activez CORS sur Nest (enableCors) et vérifiez que l’API est démarrée.',
+        );
+      }
+      rethrow;
+    }
+  }
+
+  Future<http.Response> _patch(
+    Uri url, {
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    try {
+      return await http.patch(url, headers: headers, body: body);
+    } on http.ClientException catch (_) {
+      if (kIsWeb) {
+        throw Exception(
+          'Connexion impossible au backend ($url). '
+          'Activez CORS sur Nest (enableCors) et vérifiez que l’API est démarrée.',
+        );
+      }
+      rethrow;
+    }
+  }
+
   @override
   Future<AuthResponse> login(String email, String password) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/login'),
       headers: _headers,
       body: jsonEncode({'email': email, 'password': password}),
@@ -36,7 +89,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
     String email,
     String password,
   ) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/register'),
       headers: _headers,
       body: jsonEncode({'name': name, 'email': email, 'password': password}),
@@ -52,7 +105,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   /// Demande reset mot de passe : le backend envoie l’email (Resend, etc.) avec le lien contenant le token.
   @override
   Future<void> resetPassword(String email) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/reset-password'),
       headers: _headers,
       body: jsonEncode({'email': email}),
@@ -66,7 +119,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
     required String token,
     required String newPassword,
   }) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/reset-password/confirm'),
       headers: _headers,
       body: jsonEncode({'token': token, 'newPassword': newPassword}),
@@ -80,7 +133,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
     required String currentPassword,
     required String newPassword,
   }) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/change-password'),
       headers: {..._headers, 'Authorization': 'Bearer $accessToken'},
       body: jsonEncode({
@@ -93,7 +146,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
 
   @override
   Future<void> requestEmailVerification(String accessToken) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/verify-email'),
       headers: {..._headers, 'Authorization': 'Bearer $accessToken'},
       body: jsonEncode({}),
@@ -103,7 +156,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
 
   @override
   Future<void> confirmEmailVerification(String token) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/verify-email/confirm'),
       headers: _headers,
       body: jsonEncode({'token': token}),
@@ -115,7 +168,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   /// Backend attend POST /auth/google avec body { "idToken": "..." } et renvoie { user, accessToken }.
   @override
   Future<AuthResponse> loginWithGoogle(String idToken) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/google'),
       headers: _headers,
       body: jsonEncode({'idToken': idToken}),
@@ -135,7 +188,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   }) async {
     final body = <String, dynamic>{'identityToken': identityToken};
     if (user != null) body['user'] = user;
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/apple'),
       headers: _headers,
       body: jsonEncode(body),
@@ -150,7 +203,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
 
   @override
   Future<ProfileModel> getProfile(String accessToken) async {
-    final res = await http.get(
+    final res = await _get(
       Uri.parse('$_baseUrl/auth/me'),
       headers: {..._headers, 'Authorization': 'Bearer $accessToken'},
     );
@@ -187,7 +240,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
       body['conversationsCount'] = conversationsCount;
     if (hoursSaved != null) body['hoursSaved'] = hoursSaved;
 
-    final res = await http.patch(
+    final res = await _patch(
       Uri.parse('$_baseUrl/auth/me'),
       headers: {..._headers, 'Authorization': 'Bearer $accessToken'},
       body: jsonEncode(body),
@@ -197,7 +250,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
 
   @override
   Future<bool> checkHealth() async {
-    final res = await http.get(Uri.parse('$_baseUrl/health'));
+    final res = await _get(Uri.parse('$_baseUrl/health'));
     if (res.statusCode != 200) return false;
     final data = jsonDecode(res.body) as Map<String, dynamic>?;
     return data?['status'] == 'ok';

@@ -1,10 +1,21 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../core/config/api_config.dart';
+import '../../injection_container.dart';
 
 /// Envoie les décisions Accepter/Rejeter vers NestJS (MongoDB) et vers le webhook n8n.
 class ProjectService {
   static const Duration _timeout = Duration(seconds: 15);
+
+  Future<Map<String, String>> _authHeaders() async {
+    final token =
+        await InjectionContainer.instance.authLocalDataSource.getAccessToken();
+    final h = <String, String>{'Content-Type': 'application/json'};
+    if (token != null && token.isNotEmpty) {
+      h['Authorization'] = 'Bearer $token';
+    }
+    return h;
+  }
 
   /// Body minimal pour n8n (action, row_number, name, email, type_projet).
   Map<String, dynamic> _n8nBody({
@@ -27,7 +38,10 @@ class ProjectService {
   Future<Map<String, String>> fetchProjectDecisions() async {
     try {
       final response = await http
-          .get(Uri.parse('$apiRootUrl$projectDecisionsPath'))
+          .get(
+            Uri.parse('$apiRootUrl$projectDecisionsPath'),
+            headers: await _authHeaders(),
+          )
           .timeout(_timeout);
       if (response.statusCode != 200) return {};
       final list = jsonDecode(response.body) as List<dynamic>?;
@@ -85,7 +99,6 @@ class ProjectService {
       bodyNest['periode'] = periode;
     }
 
-    const headers = {'Content-Type': 'application/json'};
     final bodyN8n = _n8nBody(
       action: action,
       rowNumber: rowNumber,
@@ -95,17 +108,18 @@ class ProjectService {
     );
 
     try {
+      final nestHeaders = await _authHeaders();
       // 1) NestJS → MongoDB
       final nestFuture = http.post(
         Uri.parse('$apiRootUrl$projectDecisionsPath'),
-        headers: headers,
+        headers: nestHeaders,
         body: jsonEncode(bodyNest),
       ).timeout(_timeout);
 
       // 2) n8n webhook (workflow n8n)
       final n8nFuture = http.post(
         Uri.parse(projectActionN8nWebhookUrl),
-        headers: headers,
+        headers: const {'Content-Type': 'application/json'},
         body: jsonEncode(bodyN8n),
       ).timeout(_timeout);
 

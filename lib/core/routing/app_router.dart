@@ -55,6 +55,8 @@ import '../../presentation/pages/decision_support_page.dart';
 import '../../presentation/pages/goals_page.dart';
 import '../../presentation/pages/work_proposals_page.dart';
 import '../../presentation/pages/work_proposals_dashboard_page.dart';
+import '../../presentation/pages/project_personnel_management_page.dart';
+import '../../presentation/pages/team_dispatch_detail_page.dart';
 import '../../presentation/pages/project_analysis_page.dart';
 import '../../presentation/pages/how_to_work_page.dart';
 import '../../presentation/pages/create_job_page.dart';
@@ -726,6 +728,29 @@ final appRouter = GoRouter(
         state: state,
         child: const WorkProposalsDashboardPage(),
       ),
+    ),
+    GoRoute(
+      path: '/team-dispatch',
+      redirect: (_, _) => '/project-management',
+    ),
+    GoRoute(
+      path: '/project-management',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const ProjectPersonnelManagementPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/team-dispatch/:projectId',
+      pageBuilder: (context, state) {
+        final id = state.pathParameters['projectId'] ?? '';
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: TeamDispatchDetailPage(projectId: id),
+        );
+      },
     ),
     GoRoute(
       path: '/project-analysis',

@@ -1,7 +1,11 @@
 import 'package:flutter/foundation.dart';
 
-/// Base URL de l'API backend (NestJS).
+/// Base URL de l'API backend (NestJS), **sans** chemin `/api` final.
 /// Utilisée pour toutes les routes auth : login, register, reset-password, /auth/google, /auth/me, etc.
+///
+/// **À éviter** : `https://hôte/api` si [apiPathPrefix] vaut déjà `api` — cela produirait
+/// `…/api/api/...` sauf si [apiRootUrl] détecte le doublon (voir ci-dessous).
+/// Préférer la base = hôte seul, ex. `https://mon-serveur.com`.
 ///
 /// Résolution (dans l’ordre) :
 /// 1. `--dart-define=API_BASE_URL=...` si non vide
@@ -12,8 +16,13 @@ import 'package:flutter/foundation.dart';
 ///   flutter run -d ios --dart-define=DEBUG_LOCAL_API_BASE_URL=http://127.0.0.1:3000
 ///   flutter run -d android --dart-define=DEBUG_LOCAL_API_BASE_URL=http://10.0.2.2:3000
 ///
-/// Si Nest utilise `setGlobalPrefix('api')`, ajoute :
-///   --dart-define=API_PATH_PREFIX=api
+/// Côté Nest, le préfixe HTTP réel suit `API_PATH_PREFIX` (vide = racine `/`, sinon routes sous `/api/...`).
+/// Vérifier le log au boot du serveur si un 404 persiste sur `/projects`, etc.
+///
+/// [apiPathPrefix] : par défaut **`api`** en prod / hors API locale ; en **debug**, si
+/// `DEBUG_LOCAL_API_BASE_URL` est la même base que [apiBaseUrl] et que `API_PATH_PREFIX` n’est pas
+/// défini, défaut **vide** (Nest local sans `setGlobalPrefix('api')`). Pour forcer `/api` en local :
+///   `flutter run --dart-define=API_PATH_PREFIX=api`
 const String _apiBaseUrlFromEnvironment = String.fromEnvironment(
   'API_BASE_URL',
   defaultValue: '',
@@ -41,19 +50,43 @@ String get apiBaseUrl {
   return _productionApiBaseUrl;
 }
 
-/// Segment optionnel après [apiBaseUrl] (sans slash). Ex. `api` → `http://host:3000/api/...`.
-/// Laisser vide si [apiBaseUrl] contient déjà `/api` ou si le backend n’a pas de préfixe global.
-const String apiPathPrefix = String.fromEnvironment(
+const String _apiPathPrefixFromEnvironment = String.fromEnvironment(
   'API_PATH_PREFIX',
-  defaultValue: '',
+  defaultValue: '__UNSET__',
 );
 
-/// Racine HTTP réelle pour auth, meetings, goals, etc.
+/// Segment optionnel après [apiBaseUrl] (sans slash). Ex. `api` → `http://host:3000/api/...`.
+///
+/// Voir la doc en tête de fichier pour le comportement debug + `DEBUG_LOCAL_API_BASE_URL`.
+String get apiPathPrefix {
+  if (_apiPathPrefixFromEnvironment == '__UNSET__') {
+    if (kDebugMode) {
+      final local = _debugLocalApiBaseUrlFromEnvironment
+          .trim()
+          .replaceAll(RegExp(r'/$'), '');
+      final base = apiBaseUrl.replaceAll(RegExp(r'/$'), '');
+      if (local.isNotEmpty && base == local) {
+        return '';
+      }
+    }
+    return 'api';
+  }
+  return _apiPathPrefixFromEnvironment.trim().replaceAll(RegExp(r'^/|/$'), '');
+}
+
+/// Racine HTTP pour tous les appels : [apiBaseUrl] + un seul segment [apiPathPrefix] si non vide.
+///
+/// Si la base se termine déjà par `/<apiPathPrefix>` (ex. `API_BASE_URL` mal configurée avec `/api`),
+/// on ne rajoute pas le segment une deuxième fois — évite `…/api/api/projects`.
 String get apiRootUrl {
   final base = apiBaseUrl.replaceAll(RegExp(r'/$'), '');
   final p = apiPathPrefix.trim().replaceAll(RegExp(r'^/|/$'), '');
   if (p.isEmpty) return base;
-  return '$base/$p';
+  final suffix = '/$p';
+  if (base.toLowerCase().endsWith(suffix.toLowerCase())) {
+    return base;
+  }
+  return '$base$suffix';
 }
 
 /// Chemin de la page "définir nouveau mot de passe" (après clic sur le lien email).
@@ -88,12 +121,11 @@ const String projectAnalysesPath = '/project-analyses';
 /// PATCH /goals/:id/actions/:actionId -> Toggle action (body: { completed: true })
 const String goalsPath = '/goals';
 
-/// AI Financial Simulation Advisor: backend endpoint (POST body: { project_text }).
-/// Backend forwards to n8n and saves to MongoDB. Response: { report: string }.
-const String advisorPath = '/api/advisor/analyze';
+/// AI Financial Simulation Advisor (sous [apiRootUrl], ex. …/api/advisor/...).
+const String advisorPath = '/advisor/analyze';
 
-/// GET /api/advisor/history – list of past analyses for current user. Response: { analyses: [{ id, project_text, report, createdAt }] }.
-const String advisorHistoryPath = '/api/advisor/history';
+/// GET advisor history for current user.
+const String advisorHistoryPath = '/advisor/history';
 
 /// Stripe Checkout (subscriptions) — **à implémenter sur le backend NestJS**.
 /// POST avec `Authorization: Bearer <JWT>` et body JSON `{ "plan": "monthly" | "yearly" }`.
