@@ -30,6 +30,10 @@ RUN flutter build web --release --tree-shake-icons --no-wasm-dry-run
 
 FROM nginx:1.27-alpine AS runtime
 
+# Patch base OS packages to reduce known critical vulnerabilities
+# reported by image scanners (openssl/libxml2 stack).
+RUN apk update && apk upgrade --no-cache && apk add --no-cache libxml2 openssl
+
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/build/web /usr/share/nginx/html
 
