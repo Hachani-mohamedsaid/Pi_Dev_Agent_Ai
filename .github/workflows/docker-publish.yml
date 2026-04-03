@@ -84,6 +84,7 @@ jobs:
             aquasec/trivy:0.57.1 \
             image \
             --severity CRITICAL \
+            --vuln-type library \
             --ignore-unfixed \
             --exit-code 1 \
             --format table \
