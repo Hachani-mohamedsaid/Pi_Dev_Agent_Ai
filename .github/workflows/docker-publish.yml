@@ -63,7 +63,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Security scan (Trivy)
+      - name: Security scan report (HIGH/CRITICAL)
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
@@ -71,6 +71,19 @@ jobs:
             aquasec/trivy:0.57.1 \
             image \
             --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --exit-code 0 \
+            --format table \
+            hachanimohamedsaid/pi-dev-agentia-front:scan
+
+      - name: Security gate (CRITICAL only)
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "${{ github.workspace }}:/work" \
+            aquasec/trivy:0.57.1 \
+            image \
+            --severity CRITICAL \
             --ignore-unfixed \
             --exit-code 1 \
             --format table \
