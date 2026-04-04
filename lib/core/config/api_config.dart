@@ -56,37 +56,11 @@ const String _apiPathPrefixFromEnvironment = String.fromEnvironment(
   defaultValue: '__UNSET__',
 );
 
-/// Segment optionnel après [apiBaseUrl] (sans slash). Ex. `api` → `http://host:3000/api/...`.
-///
-/// Voir la doc en tête de fichier pour le comportement debug + `DEBUG_LOCAL_API_BASE_URL`.
-bool _isLikelyLocalBackendHost(String baseUrl) {
-  final uri = Uri.tryParse(
-    baseUrl.contains('://') ? baseUrl : 'http://$baseUrl',
-  );
-  if (uri == null || !uri.hasAuthority) return false;
-  final h = uri.host.toLowerCase();
-  return h == 'localhost' ||
-      h == '127.0.0.1' ||
-      h == '10.0.2.2' ||
-      h == '0.0.0.0';
-}
-
 String get apiPathPrefix {
   if (_apiPathPrefixFromEnvironment == '__UNSET__') {
-    final base = apiBaseUrl.replaceAll(RegExp(r'/$'), '');
-    if (kDebugMode) {
-      final local = _debugLocalApiBaseUrlFromEnvironment
-          .trim()
-          .replaceAll(RegExp(r'/$'), '');
-      if (local.isNotEmpty && base == local) {
-        return '';
-      }
-    }
-    // Debug / profile : API_BASE_URL=http://127.0.0.1:3000 → pas de /api (Nest local sans préfixe).
-    if (!kReleaseMode && _isLikelyLocalBackendHost(base)) {
-      return '';
-    }
-    return 'api';
+    // Le backend Railway n'utilise pas de préfixe global (/api).
+    // Les routes sont directement à /auth/login, /interviews/start, etc.
+    return '';
   }
   return _apiPathPrefixFromEnvironment.trim().replaceAll(RegExp(r'^/|/$'), '');
 }
@@ -151,11 +125,12 @@ const String projectAnalysesPath = '/project-analyses';
 /// PATCH /goals/:id/actions/:actionId -> Toggle action (body: { completed: true })
 const String goalsPath = '/goals';
 
-/// AI Financial Simulation Advisor (sous [apiRootUrl], ex. …/api/advisor/...).
-const String advisorPath = '/advisor/analyze';
+/// AI Financial Simulation Advisor — le contrôleur backend est décoré @Controller('api/advisor'),
+/// donc la route est /api/advisor/... indépendamment du préfixe global.
+const String advisorPath = '/api/advisor/analyze';
 
 /// GET advisor history for current user.
-const String advisorHistoryPath = '/advisor/history';
+const String advisorHistoryPath = '/api/advisor/history';
 
 /// Stripe Checkout (subscriptions) — **à implémenter sur le backend NestJS**.
 /// POST avec `Authorization: Bearer <JWT>` et body JSON `{ "plan": "monthly" | "yearly" }`.
