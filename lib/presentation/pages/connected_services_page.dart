@@ -2,13 +2,51 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
+import '../../data/services/google_connect_service.dart';
 import '../widgets/navigation_bar.dart';
 
-class ConnectedServicesPage extends StatelessWidget {
+class ConnectedServicesPage extends StatefulWidget {
   const ConnectedServicesPage({super.key});
+
+  @override
+  State<ConnectedServicesPage> createState() => _ConnectedServicesPageState();
+}
+
+class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
+  static const _tokenKey = 'auth_access_token';
+  final _googleService = GoogleConnectService();
+
+  GoogleConnectStatus _googleStatus = GoogleConnectStatus.disconnected;
+  bool _loadingGoogleStatus = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGoogleStatus();
+  }
+
+  Future<void> _loadGoogleStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_tokenKey);
+    if (token == null || token.isEmpty) {
+      if (mounted) setState(() => _loadingGoogleStatus = false);
+      return;
+    }
+    try {
+      final status = await _googleService.getStatus(token);
+      if (mounted) setState(() {
+        _googleStatus = status;
+        _loadingGoogleStatus = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loadingGoogleStatus = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -239,6 +277,24 @@ class ConnectedServicesPage extends StatelessWidget {
                   );
                 }),
 
+                SizedBox(height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 20.0,
+                  tablet: 24.0,
+                  desktop: 28.0,
+                )),
+
+                // Google Account Connect card
+                SizedBox(height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 10.0,
+                  tablet: 12.0,
+                  desktop: 14.0,
+                )),
+                _buildGoogleConnectCard(context, isMobile)
+                    .animate()
+                    .fadeIn(delay: Duration(milliseconds: 600 + (availableServices.length * 100)), duration: 300.ms)
+                    .slideY(begin: 0.2, end: 0, delay: Duration(milliseconds: 600 + (availableServices.length * 100)), duration: 300.ms),
                 SizedBox(height: Responsive.getResponsiveValue(
                   context,
                   mobile: 20.0,
@@ -1113,6 +1169,252 @@ class ConnectedServicesPage extends StatelessWidget {
                   ),
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGoogleConnectCard(BuildContext context, bool isMobile) {
+    final isConnected = _googleStatus.connected;
+
+    return Container(
+      padding: EdgeInsets.all(Responsive.getResponsiveValue(
+        context,
+        mobile: 14.0,
+        tablet: 16.0,
+        desktop: 20.0,
+      )),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF1e4a66).withValues(alpha: 0.2),
+            const Color(0xFF16384d).withValues(alpha: 0.2),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+          context,
+          mobile: 12.0,
+          tablet: 13.0,
+          desktop: 14.0,
+        )),
+        border: Border.all(
+          color: isConnected
+              ? const Color(0xFF10B981).withValues(alpha: 0.25)
+              : AppColors.cyan500.withValues(alpha: 0.05),
+          width: 1,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+          context,
+          mobile: 12.0,
+          tablet: 13.0,
+          desktop: 14.0,
+        )),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.cyan500.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(
+                        Responsive.getResponsiveValue(
+                          context,
+                          mobile: 8.0,
+                          tablet: 9.0,
+                          desktop: 10.0,
+                        ),
+                      ),
+                      border: Border.all(
+                        color: AppColors.cyan500.withValues(alpha: 0.1),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.network(
+                          'https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico',
+                          width: 28,
+                          height: 28,
+                        ),
+                        const SizedBox(width: 8),
+                        Image.network(
+                          'https://ssl.gstatic.com/docs/spreadsheets/images/sheets_2023q4.png',
+                          width: 28,
+                          height: 28,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 10.0,
+                    tablet: 12.0,
+                    desktop: 14.0,
+                  )),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Google Account',
+                        style: TextStyle(
+                          fontSize: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 13.0,
+                            tablet: 14.0,
+                            desktop: 15.0,
+                          ),
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textWhite,
+                        ),
+                      ),
+                      SizedBox(height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 3.0,
+                        tablet: 4.0,
+                        desktop: 5.0,
+                      )),
+                      if (isConnected && _googleStatus.googleEmail != null)
+                        Text(
+                          _googleStatus.googleEmail!,
+                          style: TextStyle(
+                            fontSize: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 11.0,
+                              tablet: 12.0,
+                              desktop: 13.0,
+                            ),
+                            color: const Color(0xFF10B981).withValues(alpha: 0.8),
+                          ),
+                        )
+                      else
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Gmail — Send emails on your behalf',
+                              style: TextStyle(
+                                fontSize: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 11.0,
+                                  tablet: 12.0,
+                                  desktop: 13.0,
+                                ),
+                                color: AppColors.cyan400.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            Text(
+                              'Sheets — Auto-create your finance & email logs',
+                              style: TextStyle(
+                                fontSize: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 11.0,
+                                  tablet: 12.0,
+                                  desktop: 13.0,
+                                ),
+                                color: AppColors.cyan400.withValues(alpha: 0.5),
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+              _loadingGoogleStatus
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.cyan400),
+                      ),
+                    )
+                  : isConnected
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle_rounded,
+                              size: 16,
+                              color: const Color(0xFF10B981),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Connected ✓',
+                              style: TextStyle(
+                                fontSize: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 12.0,
+                                  tablet: 13.0,
+                                  desktop: 14.0,
+                                ),
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF10B981),
+                              ),
+                            ),
+                          ],
+                        )
+                      : GestureDetector(
+                          onTap: () async {
+                            await context.push('/google-connect');
+                            _loadGoogleStatus();
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 14.0,
+                                tablet: 16.0,
+                                desktop: 18.0,
+                              ),
+                              vertical: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 7.0,
+                                tablet: 8.0,
+                                desktop: 9.0,
+                              ),
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.cyan500.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(
+                                Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 8.0,
+                                  tablet: 9.0,
+                                  desktop: 10.0,
+                                ),
+                              ),
+                              border: Border.all(
+                                color: AppColors.cyan500.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              'Connect',
+                              style: TextStyle(
+                                fontSize: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 12.0,
+                                  tablet: 13.0,
+                                  desktop: 14.0,
+                                ),
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.cyan400,
+                              ),
+                            ),
+                          ),
+                        ),
             ],
           ),
         ),

@@ -81,6 +81,7 @@ import '../../features/phone_agent/models/phone_call_model.dart';
 import '../../features/phone_agent/screens/phone_agent_screen.dart';
 import '../../features/phone_agent/screens/phone_agent_call_detail_screen.dart';
 import '../../features/social_media/screens/social_media_brief_screen.dart';
+import '../../presentation/pages/google_connect_page.dart';
 
 // Custom page transition - fade and scale from center
 Page<T> _fadeScaleTransition<T extends Object?>({
@@ -696,6 +697,14 @@ final appRouter = GoRouter(
         context: context,
         state: state,
         child: const ConnectedServicesPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/google-connect',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const GoogleConnectPage(),
       ),
     ),
     GoRoute(
