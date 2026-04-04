@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../core/config/api_config.dart';
 import '../../core/network/request_headers.dart';
+import '../../injection_container.dart';
 
 /// Envoie les décisions Accepter/Rejeter vers NestJS (MongoDB) et vers le webhook n8n.
 class ProjectService {
@@ -108,11 +109,11 @@ class ProjectService {
     );
 
     try {
-      final nestHeaders = await _authHeaders();
+      final authH = await _authHeaders();
       // 1) NestJS → MongoDB
       final nestFuture = http.post(
         Uri.parse('$apiRootUrl$projectDecisionsPath'),
-        headers: buildJsonHeaders(),
+        headers: authH,
         body: jsonEncode(bodyNest),
       ).timeout(_timeout);
 

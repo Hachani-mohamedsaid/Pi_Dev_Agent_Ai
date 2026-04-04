@@ -185,8 +185,9 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
     if (phone != null) body['phone'] = phone;
     if (birthDate != null) body['birthDate'] = birthDate;
     if (bio != null) body['bio'] = bio;
-    if (conversationsCount != null)
+    if (conversationsCount != null) {
       body['conversationsCount'] = conversationsCount;
+    }
     if (hoursSaved != null) body['hoursSaved'] = hoursSaved;
 
     final res = await _patch(
@@ -218,5 +219,35 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
     } catch (_) {
       return Exception('Request failed (${res.statusCode})');
     }
+  }
+
+  static const Duration _timeout = Duration(seconds: 30);
+
+  Future<http.Response> _post(
+    Uri uri, {
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    if (kIsWeb) {
+      return http
+          .post(uri, headers: headers, body: body)
+          .timeout(_timeout);
+    }
+    return http.post(uri, headers: headers, body: body).timeout(_timeout);
+  }
+
+  Future<http.Response> _get(
+    Uri uri, {
+    Map<String, String>? headers,
+  }) async {
+    return http.get(uri, headers: headers).timeout(_timeout);
+  }
+
+  Future<http.Response> _patch(
+    Uri uri, {
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    return http.patch(uri, headers: headers, body: body).timeout(_timeout);
   }
 }
