@@ -49,7 +49,10 @@ class ChallengesService {
             .toList();
       }
 
-      reportHttpResponseError(feature: 'challenges.catalog', response: response);
+      reportHttpResponseError(
+        feature: 'challenges.catalog',
+        response: response,
+      );
       return getMockChallenges();
     } catch (error, stackTrace) {
       reportApiException(
@@ -86,7 +89,10 @@ class ChallengesService {
             .toList()
           ..sort((a, b) => b.totalPoints.compareTo(a.totalPoints));
       }
-      reportHttpResponseError(feature: 'challenges.leaderboard', response: response);
+      reportHttpResponseError(
+        feature: 'challenges.leaderboard',
+        response: response,
+      );
       return _getMockLeaderboard();
     } catch (e, stackTrace) {
       reportApiException(
@@ -178,7 +184,10 @@ class ChallengesService {
           isPremium: data['isPremium'] as bool? ?? false,
         );
       }
-      reportHttpResponseError(feature: 'challenges.currentUser', response: response);
+      reportHttpResponseError(
+        feature: 'challenges.currentUser',
+        response: response,
+      );
       return null;
     } catch (e, stackTrace) {
       reportApiException(
@@ -203,7 +212,10 @@ class ChallengesService {
       );
 
       if (response.statusCode != 200) {
-        reportHttpResponseError(feature: 'challenges.complete', response: response);
+        reportHttpResponseError(
+          feature: 'challenges.complete',
+          response: response,
+        );
       }
       return response.statusCode == 200;
     } catch (e, stackTrace) {

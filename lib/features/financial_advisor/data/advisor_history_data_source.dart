@@ -12,7 +12,7 @@ const Duration _timeout = Duration(seconds: 15);
 /// Fetches advisor history from backend (GET /api/advisor/history). Uses JWT if available.
 class AdvisorHistoryDataSource {
   AdvisorHistoryDataSource({AuthLocalDataSource? authLocalDataSource})
-      : _auth = authLocalDataSource;
+    : _auth = authLocalDataSource;
 
   final AuthLocalDataSource? _auth;
 
@@ -43,7 +43,11 @@ class AdvisorHistoryDataSource {
       }
       if (list == null || list.isEmpty) return [];
       return list
-          .map((e) => AdvisorHistoryItem.fromJson(Map<String, dynamic>.from(e as Map)))
+          .map(
+            (e) => AdvisorHistoryItem.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
           .toList();
     } catch (_) {
       return [];

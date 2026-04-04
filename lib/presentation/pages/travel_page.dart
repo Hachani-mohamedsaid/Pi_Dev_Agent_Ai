@@ -391,7 +391,10 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
       final response = await http.get(uri, headers: buildJsonHeaders());
 
       if (response.statusCode != 200) {
-        reportHttpResponseError(feature: 'travel.route.osrm', response: response);
+        reportHttpResponseError(
+          feature: 'travel.route.osrm',
+          response: response,
+        );
         throw Exception('Routing failed: ${response.statusCode}');
       }
 
@@ -1765,7 +1768,10 @@ out center 30;
               )
               .timeout(const Duration(seconds: 18));
           if (candidate.statusCode != 200) {
-            reportHttpResponseError(feature: 'travel.nearby_taxis.overpass', response: candidate);
+            reportHttpResponseError(
+              feature: 'travel.nearby_taxis.overpass',
+              response: candidate,
+            );
             candidate = await http
                 .post(
                   Uri.parse(endpoint),
@@ -1783,7 +1789,10 @@ out center 30;
             response = candidate;
             break;
           }
-          reportHttpResponseError(feature: 'travel.nearby_taxis.overpass', response: candidate);
+          reportHttpResponseError(
+            feature: 'travel.nearby_taxis.overpass',
+            response: candidate,
+          );
           lastError = 'OSM query failed: ${candidate.statusCode}';
         } catch (e) {
           reportApiException(feature: 'travel.nearby_taxis.overpass', error: e);

@@ -7,7 +7,8 @@ import '../models/work_proposal_model.dart';
 /// Service pour analyser un projet avec OpenAI et sauvegarder dans MongoDB.
 class OpenAIAnalysisService {
   static const Duration _timeout = Duration(seconds: 30);
-  static const String _openaiApiUrl = 'https://api.openai.com/v1/chat/completions';
+  static const String _openaiApiUrl =
+      'https://api.openai.com/v1/chat/completions';
 
   /// Récupère l'analyse depuis MongoDB si elle existe.
   Future<ProjectAnalysis?> getAnalysisFromMongo(int rowNumber) async {
@@ -28,16 +29,21 @@ class OpenAIAnalysisService {
   }
 
   /// Sauvegarde l'analyse dans MongoDB.
-  Future<bool> saveAnalysisToMongo(int rowNumber, ProjectAnalysis analysis) async {
+  Future<bool> saveAnalysisToMongo(
+    int rowNumber,
+    ProjectAnalysis analysis,
+  ) async {
     try {
-      final response = await http.post(
-        Uri.parse('$apiRootUrl$projectAnalysesPath'),
-        headers: buildJsonHeaders(),
-        body: jsonEncode({
-          'row_number': rowNumber,
-          'analysis': _analysisToJson(analysis),
-        }),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$apiRootUrl$projectAnalysesPath'),
+            headers: buildJsonHeaders(),
+            body: jsonEncode({
+              'row_number': rowNumber,
+              'analysis': _analysisToJson(analysis),
+            }),
+          )
+          .timeout(_timeout);
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -60,28 +66,28 @@ class OpenAIAnalysisService {
     if (openaiApiKey.isEmpty) return null;
     try {
       final prompt = _buildAnalysisPrompt(proposal);
-      
-      final response = await http.post(
-        Uri.parse(_openaiApiUrl),
-        headers: buildJsonHeaders(bearerToken: openaiApiKey),
-        body: jsonEncode({
-          'model': 'gpt-4o-mini',
-          'messages': [
-            {
-              'role': 'system',
-              'content': 'Tu es un expert en développement de projets web/mobile. '
-                  'Analyse les projets de manière professionnelle et détaillée. '
-                  'Réponds toujours en français, de manière structurée et claire.',
-            },
-            {
-              'role': 'user',
-              'content': prompt,
-            },
-          ],
-          'temperature': 0.7,
-          'max_tokens': 3000,
-        }),
-      ).timeout(_timeout);
+
+      final response = await http
+          .post(
+            Uri.parse(_openaiApiUrl),
+            headers: buildJsonHeaders(bearerToken: openaiApiKey),
+            body: jsonEncode({
+              'model': 'gpt-4o-mini',
+              'messages': [
+                {
+                  'role': 'system',
+                  'content':
+                      'Tu es un expert en développement de projets web/mobile. '
+                      'Analyse les projets de manière professionnelle et détaillée. '
+                      'Réponds toujours en français, de manière structurée et claire.',
+                },
+                {'role': 'user', 'content': prompt},
+              ],
+              'temperature': 0.7,
+              'max_tokens': 3000,
+            }),
+          )
+          .timeout(_timeout);
 
       if (response.statusCode != 200) {
         return null;
@@ -92,10 +98,10 @@ class OpenAIAnalysisService {
       if (content == null) return null;
 
       final analysis = _parseAnalysis(content, proposal);
-      
+
       // 3) Sauvegarder dans MongoDB
       await saveAnalysisToMongo(rowNumber, analysis);
-      
+
       return analysis;
     } catch (_) {
       return null;
@@ -115,11 +121,14 @@ class OpenAIAnalysisService {
         monitoring: json['technicalProposal']?['monitoring'] ?? '',
       ),
       howToWork: json['howToWork'] ?? '',
-      developmentSteps: (json['developmentSteps'] as List<dynamic>?)
-              ?.map((e) => DevelopmentStep(
-                    title: e['title'] ?? '',
-                    description: e['description'] ?? '',
-                  ))
+      developmentSteps:
+          (json['developmentSteps'] as List<dynamic>?)
+              ?.map(
+                (e) => DevelopmentStep(
+                  title: e['title'] ?? '',
+                  description: e['description'] ?? '',
+                ),
+              )
               .toList() ??
           [],
       recommendations: json['recommendations'] ?? '',
@@ -194,7 +203,7 @@ IMPORTANT: Réponds UNIQUEMENT avec le JSON valide, sans texte avant ou après.
       }
       final jsonStr = jsonMatch.group(0)!;
       final json = jsonDecode(jsonStr) as Map<String, dynamic>;
-      
+
       return ProjectAnalysis(
         tools: List<String>.from(json['tools'] ?? []),
         technicalProposal: TechnicalProposal(
@@ -207,11 +216,14 @@ IMPORTANT: Réponds UNIQUEMENT avec le JSON valide, sans texte avant ou après.
           monitoring: json['technicalProposal']?['monitoring'] ?? '',
         ),
         howToWork: json['howToWork'] ?? '',
-        developmentSteps: (json['developmentSteps'] as List<dynamic>?)
-                ?.map((e) => DevelopmentStep(
-                      title: e['title'] ?? '',
-                      description: e['description'] ?? '',
-                    ))
+        developmentSteps:
+            (json['developmentSteps'] as List<dynamic>?)
+                ?.map(
+                  (e) => DevelopmentStep(
+                    title: e['title'] ?? '',
+                    description: e['description'] ?? '',
+                  ),
+                )
                 .toList() ??
             [],
         recommendations: json['recommendations'] ?? '',
@@ -281,8 +293,5 @@ class DevelopmentStep {
   final String title;
   final String description;
 
-  DevelopmentStep({
-    required this.title,
-    required this.description,
-  });
+  DevelopmentStep({required this.title, required this.description});
 }

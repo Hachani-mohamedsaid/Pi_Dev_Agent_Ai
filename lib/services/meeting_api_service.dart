@@ -34,12 +34,18 @@ class MeetingApiService {
     );
     if (res.statusCode != 200 && res.statusCode != 201) {
       reportHttpResponseError(feature: 'meeting.create', response: res);
-      throw MeetingApiException('createMeeting failed: ${res.statusCode}', res.body);
+      throw MeetingApiException(
+        'createMeeting failed: ${res.statusCode}',
+        res.body,
+      );
     }
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     final id = data['id'] as String?;
     if (id == null || id.isEmpty) {
-      throw MeetingApiException('createMeeting: missing id in response', res.body);
+      throw MeetingApiException(
+        'createMeeting: missing id in response',
+        res.body,
+      );
     }
     return id;
   }
@@ -55,11 +61,13 @@ class MeetingApiService {
   }) async {
     final body = <String, dynamic>{
       'chunks': chunks
-          .map((c) => {
-                'speaker': c.speaker,
-                'text': c.text,
-                'timestamp': c.timestamp,
-              })
+          .map(
+            (c) => {
+              'speaker': c.speaker,
+              'text': c.text,
+              'timestamp': c.timestamp,
+            },
+          )
           .toList(),
     };
     if (participants != null) body['participants'] = participants;
@@ -73,8 +81,14 @@ class MeetingApiService {
       body: jsonEncode(body),
     );
     if (res.statusCode != 200) {
-      reportHttpResponseError(feature: 'meeting.transcript.append', response: res);
-      throw MeetingApiException('appendTranscript failed: ${res.statusCode}', res.body);
+      reportHttpResponseError(
+        feature: 'meeting.transcript.append',
+        response: res,
+      );
+      throw MeetingApiException(
+        'appendTranscript failed: ${res.statusCode}',
+        res.body,
+      );
     }
   }
 
@@ -100,7 +114,10 @@ class MeetingApiService {
     );
     if (res.statusCode != 200) {
       reportHttpResponseError(feature: 'meeting.summary.save', response: res);
-      throw MeetingApiException('saveSummary failed: ${res.statusCode}', res.body);
+      throw MeetingApiException(
+        'saveSummary failed: ${res.statusCode}',
+        res.body,
+      );
     }
   }
 
@@ -112,10 +129,15 @@ class MeetingApiService {
     );
     if (res.statusCode != 200) {
       reportHttpResponseError(feature: 'meeting.list', response: res);
-      throw MeetingApiException('getMeetings failed: ${res.statusCode}', res.body);
+      throw MeetingApiException(
+        'getMeetings failed: ${res.statusCode}',
+        res.body,
+      );
     }
     final list = jsonDecode(res.body) as List<dynamic>;
-    return list.map((e) => _meetingFromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => _meetingFromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// Fetch a single meeting (details + transcript + summary).
@@ -126,7 +148,10 @@ class MeetingApiService {
     );
     if (res.statusCode != 200) {
       reportHttpResponseError(feature: 'meeting.get', response: res);
-      throw MeetingApiException('getMeeting failed: ${res.statusCode}', res.body);
+      throw MeetingApiException(
+        'getMeeting failed: ${res.statusCode}',
+        res.body,
+      );
     }
     final j = jsonDecode(res.body) as Map<String, dynamic>;
     return _meetingDetailFromJson(j);
@@ -140,7 +165,10 @@ class MeetingApiService {
     );
     if (res.statusCode != 200) {
       reportHttpResponseError(feature: 'meeting.delete', response: res);
-      throw MeetingApiException('deleteMeeting failed: ${res.statusCode}', res.body);
+      throw MeetingApiException(
+        'deleteMeeting failed: ${res.statusCode}',
+        res.body,
+      );
     }
   }
 
@@ -165,7 +193,9 @@ class MeetingApiService {
     }
 
     String dateStr = '—';
-    final preferredDate = (startTime != null && startTime.isNotEmpty) ? startTime : createdAt;
+    final preferredDate = (startTime != null && startTime.isNotEmpty)
+        ? startTime
+        : createdAt;
     if (preferredDate != null && preferredDate.isNotEmpty) {
       try {
         final dt = DateTime.parse(preferredDate);
@@ -213,12 +243,15 @@ class MeetingApiService {
       );
     }).toList();
 
-    final keyPoints =
-        (j['keyPoints'] as List<dynamic>? ?? []).map((e) => e.toString()).toList();
-    final actionItems =
-        (j['actionItems'] as List<dynamic>? ?? []).map((e) => e.toString()).toList();
-    final decisions =
-        (j['decisions'] as List<dynamic>? ?? []).map((e) => e.toString()).toList();
+    final keyPoints = (j['keyPoints'] as List<dynamic>? ?? [])
+        .map((e) => e.toString())
+        .toList();
+    final actionItems = (j['actionItems'] as List<dynamic>? ?? [])
+        .map((e) => e.toString())
+        .toList();
+    final decisions = (j['decisions'] as List<dynamic>? ?? [])
+        .map((e) => e.toString())
+        .toList();
     final summary = (j['summary'] as String?) ?? '';
 
     return MeetingDetailModel(
