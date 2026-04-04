@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../../../core/config/api_config.dart';
+import '../../../../core/network/request_headers.dart';
 import '../../../../data/datasources/auth_local_data_source.dart';
 import '../models/advisor_history_item.dart';
 
@@ -16,12 +17,8 @@ class AdvisorHistoryDataSource {
   final AuthLocalDataSource? _auth;
 
   Future<Map<String, String>> _headers() async {
-    final map = <String, String>{'Content-Type': 'application/json'};
     final token = await _auth?.getAccessToken();
-    if (token != null && token.isNotEmpty) {
-      map['Authorization'] = 'Bearer $token';
-    }
-    return map;
+    return buildJsonHeaders(bearerToken: token);
   }
 
   /// Returns list of past analyses for the current user. Empty list on error or 404.

@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 
 import '../core/config/api_config.dart';
 import '../core/config/meeting_env.dart';
+import '../core/network/request_headers.dart';
+import '../core/observability/sentry_api.dart';
 import '../features/meeting_hub/models/meeting_model.dart';
 
 /// API client for meeting CRUD and transcript/summary on the NestJS backend.
@@ -18,17 +20,20 @@ class MeetingApiService {
     return fromEnv.isNotEmpty ? fromEnv : apiRootUrl;
   }
 
+  Map<String, String> _headers() => buildJsonHeaders();
+
   /// Create a new meeting record. Returns the meeting id.
   Future<String> createMeeting(String roomId, DateTime startTime) async {
     final res = await http.post(
       Uri.parse('$_baseUrl/meetings'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers(),
       body: jsonEncode({
         'roomId': roomId,
         'startTime': startTime.toUtc().toIso8601String(),
       }),
     );
     if (res.statusCode != 200 && res.statusCode != 201) {
+      reportHttpResponseError(feature: 'meeting.create', response: res);
       throw MeetingApiException('createMeeting failed: ${res.statusCode}', res.body);
     }
     final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -64,10 +69,11 @@ class MeetingApiService {
 
     final res = await http.patch(
       Uri.parse('$_baseUrl/meetings/$meetingId/transcript'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers(),
       body: jsonEncode(body),
     );
     if (res.statusCode != 200) {
+      reportHttpResponseError(feature: 'meeting.transcript.append', response: res);
       throw MeetingApiException('appendTranscript failed: ${res.statusCode}', res.body);
     }
   }
@@ -89,18 +95,23 @@ class MeetingApiService {
 
     final res = await http.patch(
       Uri.parse('$_baseUrl/meetings/$meetingId/summary'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers(),
       body: jsonEncode(body),
     );
     if (res.statusCode != 200) {
+      reportHttpResponseError(feature: 'meeting.summary.save', response: res);
       throw MeetingApiException('saveSummary failed: ${res.statusCode}', res.body);
     }
   }
 
   /// Fetch all meetings (recent first). Returns list suitable for RecentMeetingModel.
   Future<List<RecentMeetingModel>> getMeetings() async {
-    final res = await http.get(Uri.parse('$_baseUrl/meetings'));
+    final res = await http.get(
+      Uri.parse('$_baseUrl/meetings'),
+      headers: _headers(),
+    );
     if (res.statusCode != 200) {
+      reportHttpResponseError(feature: 'meeting.list', response: res);
       throw MeetingApiException('getMeetings failed: ${res.statusCode}', res.body);
     }
     final list = jsonDecode(res.body) as List<dynamic>;
@@ -109,8 +120,12 @@ class MeetingApiService {
 
   /// Fetch a single meeting (details + transcript + summary).
   Future<MeetingDetailModel> getMeeting(String meetingId) async {
-    final res = await http.get(Uri.parse('$_baseUrl/meetings/$meetingId'));
+    final res = await http.get(
+      Uri.parse('$_baseUrl/meetings/$meetingId'),
+      headers: _headers(),
+    );
     if (res.statusCode != 200) {
+      reportHttpResponseError(feature: 'meeting.get', response: res);
       throw MeetingApiException('getMeeting failed: ${res.statusCode}', res.body);
     }
     final j = jsonDecode(res.body) as Map<String, dynamic>;
@@ -119,8 +134,12 @@ class MeetingApiService {
 
   /// Delete a meeting by id.
   Future<void> deleteMeeting(String meetingId) async {
-    final res = await http.delete(Uri.parse('$_baseUrl/meetings/$meetingId'));
+    final res = await http.delete(
+      Uri.parse('$_baseUrl/meetings/$meetingId'),
+      headers: _headers(),
+    );
     if (res.statusCode != 200) {
+      reportHttpResponseError(feature: 'meeting.delete', response: res);
       throw MeetingApiException('deleteMeeting failed: ${res.statusCode}', res.body);
     }
   }

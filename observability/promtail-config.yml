@@ -1,0 +1,90 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Docker container logs
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*log.json
+
+    pipeline_stages:
+      - json:
+          expressions:
+            output: log
+            stream: stream
+            time: time
+
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+
+      - output:
+          source: output
+
+      - labels:
+          stream: ~
+
+      - regex:
+          expression: "(?P<image_name>(?:.*/)?)(?P<image_tag>[^:]+)?:(?P<image_version>.*)"
+
+  # NestJS application logs
+  - job_name: nestjs-app
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nestjs
+          service: backend
+          __path__: /var/lib/docker/containers/*nestjs*/*log.json
+
+    pipeline_stages:
+      - json:
+          expressions:
+            message: log
+            level: level
+            timestamp: timestamp
+            service: service
+            requestId: requestId
+            featureTag: feature
+
+      - timestamp:
+          source: timestamp
+          format: "2006-01-02T15:04:05.000Z07:00"
+
+      - labels:
+          level: ~
+          service: ~
+          requestId: ~
+
+  # Flutter/Sentry logs
+  - job_name: sentry-frontend
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: sentry
+          service: flutter-app
+          __path__: /var/log/sentry/*.log
+
+    pipeline_stages:
+      - regex:
+          expression: "(?P<level>ERROR|WARNING|INFO|DEBUG) (?P<timestamp>[^ ]+) (?P<message>.*)"
+
+      - timestamp:
+          source: timestamp
+          format: "2006-01-02T15:04:05.000Z07:00"
+
+      - labels:
+          level: ~
+          service: ~

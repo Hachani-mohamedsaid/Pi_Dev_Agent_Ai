@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
+import '../../core/network/request_headers.dart';
+import '../../core/observability/sentry_api.dart';
 import '../datasources/auth_local_data_source.dart';
 import '../models/assistant_notification.dart';
 import '../models/assistant_suggestion.dart';
@@ -51,12 +53,8 @@ class AssistantService {
   final AuthLocalDataSource? _authLocalDataSource;
 
   Future<Map<String, String>> _headers() async {
-    final map = <String, String>{'Content-Type': 'application/json'};
     final token = await _authLocalDataSource?.getAccessToken();
-    if (token != null && token.isNotEmpty) {
-      map['Authorization'] = 'Bearer $token';
-    }
-    return map;
+    return buildJsonHeaders(bearerToken: token);
   }
 
   /// POST /assistant/notifications – generate assistant notifications from signals (stateless).
@@ -107,6 +105,7 @@ class AssistantService {
 
     if (response.statusCode == 401) throw AssistantUnauthorizedException();
     if (response.statusCode != 200 && response.statusCode != 201) {
+      reportHttpResponseError(feature: 'assistant.notifications', response: response);
       throw Exception(
         'Failed to load assistant notifications (code ${response.statusCode})',
       );
@@ -114,6 +113,10 @@ class AssistantService {
 
     final decoded = json.decode(response.body);
     if (decoded is! List) {
+      reportApiException(
+        feature: 'assistant.notifications',
+        error: Exception('Unexpected assistant/notifications payload'),
+      );
       throw Exception('Unexpected assistant/notifications payload');
     }
 
@@ -134,6 +137,7 @@ class AssistantService {
 
     if (response.statusCode == 401) throw AssistantUnauthorizedException();
     if (response.statusCode != 200) {
+      reportHttpResponseError(feature: 'assistant.context', response: response);
       throw Exception(
         'Failed to send context (code ${response.statusCode})',
       );
@@ -160,6 +164,10 @@ class AssistantService {
           .toList();
     }
 
+    reportApiException(
+      feature: 'assistant.context',
+      error: Exception('Unexpected assistant/context payload'),
+    );
     throw Exception('Unexpected assistant/context payload');
   }
 
@@ -169,6 +177,7 @@ class AssistantService {
 
     if (response.statusCode == 401) throw AssistantUnauthorizedException();
     if (response.statusCode != 200) {
+      reportHttpResponseError(feature: 'assistant.suggestions', response: response);
       throw Exception(
         'Failed to load suggestions (code ${response.statusCode})',
       );
@@ -176,6 +185,10 @@ class AssistantService {
 
     final decoded = json.decode(response.body);
     if (decoded is! List) {
+      reportApiException(
+        feature: 'assistant.suggestions',
+        error: Exception('Unexpected suggestions payload'),
+      );
       throw Exception('Unexpected suggestions payload');
     }
 
@@ -214,6 +227,7 @@ class AssistantService {
 
     if (response.statusCode == 401) throw AssistantUnauthorizedException();
     if (response.statusCode >= 400) {
+      reportHttpResponseError(feature: 'assistant.feedback', response: response);
       throw Exception(
         'Failed to send feedback (code ${response.statusCode})',
       );

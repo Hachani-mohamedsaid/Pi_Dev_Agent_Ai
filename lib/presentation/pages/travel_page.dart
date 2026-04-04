@@ -9,6 +9,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../core/network/request_headers.dart';
+import '../../core/observability/sentry_api.dart';
 import '../../injection_container.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/services/mobility_api_service.dart';
@@ -386,9 +388,10 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
       final uri = Uri.parse(
         'https://router.project-osrm.org/route/v1/driving/$origin;$destination?overview=full&geometries=geojson',
       );
-      final response = await http.get(uri);
+      final response = await http.get(uri, headers: buildJsonHeaders());
 
       if (response.statusCode != 200) {
+        reportHttpResponseError(feature: 'travel.route.osrm', response: response);
         throw Exception('Routing failed: ${response.statusCode}');
       }
 
@@ -428,7 +431,12 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
         _durationMin = durationSeconds / 60;
         _loadingRoute = false;
       });
-    } catch (_) {
+    } catch (error, stackTrace) {
+      reportApiException(
+        feature: 'travel.route.osrm',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!mounted) return;
       setState(() {
         _loadingRoute = false;
@@ -1750,18 +1758,23 @@ out center 30;
           var candidate = await http
               .post(
                 Uri.parse(endpoint),
-                headers: const {'Content-Type': 'text/plain; charset=utf-8'},
+                headers: buildJsonHeaders(
+                  extra: const {'Content-Type': 'text/plain; charset=utf-8'},
+                ),
                 body: query,
               )
               .timeout(const Duration(seconds: 18));
           if (candidate.statusCode != 200) {
+            reportHttpResponseError(feature: 'travel.nearby_taxis.overpass', response: candidate);
             candidate = await http
                 .post(
                   Uri.parse(endpoint),
-                  headers: const {
-                    'Content-Type':
-                        'application/x-www-form-urlencoded; charset=utf-8',
-                  },
+                  headers: buildJsonHeaders(
+                    extra: const {
+                      'Content-Type':
+                          'application/x-www-form-urlencoded; charset=utf-8',
+                    },
+                  ),
                   body: 'data=${Uri.encodeQueryComponent(query)}',
                 )
                 .timeout(const Duration(seconds: 18));
@@ -1770,8 +1783,10 @@ out center 30;
             response = candidate;
             break;
           }
+          reportHttpResponseError(feature: 'travel.nearby_taxis.overpass', response: candidate);
           lastError = 'OSM query failed: ${candidate.statusCode}';
         } catch (e) {
+          reportApiException(feature: 'travel.nearby_taxis.overpass', error: e);
           lastError = e;
         }
       }

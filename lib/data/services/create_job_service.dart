@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../config.dart';
+import '../../core/network/request_headers.dart';
 
 /// Service pour créer un poste via le webhook n8n.
 /// Retourne la réponse JSON brute sous forme de [Map<String, dynamic>].
@@ -28,10 +29,9 @@ class CreateJobService {
       final response = await _client
           .post(
             Uri.parse(webhookUrl),
-            headers: const {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
+            headers: buildJsonHeaders(
+              extra: const {'Accept': 'application/json'},
+            ),
             body: jsonEncode(body),
           )
           .timeout(

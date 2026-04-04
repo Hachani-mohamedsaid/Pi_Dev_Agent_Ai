@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
+import '../../core/network/request_headers.dart';
+import '../../core/observability/sentry_api.dart';
 import '../datasources/auth_local_data_source.dart';
 import '../models/achievement_model.dart';
 import '../models/goal_model.dart';
@@ -19,12 +21,8 @@ class GoalsApiService {
   static const Duration _timeout = Duration(seconds: 15);
 
   Future<Map<String, String>> _headers() async {
-    final map = <String, String>{'Content-Type': 'application/json'};
     final token = await _authLocalDataSource?.getAccessToken();
-    if (token != null && token.isNotEmpty) {
-      map['Authorization'] = 'Bearer $token';
-    }
-    return map;
+    return buildJsonHeaders(bearerToken: token);
   }
 
   /// Récupère la liste des objectifs de l'utilisateur.
@@ -34,13 +32,21 @@ class GoalsApiService {
       final response = await http
           .get(Uri.parse('$apiRootUrl$goalsPath'), headers: await _headers())
           .timeout(_timeout);
-      if (response.statusCode != 200) return [];
+      if (response.statusCode != 200) {
+        reportHttpResponseError(feature: 'goals.list', response: response);
+        return [];
+      }
       final list = jsonDecode(response.body) as List<dynamic>?;
       if (list == null) return [];
       return list
           .map((e) => Goal.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      reportApiException(
+        feature: 'goals.list',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return [];
     }
   }
@@ -51,13 +57,21 @@ class GoalsApiService {
       final response = await http
           .get(Uri.parse('$apiRootUrl$goalsPath/achievements'), headers: await _headers())
           .timeout(_timeout);
-      if (response.statusCode != 200) return [];
+      if (response.statusCode != 200) {
+        reportHttpResponseError(feature: 'goals.achievements', response: response);
+        return [];
+      }
       final list = jsonDecode(response.body) as List<dynamic>?;
       if (list == null) return [];
       return list
           .map((e) => Achievement.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      reportApiException(
+        feature: 'goals.achievements',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return [];
     }
   }
@@ -93,11 +107,19 @@ class GoalsApiService {
             body: jsonEncode(body),
           )
           .timeout(_timeout);
-      if (response.statusCode != 201 && response.statusCode != 200) return null;
+      if (response.statusCode != 201 && response.statusCode != 200) {
+        reportHttpResponseError(feature: 'goals.create', response: response);
+        return null;
+      }
       final map = jsonDecode(response.body) as Map<String, dynamic>?;
       if (map == null) return null;
       return Goal.fromJson(map);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      reportApiException(
+        feature: 'goals.create',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }
@@ -112,11 +134,19 @@ class GoalsApiService {
             body: jsonEncode({'progress': progress.clamp(0, 100)}),
           )
           .timeout(_timeout);
-      if (response.statusCode != 200) return null;
+      if (response.statusCode != 200) {
+        reportHttpResponseError(feature: 'goals.update.progress', response: response);
+        return null;
+      }
       final map = jsonDecode(response.body) as Map<String, dynamic>?;
       if (map == null) return null;
       return Goal.fromJson(map);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      reportApiException(
+        feature: 'goals.update.progress',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }
@@ -136,11 +166,19 @@ class GoalsApiService {
             body: jsonEncode({'completed': completed}),
           )
           .timeout(_timeout);
-      if (response.statusCode != 200) return null;
+      if (response.statusCode != 200) {
+        reportHttpResponseError(feature: 'goals.toggle.action', response: response);
+        return null;
+      }
       final map = jsonDecode(response.body) as Map<String, dynamic>?;
       if (map == null) return null;
       return Goal.fromJson(map);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      reportApiException(
+        feature: 'goals.toggle.action',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }

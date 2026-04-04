@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import '../core/network/request_headers.dart';
+import '../core/observability/sentry_api.dart';
+
 /// Sends user feedback (Accept / Refuse) to the backend for ML training.
 class AssistantFeedbackService {
   static const String baseUrl =
@@ -14,16 +17,19 @@ class AssistantFeedbackService {
   }) async {
     final url = Uri.parse('$baseUrl/assistant/feedback');
 
-    await http.post(
+    final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: buildJsonHeaders(),
       body: jsonEncode({
         'userId': userId,
         'suggestionId': suggestionId,
         'accepted': accepted,
       }),
     );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      reportHttpResponseError(feature: 'assistant.feedback.legacy', response: response);
+      throw Exception('Failed to send feedback (${response.statusCode})');
+    }
   }
 }

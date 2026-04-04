@@ -1,0 +1,45 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'pi-dev-agent'
+    environment: 'production'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+rule_files:
+  - '/etc/prometheus/alert-rules.yml'
+
+scrape_configs:
+  # NestJS Backend - Prometheus metrics endpoint
+  - job_name: 'nestjs-backend'
+    static_configs:
+      - targets:
+          - 'localhost:3001' # Change port if different
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Sentry (optional - if you have Sentry proxy)
+  - job_name: 'sentry-errors'
+    static_configs:
+      - targets:
+          - 'localhost:9110' # Sentry exporter (optional)
+    scrape_interval: 30s
+
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets:
+          - localhost:9090
+
+  # Node Exporter (system metrics - optional)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets:
+          - 'localhost:9100'
+    scrape_interval: 15s

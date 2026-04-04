@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../core/network/request_headers.dart';
+import '../../core/observability/sentry_api.dart';
 import '../../core/config/open_weather_config.dart';
 
 /// Une suggestion de ville retournée par l'API Geocoding OpenWeather.
@@ -38,8 +40,11 @@ class OpenWeatherService {
           'appid': openWeatherApiKey,
         },
       );
-      final res = await http.get(uri);
-      if (res.statusCode != 200) return [];
+      final res = await http.get(uri, headers: buildJsonHeaders());
+      if (res.statusCode != 200) {
+        reportHttpResponseError(feature: 'openweather.city_suggestions', response: res);
+        return [];
+      }
       final list = jsonDecode(res.body) as List<dynamic>?;
       if (list == null) return [];
       final suggestions = <CitySuggestion>[];
@@ -56,7 +61,12 @@ class OpenWeatherService {
         ));
       }
       return suggestions;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      reportApiException(
+        feature: 'openweather.city_suggestions',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return [];
     }
   }
@@ -74,8 +84,11 @@ class OpenWeatherService {
           'lang': 'fr',
         },
       );
-      final res = await http.get(uri);
-      if (res.statusCode != 200) return null;
+      final res = await http.get(uri, headers: buildJsonHeaders());
+      if (res.statusCode != 200) {
+        reportHttpResponseError(feature: 'openweather.summary', response: res);
+        return null;
+      }
       final data = jsonDecode(res.body) as Map<String, dynamic>?;
       final main = data?['main'] as Map<String, dynamic>?;
       final weatherList = data?['weather'] as List<dynamic>?;
@@ -88,7 +101,12 @@ class OpenWeatherService {
       final tempStr = temp.round().toString();
       final desc = description != null ? _capitalize(description) : '';
       return desc.isEmpty ? '$tempStr°C' : '$tempStr°C, $desc';
-    } catch (_) {
+    } catch (error, stackTrace) {
+      reportApiException(
+        feature: 'openweather.summary',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }
@@ -105,13 +123,21 @@ class OpenWeatherService {
           'units': 'metric',
         },
       );
-      final res = await http.get(uri);
-      if (res.statusCode != 200) return null;
+      final res = await http.get(uri, headers: buildJsonHeaders());
+      if (res.statusCode != 200) {
+        reportHttpResponseError(feature: 'openweather.temperature', response: res);
+        return null;
+      }
       final data = jsonDecode(res.body) as Map<String, dynamic>?;
       final main = data?['main'] as Map<String, dynamic>?;
       final temp = main?['temp'] as num?;
       return temp?.toDouble();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      reportApiException(
+        feature: 'openweather.temperature',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }
@@ -128,8 +154,11 @@ class OpenWeatherService {
           'units': 'metric',
         },
       );
-      final res = await http.get(uri);
-      if (res.statusCode != 200) return 'sunny';
+      final res = await http.get(uri, headers: buildJsonHeaders());
+      if (res.statusCode != 200) {
+        reportHttpResponseError(feature: 'openweather.condition', response: res);
+        return 'sunny';
+      }
       final data = jsonDecode(res.body) as Map<String, dynamic>?;
       final weatherList = data?['weather'] as List<dynamic>?;
       final first = weatherList != null && weatherList.isNotEmpty
@@ -142,7 +171,12 @@ class OpenWeatherService {
       if (id >= 801 && id <= 804) return 'cloudy'; // clouds
       if (id == 800) return 'sunny'; // clear
       return 'cloudy'; // 701-799 atmosphere, etc.
-    } catch (_) {
+    } catch (error, stackTrace) {
+      reportApiException(
+        feature: 'openweather.condition',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return 'sunny';
     }
   }
