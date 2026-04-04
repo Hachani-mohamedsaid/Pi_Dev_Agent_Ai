@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
+import '../../core/network/request_headers.dart';
+import '../../core/observability/sentry_api.dart';
 import '../../features/meeting_intelligence/models/cultural_result.dart';
 import '../../features/meeting_intelligence/models/psych_result.dart';
 import '../../features/meeting_intelligence/models/report_result.dart';
@@ -64,12 +66,8 @@ class MeetingIntelligenceService {
   static const Duration _timeout = Duration(seconds: 45);
 
   Future<Map<String, String>> _headers() async {
-    final map = <String, String>{'Content-Type': 'application/json'};
     final token = await _auth.getAccessToken();
-    if (token != null && token.isNotEmpty) {
-      map['Authorization'] = 'Bearer $token';
-    }
-    return map;
+    return buildJsonHeaders(bearerToken: token);
   }
 
   /// Step 1 → 2: POST /meetings/intelligence/draft
@@ -437,6 +435,7 @@ class MeetingIntelligenceService {
   }
 
   Exception _parseError(http.Response res) {
+    reportHttpResponseError(feature: 'meeting.intelligence', response: res);
     try {
       final data = jsonDecode(res.body) as Map<String, dynamic>?;
       final msg = data?['message'];

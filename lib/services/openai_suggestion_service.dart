@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../core/config/api_config.dart';
+import '../core/network/request_headers.dart';
+import '../core/observability/sentry_api.dart';
 import '../data/models/assistant_suggestion.dart';
 
 /// Context passed to OpenAI to generate suggestions (context + user profile + learned preferences).
@@ -102,10 +104,7 @@ Allowed types: break, coffee, umbrella, leave_home, lightbulb. Confidence 0.0 to
     try {
       final response = await http.post(
         Uri.parse(_apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $key',
-        },
+        headers: buildJsonHeaders(bearerToken: key),
         body: jsonEncode({
           'model': 'gpt-4o-mini',
           'messages': [
@@ -117,7 +116,10 @@ Allowed types: break, coffee, umbrella, leave_home, lightbulb. Confidence 0.0 to
         }),
       );
 
-      if (response.statusCode != 200) return [];
+      if (response.statusCode != 200) {
+        reportHttpResponseError(feature: 'openai.suggestions', response: response);
+        return [];
+      }
 
       final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
       final choices = decoded?['choices'] as List<dynamic>?;
@@ -159,7 +161,12 @@ Allowed types: break, coffee, umbrella, leave_home, lightbulb. Confidence 0.0 to
         ));
       }
       return suggestions;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      reportApiException(
+        feature: 'openai.suggestions',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return [];
     }
   }

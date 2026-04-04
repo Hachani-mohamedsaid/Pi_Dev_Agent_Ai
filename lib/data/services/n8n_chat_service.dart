@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import '../../core/network/request_headers.dart';
+
 /// Service for communicating with n8n webhook.
 /// Handles sending messages and receiving AI responses.
 class N8nChatService {
@@ -26,10 +28,9 @@ class N8nChatService {
       final response = await httpClient
           .post(
             Uri.parse(webhookUrl),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'text/plain, application/json',
-            },
+            headers: buildJsonHeaders(
+              extra: const {'Accept': 'text/plain, application/json'},
+            ),
             body: jsonEncode({'message': userMessage}),
           )
           .timeout(
@@ -103,10 +104,9 @@ class N8nChatService {
       final response = await httpClient
           .post(
             Uri.parse(webhookUrl),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'text/plain, application/json',
-            },
+            headers: buildJsonHeaders(
+              extra: const {'Accept': 'text/plain, application/json'},
+            ),
             body: body,
           )
           .timeout(

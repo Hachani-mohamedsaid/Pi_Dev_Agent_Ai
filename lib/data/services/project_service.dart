@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../core/config/api_config.dart';
+import '../../core/network/request_headers.dart';
 
 /// Envoie les décisions Accepter/Rejeter vers NestJS (MongoDB) et vers le webhook n8n.
 class ProjectService {
@@ -27,7 +28,10 @@ class ProjectService {
   Future<Map<String, String>> fetchProjectDecisions() async {
     try {
       final response = await http
-          .get(Uri.parse('$apiRootUrl$projectDecisionsPath'))
+          .get(
+            Uri.parse('$apiRootUrl$projectDecisionsPath'),
+            headers: buildJsonHeaders(),
+          )
           .timeout(_timeout);
       if (response.statusCode != 200) return {};
       final list = jsonDecode(response.body) as List<dynamic>?;
@@ -85,7 +89,6 @@ class ProjectService {
       bodyNest['periode'] = periode;
     }
 
-    const headers = {'Content-Type': 'application/json'};
     final bodyN8n = _n8nBody(
       action: action,
       rowNumber: rowNumber,
@@ -98,14 +101,14 @@ class ProjectService {
       // 1) NestJS → MongoDB
       final nestFuture = http.post(
         Uri.parse('$apiRootUrl$projectDecisionsPath'),
-        headers: headers,
+        headers: buildJsonHeaders(),
         body: jsonEncode(bodyNest),
       ).timeout(_timeout);
 
       // 2) n8n webhook (workflow n8n)
       final n8nFuture = http.post(
         Uri.parse(projectActionN8nWebhookUrl),
-        headers: headers,
+        headers: buildJsonHeaders(),
         body: jsonEncode(bodyN8n),
       ).timeout(_timeout);
 

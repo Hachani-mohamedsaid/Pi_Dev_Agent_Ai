@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
+import '../../core/network/request_headers.dart';
+import '../../core/observability/sentry_api.dart';
 import '../../models/challenge_model.dart';
 import '../datasources/auth_local_data_source.dart';
 
@@ -16,8 +18,6 @@ class ChallengesService {
   }) : _baseUrl = baseUrl ?? apiRootUrl,
        _authLocalDataSource = authLocalDataSource;
 
-  static const _headers = {'Content-Type': 'application/json'};
-
   /// Fetch challenge catalog dynamically from backend.
   /// Expected API response: List<Challenge>
   Future<List<Challenge>> fetchChallengesCatalog() async {
@@ -25,11 +25,7 @@ class ChallengesService {
       final token = await _authLocalDataSource.getAccessToken();
       final response = await http.get(
         Uri.parse('$_baseUrl/challenges/catalog'),
-        headers: {
-          ..._headers,
-          if (token != null && token.isNotEmpty)
-            'Authorization': 'Bearer $token',
-        },
+        headers: buildJsonHeaders(bearerToken: token),
       );
 
       if (response.statusCode == 200) {
@@ -53,8 +49,14 @@ class ChallengesService {
             .toList();
       }
 
+      reportHttpResponseError(feature: 'challenges.catalog', response: response);
       return getMockChallenges();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      reportApiException(
+        feature: 'challenges.catalog',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return getMockChallenges();
     }
   }
@@ -71,7 +73,7 @@ class ChallengesService {
 
       final response = await http.get(
         Uri.parse('$_baseUrl/users/leaderboard'),
-        headers: {..._headers, 'Authorization': 'Bearer $token'},
+        headers: buildJsonHeaders(bearerToken: token),
       );
 
       if (response.statusCode == 200) {
@@ -84,8 +86,14 @@ class ChallengesService {
             .toList()
           ..sort((a, b) => b.totalPoints.compareTo(a.totalPoints));
       }
+      reportHttpResponseError(feature: 'challenges.leaderboard', response: response);
       return _getMockLeaderboard();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      reportApiException(
+        feature: 'challenges.leaderboard',
+        error: e,
+        stackTrace: stackTrace,
+      );
       // If endpoint doesn't exist, use mock data
       return _getMockLeaderboard();
     }
@@ -152,7 +160,7 @@ class ChallengesService {
 
       final response = await http.get(
         Uri.parse('$_baseUrl/auth/me'),
-        headers: {..._headers, 'Authorization': 'Bearer $token'},
+        headers: buildJsonHeaders(bearerToken: token),
       );
 
       if (response.statusCode == 200) {
@@ -170,8 +178,14 @@ class ChallengesService {
           isPremium: data['isPremium'] as bool? ?? false,
         );
       }
+      reportHttpResponseError(feature: 'challenges.currentUser', response: response);
       return null;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      reportApiException(
+        feature: 'challenges.currentUser',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }
@@ -184,12 +198,20 @@ class ChallengesService {
 
       final response = await http.post(
         Uri.parse('$_baseUrl/users/complete-challenge'),
-        headers: {..._headers, 'Authorization': 'Bearer $token'},
+        headers: buildJsonHeaders(bearerToken: token),
         body: jsonEncode({'challengeId': challengeId, 'points': points}),
       );
 
+      if (response.statusCode != 200) {
+        reportHttpResponseError(feature: 'challenges.complete', response: response);
+      }
       return response.statusCode == 200;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      reportApiException(
+        feature: 'challenges.complete',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return false;
     }
   }

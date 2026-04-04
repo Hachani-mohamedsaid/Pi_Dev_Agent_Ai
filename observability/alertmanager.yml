@@ -1,0 +1,126 @@
+global:
+  resolve_timeout: 5m
+  # SMTP configuration (optional - replace with your email provider)
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_auth_username: 'your-email@gmail.com'
+  smtp_auth_password: 'your-app-password'
+  smtp_from: 'alerts@pi-dev-agent.com'
+
+# Slack webhook - REPLACE with your Slack webhook URL
+# Get it from: https://api.slack.com/messaging/webhooks
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+route:
+  # Default receiver
+  receiver: 'default-team'
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+
+  # Sub-routes for different severities
+  routes:
+    # Critical alerts go to ops immediately
+    - match:
+        severity: critical
+      receiver: 'ops-critical'
+      group_wait: 5s
+      repeat_interval: 1h
+      continue: true
+
+    # Warning alerts bundled
+    - match:
+        severity: warning
+      receiver: 'dev-team'
+      group_wait: 30s
+      repeat_interval: 4h
+
+    # Auth-related alerts
+    - match:
+        service: auth
+      receiver: 'security-team'
+      group_wait: 5s
+      repeat_interval: 2h
+
+    # Database alerts
+    - match:
+        service: database
+      receiver: 'dba-team'
+      group_wait: 5s
+      repeat_interval: 1h
+
+receivers:
+  # Default receiver - email to team
+  - name: 'default-team'
+    email_configs:
+      - to: 'team@pi-dev-agent.com'
+        headers:
+          Subject: '[{{ .GroupLabels.alertname }}] {{ .GroupLabels.cluster }}'
+
+  # Critical alerts - instant notification
+  - name: 'ops-critical'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#alerts-critical'
+        title: 'Critical Alert'
+        text: |
+          Severity: {{ .CommonLabels.severity }}
+          Service: {{ .CommonLabels.service }}
+          Alert: {{ .GroupLabels.alertname }}
+        send_resolved: true
+    email_configs:
+      - to: 'ops-oncall@pi-dev-agent.com'
+        headers:
+          Subject: '[CRITICAL] {{ .GroupLabels.alertname }} - {{ .GroupLabels.cluster }}'
+    # PagerDuty integration (optional)
+    # pagerduty_configs:
+    #   - service_key: 'YOUR_PAGERDUTY_SERVICE_KEY'
+
+  # Development team warnings
+  - name: 'dev-team'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#alerts-dev'
+        title: 'Dev Alert'
+        text: |
+          Service: {{ .CommonLabels.service }}
+          Alert: {{ .GroupLabels.alertname }}
+        send_resolved: true
+
+  # Security team - authentication issues
+  - name: 'security-team'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#security-alerts'
+        title: 'Security Alert'
+        text: |
+          Type: Authentication Failure
+          Detail: {{ .GroupLabels.alertname }}
+        send_resolved: true
+    email_configs:
+      - to: 'security@pi-dev-agent.com'
+
+  # Database team
+  - name: 'dba-team'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#database-alerts'
+    email_configs:
+      - to: 'dba@pi-dev-agent.com'
+
+# Inhibition rules - suppress alerts based on conditions
+inhibit_rules:
+  # Suppress non-critical alerts if critical alert already firing
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal: ['alertname', 'service']
+
+  # Suppress warning if service is already down
+  - source_match:
+      alertname: BackendServiceDown
+    target_match_re:
+      alertname: '.*'
+    equal: ['service']

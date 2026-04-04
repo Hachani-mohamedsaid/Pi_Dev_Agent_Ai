@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
+import '../../core/network/request_headers.dart';
+import '../../core/observability/sentry_api.dart';
 import 'auth_local_data_source.dart';
 
 /// Contrat pour l'appel au backend chat IA (Talk to buddy).
@@ -31,8 +33,6 @@ class ApiChatRemoteDataSource implements ChatRemoteDataSource {
   final String _baseUrl;
   final AuthLocalDataSource? _authLocalDataSource;
 
-  static const _headers = {'Content-Type': 'application/json'};
-
   @override
   Future<String> sendMessages(
     List<Map<String, String>> messages, {
@@ -44,11 +44,8 @@ class ApiChatRemoteDataSource implements ChatRemoteDataSource {
     }
     bodyMessages.addAll(messages);
 
-    final headers = Map<String, String>.from(_headers);
     final token = await _authLocalDataSource?.getAccessToken();
-    if (token != null && token.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $token';
-    }
+    final headers = buildJsonHeaders(bearerToken: token);
 
     final res = await http.post(
       Uri.parse('$_baseUrl$chatPath'),
@@ -56,12 +53,21 @@ class ApiChatRemoteDataSource implements ChatRemoteDataSource {
       body: jsonEncode({'messages': bodyMessages}),
     );
     if (res.statusCode != 200) {
+      reportHttpResponseError(feature: 'chat', response: res);
       throw Exception('Chat API error: ${res.statusCode}');
     }
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     // Supporte "message" ou "content"
     final text = data['message'] as String? ?? data['content'] as String?;
     if (text == null || text.isEmpty) {
+      reportApiException(
+        feature: 'chat',
+        error: Exception('Chat API empty response payload'),
+        context: {
+          'url': '$_baseUrl$chatPath',
+          'requestId': headers['x-request-id'] ?? '',
+        },
+      );
       throw Exception('Chat API: réponse vide');
     }
     return text;

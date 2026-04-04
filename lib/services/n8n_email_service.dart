@@ -4,6 +4,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import '../core/network/request_headers.dart';
+import '../core/observability/sentry_api.dart';
+
 class N8nEmailService {
   static const String _fetchUrl =
       'https://n8n-production-1e13.up.railway.app/webhook/email-summaries';
@@ -15,8 +18,12 @@ class N8nEmailService {
       'https://n8n-production-1e13.up.railway.app/webhook/send-reply';
 
   Future<List<dynamic>> fetchEmails() async {
-    final response = await http.get(Uri.parse(_fetchUrl));
+    final response = await http.get(
+      Uri.parse(_fetchUrl),
+      headers: buildJsonHeaders(),
+    );
     if (response.statusCode != 200) {
+      reportHttpResponseError(feature: 'n8n_email.fetch', response: response);
       throw Exception('Failed to load emails: ${response.statusCode}');
     }
     
@@ -91,8 +98,12 @@ class N8nEmailService {
   /// Returns { emails: List, deadlines: int?, requiredActions: int? }.
   /// Use deadlines/requiredActions if n8n includes them at top level; else compute from emails.
   Future<Map<String, dynamic>> fetchEmailsWithStats() async {
-    final response = await http.get(Uri.parse(_fetchUrl));
+    final response = await http.get(
+      Uri.parse(_fetchUrl),
+      headers: buildJsonHeaders(),
+    );
     if (response.statusCode != 200) {
+      reportHttpResponseError(feature: 'n8n_email.fetch_with_stats', response: response);
       throw Exception('Failed to load emails: ${response.statusCode}');
     }
     final decoded = json.decode(response.body);
@@ -122,10 +133,14 @@ class N8nEmailService {
   }
 
   Future<Map<String, dynamic>> getEmailSummaryStats() async {
-    final response = await http.get(Uri.parse(_statsUrl));
+    final response = await http.get(
+      Uri.parse(_statsUrl),
+      headers: buildJsonHeaders(),
+    );
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
+    reportHttpResponseError(feature: 'n8n_email.stats', response: response);
     throw Exception('Failed to load email stats');
   }
 
@@ -136,7 +151,7 @@ class N8nEmailService {
   ) async {
     final response = await http.post(
       Uri.parse(_generateUrl),
-      headers: {'Content-Type': 'application/json'},
+      headers: buildJsonHeaders(),
       body: json.encode({
         'emailId': emailId,
         'replyType': replyType,
@@ -146,13 +161,14 @@ class N8nEmailService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
+    reportHttpResponseError(feature: 'n8n_email.generate_reply', response: response);
     throw Exception('Failed to generate reply');
   }
 
   Future<void> sendReply(String emailId, String subject, String body) async {
     final response = await http.post(
       Uri.parse(_sendUrl),
-      headers: {'Content-Type': 'application/json'},
+      headers: buildJsonHeaders(),
       body: json.encode({
         'emailId': emailId,
         'replySubject': subject,
@@ -160,6 +176,7 @@ class N8nEmailService {
       }),
     );
     if (response.statusCode != 200) {
+      reportHttpResponseError(feature: 'n8n_email.send_reply', response: response);
       throw Exception('Failed to send reply');
     }
   }

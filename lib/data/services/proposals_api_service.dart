@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+
+import '../../core/network/request_headers.dart';
 import '../models/proposal_model.dart';
 
 class ProposalsApiService {
@@ -12,7 +14,10 @@ class ProposalsApiService {
   Future<List<Proposal>> fetchProposals() async {
     try {
       final response = await http
-          .get(Uri.parse(baseUrl))
+          .get(
+            Uri.parse(baseUrl),
+            headers: buildJsonHeaders(),
+          )
           .timeout(
             timeout,
             onTimeout: () {

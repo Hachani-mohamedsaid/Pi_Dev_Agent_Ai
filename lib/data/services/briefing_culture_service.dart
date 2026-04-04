@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
+import '../../core/network/request_headers.dart';
 import '../../features/meeting_intelligence/models/cultural_result.dart';
 import '../briefing_session_cache.dart';
 import '../datasources/auth_local_data_source.dart';
@@ -17,15 +18,11 @@ class BriefingCultureService {
   static const Duration _timeout = Duration(seconds: 45);
 
   Future<Map<String, String>> _headers() async {
-    final map = <String, String>{
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
     final token = await _auth.getAccessToken();
-    if (token != null && token.isNotEmpty) {
-      map['Authorization'] = 'Bearer $token';
-    }
-    return map;
+    return buildJsonHeaders(
+      bearerToken: token,
+      extra: const {'Accept': 'application/json'},
+    );
   }
 
   /// Uses cache when [useCache] is true and data exists.
