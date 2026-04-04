@@ -12,10 +12,11 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
 import '../../../core/config/meeting_env.dart';
+import '../../../core/network/request_headers.dart';
+import '../../../core/observability/sentry_api.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../services/meeting_api_service.dart';
 import '../../../core/utils/responsive.dart';
-import '../data/meeting_hub_mock_data.dart';
 import '../models/meeting_model.dart';
 
 /// Meeting transcript with AI summary (key points, action items, decisions) and full transcript.
@@ -183,11 +184,12 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
 
     final response = await http.post(
       Uri.parse('https://api.anthropic.com/v1/messages'),
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
+      headers: buildJsonHeaders(
+        extra: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+      ),
       body: jsonEncode({
         'model': 'claude-sonnet-4-5-20250929',
         'max_tokens': 1024,
@@ -201,6 +203,7 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
     ).timeout(const Duration(seconds: 30));
 
     if (response.statusCode != 200) {
+      reportHttpResponseError(feature: 'meeting.transcript.claude', response: response);
       throw Exception('Claude API error ${response.statusCode}: ${response.body}');
     }
 

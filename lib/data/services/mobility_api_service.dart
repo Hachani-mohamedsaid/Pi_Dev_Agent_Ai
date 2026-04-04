@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
+import '../../core/network/request_headers.dart';
+import '../../core/observability/sentry_api.dart';
 import '../datasources/auth_local_data_source.dart';
 
 class MobilityApiService {
@@ -13,15 +15,13 @@ class MobilityApiService {
   static const Duration _timeout = Duration(seconds: 25);
 
   Future<Map<String, String>> _headers({bool requireAuth = true}) async {
-    final headers = <String, String>{'Content-Type': 'application/json'};
     final rawToken = await _auth.getAccessToken();
     final token = _normalizeToken(rawToken);
-    if (token != null) {
-      headers['Authorization'] = 'Bearer $token';
-    } else if (requireAuth) {
+    if (token == null && requireAuth) {
       throw const MobilityApiException('login_required');
     }
-    return headers;
+
+    return buildJsonHeaders(bearerToken: token);
   }
 
   String? _normalizeToken(String? token) {
@@ -36,6 +36,7 @@ class MobilityApiService {
   }
 
   Never _throwHttpError(http.Response response) {
+    reportHttpResponseError(feature: 'mobility.api', response: response);
     if (response.statusCode == 401) {
       throw MobilityApiException(
         'unauthorized',

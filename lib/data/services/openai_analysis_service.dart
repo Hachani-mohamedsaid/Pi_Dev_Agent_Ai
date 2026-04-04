@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../core/config/api_config.dart';
+import '../../core/network/request_headers.dart';
 import '../models/work_proposal_model.dart';
 
 /// Service pour analyser un projet avec OpenAI et sauvegarder dans MongoDB.
@@ -12,7 +13,10 @@ class OpenAIAnalysisService {
   Future<ProjectAnalysis?> getAnalysisFromMongo(int rowNumber) async {
     try {
       final response = await http
-          .get(Uri.parse('$apiRootUrl$projectAnalysesPath/$rowNumber'))
+          .get(
+            Uri.parse('$apiRootUrl$projectAnalysesPath/$rowNumber'),
+            headers: buildJsonHeaders(),
+          )
           .timeout(_timeout);
       if (response.statusCode != 200) return null;
       final json = jsonDecode(response.body) as Map<String, dynamic>?;
@@ -28,7 +32,7 @@ class OpenAIAnalysisService {
     try {
       final response = await http.post(
         Uri.parse('$apiRootUrl$projectAnalysesPath'),
-        headers: {'Content-Type': 'application/json'},
+        headers: buildJsonHeaders(),
         body: jsonEncode({
           'row_number': rowNumber,
           'analysis': _analysisToJson(analysis),
@@ -59,10 +63,7 @@ class OpenAIAnalysisService {
       
       final response = await http.post(
         Uri.parse(_openaiApiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $openaiApiKey',
-        },
+        headers: buildJsonHeaders(bearerToken: openaiApiKey),
         body: jsonEncode({
           'model': 'gpt-4o-mini',
           'messages': [

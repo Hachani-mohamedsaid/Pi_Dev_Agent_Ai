@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
+import '../../core/network/request_headers.dart';
+import '../../core/observability/sentry_api.dart';
 import '../datasources/auth_local_data_source.dart';
 
 /// Appelle le backend NestJS pour créer une [Stripe Checkout Session] (abonnement),
@@ -39,10 +41,7 @@ class StripeCheckoutService {
     final response = await http
         .post(
           uri,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
+          headers: buildJsonHeaders(bearerToken: token),
           body: jsonEncode({
             'couponCode': couponCode,
             'plan': plan,
@@ -51,6 +50,7 @@ class StripeCheckoutService {
         .timeout(_timeout);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
+      reportHttpResponseError(feature: 'stripe.coupon.validate', response: response);
       throw StripeCheckoutException(
         'http_${response.statusCode}',
         body: response.body.isNotEmpty ? response.body : null,
@@ -87,10 +87,7 @@ class StripeCheckoutService {
     final response = await http
         .post(
           uri,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
+          headers: buildJsonHeaders(bearerToken: token),
           body: jsonEncode({
             'plan': plan,
             if (couponCode != null && couponCode.trim().isNotEmpty)
@@ -100,6 +97,7 @@ class StripeCheckoutService {
         .timeout(_timeout);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
+      reportHttpResponseError(feature: 'stripe.checkout.create', response: response);
       throw StripeCheckoutException(
         'http_${response.statusCode}',
         body: response.body.isNotEmpty ? response.body : null,

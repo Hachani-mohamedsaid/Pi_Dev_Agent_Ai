@@ -410,6 +410,12 @@
       "languageVersion": "3.3"
     },
     {
+      "name": "jni",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/jni-0.14.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
       "name": "js",
       "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/js-0.6.7",
       "packageUri": "lib/",
@@ -522,6 +528,24 @@
       "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/openai_tts-0.0.3",
       "packageUri": "lib/",
       "languageVersion": "3.4"
+    },
+    {
+      "name": "package_config",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/package_config-2.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "package_info_plus",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/package_info_plus-9.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "package_info_plus_platform_interface",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/package_info_plus_platform_interface-3.2.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.18"
     },
     {
       "name": "path",
@@ -678,6 +702,18 @@
       "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/qr-3.0.2",
       "packageUri": "lib/",
       "languageVersion": "3.4"
+    },
+    {
+      "name": "sentry",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/sentry-9.16.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "sentry_flutter",
+      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/sentry_flutter-9.16.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
     },
     {
       "name": "share_plus",

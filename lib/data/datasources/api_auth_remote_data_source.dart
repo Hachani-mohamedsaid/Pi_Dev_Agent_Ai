@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
+import '../../core/network/request_headers.dart';
+import '../../core/observability/sentry_api.dart';
 import '../models/auth_response.dart';
 import '../models/profile_model.dart';
 import 'auth_remote_data_source.dart';
@@ -14,65 +17,11 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
 
   final String _baseUrl;
 
-  static const _headers = {'Content-Type': 'application/json'};
-
-  Future<http.Response> _post(
-    Uri url, {
-    Map<String, String>? headers,
-    Object? body,
-  }) async {
-    try {
-      return await http.post(url, headers: headers, body: body);
-    } on http.ClientException catch (_) {
-      if (kIsWeb) {
-        throw Exception(
-          'Connexion impossible au backend ($url). '
-          'Sur Flutter Web, le navigateur bloque souvent les appels vers un autre port sans CORS. '
-          'Dans Nest : app.enableCors({ origin: true, credentials: true }). '
-          'Vérifiez aussi que le serveur tourne (ex. port 3000).',
-        );
-      }
-      rethrow;
-    }
-  }
-
-  Future<http.Response> _get(Uri url, {Map<String, String>? headers}) async {
-    try {
-      return await http.get(url, headers: headers);
-    } on http.ClientException catch (_) {
-      if (kIsWeb) {
-        throw Exception(
-          'Connexion impossible au backend ($url). '
-          'Activez CORS sur Nest (enableCors) et vérifiez que l’API est démarrée.',
-        );
-      }
-      rethrow;
-    }
-  }
-
-  Future<http.Response> _patch(
-    Uri url, {
-    Map<String, String>? headers,
-    Object? body,
-  }) async {
-    try {
-      return await http.patch(url, headers: headers, body: body);
-    } on http.ClientException catch (_) {
-      if (kIsWeb) {
-        throw Exception(
-          'Connexion impossible au backend ($url). '
-          'Activez CORS sur Nest (enableCors) et vérifiez que l’API est démarrée.',
-        );
-      }
-      rethrow;
-    }
-  }
-
   @override
   Future<AuthResponse> login(String email, String password) async {
     final res = await _post(
       Uri.parse('$_baseUrl/auth/login'),
-      headers: _headers,
+      headers: buildJsonHeaders(),
       body: jsonEncode({'email': email, 'password': password}),
     );
     if (res.statusCode == 200) {
@@ -91,7 +40,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   ) async {
     final res = await _post(
       Uri.parse('$_baseUrl/auth/register'),
-      headers: _headers,
+      headers: buildJsonHeaders(),
       body: jsonEncode({'name': name, 'email': email, 'password': password}),
     );
     if (res.statusCode == 201) {
@@ -107,7 +56,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   Future<void> resetPassword(String email) async {
     final res = await _post(
       Uri.parse('$_baseUrl/auth/reset-password'),
-      headers: _headers,
+      headers: buildJsonHeaders(),
       body: jsonEncode({'email': email}),
     );
     if (res.statusCode != 200) throw _parseError(res);
@@ -121,7 +70,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   }) async {
     final res = await _post(
       Uri.parse('$_baseUrl/auth/reset-password/confirm'),
-      headers: _headers,
+      headers: buildJsonHeaders(),
       body: jsonEncode({'token': token, 'newPassword': newPassword}),
     );
     if (res.statusCode != 200) throw _parseError(res);
@@ -135,7 +84,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   }) async {
     final res = await _post(
       Uri.parse('$_baseUrl/auth/change-password'),
-      headers: {..._headers, 'Authorization': 'Bearer $accessToken'},
+      headers: buildJsonHeaders(bearerToken: accessToken),
       body: jsonEncode({
         'currentPassword': currentPassword,
         'newPassword': newPassword,
@@ -148,7 +97,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   Future<void> requestEmailVerification(String accessToken) async {
     final res = await _post(
       Uri.parse('$_baseUrl/auth/verify-email'),
-      headers: {..._headers, 'Authorization': 'Bearer $accessToken'},
+      headers: buildJsonHeaders(bearerToken: accessToken),
       body: jsonEncode({}),
     );
     if (res.statusCode != 200 && res.statusCode != 204) throw _parseError(res);
@@ -158,7 +107,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   Future<void> confirmEmailVerification(String token) async {
     final res = await _post(
       Uri.parse('$_baseUrl/auth/verify-email/confirm'),
-      headers: _headers,
+      headers: buildJsonHeaders(),
       body: jsonEncode({'token': token}),
     );
     if (res.statusCode != 200 && res.statusCode != 204) throw _parseError(res);
@@ -170,7 +119,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   Future<AuthResponse> loginWithGoogle(String idToken) async {
     final res = await _post(
       Uri.parse('$_baseUrl/auth/google'),
-      headers: _headers,
+      headers: buildJsonHeaders(),
       body: jsonEncode({'idToken': idToken}),
     );
     if (res.statusCode == 200) {
@@ -190,7 +139,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
     if (user != null) body['user'] = user;
     final res = await _post(
       Uri.parse('$_baseUrl/auth/apple'),
-      headers: _headers,
+      headers: buildJsonHeaders(),
       body: jsonEncode(body),
     );
     if (res.statusCode == 200) {
@@ -205,7 +154,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   Future<ProfileModel> getProfile(String accessToken) async {
     final res = await _get(
       Uri.parse('$_baseUrl/auth/me'),
-      headers: {..._headers, 'Authorization': 'Bearer $accessToken'},
+      headers: buildJsonHeaders(bearerToken: accessToken),
     );
     if (res.statusCode == 200) {
       return ProfileModel.fromJson(
@@ -242,7 +191,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
 
     final res = await _patch(
       Uri.parse('$_baseUrl/auth/me'),
-      headers: {..._headers, 'Authorization': 'Bearer $accessToken'},
+      headers: buildJsonHeaders(bearerToken: accessToken),
       body: jsonEncode(body),
     );
     if (res.statusCode != 200) throw _parseError(res);
@@ -250,13 +199,17 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
 
   @override
   Future<bool> checkHealth() async {
-    final res = await _get(Uri.parse('$_baseUrl/health'));
+    final res = await http.get(
+      Uri.parse('$_baseUrl/health'),
+      headers: buildJsonHeaders(),
+    );
     if (res.statusCode != 200) return false;
     final data = jsonDecode(res.body) as Map<String, dynamic>?;
     return data?['status'] == 'ok';
   }
 
   Exception _parseError(http.Response res) {
+    reportHttpResponseError(feature: 'auth', response: res);
     try {
       final data = jsonDecode(res.body) as Map<String, dynamic>?;
       final msg = data?['message'];

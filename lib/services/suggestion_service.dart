@@ -4,6 +4,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:pi_dev_agentia/core/config/meeting_env.dart';
 
+import '../core/network/request_headers.dart';
+import '../core/observability/sentry_api.dart';
+
 /// Listens to transcription stream, keeps history, calls Claude for 3 suggestions, returns Stream of List of String.
 class SuggestionService {
   SuggestionService._();
@@ -72,16 +75,18 @@ class SuggestionService {
     print('Calling Claude API...');
     final response = await http.post(
       Uri.parse('https://api.anthropic.com/v1/messages'),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
+      headers: buildJsonHeaders(
+        extra: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+      ),
       body: jsonEncode(body),
     );
     print('Claude response: ${response.body}');
 
     if (response.statusCode != 200) {
+      reportHttpResponseError(feature: 'meeting.suggestions.claude', response: response);
       throw Exception('Claude API ${response.statusCode}');
     }
     final map = jsonDecode(response.body) as Map<String, dynamic>?;
@@ -107,7 +112,12 @@ class SuggestionService {
       final List<dynamic> parsed = jsonDecode(text);
       final suggestions = parsed.map((e) => e.toString()).toList();
       return suggestions.where((s) => s.isNotEmpty).toList();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      reportApiException(
+        feature: 'meeting.suggestions.claude_parse',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return [];
     }
   }

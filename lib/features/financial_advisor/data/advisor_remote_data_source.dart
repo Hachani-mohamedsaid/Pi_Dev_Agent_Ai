@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../../../core/config/api_config.dart';
-import '../models/advisor_report_model.dart';
+import '../../../../core/network/request_headers.dart';
 
 /// Calls backend POST /api/advisor/analyze or n8n webhook; returns report string.
 class AdvisorRemoteDataSource {
@@ -15,7 +15,7 @@ class AdvisorRemoteDataSource {
     final response = await http
         .post(
           uri,
-          headers: {'Content-Type': 'application/json'},
+          headers: buildJsonHeaders(),
           body: jsonEncode({'project_text': projectText.trim()}),
         )
         .timeout(_timeout);
@@ -40,7 +40,7 @@ class AdvisorRemoteDataSource {
     final response = await http
         .post(
           uri,
-          headers: {'Content-Type': 'application/json'},
+          headers: buildJsonHeaders(),
           body: jsonEncode({'text': projectText.trim()}),
         )
         .timeout(_timeout);

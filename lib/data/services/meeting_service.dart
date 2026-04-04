@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../core/network/request_headers.dart';
 import '../models/meeting_model.dart';
 
 /// Type de décision pour une réunion (webhook POST meeting-decision).
@@ -48,9 +49,9 @@ class MeetingService {
       final response = await httpClient
           .get(
             endpoint,
-            headers: const <String, String>{
-              'Accept': 'application/json',
-            },
+            headers: buildJsonHeaders(
+              extra: const {'Accept': 'application/json'},
+            ),
           )
           .timeout(
             timeout,
@@ -132,10 +133,9 @@ class MeetingService {
       final response = await httpClient
           .post(
             Uri.parse(_decisionEndpoint),
-            headers: const <String, String>{
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
+            headers: buildJsonHeaders(
+              extra: const {'Accept': 'application/json'},
+            ),
             body: jsonEncode(body),
           )
           .timeout(

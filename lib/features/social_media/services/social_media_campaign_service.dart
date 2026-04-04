@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/config/api_config.dart';
+import '../../../core/network/request_headers.dart';
+import '../../../core/observability/sentry_api.dart';
 import '../models/campaign_brief_model.dart';
 import '../models/campaign_result_model.dart';
 
@@ -28,7 +30,7 @@ class SocialMediaCampaignService {
   Future<String> generateCampaign(CampaignBriefModel brief) async {
     final res = await http.post(
       Uri.parse('$_base/social-campaign/generate'),
-      headers: {'Content-Type': 'application/json'},
+      headers: buildJsonHeaders(),
       body: jsonEncode({
         'productName': brief.productName,
         'description': brief.description,
@@ -39,6 +41,7 @@ class SocialMediaCampaignService {
       }),
     );
     if (res.statusCode != 200 && res.statusCode != 201) {
+      reportHttpResponseError(feature: 'social_campaign.generate', response: res);
       throw SocialMediaCampaignException(
         'generateCampaign failed: ${res.statusCode}',
         res.body,
@@ -63,9 +66,10 @@ class SocialMediaCampaignService {
   Future<CampaignResultModel> getCampaignStatus(String campaignId) async {
     final res = await http.get(
       Uri.parse('$_base/social-campaign/$campaignId'),
-      headers: {'Content-Type': 'application/json'},
+      headers: buildJsonHeaders(),
     );
     if (res.statusCode != 200) {
+      reportHttpResponseError(feature: 'social_campaign.status', response: res);
       throw SocialMediaCampaignException(
         'getCampaignStatus failed: ${res.statusCode}',
         res.body,
@@ -85,13 +89,14 @@ class SocialMediaCampaignService {
   ) async {
     final res = await http.post(
       Uri.parse('$_base/social-campaign/$campaignId/send'),
-      headers: {'Content-Type': 'application/json'},
+      headers: buildJsonHeaders(),
       body: jsonEncode({
         'recipients': recipients,
         'notes': notes,
       }),
     );
     if (res.statusCode != 200 && res.statusCode != 201) {
+      reportHttpResponseError(feature: 'social_campaign.send', response: res);
       throw SocialMediaCampaignException(
         'sendCampaignReport failed: ${res.statusCode}',
         res.body,
