@@ -209,10 +209,115 @@ class TeamDispatchApiService {
           headers: await _authHeaders(),
         )
         .timeout(_timeout);
-    if (res.statusCode != 200) return [];
-    final data = jsonDecode(res.body);
-    if (data is! List) return [];
-    return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      if (data is! List) return [];
+      return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    }
+    if (res.statusCode == 401 || res.statusCode == 403) {
+      throw TeamDispatchException(
+        res.statusCode,
+        'Session expirée ou accès refusé. Reconnectez-vous.',
+      );
+    }
+    throw TeamDispatchException(
+      res.statusCode,
+      _extractErrorBody(res.body) ??
+          'Impossible de charger l’équipe (${res.statusCode})',
+    );
+  }
+
+  Future<Map<String, dynamic>> createEmployee({
+    required String fullName,
+    required String email,
+    required String profile,
+    List<String>? skills,
+    List<String>? tags,
+  }) async {
+    final res = await http
+        .post(
+          Uri.parse('$apiRootUrl/employees'),
+          headers: await _authHeaders(),
+          body: jsonEncode({
+            'fullName': fullName,
+            'email': email,
+            'profile': profile,
+            'skills': skills ?? <String>[],
+            'tags': tags ?? <String>[],
+          }),
+        )
+        .timeout(_timeout);
+    final body = res.body.isEmpty
+        ? <String, dynamic>{}
+        : Map<String, dynamic>.from(jsonDecode(res.body) as Map);
+    if (res.statusCode == 201 || res.statusCode == 200) {
+      return body;
+    }
+    throw TeamDispatchException(
+      res.statusCode,
+      body['message']?.toString() ??
+          _extractErrorBody(res.body) ??
+          'Création impossible (${res.statusCode})',
+    );
+  }
+
+  Future<Map<String, dynamic>> updateEmployee(
+    String id, {
+    String? fullName,
+    String? email,
+    String? profile,
+    List<String>? skills,
+    List<String>? tags,
+  }) async {
+    final patch = <String, dynamic>{};
+    if (fullName != null) patch['fullName'] = fullName;
+    if (email != null) patch['email'] = email;
+    if (profile != null) patch['profile'] = profile;
+    if (skills != null) patch['skills'] = skills;
+    if (tags != null) patch['tags'] = tags;
+    final res = await http
+        .patch(
+          Uri.parse('$apiRootUrl/employees/$id'),
+          headers: await _authHeaders(),
+          body: jsonEncode(patch),
+        )
+        .timeout(_timeout);
+    final body = res.body.isEmpty
+        ? <String, dynamic>{}
+        : Map<String, dynamic>.from(jsonDecode(res.body) as Map);
+    if (res.statusCode == 200) {
+      return body;
+    }
+    throw TeamDispatchException(
+      res.statusCode,
+      body['message']?.toString() ??
+          _extractErrorBody(res.body) ??
+          'Mise à jour impossible (${res.statusCode})',
+    );
+  }
+
+  Future<void> deleteEmployee(String id) async {
+    final res = await http
+        .delete(
+          Uri.parse('$apiRootUrl/employees/$id'),
+          headers: await _authHeaders(),
+        )
+        .timeout(_timeout);
+    if (res.statusCode == 200 || res.statusCode == 204) {
+      return;
+    }
+    Map<String, dynamic> body = {};
+    try {
+      if (res.body.isNotEmpty) {
+        body = Map<String, dynamic>.from(jsonDecode(res.body) as Map);
+      }
+    } catch (_) {}
+    throw TeamDispatchException(
+      res.statusCode,
+      body['message']?.toString() ??
+          _extractErrorBody(res.body) ??
+          'Suppression impossible (${res.statusCode})',
+    );
   }
 
   Future<List<Map<String, dynamic>>> listSprints(String projectId) async {

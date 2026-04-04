@@ -5,6 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../data/services/team_dispatch_api_service.dart';
+import '../widgets/employee_editor_sheet.dart';
 import '../widgets/navigation_bar.dart';
 
 /// Hub professionnel : projets acceptés (dispatch / sprints) et annuaire du personnel.
@@ -533,6 +534,195 @@ class _EmployeesTabState extends State<_EmployeesTab> {
     await _future;
   }
 
+  String _userFacingError(Object error) {
+    if (error is TeamDispatchException) {
+      return error.message;
+    }
+    return 'Une erreur inattendue s’est produite. Réessayez dans un instant.';
+  }
+
+  void _toast(String text, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(text),
+        backgroundColor: error
+            ? const Color(0xFF7f1d1d).withValues(alpha: 0.95)
+            : AppColors.primaryDark,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  String? _employeeId(Map<String, dynamic> e) {
+    final v = e['_id']?.toString() ?? e['id']?.toString();
+    if (v == null || v.isEmpty) return null;
+    return v;
+  }
+
+  String _initials(String name) {
+    final parts =
+        name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.length >= 2) {
+      final a = parts[0].isNotEmpty ? parts[0][0] : '';
+      final b = parts[1].isNotEmpty ? parts[1][0] : '';
+      return ('$a$b').toUpperCase();
+    }
+    if (parts.isNotEmpty && parts[0].length >= 2) {
+      return parts[0].substring(0, 2).toUpperCase();
+    }
+    if (parts.isNotEmpty) {
+      return parts[0].substring(0, 1).toUpperCase();
+    }
+    return '?';
+  }
+
+  Future<void> _openCreate() async {
+    final draft = await showEmployeeEditorSheet(context);
+    if (draft == null || !mounted) return;
+    try {
+      await _api.createEmployee(
+        fullName: draft.fullName,
+        email: draft.email,
+        profile: draft.profile,
+        skills: draft.skills,
+        tags: draft.tags,
+      );
+      if (!mounted) return;
+      _toast('Collaborateur ajouté.');
+      await _reload();
+    } on TeamDispatchException catch (e) {
+      if (mounted) _toast(e.message, error: true);
+    } catch (e) {
+      if (mounted) _toast(_userFacingError(e), error: true);
+    }
+  }
+
+  Future<void> _openEdit(Map<String, dynamic> row) async {
+    final id = _employeeId(row);
+    if (id == null) {
+      _toast('Impossible de modifier : identifiant manquant.', error: true);
+      return;
+    }
+    final draft = await showEmployeeEditorSheet(context, initial: row);
+    if (draft == null || !mounted) return;
+    try {
+      await _api.updateEmployee(
+        id,
+        fullName: draft.fullName,
+        email: draft.email,
+        profile: draft.profile,
+        skills: draft.skills,
+        tags: draft.tags,
+      );
+      if (!mounted) return;
+      _toast('Modifications enregistrées.');
+      await _reload();
+    } on TeamDispatchException catch (e) {
+      if (mounted) _toast(e.message, error: true);
+    } catch (e) {
+      if (mounted) _toast(_userFacingError(e), error: true);
+    }
+  }
+
+  Future<void> _confirmDelete(Map<String, dynamic> row) async {
+    final id = _employeeId(row);
+    if (id == null) {
+      _toast('Impossible de supprimer : identifiant manquant.', error: true);
+      return;
+    }
+    final name = row['fullName']?.toString() ??
+        row['full_name']?.toString() ??
+        'ce collaborateur';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF152f45),
+        title: const Text(
+          'Supprimer le collaborateur ?',
+          style: TextStyle(color: AppColors.textWhite),
+        ),
+        content: Text(
+          '« $name » sera retiré de l’annuaire. Cette action est définitive.',
+          style: TextStyle(
+            color: AppColors.textCyan200.withValues(alpha: 0.9),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFb91c1c),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await _api.deleteEmployee(id);
+      if (!mounted) return;
+      _toast('Collaborateur supprimé.');
+      await _reload();
+    } on TeamDispatchException catch (e) {
+      if (mounted) _toast(e.message, error: true);
+    } catch (e) {
+      if (mounted) _toast(_userFacingError(e), error: true);
+    }
+  }
+
+  Widget _header() {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(widget.pad, widget.pad, widget.pad, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Annuaire',
+                  style: TextStyle(
+                    color: AppColors.textWhite,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Gérez les profils utilisés pour l’affectation et le dispatch.',
+                  style: TextStyle(
+                    color: AppColors.textCyan200.withValues(alpha: 0.75),
+                    fontSize: 13,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          FilledButton.icon(
+            onPressed: _openCreate,
+            icon: const Icon(LucideIcons.userPlus, size: 18),
+            label: const Text('Ajouter'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              backgroundColor: AppColors.cyan400.withValues(alpha: 0.9),
+              foregroundColor: const Color(0xFF0a1628),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Map<String, dynamic>>>(
@@ -544,11 +734,49 @@ class _EmployeesTabState extends State<_EmployeesTab> {
           );
         }
         if (snap.hasError) {
-          return Center(
-            child: Text(
-              snap.error.toString(),
-              style: const TextStyle(color: AppColors.textCyan200),
-              textAlign: TextAlign.center,
+          return RefreshIndicator(
+            color: AppColors.cyan400,
+            onRefresh: _reload,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.65,
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(widget.pad * 1.25),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          LucideIcons.cloudOff,
+                          size: 44,
+                          color: AppColors.textCyan200.withValues(alpha: 0.5),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _userFacingError(snap.error!),
+                          style: const TextStyle(
+                            color: AppColors.textCyan200,
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
+                        OutlinedButton.icon(
+                          onPressed: _reload,
+                          icon: const Icon(LucideIcons.refreshCw, size: 18),
+                          label: const Text('Réessayer'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.cyan400,
+                            side: const BorderSide(color: AppColors.cyan400),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
           );
         }
@@ -560,16 +788,85 @@ class _EmployeesTabState extends State<_EmployeesTab> {
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               child: SizedBox(
-                height: MediaQuery.sizeOf(context).height * 0.65,
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(widget.pad),
-                    child: const Text(
-                      'Aucun collaborateur enregistré pour le moment.',
-                      style: TextStyle(color: AppColors.textCyan200),
-                      textAlign: TextAlign.center,
+                height: MediaQuery.sizeOf(context).height * 0.72,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _header(),
+                    Expanded(
+                      child: Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: widget.pad * 1.5,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppColors.cyan400.withValues(
+                                    alpha: 0.12,
+                                  ),
+                                  border: Border.all(
+                                    color: AppColors.cyan400.withValues(
+                                      alpha: 0.25,
+                                    ),
+                                  ),
+                                ),
+                                child: Icon(
+                                  LucideIcons.users,
+                                  size: 40,
+                                  color: AppColors.cyan400.withValues(
+                                    alpha: 0.85,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              const Text(
+                                'Aucun collaborateur pour l’instant',
+                                style: TextStyle(
+                                  color: AppColors.textWhite,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Ajoutez des membres pour les assigner aux tâches '
+                                'et aux envois de sprint.',
+                                style: TextStyle(
+                                  color: AppColors.textCyan200
+                                      .withValues(alpha: 0.8),
+                                  fontSize: 14,
+                                  height: 1.4,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 24),
+                              FilledButton.icon(
+                                onPressed: _openCreate,
+                                icon: const Icon(LucideIcons.userPlus, size: 20),
+                                label: const Text('Ajouter un collaborateur'),
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 22,
+                                    vertical: 14,
+                                  ),
+                                  backgroundColor:
+                                      AppColors.cyan400.withValues(alpha: 0.9),
+                                  foregroundColor: const Color(0xFF0a1628),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    SizedBox(height: widget.bottomInset),
+                  ],
                 ),
               ),
             ),
@@ -578,133 +875,302 @@ class _EmployeesTabState extends State<_EmployeesTab> {
         return RefreshIndicator(
           color: AppColors.cyan400,
           onRefresh: _reload,
-          child: ListView.separated(
+          child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.fromLTRB(
-              widget.pad,
-              widget.pad,
-              widget.pad,
-              widget.pad + widget.bottomInset,
-            ),
-            itemCount: list.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 10),
-            itemBuilder: (context, i) {
-              final e = list[i];
-              final name = e['fullName']?.toString() ??
-                  e['full_name']?.toString() ??
-                  'Employé';
-              final email = e['email']?.toString() ?? '—';
-              final profile = e['profile']?.toString();
-              final skills = _stringList(e['skills']);
-              final tags = _stringList(e['tags']);
-              return Material(
-                color: AppColors.primaryDarker.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: EdgeInsets.all(widget.pad * 0.75),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            LucideIcons.userCircle,
-                            color: AppColors.cyan400,
-                            size: 28,
+            slivers: [
+              SliverToBoxAdapter(child: _header()),
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  widget.pad,
+                  4,
+                  widget.pad,
+                  widget.pad + widget.bottomInset,
+                ),
+                sliver: SliverList.separated(
+                  itemCount: list.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  itemBuilder: (context, i) {
+                    final e = list[i];
+                    final name = e['fullName']?.toString() ??
+                        e['full_name']?.toString() ??
+                        'Employé';
+                    final email = e['email']?.toString() ?? '—';
+                    final profile = e['profile']?.toString();
+                    final skills = _stringList(e['skills']);
+                    final tags = _stringList(e['tags']);
+                    final initials = _initials(name);
+                    return Material(
+                      color: Colors.transparent,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.cyan400.withValues(alpha: 0.18),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  name,
-                                  style: const TextStyle(
-                                    color: AppColors.textWhite,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.22),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.primaryDarker.withValues(alpha: 0.95),
+                              AppColors.primaryDark.withValues(alpha: 0.88),
+                            ],
+                          ),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(widget.pad * 0.8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 26,
+                                    backgroundColor: AppColors.cyan400
+                                        .withValues(alpha: 0.22),
+                                    child: Text(
+                                      initials,
+                                      style: const TextStyle(
+                                        color: AppColors.cyan400,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  email,
-                                  style: TextStyle(
-                                    color: AppColors.textCyan200
-                                        .withValues(alpha: 0.85),
-                                    fontSize: 13,
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          name,
+                                          style: const TextStyle(
+                                            color: AppColors.textWhite,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 16,
+                                            letterSpacing: -0.2,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              LucideIcons.mail,
+                                              size: 13,
+                                              color: AppColors.textCyan200
+                                                  .withValues(alpha: 0.55),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                email,
+                                                style: TextStyle(
+                                                  color: AppColors.textCyan200
+                                                      .withValues(alpha: 0.88),
+                                                  fontSize: 13,
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuButton<String>(
+                                    icon: Icon(
+                                      LucideIcons.moreVertical,
+                                      color: AppColors.textCyan200
+                                          .withValues(alpha: 0.75),
+                                      size: 20,
+                                    ),
+                                    color: const Color(0xFF152f45),
+                                    onSelected: (v) {
+                                      if (v == 'edit') {
+                                        _openEdit(e);
+                                      } else if (v == 'delete') {
+                                        _confirmDelete(e);
+                                      }
+                                    },
+                                    itemBuilder: (ctx) => [
+                                      const PopupMenuItem(
+                                        value: 'edit',
+                                        child: ListTile(
+                                          dense: true,
+                                          leading: Icon(
+                                            LucideIcons.pencil,
+                                            color: AppColors.cyan400,
+                                            size: 20,
+                                          ),
+                                          title: Text('Modifier'),
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'delete',
+                                        child: ListTile(
+                                          dense: true,
+                                          leading: Icon(
+                                            LucideIcons.trash2,
+                                            color: Color(0xFFf87171),
+                                            size: 20,
+                                          ),
+                                          title: Text(
+                                            'Supprimer',
+                                            style: TextStyle(
+                                              color: Color(0xFFf87171),
+                                            ),
+                                          ),
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              if (profile != null && profile.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryDark
+                                        .withValues(alpha: 0.65),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: AppColors.textCyan200
+                                          .withValues(alpha: 0.12),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        LucideIcons.briefcase,
+                                        size: 14,
+                                        color: AppColors.cyan400
+                                            .withValues(alpha: 0.85),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          profile,
+                                          style: TextStyle(
+                                            color: AppColors.textCyan200
+                                                .withValues(alpha: 0.92),
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (profile != null && profile.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          'Profil : $profile',
-                          style: const TextStyle(
-                            color: AppColors.textCyan200,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                      if (skills.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: skills
-                              .map(
-                                (s) => Chip(
-                                  label: Text(
-                                    s,
-                                    style: const TextStyle(fontSize: 11),
-                                  ),
-                                  backgroundColor: AppColors.primaryDark,
-                                  side: const BorderSide(
-                                    color: AppColors.cyan400,
-                                    width: 0.5,
-                                  ),
-                                  padding: EdgeInsets.zero,
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  visualDensity: VisualDensity.compact,
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ],
-                      if (tags.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: tags
-                              .map(
-                                (t) => Chip(
-                                  label: Text(
-                                    t,
-                                    style: const TextStyle(fontSize: 11),
-                                  ),
-                                  backgroundColor: AppColors.primaryDarker,
-                                  side: BorderSide(
+                              if (skills.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Compétences',
+                                  style: TextStyle(
                                     color: AppColors.textCyan200
-                                        .withValues(alpha: 0.35),
+                                        .withValues(alpha: 0.55),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.4,
                                   ),
-                                  padding: EdgeInsets.zero,
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  visualDensity: VisualDensity.compact,
                                 ),
-                              )
-                              .toList(),
+                                const SizedBox(height: 6),
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 6,
+                                  children: skills
+                                      .map(
+                                        (s) => Chip(
+                                          label: Text(
+                                            s,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          backgroundColor: AppColors
+                                              .primaryDark
+                                              .withValues(alpha: 0.9),
+                                          side: BorderSide(
+                                            color: AppColors.cyan400
+                                                .withValues(alpha: 0.35),
+                                          ),
+                                          padding: EdgeInsets.zero,
+                                          materialTapTargetSize:
+                                              MaterialTapTargetSize
+                                                  .shrinkWrap,
+                                          visualDensity: VisualDensity.compact,
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                              ],
+                              if (tags.isNotEmpty) ...[
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Étiquettes',
+                                  style: TextStyle(
+                                    color: AppColors.textCyan200
+                                        .withValues(alpha: 0.55),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 6,
+                                  children: tags
+                                      .map(
+                                        (t) => Chip(
+                                          label: Text(
+                                            t,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                          backgroundColor:
+                                              AppColors.primaryDarker,
+                                          side: BorderSide(
+                                            color: AppColors.textCyan200
+                                                .withValues(alpha: 0.28),
+                                          ),
+                                          padding: EdgeInsets.zero,
+                                          materialTapTargetSize:
+                                              MaterialTapTargetSize
+                                                  .shrinkWrap,
+                                          visualDensity: VisualDensity.compact,
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
-                      ],
-                    ],
-                  ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ],
           ),
         );
       },

@@ -19,10 +19,11 @@ import 'package:flutter/foundation.dart';
 /// Côté Nest, le préfixe HTTP réel suit `API_PATH_PREFIX` (vide = racine `/`, sinon routes sous `/api/...`).
 /// Vérifier le log au boot du serveur si un 404 persiste sur `/projects`, etc.
 ///
-/// [apiPathPrefix] : par défaut **`api`** en prod / hors API locale ; en **debug**, si
-/// `DEBUG_LOCAL_API_BASE_URL` est la même base que [apiBaseUrl] et que `API_PATH_PREFIX` n’est pas
-/// défini, défaut **vide** (Nest local sans `setGlobalPrefix('api')`). Pour forcer `/api` en local :
-///   `flutter run --dart-define=API_PATH_PREFIX=api`
+/// [apiPathPrefix] : par défaut **`api`** en prod ; en **debug**, préfixe **vide** si :
+/// - `DEBUG_LOCAL_API_BASE_URL` == [apiBaseUrl], ou
+/// - [apiBaseUrl] pointe vers un hôte local (`localhost`, `127.0.0.1`, `10.0.2.2`) et `API_PATH_PREFIX`
+///   n’est pas défini — aligné avec un Nest local **sans** `setGlobalPrefix('api')`.
+/// Pour un API locale **avec** `/api` : `flutter run --dart-define=API_PATH_PREFIX=api`
 const String _apiBaseUrlFromEnvironment = String.fromEnvironment(
   'API_BASE_URL',
   defaultValue: '',
@@ -58,16 +59,32 @@ const String _apiPathPrefixFromEnvironment = String.fromEnvironment(
 /// Segment optionnel après [apiBaseUrl] (sans slash). Ex. `api` → `http://host:3000/api/...`.
 ///
 /// Voir la doc en tête de fichier pour le comportement debug + `DEBUG_LOCAL_API_BASE_URL`.
+bool _isLikelyLocalBackendHost(String baseUrl) {
+  final uri = Uri.tryParse(
+    baseUrl.contains('://') ? baseUrl : 'http://$baseUrl',
+  );
+  if (uri == null || !uri.hasAuthority) return false;
+  final h = uri.host.toLowerCase();
+  return h == 'localhost' ||
+      h == '127.0.0.1' ||
+      h == '10.0.2.2' ||
+      h == '0.0.0.0';
+}
+
 String get apiPathPrefix {
   if (_apiPathPrefixFromEnvironment == '__UNSET__') {
+    final base = apiBaseUrl.replaceAll(RegExp(r'/$'), '');
     if (kDebugMode) {
       final local = _debugLocalApiBaseUrlFromEnvironment
           .trim()
           .replaceAll(RegExp(r'/$'), '');
-      final base = apiBaseUrl.replaceAll(RegExp(r'/$'), '');
       if (local.isNotEmpty && base == local) {
         return '';
       }
+    }
+    // Debug / profile : API_BASE_URL=http://127.0.0.1:3000 → pas de /api (Nest local sans préfixe).
+    if (!kReleaseMode && _isLikelyLocalBackendHost(base)) {
+      return '';
     }
     return 'api';
   }

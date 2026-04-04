@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -35,8 +34,6 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
   bool _useAiForAssignment = true;
   bool _ensureSprintsFromProposal = false;
   String? _lastDispatchSummary;
-  /// Réservé au mode debug : n’envoie pas de vrais e-mails (voir [_send]).
-  bool _dryRun = false;
   bool _sending = false;
 
   @override
@@ -122,8 +119,8 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = kDebugMode
-            ? e.toString()
+        _error = e is TeamDispatchException
+            ? e.message
             : 'Impossible de charger les informations. Vérifiez votre connexion et réessayez.';
         _loading = false;
       });
@@ -144,7 +141,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
       return 'Aucun sprint n’est encore défini pour ce projet. Créez des sprints ou activez la génération à partir de la proposition acceptée.';
     }
     if (rawMsg.contains('Simulation (dryRun)') || rawMsg.startsWith('Simulation')) {
-      return 'Simulation : aucun e-mail réel n’a été envoyé. Les réglages ont été testés.';
+      return 'Aucun e-mail n’a été envoyé (exécution de contrôle uniquement).';
     }
     final emails = _intFromResponse(res['emailsSent']);
     final failedCount = res['failed'] is List
@@ -208,7 +205,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
       ..writeln('Projet : $projectTitle')
       ..writeln('Destinataire : ${b.fullName} <${b.email}>')
       ..writeln()
-      ..writeln('Voici le détail de tes sprints et de ce qui t’est assigné :')
+      ..writeln('Voici le détail de vos sprints et des missions qui vous sont confiées :')
       ..writeln();
 
     final bySprint = <String, List<_SprintTaskItem>>{};
@@ -246,7 +243,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
         autoAssignTasksByProfile: _autoAssignByProfile,
         useAiForTaskAssignment: _useAiForAssignment,
         ensureSprintsFromAcceptedProposal: _ensureSprintsFromProposal,
-        dryRun: kDebugMode && _dryRun,
+        dryRun: false,
       );
       if (!mounted) return;
       final summary = _clientDispatchSummary(res);
@@ -254,9 +251,8 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(summary),
-          duration: Duration(
-            seconds: (kDebugMode && _dryRun) || summary.length > 120 ? 8 : 4,
-          ),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: summary.length > 120 ? 8 : 4),
         ),
       );
       await _load();
@@ -265,14 +261,19 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.message),
+          behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.red.shade800,
         ),
       );
     } catch (e) {
       if (!mounted) return;
+      final msg = e is TeamDispatchException
+          ? e.message
+          : 'L’opération n’a pas pu aboutir. Réessayez dans un instant.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString()),
+          content: Text(msg),
+          behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.red.shade800,
         ),
       );
@@ -312,7 +313,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
               ),
             ),
             Text(
-              'Missions, e-mails et documents',
+              'Coordination de l’équipe et envoi des missions',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w400,
@@ -379,7 +380,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                         ),
                         children: [
                       _buildSectionTitle(
-                        'Projet',
+                        'Votre projet',
                         LucideIcons.folderKanban,
                       ),
                       SizedBox(height: pad * 0.5),
@@ -393,8 +394,8 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                       ),
                       SizedBox(height: pad * 0.45),
                       Text(
-                        'Les tâches sont attribuées selon les rôles et compétences ci-dessous. '
-                        'Vous pouvez activer l’aide à la répartition par intelligence artificielle dans les options d’envoi.',
+                        'Chaque collaborateur est identifié par son rôle et ses compétences. '
+                        'Les réglages ci-dessous permettent d’attribuer les tâches et d’envoyer les synthèses par e-mail.',
                         style: TextStyle(
                           color: AppColors.textCyan200.withValues(alpha: 0.88),
                           fontSize: 12.5,
@@ -405,7 +406,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                       _buildTeamRoster(pad),
                       SizedBox(height: pad),
                       _buildSectionTitle(
-                        'Options d’envoi',
+                        'Paramètres d’envoi',
                         LucideIcons.settings2,
                       ),
                       SizedBox(height: pad * 0.5),
@@ -420,8 +421,8 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                         const SizedBox(height: 12),
                         Text(
                           _autoAssignByProfile || _ensureSprintsFromProposal
-                              ? 'Les membres ci-dessus pourront recevoir les missions par e-mail avec le document récapitulatif.'
-                              : 'Activez l’assignation automatique ou la création depuis la proposition pour envoyer aux collaborateurs.',
+                              ?           'Les collaborateurs listés recevront un e-mail avec la synthèse de leurs missions et le document joint si activé.'
+                              : 'Activez l’attribution automatique ou la préparation depuis la proposition pour lancer l’envoi.',
                           style: TextStyle(
                             color: AppColors.textCyan200.withValues(alpha: 0.85),
                             fontSize: 12.5,
@@ -431,12 +432,12 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                       SizedBox(height: pad * 1.25),
                       if (_byEmployee.isNotEmpty) ...[
                         _buildSectionTitle(
-                          'Aperçu des messages',
+                          'Aperçu des e-mails',
                           LucideIcons.mail,
                         ),
                         SizedBox(height: pad * 0.5),
                         Text(
-                          'Aperçu du contenu envoyé à chaque personne.',
+                          'Voici le texte qui sera adressé à chaque destinataire.',
                           style: TextStyle(
                             color: AppColors.textCyan200.withValues(alpha: 0.75),
                             fontSize: 12,
@@ -457,7 +458,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                           color: AppColors.cyan400,
                         ),
                         label: const Text(
-                          'Retour à la gestion projets',
+                          'Retour aux projets',
                           style: TextStyle(color: AppColors.cyan400),
                         ),
                       ),
@@ -581,7 +582,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
           ),
           Expanded(
             child: _KpiCell(
-              label: 'Sans assigné',
+              label: 'À assigner',
               value: '$_unassignedTaskCount',
               icon: LucideIcons.userX,
               highlight: _unassignedTaskCount > 0,
@@ -781,8 +782,8 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                           style: TextStyle(color: AppColors.textWhite),
                         ),
                         subtitle: Text(
-                          'Attribue chaque tâche à un collaborateur en fonction des profils, '
-                          'puis prépare les envois.',
+                          'Répartit les tâches entre les membres de l’équipe selon leur profil, '
+                          'avant l’envoi des e-mails.',
                           style: TextStyle(
                             color: AppColors.textCyan200.withValues(alpha: 0.8),
                             fontSize: 12,
@@ -796,11 +797,12 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
                           title: const Text(
-                            'Suggérer la répartition avec l’intelligence artificielle',
+                            'Suggestions pour la répartition des tâches',
                             style: TextStyle(color: AppColors.textWhite),
                           ),
                           subtitle: Text(
-                            'Utilise l’IA pour proposer qui fait quoi ; sinon la répartition s’appuie sur les libellés du projet et des compétences.',
+                            'Propose automatiquement qui réalise quelle tâche, '
+                            'en s’appuyant sur le projet et les compétences déclarées.',
                             style: TextStyle(
                               color: AppColors.textCyan200.withValues(alpha: 0.8),
                               fontSize: 12,
@@ -814,11 +816,12 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: const Text(
-                          'Créer sprints et tâches depuis la proposition acceptée',
+                          'Préparer sprints et tâches à partir de la proposition',
                           style: TextStyle(color: AppColors.textWhite),
                         ),
                         subtitle: Text(
-                          'Génère une première structure (sprints, tâches) à partir du type de projet, du budget et de la période indiqués dans la proposition.',
+                          'Crée une première planification (jalons et tâches) à partir des informations '
+                          'de votre proposition acceptée : type de projet, budget et calendrier.',
                           style: TextStyle(
                             color: AppColors.textCyan200.withValues(alpha: 0.8),
                             fontSize: 12,
@@ -832,11 +835,12 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: const Text(
-                          'Rédiger les e-mails de façon personnalisée',
+                          'Personnaliser le texte de chaque e-mail',
                           style: TextStyle(color: AppColors.textWhite),
                         ),
                         subtitle: Text(
-                          'Formule un texte clair pour chaque destinataire à partir des missions réelles (sans en inventer).',
+                          'Adapte le message à chaque collaborateur, en reprenant uniquement '
+                          'les missions qui lui sont réellement assignées.',
                           style: TextStyle(
                             color: AppColors.textCyan200.withValues(alpha: 0.8),
                             fontSize: 12,
@@ -849,31 +853,20 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: const Text(
-                          'Joindre la fiche PDF récapitulative',
+                          'Joindre le document PDF récapitulatif',
                           style: TextStyle(color: AppColors.textWhite),
+                        ),
+                        subtitle: Text(
+                          'Chaque destinataire reçoit une fiche PDF avec le détail de ses missions.',
+                          style: TextStyle(
+                            color: AppColors.textCyan200.withValues(alpha: 0.8),
+                            fontSize: 12,
+                          ),
                         ),
                         value: _attachPdf,
                         activeThumbColor: AppColors.cyan400,
                         onChanged: (v) => setState(() => _attachPdf = v),
                       ),
-                      if (kDebugMode)
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text(
-                            'Mode test (aucun envoi réel)',
-                            style: TextStyle(color: AppColors.textWhite),
-                          ),
-                          subtitle: Text(
-                            'Réservé au développement : exécute les étapes sans envoyer de vrais e-mails.',
-                            style: TextStyle(
-                              color: AppColors.textCyan200.withValues(alpha: 0.8),
-                              fontSize: 12,
-                            ),
-                          ),
-                          value: _dryRun,
-                          activeThumbColor: AppColors.cyan400,
-                          onChanged: (v) => setState(() => _dryRun = v),
-                        ),
         ],
       ),
     );
@@ -1000,8 +993,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
               style: const TextStyle(
                 color: AppColors.textCyan200,
                 fontSize: 13,
-                height: 1.45,
-                fontFamily: 'monospace',
+                height: 1.5,
               ),
             ),
           ),
