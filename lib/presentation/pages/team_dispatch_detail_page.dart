@@ -612,20 +612,44 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
         padding: EdgeInsets.all(pad * 0.75),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.textCyan200.withValues(alpha: 0.2),
-          ),
+          border: Border.all(color: AppColors.textCyan200.withValues(alpha: 0.2)),
         ),
-        child: Text(
-          'Aucun membre d’équipe n’est enregistré. Ajoutez des collaborateurs pour pouvoir leur assigner des tâches.',
-          style: TextStyle(
-            color: AppColors.textCyan200.withValues(alpha: 0.8),
-            fontSize: 12.5,
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Aucun collaborateur enregistré.',
+              style: TextStyle(
+                color: AppColors.textCyan200.withValues(alpha: 0.9),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              "Ajoutez des membres depuis l'onglet Personnel, puis revenez pour leur assigner des missions.",
+              style: TextStyle(
+                color: AppColors.textCyan200.withValues(alpha: 0.7),
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () => context.go('/project-management'),
+              icon: const Icon(Icons.people_outline, size: 16),
+              label: const Text("Aller à l'onglet Personnel"),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.cyan400,
+                side: BorderSide(color: AppColors.cyan400.withValues(alpha: 0.5)),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                textStyle: const TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
         ),
       );
     }
-    return SizedBox(
+        return SizedBox(
       height: 118,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
