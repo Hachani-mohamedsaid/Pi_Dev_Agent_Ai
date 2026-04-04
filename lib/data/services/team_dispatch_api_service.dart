@@ -4,7 +4,9 @@ import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
 import '../../injection_container.dart';
+import '../models/proposal_model.dart';
 import 'project_service.dart';
+import 'proposals_api_service.dart';
 
 /// Appels NestJS pour regrouper par employé et envoyer e-mails / PDF de sprints.
 /// Endpoint d’envoi : `POST /projects/:projectId/dispatch-sprint-emails` (à implémenter côté backend).
@@ -67,117 +69,80 @@ class TeamDispatchApiService {
     return list;
   }
 
-  /// Liste les projets **acceptés** :
-  /// 1) si `GET /projects/accepted` répond 200 avec un **tableau non vide**, on l’utilise ;
-  /// 2) si réponse vide `[]`, 404 ou corps non liste → **fallback** : `GET /project-decisions`
-  ///    + `GET /projects` + filtre (`row_number`, `status`, etc.).
+  /// Projets acceptés : même source que work_proposals_page.
+  /// 1) Récupère toutes les propositions depuis le webhook n8n (ProposalsApiService).
+  /// 2) Récupère les décisions depuis MongoDB NestJS (ProjectService).
+  /// 3) Filtre uniquement les propositions avec décision "accept".
   Future<AcceptedProjectsLoadResult> loadAcceptedProjectsForDispatch() async {
-    final shortcut = await http
-        .get(
-          Uri.parse('$apiRootUrl/projects/accepted'),
-          headers: await _authHeaders(),
-        )
-        .timeout(_timeout);
-    if (shortcut.statusCode == 200) {
-      try {
-        final data = jsonDecode(shortcut.body);
-        if (data is List) {
-          final list =
-              data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-          if (list.isNotEmpty) {
-            return AcceptedProjectsLoadResult(
-              projects: list,
-              emptyMessage: null,
-            );
-          }
-          // Tableau vide : le backend peut ne pas encore peupler /accepted — tenter le fallback.
-        }
-      } catch (_) {
-        // Corps invalide → fallback
+    try {
+      final results = await Future.wait([
+        ProposalsApiService().fetchProposals(),
+        ProjectService().fetchProjectDecisions(),
+      ]);
+
+      final proposals = results[0] as List<Proposal>;
+      final decisions = results[1] as Map<String, String>;
+
+      final acceptedRows = decisions.entries
+          .where((e) => e.value == 'accept')
+          .map((e) => e.key)
+          .toSet();
+
+      if (proposals.isEmpty) {
+        return AcceptedProjectsLoadResult(
+          projects: [],
+          emptyMessage: 'Aucune proposition reçue depuis le webhook.',
+        );
       }
-    }
 
-    final projectService = ProjectService();
-    final decisions = await projectService.fetchProjectDecisions();
-    final acceptedRows = decisions.entries
-        .where((e) => e.value == 'accept')
-        .map((e) => e.key)
-        .toSet();
-
-    if (acceptedRows.isEmpty) {
-      final allNoDecision = await _tryListProjects();
-      if (allNoDecision != null) {
-        final byStatus = allNoDecision
-            .where((p) {
-              final s = p['status']?.toString().toLowerCase();
-              return s == 'accepted' || s == 'accept';
-            })
-            .toList();
-        if (byStatus.isNotEmpty) {
-          return AcceptedProjectsLoadResult(
-            projects: byStatus,
-            emptyMessage: null,
-          );
-        }
+      if (acceptedRows.isEmpty) {
+        return AcceptedProjectsLoadResult(
+          projects: [],
+          emptyMessage:
+              'Aucun projet accepté pour le moment.\nAccepte des propositions depuis Work Proposals.',
+        );
       }
+
+      final accepted = proposals
+          .where((p) => acceptedRows.contains(p.rowNumber.toString()))
+          .map(_proposalToMap)
+          .toList();
+
+      if (accepted.isEmpty) {
+        return AcceptedProjectsLoadResult(
+          projects: [],
+          emptyMessage:
+              'Aucune proposition acceptée ne correspond aux données reçues.',
+        );
+      }
+
+      return AcceptedProjectsLoadResult(projects: accepted, emptyMessage: null);
+    } on TeamDispatchException {
+      rethrow;
+    } catch (e) {
       return AcceptedProjectsLoadResult(
         projects: [],
-        emptyMessage:
-            'Aucune proposition « accept » (GET /project-decisions) et aucun projet avec '
-            'status « accepted » dans GET /projects. '
-            'Accepte des propositions depuis Work proposals ou vérifie le JWT sur /project-decisions.',
+        emptyMessage: 'Erreur lors du chargement des projets : $e',
       );
     }
-
-    final all = await _tryListProjects();
-    if (all == null) {
-      return AcceptedProjectsLoadResult(
-        projects: [],
-        emptyMessage:
-            'GET /projects répond 404. Vérifie sur Nest le préfixe (log au boot : API_PATH_PREFIX) '
-            'et que l’URL appelle bien …/api/projects (base = hôte seul + préfixe api). '
-            'Sinon ajoute GET /projects ou GET /projects/accepted qui renvoie un tableau JSON.',
-      );
-    }
-
-    final filtered = all
-        .where((p) => _projectMatchesAcceptedDecision(p, acceptedRows))
-        .toList();
-
-    if (filtered.isEmpty) {
-      return AcceptedProjectsLoadResult(
-        projects: [],
-        emptyMessage:
-            '${acceptedRows.length} proposition(s) acceptée(s), mais aucun projet MongoDB ne correspond. '
-            'Ajoute sur chaque document Project un champ row_number (aligné sur la ligne du sheet) '
-            'ou status = accepted, ou expose GET /projects/accepted côté NestJS.',
-      );
-    }
-
-    return AcceptedProjectsLoadResult(projects: filtered, emptyMessage: null);
   }
 
-  bool _projectMatchesAcceptedDecision(
-    Map<String, dynamic> p,
-    Set<String> acceptedRows,
-  ) {
-    final status = p['status']?.toString().toLowerCase();
-    if (status == 'accepted' || status == 'accept') return true;
-
-    const keys = [
-      'row_number',
-      'rowNumber',
-      'proposalRowNumber',
-      'sheetRowNumber',
-      'sourceRowNumber',
-      'row',
-    ];
-    for (final k in keys) {
-      final v = p[k];
-      if (v != null && acceptedRows.contains(v.toString())) return true;
-    }
-    return false;
-  }
+  /// Convertit un [Proposal] (n8n) vers le format Map attendu par la vue.
+  Map<String, dynamic> _proposalToMap(Proposal p) => {
+        'id': p.rowNumber.toString(),
+        'title': p.typeProjet.isNotEmpty ? p.typeProjet : 'Projet sans titre',
+        'description': p.fonctionnalites.isNotEmpty ? p.fonctionnalites : null,
+        'status': 'accepted',
+        'type_projet': p.typeProjet,
+        'budget_estime': p.budgetEstime,
+        'periode': p.deadlineEstime.isNotEmpty ? p.deadlineEstime : null,
+        'row_number': p.rowNumber,
+        'clientName': p.name,
+        'clientEmail': p.email,
+        'tags': [p.secteur, p.plateformes]
+            .where((s) => s.isNotEmpty)
+            .toList(),
+      };
 
   String? _extractErrorBody(String body) {
     if (body.isEmpty) return null;
