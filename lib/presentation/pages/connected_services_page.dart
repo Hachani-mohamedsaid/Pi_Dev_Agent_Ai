@@ -1178,7 +1178,6 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
 
   Widget _buildGoogleConnectCard(BuildContext context, bool isMobile) {
     final isConnected = _googleStatus.connected;
-    final iconColor = isConnected ? const Color(0xFF10B981) : AppColors.cyan400;
 
     return Container(
       padding: EdgeInsets.all(Responsive.getResponsiveValue(
@@ -1224,18 +1223,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
               Row(
                 children: [
                   Container(
-                    width: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 36.0,
-                      tablet: 40.0,
-                      desktop: 44.0,
-                    ),
-                    height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 36.0,
-                      tablet: 40.0,
-                      desktop: 44.0,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                     decoration: BoxDecoration(
                       color: AppColors.cyan500.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(
@@ -1251,17 +1239,21 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                         width: 1,
                       ),
                     ),
-                    child: Center(
-                      child: Icon(
-                        LucideIcons.mail,
-                        size: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 18.0,
-                          tablet: 20.0,
-                          desktop: 22.0,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.network(
+                          'https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico',
+                          width: 28,
+                          height: 28,
                         ),
-                        color: iconColor,
-                      ),
+                        const SizedBox(width: 8),
+                        Image.network(
+                          'https://ssl.gstatic.com/docs/spreadsheets/images/sheets_2023q4.png',
+                          width: 28,
+                          height: 28,
+                        ),
+                      ],
                     ),
                   ),
                   SizedBox(width: Responsive.getResponsiveValue(
@@ -1292,22 +1284,49 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                         tablet: 4.0,
                         desktop: 5.0,
                       )),
-                      Text(
-                        isConnected && _googleStatus.googleEmail != null
-                            ? _googleStatus.googleEmail!
-                            : 'Gmail & Google Sheets',
-                        style: TextStyle(
-                          fontSize: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 11.0,
-                            tablet: 12.0,
-                            desktop: 13.0,
+                      if (isConnected && _googleStatus.googleEmail != null)
+                        Text(
+                          _googleStatus.googleEmail!,
+                          style: TextStyle(
+                            fontSize: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 11.0,
+                              tablet: 12.0,
+                              desktop: 13.0,
+                            ),
+                            color: const Color(0xFF10B981).withValues(alpha: 0.8),
                           ),
-                          color: isConnected
-                              ? const Color(0xFF10B981).withValues(alpha: 0.8)
-                              : AppColors.cyan400.withValues(alpha: 0.5),
+                        )
+                      else
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Gmail — Send emails on your behalf',
+                              style: TextStyle(
+                                fontSize: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 11.0,
+                                  tablet: 12.0,
+                                  desktop: 13.0,
+                                ),
+                                color: AppColors.cyan400.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            Text(
+                              'Sheets — Auto-create your finance & email logs',
+                              style: TextStyle(
+                                fontSize: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 11.0,
+                                  tablet: 12.0,
+                                  desktop: 13.0,
+                                ),
+                                color: AppColors.cyan400.withValues(alpha: 0.5),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
                     ],
                   ),
                 ],

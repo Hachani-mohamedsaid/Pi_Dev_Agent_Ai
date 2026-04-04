@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uni_links/uni_links.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -16,9 +17,11 @@ class GoogleConnectPage extends StatefulWidget {
   State<GoogleConnectPage> createState() => _GoogleConnectPageState();
 }
 
-class _GoogleConnectPageState extends State<GoogleConnectPage> {
+class _GoogleConnectPageState extends State<GoogleConnectPage>
+    with WidgetsBindingObserver {
   static const _tokenKey = 'auth_access_token';
   static const _pollInterval = Duration(seconds: 3);
+  static const _pollIntervalFast = Duration(seconds: 2);
   static const _pollTimeout = Duration(minutes: 2);
 
   final _service = GoogleConnectService();
@@ -27,11 +30,78 @@ class _GoogleConnectPageState extends State<GoogleConnectPage> {
   String? _connectedEmail;
   Timer? _pollTimer;
   DateTime? _pollStarted;
+  StreamSubscription<String?>? _linkSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _linkSubscription = linkStream.listen(
+      (String? link) {
+        if (link == null || link.isEmpty) return;
+        if (link.contains('google-connect/success')) {
+          _pollTimer?.cancel();
+          unawaited(() async {
+            final token = await _getToken();
+            if (token == null || token.isEmpty) return;
+            await _checkStatus(token);
+          }());
+          return;
+        }
+        if (link.contains('google-connect/error')) {
+          _pollTimer?.cancel();
+          if (!mounted) return;
+          setState(() => _state = _GoogleConnectState.idle);
+          _showSnackBar('Google connection failed. Please try again.');
+        }
+      },
+      onError: (_) {},
+    );
+  }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _linkSubscription?.cancel();
     _pollTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed &&
+        _state == _GoogleConnectState.waiting) {
+      unawaited(_onResumedWhileWaiting());
+    }
+  }
+
+  Future<void> _onResumedWhileWaiting() async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) return;
+    await _checkStatus(token);
+    if (!mounted || _state != _GoogleConnectState.waiting) return;
+    _startPolling(
+      token,
+      interval: _pollIntervalFast,
+      resetPollStart: false,
+    );
+  }
+
+  Future<void> _checkStatus(String token) async {
+    try {
+      final status = await _service.getStatus(token);
+      if (!mounted) return;
+      if (status.sheetReady) {
+        _pollTimer?.cancel();
+        setState(() {
+          _state = _GoogleConnectState.connected;
+          _connectedEmail = status.googleEmail;
+        });
+      }
+    } catch (_) {
+      // Keep polling — transient network error
+    }
   }
 
   Future<String?> _getToken() async {
@@ -64,10 +134,16 @@ class _GoogleConnectPageState extends State<GoogleConnectPage> {
     _startPolling(token);
   }
 
-  void _startPolling(String token) {
-    _pollStarted = DateTime.now();
+  void _startPolling(
+    String token, {
+    Duration interval = _pollInterval,
+    bool resetPollStart = true,
+  }) {
+    if (resetPollStart) {
+      _pollStarted = DateTime.now();
+    }
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(_pollInterval, (_) async {
+    _pollTimer = Timer.periodic(interval, (_) async {
       if (!mounted) {
         _pollTimer?.cancel();
         return;
@@ -81,19 +157,7 @@ class _GoogleConnectPageState extends State<GoogleConnectPage> {
         return;
       }
 
-      try {
-        final status = await _service.getStatus(token);
-        if (!mounted) return;
-        if (status.sheetReady) {
-          _pollTimer?.cancel();
-          setState(() {
-            _state = _GoogleConnectState.connected;
-            _connectedEmail = status.googleEmail;
-          });
-        }
-      } catch (_) {
-        // Keep polling — transient network error
-      }
+      await _checkStatus(token);
     });
   }
 
