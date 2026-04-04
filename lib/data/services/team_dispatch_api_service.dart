@@ -168,28 +168,36 @@ class TeamDispatchApiService {
   }
 
   Future<List<Map<String, dynamic>>> listEmployees() async {
-    final res = await http
-        .get(
-          Uri.parse('$apiRootUrl/employees'),
-          headers: await _authHeaders(),
-        )
-        .timeout(_timeout);
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-      if (data is! List) return [];
-      return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-    }
-    if (res.statusCode == 401 || res.statusCode == 403) {
+    try {
+      final res = await http
+          .get(
+            Uri.parse('$apiRootUrl/employees'),
+            headers: await _authHeaders(),
+          )
+          .timeout(_timeout);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data is! List) return [];
+        return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      if (res.statusCode == 401 || res.statusCode == 403) {
+        throw TeamDispatchException(
+          res.statusCode,
+          'Session expirée ou accès refusé. Reconnectez-vous.',
+        );
+      }
+      // 404 = route pas encore déployée sur Railway → liste vide, pas de crash.
+      if (res.statusCode == 404) return [];
       throw TeamDispatchException(
         res.statusCode,
-        'Session expirée ou accès refusé. Reconnectez-vous.',
+        _extractErrorBody(res.body) ??
+            'Impossible de charger l\'équipe (${res.statusCode})',
       );
+    } on TeamDispatchException {
+      rethrow;
+    } catch (_) {
+      return [];
     }
-    throw TeamDispatchException(
-      res.statusCode,
-      _extractErrorBody(res.body) ??
-          'Impossible de charger l’équipe (${res.statusCode})',
-    );
   }
 
   Future<Map<String, dynamic>> createEmployee({
