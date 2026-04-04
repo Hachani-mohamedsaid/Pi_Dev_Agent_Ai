@@ -49,6 +49,23 @@ class EvaluationDetailPage extends StatelessWidget {
                           content: evaluation.weaknesses!,
                         ),
                       _infoCard(),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () => context.push(
+                            '/candidate-interview',
+                            extra: evaluation,
+                          ),
+                          icon: const Icon(LucideIcons.messageCircle, size: 20),
+                          label: const Text('Entretien assisté (IA)'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.cyan500,
+                            foregroundColor: const Color(0xFF0a1628),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),

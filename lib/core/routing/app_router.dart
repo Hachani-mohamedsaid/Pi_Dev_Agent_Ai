@@ -63,6 +63,7 @@ import '../../presentation/pages/create_job_page.dart';
 import '../../presentation/pages/evaluation_status_page.dart';
 import '../../presentation/pages/candidatures_page.dart';
 import '../../presentation/pages/evaluation_detail_page.dart';
+import '../../presentation/pages/candidate_interview_page.dart';
 import '../../data/models/evaluation.dart';
 import '../../presentation/pages/work_proposal_details_page.dart';
 import '../../presentation/widgets/premium_feature_gate.dart';
@@ -819,6 +820,17 @@ final appRouter = GoRouter(
           context: context,
           state: state,
           child: EvaluationDetailPage(evaluation: evaluation),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/candidate-interview',
+      pageBuilder: (context, state) {
+        final evaluation = state.extra as Evaluation?;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: CandidateInterviewPage(evaluation: evaluation),
         );
       },
     ),

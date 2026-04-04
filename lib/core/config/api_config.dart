@@ -117,6 +117,19 @@ const String verifyEmailConfirmPath = '/verify-email/confirm';
 /// Chemin de l'endpoint chat IA (Talk to buddy). Backend attend POST avec { "messages": [ { "role": "user"|"assistant", "content": "..." } ] } et renvoie { "message": "..." } ou { "content": "..." }.
 const String chatPath = '/ai/chat';
 
+/// Entretiens candidats (LLM Gemini côté Nest uniquement — pas n8n).
+/// POST [interviewsStartPath] puis POST `/interviews/:sessionId/message`.
+/// JWT requis (`Authorization: Bearer`).
+const String interviewsStartPath = '/interviews/start';
+
+/// POST [apiRootUrl]/interviews/:sessionId/message — corps `{ "content": "..." }`.
+String interviewSessionMessagePath(String sessionId) =>
+    '/interviews/$sessionId/message';
+
+/// POST [apiRootUrl]/interviews/:sessionId/complete — fin de session, synthèse optionnelle.
+String interviewSessionCompletePath(String sessionId) =>
+    '/interviews/$sessionId/complete';
+
 /// Endpoint NestJS pour enregistrer les décisions Accepter/Rejeter des propositions (stockage MongoDB).
 /// POST avec body: action, row_number, name, email, type_projet (optionnel: budget_estime, periode).
 const String projectDecisionsPath = '/project-decisions';
