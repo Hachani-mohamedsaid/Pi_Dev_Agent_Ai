@@ -25,6 +25,9 @@ class NavigationBarWidget extends StatelessWidget {
     final isWorkProposalsActive =
         currentPath == '/work-proposals' ||
         currentPath == '/work-proposals-dashboard';
+    final isTeamDispatchActive =
+        currentPath.startsWith('/team-dispatch') ||
+        currentPath.startsWith('/project-management');
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = isMobile ? 10.0 : 24.0;
 
@@ -38,7 +41,7 @@ class NavigationBarWidget extends StatelessWidget {
       child: Center(
         child: Container(
           constraints: BoxConstraints(
-            maxWidth: isMobile ? screenWidth - (horizontalPadding * 2) : 400,
+            maxWidth: isMobile ? screenWidth - (horizontalPadding * 2) : 520,
           ),
           padding: EdgeInsets.symmetric(
             horizontal: isMobile ? 12 : 16,
@@ -126,6 +129,24 @@ class NavigationBarWidget extends StatelessWidget {
                         colors: [
                           const Color(0xFF10B981).withOpacity(0.3),
                           const Color(0xFF059669).withOpacity(0.3),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: isMobile ? 6 : 10),
+                  Flexible(
+                    child: _NavButton(
+                      icon: LucideIcons.mails,
+                      label: 'Sprints',
+                      isActive: isTeamDispatchActive,
+                      onTap: () => context.go('/project-management'),
+                      isMobile: isMobile,
+                      activeGradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.cyan500.withOpacity(0.35),
+                          AppColors.blue500.withOpacity(0.28),
                         ],
                       ),
                     ),

@@ -1,7 +1,11 @@
 import 'package:flutter/foundation.dart';
 
-/// Base URL de l'API backend (NestJS).
+/// Base URL de l'API backend (NestJS), **sans** chemin `/api` final.
 /// Utilisée pour toutes les routes auth : login, register, reset-password, /auth/google, /auth/me, etc.
+///
+/// **À éviter** : `https://hôte/api` si [apiPathPrefix] vaut déjà `api` — cela produirait
+/// `…/api/api/...` sauf si [apiRootUrl] détecte le doublon (voir ci-dessous).
+/// Préférer la base = hôte seul, ex. `https://mon-serveur.com`.
 ///
 /// Résolution (dans l’ordre) :
 /// 1. `--dart-define=API_BASE_URL=...` si non vide
@@ -12,8 +16,14 @@ import 'package:flutter/foundation.dart';
 ///   flutter run -d ios --dart-define=DEBUG_LOCAL_API_BASE_URL=http://127.0.0.1:3000
 ///   flutter run -d android --dart-define=DEBUG_LOCAL_API_BASE_URL=http://10.0.2.2:3000
 ///
-/// Si Nest utilise `setGlobalPrefix('api')`, ajoute :
-///   --dart-define=API_PATH_PREFIX=api
+/// Côté Nest, le préfixe HTTP réel suit `API_PATH_PREFIX` (vide = racine `/`, sinon routes sous `/api/...`).
+/// Vérifier le log au boot du serveur si un 404 persiste sur `/projects`, etc.
+///
+/// [apiPathPrefix] : par défaut **`api`** en prod ; en **debug**, préfixe **vide** si :
+/// - `DEBUG_LOCAL_API_BASE_URL` == [apiBaseUrl], ou
+/// - [apiBaseUrl] pointe vers un hôte local (`localhost`, `127.0.0.1`, `10.0.2.2`) et `API_PATH_PREFIX`
+///   n’est pas défini — aligné avec un Nest local **sans** `setGlobalPrefix('api')`.
+/// Pour un API locale **avec** `/api` : `flutter run --dart-define=API_PATH_PREFIX=api`
 const String _apiBaseUrlFromEnvironment = String.fromEnvironment(
   'API_BASE_URL',
   defaultValue: '',
@@ -41,19 +51,66 @@ String get apiBaseUrl {
   return _productionApiBaseUrl;
 }
 
-/// Segment optionnel après [apiBaseUrl] (sans slash). Ex. `api` → `http://host:3000/api/...`.
-/// Laisser vide si [apiBaseUrl] contient déjà `/api` ou si le backend n’a pas de préfixe global.
-const String apiPathPrefix = String.fromEnvironment(
+const String _apiPathPrefixFromEnvironment = String.fromEnvironment(
   'API_PATH_PREFIX',
-  defaultValue: '',
+  defaultValue: '__UNSET__',
 );
 
-/// Racine HTTP réelle pour auth, meetings, goals, etc.
+String get apiPathPrefix {
+  if (_apiPathPrefixFromEnvironment == '__UNSET__') {
+    // Le backend Railway n'utilise pas de préfixe global (/api).
+    // Les routes sont directement à /auth/login, /interviews/start, etc.
+    return '';
+  }
+  return _apiPathPrefixFromEnvironment.trim().replaceAll(RegExp(r'^/|/$'), '');
+}
+
+/// Racine HTTP pour tous les appels : [apiBaseUrl] + un seul segment [apiPathPrefix] si non vide.
+///
+/// Si la base se termine déjà par `/<apiPathPrefix>` (ex. `API_BASE_URL` mal configurée avec `/api`),
+/// on ne rajoute pas le segment une deuxième fois — évite `…/api/api/projects`.
 String get apiRootUrl {
   final base = apiBaseUrl.replaceAll(RegExp(r'/$'), '');
   final p = apiPathPrefix.trim().replaceAll(RegExp(r'^/|/$'), '');
   if (p.isEmpty) return base;
-  return '$base/$p';
+  final suffix = '/$p';
+  if (base.toLowerCase().endsWith(suffix.toLowerCase())) {
+    return base;
+  }
+  return '$base$suffix';
+}
+
+/// Surcharge explicite de la racine des entretiens (sans slash final).
+/// Ex. `--dart-define=INTERVIEW_API_ROOT=https://mon-backend.com/api`
+const String _interviewApiRootOverride = String.fromEnvironment(
+  'INTERVIEW_API_ROOT',
+  defaultValue: '',
+);
+
+/// Segment optionnel sous l’hôte pour les entretiens seulement (sans slash).
+/// Ex. `--dart-define=INTERVIEW_API_SEGMENT=api` → `https://hôte/api/interviews/start`
+/// alors que [apiPathPrefix] peut rester vide pour `/auth/login`.
+const String _interviewApiSegment = String.fromEnvironment(
+  'INTERVIEW_API_SEGMENT',
+  defaultValue: '',
+);
+
+/// Racine HTTP **uniquement** pour `POST /interviews/...`.
+///
+/// Par défaut = [apiRootUrl] (même logique que le reste de l’API). Si ton Nest expose les entretiens
+/// sous `/api/...` alors que l’auth est à la racine, passe `--dart-define=INTERVIEW_API_SEGMENT=api`.
+/// Surcharge totale : `--dart-define=INTERVIEW_API_ROOT=https://hôte/...` (sans slash final).
+String get interviewApiRootUrl {
+  final manual = _interviewApiRootOverride.trim().replaceAll(RegExp(r'/$'), '');
+  if (manual.isNotEmpty) return manual;
+
+  final seg = _interviewApiSegment.trim().replaceAll(RegExp(r'^/|/$'), '');
+  if (seg.isEmpty) return apiRootUrl;
+
+  final base = apiBaseUrl.replaceAll(RegExp(r'/$'), '');
+  final suffix = '/$seg';
+  if (base.toLowerCase().endsWith(suffix.toLowerCase())) return base;
+  return '$base$suffix';
 }
 
 /// Chemin de la page "définir nouveau mot de passe" (après clic sur le lien email).
@@ -66,6 +123,35 @@ const String verifyEmailConfirmPath = '/verify-email/confirm';
 
 /// Chemin de l'endpoint chat IA (Talk to buddy). Backend attend POST avec { "messages": [ { "role": "user"|"assistant", "content": "..." } ] } et renvoie { "message": "..." } ou { "content": "..." }.
 const String chatPath = '/ai/chat';
+
+/// Entretiens candidats (LLM Gemini côté Nest uniquement — pas n8n).
+/// Base URL : [interviewApiRootUrl] (= [apiRootUrl] par défaut ; aligné Nest sans `API_PATH_PREFIX`).
+/// JWT requis (`Authorization: Bearer`).
+const String interviewsStartPath = '/interviews/start';
+
+/// POST [interviewApiRootUrl]/interviews/:sessionId/message — corps `{ "content": "..." }`.
+String interviewSessionMessagePath(String sessionId) =>
+    '/interviews/$sessionId/message';
+
+/// POST [interviewApiRootUrl]/interviews/:sessionId/complete — fin de session, synthèse optionnelle.
+String interviewSessionCompletePath(String sessionId) =>
+    '/interviews/$sessionId/complete';
+
+/// POST [interviewApiRootUrl]/interviews/guest/:sessionId/proctoring-events — événements proctoring (token invité).
+String interviewGuestProctoringEventsPath(String sessionId) =>
+    '/interviews/guest/$sessionId/proctoring-events';
+
+/// Candidat invité — Bearer JWT invité (pas le JWT recruteur).
+const String interviewsGuestStartPath = '/interviews/guest/start';
+
+String interviewGuestSessionMessagePath(String sessionId) =>
+    '/interviews/guest/$sessionId/message';
+
+String interviewGuestSessionCompletePath(String sessionId) =>
+    '/interviews/guest/$sessionId/complete';
+
+/// POST [interviewApiRootUrl]/interviews/send-invite-email — envoi serveur du lien d’entretien au candidat (JWT recruteur).
+const String interviewsSendInviteEmailPath = '/interviews/send-invite-email';
 
 /// Endpoint NestJS pour enregistrer les décisions Accepter/Rejeter des propositions (stockage MongoDB).
 /// POST avec body: action, row_number, name, email, type_projet (optionnel: budget_estime, periode).
@@ -88,11 +174,11 @@ const String projectAnalysesPath = '/project-analyses';
 /// PATCH /goals/:id/actions/:actionId -> Toggle action (body: { completed: true })
 const String goalsPath = '/goals';
 
-/// AI Financial Simulation Advisor: backend endpoint (POST body: { project_text }).
-/// Backend forwards to n8n and saves to MongoDB. Response: { report: string }.
+/// AI Financial Simulation Advisor — le contrôleur backend est décoré @Controller('api/advisor'),
+/// donc la route est /api/advisor/... indépendamment du préfixe global.
 const String advisorPath = '/api/advisor/analyze';
 
-/// GET /api/advisor/history – list of past analyses for current user. Response: { analyses: [{ id, project_text, report, createdAt }] }.
+/// GET advisor history for current user.
 const String advisorHistoryPath = '/api/advisor/history';
 
 /// Stripe Checkout (subscriptions) — **à implémenter sur le backend NestJS**.

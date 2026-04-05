@@ -2,10 +2,21 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../core/config/api_config.dart';
 import '../../core/network/request_headers.dart';
+import '../../injection_container.dart';
 
 /// Envoie les décisions Accepter/Rejeter vers NestJS (MongoDB) et vers le webhook n8n.
 class ProjectService {
   static const Duration _timeout = Duration(seconds: 15);
+
+  Future<Map<String, String>> _authHeaders() async {
+    final token =
+        await InjectionContainer.instance.authLocalDataSource.getAccessToken();
+    final h = <String, String>{'Content-Type': 'application/json'};
+    if (token != null && token.isNotEmpty) {
+      h['Authorization'] = 'Bearer $token';
+    }
+    return h;
+  }
 
   /// Body minimal pour n8n (action, row_number, name, email, type_projet).
   Map<String, dynamic> _n8nBody({
@@ -27,10 +38,12 @@ class ProjectService {
   /// Retourne une map row_number (string) -> "accept" | "reject" (dernière décision par row_number).
   Future<Map<String, String>> fetchProjectDecisions() async {
     try {
+      final token =
+          await InjectionContainer.instance.authLocalDataSource.getAccessToken();
       final response = await http
           .get(
             Uri.parse('$apiRootUrl$projectDecisionsPath'),
-            headers: buildJsonHeaders(),
+            headers: buildJsonHeaders(bearerToken: token),
           )
           .timeout(_timeout);
       if (response.statusCode != 200) return {};
@@ -46,7 +59,7 @@ class ProjectService {
         return (bAt.compareTo(aAt));
       });
       for (final e in sorted) {
-        final row = e['row_number'];
+        final row = e['row_number'] ?? e['rowNumber'];
         final action = e['action']?.toString();
         if (row == null || action == null) continue;
         final id = row.toString();
@@ -98,10 +111,11 @@ class ProjectService {
     );
 
     try {
+      final authH = await _authHeaders();
       // 1) NestJS → MongoDB
       final nestFuture = http.post(
         Uri.parse('$apiRootUrl$projectDecisionsPath'),
-        headers: buildJsonHeaders(),
+        headers: authH,
         body: jsonEncode(bodyNest),
       ).timeout(_timeout);
 

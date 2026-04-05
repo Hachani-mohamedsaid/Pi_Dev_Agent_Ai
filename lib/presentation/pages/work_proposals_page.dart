@@ -126,7 +126,8 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Proposition acceptée avec succès',
+            'Proposition acceptée. Le projet est enregistré côté serveur — il apparaît dans Sprints '
+            'dès que l’API le renvoie (actualise ou ouvre l’onglet).',
             style: TextStyle(color: AppColors.textWhite),
           ),
           behavior: SnackBarBehavior.floating,
@@ -135,6 +136,12 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
           ),
           backgroundColor: AppColors.statusAccepted.withOpacity(0.9),
           margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(
+            label: 'Sprints',
+            textColor: AppColors.cyan400,
+            onPressed: () => context.go('/project-management'),
+          ),
         ),
       );
     } else {
@@ -756,6 +763,11 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                   ),
                 ],
               ),
+            ),
+            IconButton(
+              tooltip: 'Sprints & e-mails par employé',
+              onPressed: () => context.push('/project-management'),
+              icon: const Icon(LucideIcons.mails, color: AppColors.cyan400),
             ),
           ],
         ),
