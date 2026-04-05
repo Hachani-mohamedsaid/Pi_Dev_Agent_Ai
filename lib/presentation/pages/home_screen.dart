@@ -10,6 +10,7 @@ import '../../features/social_media/screens/social_media_brief_screen.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/services/subscription_access_service.dart';
+import '../widgets/premium_gate_sheet.dart';
 import '../../data/services/meeting_service.dart';
 import '../../services/n8n_email_service.dart';
 import '../../features/phone_agent/data/phone_agent_mock_data.dart';
@@ -182,14 +183,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return int.tryParse(v.toString()) ?? 0;
   }
 
-  void _showPremiumRequiredMessage() {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Active subscription required for this feature.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  String _premiumFeatureNameForRoute(String route) {
+    switch (route) {
+      case '/meetings':
+        return 'Meeting Hub';
+      case '/phone-agent':
+      case '/phone-agent-call':
+        return 'Phone Agent';
+      default:
+        return 'Premium Feature';
+    }
   }
 
   void _openMeetingHubPremiumOnly() async {
@@ -202,8 +205,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       return;
     }
 
-    _showPremiumRequiredMessage();
-    context.push('/subscription');
+    PremiumGateSheet.show(context, 'Meeting Hub');
   }
 
   Future<void> _openRouteWithPremiumCheck(String route) async {
@@ -222,8 +224,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       return;
     }
 
-    _showPremiumRequiredMessage();
-    context.push('/subscription');
+    PremiumGateSheet.show(context, _premiumFeatureNameForRoute(route));
   }
 
   String _getGreeting(BuildContext context) {

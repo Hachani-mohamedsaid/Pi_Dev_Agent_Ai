@@ -620,7 +620,10 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: const PremiumFeatureGate(child: MeetingHubScreen()),
+        child: const PremiumFeatureGate(
+          featureName: 'Meeting Hub',
+          child: MeetingHubScreen(),
+        ),
       ),
     ),
     GoRoute(
@@ -988,7 +991,10 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: const PremiumFeatureGate(child: PhoneAgentScreen()),
+        child: const PremiumFeatureGate(
+          featureName: 'Phone Agent',
+          child: PhoneAgentScreen(),
+        ),
       ),
     ),
     GoRoute(
@@ -1007,13 +1013,17 @@ final appRouter = GoRouter(
           return _fadeScaleTransition(
             context: context,
             state: state,
-            child: const PremiumFeatureGate(child: PhoneAgentScreen()),
+            child: const PremiumFeatureGate(
+              featureName: 'Phone Agent',
+              child: PhoneAgentScreen(),
+            ),
           );
         }
         return _fadeScaleTransition(
           context: context,
           state: state,
           child: PremiumFeatureGate(
+            featureName: 'Phone Agent',
             child: PhoneAgentCallDetailScreen(call: call),
           ),
         );
