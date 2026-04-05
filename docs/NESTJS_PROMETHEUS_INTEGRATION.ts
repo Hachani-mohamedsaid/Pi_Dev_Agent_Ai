@@ -13,14 +13,14 @@ import { v4 as uuidv4 } from 'uuid';
 // ===== METRICS DEFINITIONS =====
 export const httpRequestsTotal = new promClient.Counter({
   name: 'http_requests_total',
-  help: 'Total HTTP requests by method, route, and status code',
-  labelNames: ['method', 'route', 'status_code'],
+  help: 'Total HTTP requests by method, route, status code, and client source',
+  labelNames: ['method', 'route', 'status_code', 'source'],
 });
 
 export const httpRequestDurationSeconds = new promClient.Histogram({
   name: 'http_request_duration_seconds',
-  help: 'HTTP request latency in seconds',
-  labelNames: ['method', 'route', 'status_code'],
+  help: 'HTTP request latency in seconds by client source',
+  labelNames: ['method', 'route', 'status_code', 'source'],
   buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0],
 });
 
@@ -80,12 +80,16 @@ export class PrometheusMiddleware implements NestMiddleware {
       const statusCode = res.statusCode;
       const routePath = req.route?.path || req.path;
       const method = req.method;
+      const explicitSource = req.headers['x-client-source'] as string | undefined;
+      const userAgent = (req.headers['user-agent'] as string | undefined) || '';
+      const source = explicitSource || (userAgent.includes('Mozilla') ? 'web-unknown' : 'unknown');
 
       // Record metrics
       httpRequestsTotal.inc({
         method,
         route: routePath,
         status_code: statusCode,
+        source,
       });
 
       httpRequestDurationSeconds.observe(
@@ -93,6 +97,7 @@ export class PrometheusMiddleware implements NestMiddleware {
           method,
           route: routePath,
           status_code: statusCode,
+          source,
         },
         duration,
       );
@@ -100,7 +105,7 @@ export class PrometheusMiddleware implements NestMiddleware {
       // Log request completion with request ID
       const requestId = req['requestId'];
       console.log(
-        `[${requestId}] ${method} ${routePath} - ${statusCode} (${(duration * 1000).toFixed(2)}ms)`,
+        `[${requestId}] [${source}] ${method} ${routePath} - ${statusCode} (${(duration * 1000).toFixed(2)}ms)`,
       );
 
       res.send = originalSend;
@@ -320,10 +325,19 @@ export class MyController {
 // ============================================
 
 // Error rate (5-minute window)
-rate(http_requests_total{status=~"5.."}[5m])
+rate(http_requests_total{status_code=~"5.."}[5m])
+
+// Frontend request rate only
+sum(rate(http_requests_total{source=~"flutter-.*"}[5m]))
+
+// Request rate by source (frontend vs other clients)
+sum by (source) (rate(http_requests_total[5m]))
 
 // P95 latency
 histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) * 1000
+
+// Frontend P95 latency
+histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{source=~"flutter-.*"}[5m]))) * 1000
 
 // Memory usage
 process_resident_memory_bytes / (1024 * 1024 * 1024)
