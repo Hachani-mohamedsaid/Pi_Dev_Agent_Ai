@@ -121,6 +121,21 @@ const String mobilityBookingRejectDriverPathTemplate =
 const String advisorWebhookUrl =
     'https://n8n-production-1e13.up.railway.app/webhook/a0cd36ce-41f1-4ef8-8bb2-b22cbe7cad6c';
 
+/// Surcharge optionnelle pour AVA Wellbeing (autre host que Nest).
+/// Vide = **même base que** `apiRootUrl` (routes Nest : `/api/register`, `/api/wellbeing/...`).
+/// Ex. : `--dart-define=WELLBEING_API_BASE_URL=https://autre-host.com`
+const String wellbeingApiBaseUrlOverride = String.fromEnvironment(
+  'WELLBEING_API_BASE_URL',
+  defaultValue: '',
+);
+
+/// Base HTTP pour le module Wellbeing (Nest par défaut).
+String get wellbeingHttpBaseUrl {
+  final o = wellbeingApiBaseUrlOverride.trim().replaceAll(RegExp(r'/$'), '');
+  if (o.isNotEmpty) return o;
+  return apiRootUrl;
+}
+
 /// Clé API OpenAI utilisée côté Flutter pour OpenAI TTS (voix type ChatGPT)
 /// via le package `openai_tts`.
 ///
@@ -129,7 +144,7 @@ const String advisorWebhookUrl =
 ///
 /// ⚠️ Ne jamais commiter une clé réelle sur GitHub.
 /// Pour activer OpenAI TTS : crée un fichier .env à la racine avec :
-///   OPENAI_API_KEY=<your-openai-api-key>
+///   `OPENAI_API_KEY=` suivi de ta clé (sans chevrons).
 /// (clé valide sur https://platform.openai.com/account/api-keys)
 /// Sinon l'app utilise FlutterTts (pas de 401).
 const String _openaiKeyFromDartDefine = String.fromEnvironment(

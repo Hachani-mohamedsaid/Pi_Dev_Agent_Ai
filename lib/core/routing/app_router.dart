@@ -79,6 +79,10 @@ import '../../features/phone_agent/screens/phone_agent_screen.dart';
 import '../../features/phone_agent/screens/phone_agent_call_detail_screen.dart';
 import '../../features/social_media/screens/social_media_brief_screen.dart';
 import '../../presentation/pages/google_connect_page.dart';
+import '../../features/wellbeing/models/wellbeing_models.dart';
+import '../../features/wellbeing/screens/wellbeing_landing_screen.dart';
+import '../../features/wellbeing/screens/wellbeing_questionnaire_screen.dart';
+import '../../features/wellbeing/screens/wellbeing_results_screen.dart';
 
 // Custom page transition - fade and scale from center
 Page<T> _fadeScaleTransition<T extends Object?>({
@@ -413,6 +417,40 @@ final appRouter = GoRouter(
             valuationBarLabel:
                 m['valuationBarLabel']?.toString() ?? '€${numVal.round()}',
           ),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/wellbeing',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const WellbeingLandingScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/wellbeing/check-in',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const WellbeingQuestionnaireScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/wellbeing/results',
+      pageBuilder: (context, state) {
+        final extra = state.extra;
+        if (extra is! WellbeingSessionOutcome) {
+          return _fadeScaleTransition(
+            context: context,
+            state: state,
+            child: const WellbeingLandingScreen(),
+          );
+        }
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: WellbeingResultsScreen(outcome: extra),
         );
       },
     ),

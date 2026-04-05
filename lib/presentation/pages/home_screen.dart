@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../features/wellbeing/wellbeing_section_styles.dart';
 import '../../features/social_media/screens/social_media_brief_screen.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/l10n/app_strings.dart';
@@ -1616,6 +1617,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'color': const Color(0xFF0EA5E9),
         'colorLight': const Color(0xFF38BDF8),
       },
+      {
+        'title': 'Wellbeing',
+        'icon': LucideIcons.heartPulse,
+        'route': '/wellbeing',
+        'color': const Color(0xFF14B8A6),
+        'colorLight': const Color(0xFF2DD4BF),
+      },
     ];
 
     return Column(
@@ -1691,10 +1699,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           if (entry.key == 0 ||
               entry.key == 5 ||
               entry.key == 6 ||
-              entry.key == 7)
+              entry.key == 7) {
             return const SizedBox.shrink();
+          }
           final index = entry.key;
           final action = entry.value;
+          final route = action['route'] as String;
           return Padding(
             padding: EdgeInsets.only(
               bottom: Responsive.getResponsiveValue(
@@ -1704,16 +1714,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 desktop: 16.0,
               ),
             ),
-            child: _buildQuickActionItem(
-              context,
-              isMobile,
-              action['title'] as String,
-              action['icon'] as IconData,
-              action['route'] as String,
-              action['color'] as Color,
-              action['colorLight'] as Color,
-              index,
-            ),
+            child: route == '/wellbeing'
+                ? _buildWellbeingQuickActionCard(context)
+                : _buildQuickActionItem(
+                    context,
+                    isMobile,
+                    action['title'] as String,
+                    action['icon'] as IconData,
+                    route,
+                    action['color'] as Color,
+                    action['colorLight'] as Color,
+                    index,
+                  ),
           );
         }),
       ],
@@ -2797,6 +2809,207 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _wellbeingMiniPillar({
+    required BuildContext context,
+    required WellbeingSectionStyle style,
+    required IconData icon,
+  }) {
+    final dim = Responsive.getResponsiveValue(
+      context,
+      mobile: 30.0,
+      tablet: 34.0,
+      desktop: 36.0,
+    );
+    final iconSz = dim * 0.5;
+    return Container(
+      width: dim,
+      height: dim,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: style.likertSelectedGradient,
+        boxShadow: [
+          BoxShadow(
+            color: style.glow.withValues(alpha: 0.55),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Icon(icon, color: Colors.white, size: iconSz),
+    );
+  }
+
+  /// Distinctive entry: tri-color pillar strip matching the Wellbeing diagnostic.
+  Widget _buildWellbeingQuickActionCard(BuildContext context) {
+    final pad = Responsive.getResponsiveValue(
+      context,
+      mobile: 14.0,
+      tablet: 16.0,
+      desktop: 20.0,
+    );
+    final br = Responsive.getResponsiveValue(
+      context,
+      mobile: 12.0,
+      tablet: 13.0,
+      desktop: 15.0,
+    );
+    final a = WellbeingSectionStyle.cognitive;
+    final b = WellbeingSectionStyle.emotional;
+    final c = WellbeingSectionStyle.physical;
+
+    return GestureDetector(
+      onTap: () => _openRouteWithPremiumCheck('/wellbeing'),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(br + 2),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              a.bright,
+              b.bright,
+              c.bright,
+            ],
+            stops: const [0.0, 0.52, 1.0],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: a.glow.withValues(alpha: 0.22),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: b.glow.withValues(alpha: 0.18),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: c.glow.withValues(alpha: 0.2),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(1.5),
+        child: Container(
+          padding: EdgeInsets.all(pad),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(br),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF0E1928),
+                Color(0xFF152A3D),
+              ],
+            ),
+            border: Border.all(
+              color: AppColors.cyan500.withValues(alpha: 0.12),
+            ),
+          ),
+          child: Row(
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _wellbeingMiniPillar(
+                    context: context,
+                    style: a,
+                    icon: Icons.psychology_rounded,
+                  ),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 5.0,
+                      tablet: 7.0,
+                      desktop: 8.0,
+                    ),
+                  ),
+                  _wellbeingMiniPillar(
+                    context: context,
+                    style: b,
+                    icon: Icons.favorite_rounded,
+                  ),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 5.0,
+                      tablet: 7.0,
+                      desktop: 8.0,
+                    ),
+                  ),
+                  _wellbeingMiniPillar(
+                    context: context,
+                    style: c,
+                    icon: Icons.bolt_rounded,
+                  ),
+                ],
+              ),
+              SizedBox(
+                width: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 12.0,
+                  tablet: 14.0,
+                  desktop: 16.0,
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Wellbeing',
+                      style: TextStyle(
+                        fontSize: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 15.0,
+                          tablet: 16.0,
+                          desktop: 17.0,
+                        ),
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textWhite,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Mind · Heart · Energy · monthly check-in',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 11.0,
+                          tablet: 12.0,
+                          desktop: 13.0,
+                        ),
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textCyan200.withValues(alpha: 0.82),
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                LucideIcons.chevronRight,
+                color: AppColors.cyan400,
+                size: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 18.0,
+                  tablet: 20.0,
+                  desktop: 22.0,
+                ),
+              ),
+            ],
           ),
         ),
       ),
