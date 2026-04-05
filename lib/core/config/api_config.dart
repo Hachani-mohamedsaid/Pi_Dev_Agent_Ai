@@ -80,6 +80,39 @@ String get apiRootUrl {
   return '$base$suffix';
 }
 
+/// Surcharge explicite de la racine des entretiens (sans slash final).
+/// Ex. `--dart-define=INTERVIEW_API_ROOT=https://mon-backend.com/api`
+const String _interviewApiRootOverride = String.fromEnvironment(
+  'INTERVIEW_API_ROOT',
+  defaultValue: '',
+);
+
+/// Segment optionnel sous l’hôte pour les entretiens seulement (sans slash).
+/// Ex. `--dart-define=INTERVIEW_API_SEGMENT=api` → `https://hôte/api/interviews/start`
+/// alors que [apiPathPrefix] peut rester vide pour `/auth/login`.
+const String _interviewApiSegment = String.fromEnvironment(
+  'INTERVIEW_API_SEGMENT',
+  defaultValue: '',
+);
+
+/// Racine HTTP **uniquement** pour `POST /interviews/...`.
+///
+/// Par défaut = [apiRootUrl] (même logique que le reste de l’API). Si ton Nest expose les entretiens
+/// sous `/api/...` alors que l’auth est à la racine, passe `--dart-define=INTERVIEW_API_SEGMENT=api`.
+/// Surcharge totale : `--dart-define=INTERVIEW_API_ROOT=https://hôte/...` (sans slash final).
+String get interviewApiRootUrl {
+  final manual = _interviewApiRootOverride.trim().replaceAll(RegExp(r'/$'), '');
+  if (manual.isNotEmpty) return manual;
+
+  final seg = _interviewApiSegment.trim().replaceAll(RegExp(r'^/|/$'), '');
+  if (seg.isEmpty) return apiRootUrl;
+
+  final base = apiBaseUrl.replaceAll(RegExp(r'/$'), '');
+  final suffix = '/$seg';
+  if (base.toLowerCase().endsWith(suffix.toLowerCase())) return base;
+  return '$base$suffix';
+}
+
 /// Chemin de la page "définir nouveau mot de passe" (après clic sur le lien email).
 /// Le backend (Resend, etc.) doit mettre dans l'email : (URL de l'app) + ce chemin + ?token=...
 /// Ex. backend FRONTEND_RESET_PASSWORD_URL = https://ton-app.web.app/reset-password/confirm
@@ -92,17 +125,33 @@ const String verifyEmailConfirmPath = '/verify-email/confirm';
 const String chatPath = '/ai/chat';
 
 /// Entretiens candidats (LLM Gemini côté Nest uniquement — pas n8n).
-/// POST [interviewsStartPath] puis POST `/interviews/:sessionId/message`.
+/// Base URL : [interviewApiRootUrl] (= [apiRootUrl] par défaut ; aligné Nest sans `API_PATH_PREFIX`).
 /// JWT requis (`Authorization: Bearer`).
 const String interviewsStartPath = '/interviews/start';
 
-/// POST [apiRootUrl]/interviews/:sessionId/message — corps `{ "content": "..." }`.
+/// POST [interviewApiRootUrl]/interviews/:sessionId/message — corps `{ "content": "..." }`.
 String interviewSessionMessagePath(String sessionId) =>
     '/interviews/$sessionId/message';
 
-/// POST [apiRootUrl]/interviews/:sessionId/complete — fin de session, synthèse optionnelle.
+/// POST [interviewApiRootUrl]/interviews/:sessionId/complete — fin de session, synthèse optionnelle.
 String interviewSessionCompletePath(String sessionId) =>
     '/interviews/$sessionId/complete';
+
+/// POST [interviewApiRootUrl]/interviews/guest/:sessionId/proctoring-events — événements proctoring (token invité).
+String interviewGuestProctoringEventsPath(String sessionId) =>
+    '/interviews/guest/$sessionId/proctoring-events';
+
+/// Candidat invité — Bearer JWT invité (pas le JWT recruteur).
+const String interviewsGuestStartPath = '/interviews/guest/start';
+
+String interviewGuestSessionMessagePath(String sessionId) =>
+    '/interviews/guest/$sessionId/message';
+
+String interviewGuestSessionCompletePath(String sessionId) =>
+    '/interviews/guest/$sessionId/complete';
+
+/// POST [interviewApiRootUrl]/interviews/send-invite-email — envoi serveur du lien d’entretien au candidat (JWT recruteur).
+const String interviewsSendInviteEmailPath = '/interviews/send-invite-email';
 
 /// Endpoint NestJS pour enregistrer les décisions Accepter/Rejeter des propositions (stockage MongoDB).
 /// POST avec body: action, row_number, name, email, type_projet (optionnel: budget_estime, periode).

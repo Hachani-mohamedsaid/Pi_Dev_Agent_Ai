@@ -7,7 +7,7 @@ import '../../injection_container.dart';
 
 /// Appels NestJS pour l’entretien candidat (Gemini). Contrat attendu :
 ///
-/// **POST** `[apiRootUrl]/interviews/start`
+/// **POST** `[interviewApiRootUrl]/interviews/start`
 /// - Headers : `Authorization: Bearer <JWT>`, `Content-Type: application/json`
 /// - Body :
 /// ```json
@@ -27,11 +27,11 @@ import '../../injection_container.dart';
 /// ```
 /// (aliases acceptés : `session_id`, message dans `assistant_message`, `message.content`, etc.)
 ///
-/// **POST** `[apiRootUrl]/interviews/:sessionId/message`
+/// **POST** `[interviewApiRootUrl]/interviews/:sessionId/message`
 /// - Body : `{ "content": "texte utilisateur" }`
 /// - Réponse : `{ "assistantMessage": "…" }` ou équivalents ci-dessus.
 ///
-/// **POST** `[apiRootUrl]/interviews/:sessionId/complete` (optionnel)
+/// **POST** `[interviewApiRootUrl]/interviews/:sessionId/complete` (optionnel)
 /// - Body : `{}`
 /// - Réponse : `{ "summary": "…" }` ou `{ "assistantMessage": "…" }`
 class CandidateInterviewApiService {
@@ -119,7 +119,7 @@ class CandidateInterviewApiService {
     String? jobTitle,
     String? jobId,
   }) async {
-    final uri = Uri.parse('$apiRootUrl$interviewsStartPath');
+    final uri = Uri.parse('$interviewApiRootUrl$interviewsStartPath');
     final res = await http
         .post(
           uri,
@@ -153,7 +153,7 @@ class CandidateInterviewApiService {
   /// Envoie un message candidat ; retourne la réponse de l’assistant.
   Future<String> sendMessage(String sessionId, String content) async {
     final uri = Uri.parse(
-      '$apiRootUrl${interviewSessionMessagePath(sessionId)}',
+      '$interviewApiRootUrl${interviewSessionMessagePath(sessionId)}',
     );
     final res = await http
         .post(
@@ -183,7 +183,7 @@ class CandidateInterviewApiService {
   /// Termine la session ; retourne un texte de synthèse si le backend en fournit une.
   Future<String?> completeSession(String sessionId) async {
     final uri = Uri.parse(
-      '$apiRootUrl${interviewSessionCompletePath(sessionId)}',
+      '$interviewApiRootUrl${interviewSessionCompletePath(sessionId)}',
     );
     final res = await http
         .post(
@@ -238,9 +238,10 @@ class CandidateInterviewApiService {
 
     if (statusCode == 404) {
       buf.write(
-        '\n\nRoute introuvable. Si le backend utilise le préfixe global « api », '
-        'lancez l’app avec :\n'
-        'flutter run ... --dart-define=API_PATH_PREFIX=api',
+        '\n\nRoute introuvable. L’app appelle : $interviewApiRootUrl$interviewsStartPath.\n'
+        '• Si le module Nest « interviews » n’est pas déployé sur Railway, il faut le déployer côté backend.\n'
+        '• Si la route est sous /api uniquement : flutter run ... --dart-define=INTERVIEW_API_SEGMENT=api\n'
+        '• Si tout le backend est sous /api : --dart-define=API_PATH_PREFIX=api',
       );
     } else if (statusCode == 401 || statusCode == 403) {
       buf.write(

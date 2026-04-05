@@ -9,7 +9,7 @@ import 'project_service.dart';
 import 'proposals_api_service.dart';
 
 /// Appels NestJS pour regrouper par employé et envoyer e-mails / PDF de sprints.
-/// Endpoint d’envoi : `POST /projects/:projectId/dispatch-sprint-emails` (à implémenter côté backend).
+/// Endpoint d’envoi : `POST /projects/:projectId/dispatch-sprint-emails` (`projectId` = ObjectId ou `row_number`).
 class TeamDispatchApiService {
   TeamDispatchApiService();
 
@@ -152,6 +152,15 @@ class TeamDispatchApiService {
     } catch (_) {}
     if (body.length > 300) return '${body.substring(0, 300)}…';
     return body;
+  }
+
+  Map<String, dynamic> _decodeJsonMap(String body) {
+    if (body.isEmpty) return {};
+    try {
+      final d = jsonDecode(body);
+      if (d is Map) return Map<String, dynamic>.from(d);
+    } catch (_) {}
+    return {};
   }
 
   Future<Map<String, dynamic>?> getProject(String id) async {
@@ -319,14 +328,17 @@ class TeamDispatchApiService {
     return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
-  /// Déclenche l’envoi groupé (LLM corps mail + PDF par employé + assignation + génération sprints).
+  /// Déclenche l’envoi groupé : pour chaque projet, un e-mail (corps via Gemini si activé) + PDF
+  /// des sprints / tâches **par employé concerné** (missions qui lui sont assignées, souvent après
+  /// matching profil ↔ besoins du projet, ex. Flutter).
   ///
   /// **Contrat NestJS** (`POST /projects/:id/dispatch-sprint-emails`) :
-  /// - [attachPdf] : PDF sprint détaillé par employé en pièce jointe.
-  /// - [autoAssignTasksByProfile] : assigne les tâches sans `assignedEmployeeId`.
-  /// - [useAiForTaskAssignment] : si true (défaut), le backend appelle Gemini puis OpenAI pour choisir
-  ///   l’employé par tâche ; sinon uniquement correspondance texte.
-  /// - [ensureSprintsFromAcceptedProposal] : si `row_number` + décision accept, génère sprints/tâches (LLM ou secours).
+  /// - [attachPdf] : PDF récapitulatif par employé en pièce jointe.
+  /// - [autoAssignTasksByProfile] : assigne les tâches sans `assignedEmployeeId` selon l’équipe.
+  /// - [useAiForTaskAssignment] : si true (défaut), le backend s’appuie sur l’IA (ex. Gemini / OpenAI)
+  ///   pour proposer l’employé par tâche ; sinon correspondance texte simple.
+  /// - [ensureSprintsFromAcceptedProposal] : pour projet lié à une proposition acceptée (`row_number`),
+  ///   génère sprints et tâches en amont si la base est encore vide.
   /// - [dryRun] : simulation sans envoi réel d’e-mails.
   ///
   /// Réponse 200 typique : `message`, `sent`, `emailsSent`, `assignedCount`, `sprintsCreated`, `tasksCreated`,
@@ -354,13 +366,24 @@ class TeamDispatchApiService {
           }),
         )
         .timeout(const Duration(seconds: 120));
-    final body = res.body.isEmpty
-        ? <String, dynamic>{}
-        : Map<String, dynamic>.from(jsonDecode(res.body) as Map);
+    final body = _decodeJsonMap(res.body);
     if (res.statusCode >= 400) {
+      final nestMsg = body['message']?.toString().trim();
+      if (res.statusCode == 404) {
+        final friendly =
+            'Projet introuvable sur le serveur (réf. « $projectId »). '
+            'Vérifiez que l’identifiant existe (MongoDB ou ligne de proposition / row_number) '
+            'et que la session JWT est valide.';
+        throw TeamDispatchException(
+          res.statusCode,
+          (nestMsg != null && nestMsg.isNotEmpty) ? '$nestMsg\n\n$friendly' : friendly,
+        );
+      }
       throw TeamDispatchException(
         res.statusCode,
-        body['message']?.toString() ?? res.body,
+        nestMsg?.isNotEmpty == true
+            ? nestMsg!
+            : (_extractErrorBody(res.body) ?? 'Erreur HTTP ${res.statusCode}'),
       );
     }
     return body;

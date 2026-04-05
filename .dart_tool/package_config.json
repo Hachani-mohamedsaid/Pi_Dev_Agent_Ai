@@ -38,6 +38,36 @@
       "languageVersion": "3.1"
     },
     {
+      "name": "camera",
+      "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/camera-0.11.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "camera_android_camerax",
+      "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/camera_android_camerax-0.6.30",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "camera_avfoundation",
+      "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/camera_avfoundation-0.9.23+2",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "camera_platform_interface",
+      "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/camera_platform_interface-2.12.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "camera_web",
+      "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/camera_web-0.3.5+3",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
+    },
+    {
       "name": "characters",
       "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/characters-1.4.0",
       "packageUri": "lib/",
@@ -308,6 +338,18 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "google_mlkit_commons",
+      "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/google_mlkit_commons-0.11.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
+    },
+    {
+      "name": "google_mlkit_face_detection",
+      "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/google_mlkit_face_detection-0.13.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
+    },
+    {
       "name": "google_sign_in",
       "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/google_sign_in-7.2.0",
       "packageUri": "lib/",
@@ -411,7 +453,7 @@
     },
     {
       "name": "jni",
-      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/jni-0.14.2",
+      "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/jni-0.14.2",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
@@ -531,19 +573,19 @@
     },
     {
       "name": "package_config",
-      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/package_config-2.2.0",
+      "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/package_config-2.2.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "package_info_plus",
-      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/package_info_plus-9.0.1",
+      "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/package_info_plus-9.0.1",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "package_info_plus_platform_interface",
-      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/package_info_plus_platform_interface-3.2.1",
+      "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/package_info_plus_platform_interface-3.2.1",
       "packageUri": "lib/",
       "languageVersion": "2.18"
     },
@@ -705,13 +747,13 @@
     },
     {
       "name": "sentry",
-      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/sentry-9.16.0",
+      "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/sentry-9.16.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "sentry_flutter",
-      "rootUri": "file:///Users/mohamedsaidhachani/.pub-cache/hosted/pub.dev/sentry_flutter-9.16.0",
+      "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/sentry_flutter-9.16.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
@@ -810,6 +852,12 @@
       "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/stream_channel-2.1.4",
       "packageUri": "lib/",
       "languageVersion": "3.3"
+    },
+    {
+      "name": "stream_transform",
+      "rootUri": "file:///Users/azizouergli/.pub-cache/hosted/pub.dev/stream_transform-2.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
     },
     {
       "name": "string_scanner",

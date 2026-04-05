@@ -8,6 +8,7 @@ import '../../presentation/pages/register_page.dart';
 import '../../presentation/pages/reset_password_page.dart';
 import '../../presentation/pages/reset_password_confirm_page.dart';
 import '../../presentation/pages/verify_email_confirm_page.dart';
+import '../../presentation/pages/guest_interview_page.dart';
 import '../../presentation/pages/home_screen.dart';
 import '../../presentation/pages/profile_screen.dart';
 import '../../presentation/pages/edit_profile_page.dart';
@@ -63,7 +64,7 @@ import '../../presentation/pages/create_job_page.dart';
 import '../../presentation/pages/evaluation_status_page.dart';
 import '../../presentation/pages/candidatures_page.dart';
 import '../../presentation/pages/evaluation_detail_page.dart';
-import '../../presentation/pages/candidate_interview_page.dart';
+import '../../presentation/pages/candidate_interview_static_page.dart';
 import '../../data/models/evaluation.dart';
 import '../../presentation/pages/work_proposal_details_page.dart';
 import '../../presentation/widgets/premium_feature_gate.dart';
@@ -208,6 +209,35 @@ final appRouter = GoRouter(
           token: state.uri.queryParameters['token'],
         ),
       ),
+    ),
+    /// Entretien candidat sans compte (lien partagé par le recruteur).
+    GoRoute(
+      path: '/guest-interview',
+      pageBuilder: (context, state) {
+        final q = state.uri.queryParameters;
+        String? qp(String k) {
+          final v = q[k]?.trim();
+          return (v == null || v.isEmpty) ? null : v;
+        }
+
+        final evaluation = Evaluation(
+          evaluationId: qp('eid'),
+          candidateName: qp('name'),
+          jobTitle: qp('job'),
+          candidateEmail: qp('email'),
+          status: 'pending',
+        );
+
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: GuestInterviewPage(
+            evaluation: evaluation,
+            guestToken: qp('token'),
+            prefilledSessionId: qp('sid'),
+          ),
+        );
+      },
     ),
     GoRoute(
       path: '/home',
@@ -839,7 +869,7 @@ final appRouter = GoRouter(
         return _fadeScaleTransition(
           context: context,
           state: state,
-          child: CandidateInterviewPage(evaluation: evaluation),
+          child: CandidateInterviewStaticPage(evaluation: evaluation),
         );
       },
     ),

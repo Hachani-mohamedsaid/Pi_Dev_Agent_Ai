@@ -39,6 +39,11 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
   @override
   void initState() {
     super.initState();
+    // Propositions acceptées (id = numéro de ligne) : sans sprints en base, le dispatch
+    // doit demander au serveur de les créer depuis la proposition, puis affecter par profil.
+    if (_isSheetRowOnlyProjectId(widget.projectId)) {
+      _ensureSprintsFromProposal = true;
+    }
     _load();
   }
 
@@ -167,8 +172,37 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
     }
     if (failedCount > 0) {
       parts.add(
-        '$failedCount envoi${failedCount > 1 ? 's' : ''} n’ont pas pu aboutir.',
+        failedCount == 1
+            ? '1 envoi n’a pas pu aboutir.'
+            : '$failedCount envois n’ont pas pu aboutir.',
       );
+      final failedReasons = <String>[];
+      final failedList = res['failed'];
+      if (failedList is List) {
+        for (final item in failedList) {
+          if (item is Map) {
+            final r = item['reason'] ??
+                item['message'] ??
+                item['error'] ??
+                item['detail'];
+            if (r != null && r.toString().trim().isNotEmpty) {
+              failedReasons.add(r.toString().trim());
+            }
+          } else if (item != null && item.toString().trim().isNotEmpty) {
+            failedReasons.add(item.toString().trim());
+          }
+        }
+      }
+      if (failedReasons.isNotEmpty) {
+        final shown = failedReasons.length <= 2
+            ? failedReasons.join(' ')
+            : '${failedReasons.take(2).join(' ')} (+${failedReasons.length - 2})';
+        parts.add('Détail : $shown');
+      } else if (rawMsg.isNotEmpty && !rawMsg.contains('Aucun sprint')) {
+        parts.add(
+          rawMsg.length > 220 ? '${rawMsg.substring(0, 220)}…' : rawMsg,
+        );
+      }
     }
     if (assigned > 0) {
       parts.add(
@@ -233,6 +267,13 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
     return buf.toString().trim();
   }
 
+  /// Identifiant projet = numéro de ligne de proposition (`2`, `3`…) : le backend l’accepte comme
+  /// `row_number` sur les routes dispatch (même URL que pour un id MongoDB).
+  bool _isSheetRowOnlyProjectId(String id) {
+    final t = id.trim();
+    return t.isNotEmpty && RegExp(r'^\d+$').hasMatch(t);
+  }
+
   Future<void> _send() async {
     setState(() => _sending = true);
     try {
@@ -263,6 +304,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
           content: Text(e.message),
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.red.shade800,
+          duration: Duration(seconds: e.message.length > 200 ? 10 : 5),
         ),
       );
     } catch (e) {
@@ -806,8 +848,8 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                           style: TextStyle(color: AppColors.textWhite),
                         ),
                         subtitle: Text(
-                          'Répartit les tâches entre les membres de l’équipe selon leur profil, '
-                          'avant l’envoi des e-mails.',
+                          'Attribue les tâches du projet aux personnes dont le profil correspond '
+                          '(ex. développeur Flutter pour les parties mobile), avant l’envoi.',
                           style: TextStyle(
                             color: AppColors.textCyan200.withValues(alpha: 0.8),
                             fontSize: 12,
@@ -825,8 +867,8 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                             style: TextStyle(color: AppColors.textWhite),
                           ),
                           subtitle: Text(
-                            'Propose automatiquement qui réalise quelle tâche, '
-                            'en s’appuyant sur le projet et les compétences déclarées.',
+                            'Le serveur compare libellés de tâches et compétences (ex. Flutter, NestJS) '
+                            'via l’IA pour proposer une affectation, puis envoie un mail par personne.',
                             style: TextStyle(
                               color: AppColors.textCyan200.withValues(alpha: 0.8),
                               fontSize: 12,
@@ -863,8 +905,8 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                           style: TextStyle(color: AppColors.textWhite),
                         ),
                         subtitle: Text(
-                          'Adapte le message à chaque collaborateur, en reprenant uniquement '
-                          'les missions qui lui sont réellement assignées.',
+                          'Rédige le corps de l’e-mail avec Gemini (côté serveur) pour chaque destinataire, '
+                          'en ne reprenant que ses missions assignées ; le PDF joint résume ses sprints.',
                           style: TextStyle(
                             color: AppColors.textCyan200.withValues(alpha: 0.8),
                             fontSize: 12,
@@ -897,9 +939,50 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
   }
 
   Widget _buildPrimaryCta(double pad) {
+    final sheetRow = _isSheetRowOnlyProjectId(widget.projectId);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (sheetRow)
+          Padding(
+            padding: EdgeInsets.only(bottom: pad * 0.75),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppColors.cyan400.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.cyan400.withValues(alpha: 0.35),
+                ),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(pad * 0.65),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: AppColors.cyan400,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Projet identifié par la ligne du tableau des propositions (réf. ${widget.projectId}). '
+                        'Le serveur reconnaît ce numéro comme identifiant de projet pour l’envoi des missions. '
+                        'Si les sprints ne sont pas encore visibles, activez « Préparer sprints et tâches '
+                        'à partir de la proposition » avant d’envoyer.',
+                        style: TextStyle(
+                          color: AppColors.textCyan200.withValues(alpha: 0.95),
+                          fontSize: 12.5,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         FilledButton.icon(
           style: FilledButton.styleFrom(
             padding: EdgeInsets.symmetric(vertical: pad * 0.65),

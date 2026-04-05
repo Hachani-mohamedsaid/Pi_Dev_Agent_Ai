@@ -38,10 +38,12 @@ class ProjectService {
   /// Retourne une map row_number (string) -> "accept" | "reject" (dernière décision par row_number).
   Future<Map<String, String>> fetchProjectDecisions() async {
     try {
+      final token =
+          await InjectionContainer.instance.authLocalDataSource.getAccessToken();
       final response = await http
           .get(
             Uri.parse('$apiRootUrl$projectDecisionsPath'),
-            headers: buildJsonHeaders(),
+            headers: buildJsonHeaders(bearerToken: token),
           )
           .timeout(_timeout);
       if (response.statusCode != 200) return {};
@@ -57,7 +59,7 @@ class ProjectService {
         return (bAt.compareTo(aAt));
       });
       for (final e in sorted) {
-        final row = e['row_number'];
+        final row = e['row_number'] ?? e['rowNumber'];
         final action = e['action']?.toString();
         if (row == null || action == null) continue;
         final id = row.toString();
