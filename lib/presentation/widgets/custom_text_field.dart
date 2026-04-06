@@ -18,7 +18,6 @@ class CustomTextField extends StatefulWidget {
     this.onChanged,
     this.focusNode,
   });
-
   final String label;
   final String hint;
   final IconData icon;
