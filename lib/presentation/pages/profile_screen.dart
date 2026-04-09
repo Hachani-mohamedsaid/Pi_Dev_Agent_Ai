@@ -47,31 +47,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final stats = [
       {
-        'label': AppStrings.tr(context, 'conversations'),
+        'label': 'Conversations',
         'value': '${profile?.conversationsCount ?? 0}',
       },
       {
-        'label': AppStrings.tr(context, 'daysActive'),
+        'label': 'Days active',
         'value': '${profile?.daysActive ?? 0}',
       },
       {
-        'label': AppStrings.tr(context, 'hoursSaved'),
+        'label': 'Hours saved',
         'value': '${profile?.hoursSaved ?? 0}',
-      },
-    ];
-
-    final recentActivities = [
-      {
-        'action': AppStrings.tr(context, 'startedConversation'),
-        'time': '2 hours ago',
-      },
-      {
-        'action': AppStrings.tr(context, 'updatedProfilePicture'),
-        'time': '1 day ago',
-      },
-      {
-        'action': AppStrings.tr(context, 'joinedPersonalAIBuddy'),
-        'time': '5 days ago',
       },
     ];
 
@@ -180,55 +165,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         .slideY(begin: 0.2, end: 0, duration: 500.ms),
                     SizedBox(height: isMobile ? 24 : 32),
 
-                    // Stats Grid
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: isMobile ? 12 : 16,
-                        mainAxisSpacing: isMobile ? 12 : 16,
-                        childAspectRatio: isMobile ? 0.92 : 1.2,
+                    // Stats row (compact)
+                    SizedBox(
+                      height: 80,
+                      child: Row(
+                        children: List.generate(stats.length, (index) {
+                          return Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                right: index < stats.length - 1 ? (isMobile ? 10.0 : 12.0) : 0,
+                              ),
+                              child: _StatCard(
+                                value: stats[index]['value']!,
+                                label: stats[index]['label']!,
+                                isMobile: isMobile,
+                              ).animate().fadeIn(
+                                delay: Duration(milliseconds: 100 + (index * 50)),
+                                duration: 500.ms,
+                              ),
+                            ),
+                          );
+                        }),
                       ),
-                      itemCount: stats.length,
-                      itemBuilder: (context, index) {
-                        return _StatCard(
-                          value: stats[index]['value']!,
-                          label: stats[index]['label']!,
-                          isMobile: isMobile,
-                        ).animate().fadeIn(
-                          delay: Duration(milliseconds: 100 + (index * 50)),
-                          duration: 500.ms,
-                        );
-                      },
                     ),
-                    SizedBox(height: isMobile ? 24 : 32),
-
-                    // Recent Activity
-                    Text(
-                      AppStrings.tr(context, 'recentActivity'),
-                      style: TextStyle(
-                        fontSize: isMobile ? 18 : 20,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textWhite,
-                      ),
-                    ).animate().fadeIn(delay: 300.ms, duration: 500.ms),
-                    SizedBox(height: isMobile ? 12 : 16),
-                    ...List.generate(recentActivities.length, (index) {
-                      return _ProfileActivityItem(
-                        action: recentActivities[index]['action']!,
-                        time: recentActivities[index]['time']!,
-                        isMobile: isMobile,
-                      ).animate().fadeIn(
-                        delay: Duration(milliseconds: 400 + (index * 100)),
-                        duration: 500.ms,
-                      );
-                    }),
                     SizedBox(height: isMobile ? 24 : 32),
 
                     // AI Features Section
                     Text(
-                      AppStrings.tr(context, 'aiFeatures'),
+                      'AI features',
                       style: TextStyle(
                         fontSize: Responsive.getResponsiveValue(
                           context,
@@ -239,7 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontWeight: FontWeight.w600,
                         color: AppColors.textWhite,
                       ),
-                    ).animate().fadeIn(delay: 400.ms, duration: 500.ms),
+                    ).animate().fadeIn(delay: 300.ms, duration: 500.ms),
                     SizedBox(
                       height: Responsive.getResponsiveValue(
                         context,
@@ -279,47 +243,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final features = [
       {
         'icon': LucideIcons.brain,
-        'label': AppStrings.tr(context, 'learningInsights'),
+        'label': 'Learning & insights',
         'route': '/insights',
         'gradient': [
           const Color(0xFF9333EA).withOpacity(0.2),
           const Color(0xFFEC4899).withOpacity(0.2),
         ],
         'iconColor': const Color(0xFFC084FC),
-        'description': AppStrings.tr(context, 'learningInsightsDesc'),
+        'description': 'Personalized tips and summaries based on your activity.',
       },
       {
         'icon': LucideIcons.plug,
-        'label': AppStrings.tr(context, 'connectedServices'),
+        'label': 'Connected services',
         'route': '/services',
         'gradient': [
           const Color(0xFF10B981).withOpacity(0.2),
           AppColors.cyan500.withOpacity(0.2),
         ],
         'iconColor': const Color(0xFF10B981),
-        'description': AppStrings.tr(context, 'connectedServicesDesc'),
+        'description': 'Manage integrations like Gmail, calendar, and more.',
       },
       {
         'icon': LucideIcons.scale,
-        'label': AppStrings.tr(context, 'decisionSupport'),
+        'label': 'Decision support',
         'route': '/decisions',
         'gradient': [
           const Color(0xFF6366F1).withOpacity(0.2),
           const Color(0xFF9333EA).withOpacity(0.2),
         ],
         'iconColor': const Color(0xFF818CF8),
-        'description': AppStrings.tr(context, 'decisionSupportDesc'),
+        'description': 'Structured help for choices and trade-offs.',
       },
       {
         'icon': LucideIcons.trophy,
-        'label': AppStrings.tr(context, 'goalsGrowth'),
+        'label': 'Goals & growth',
         'route': '/goals',
         'gradient': [
           const Color(0xFFF59E0B).withOpacity(0.2),
           const Color(0xFFEAB308).withOpacity(0.2),
         ],
         'iconColor': const Color(0xFFFCD34D),
-        'description': AppStrings.tr(context, 'goalsGrowthDesc'),
+        'description': 'Track objectives and build streaks.',
       },
       {
         'icon': LucideIcons.zap,
@@ -505,7 +469,7 @@ class _ProfileCard extends StatelessWidget {
                           ),
                           SizedBox(height: 4),
                           Text(
-                            AppStrings.tr(context, 'aiEnthusiast'),
+                            'AI enthusiast',
                             style: TextStyle(
                               fontSize: Responsive.getResponsiveValue(
                                 context,
@@ -666,88 +630,29 @@ class _StatCard extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Padding(
-            padding: EdgeInsets.all(isMobile ? 12 : 20),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   value,
-                  style: TextStyle(
-                    fontSize: isMobile ? 20 : 24,
+                  style: const TextStyle(
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: AppColors.cyan400,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: isMobile ? 10 : 12,
+                    fontSize: 11,
                     color: AppColors.textCyan200.withOpacity(0.6),
                   ),
                   textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfileActivityItem extends StatelessWidget {
-  final String action;
-  final String time;
-  final bool isMobile;
-
-  const _ProfileActivityItem({
-    required this.action,
-    required this.time,
-    required this.isMobile,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primaryLight.withOpacity(0.4),
-            AppColors.primaryDarker.withOpacity(0.4),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.1), width: 1),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Padding(
-            padding: EdgeInsets.all(isMobile ? 16 : 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  action,
-                  style: TextStyle(
-                    fontSize: isMobile ? 14 : 16,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textWhite,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  time,
-                  style: TextStyle(
-                    fontSize: isMobile ? 12 : 13,
-                    color: AppColors.textCyan200.withOpacity(0.5),
-                  ),
                 ),
               ],
             ),

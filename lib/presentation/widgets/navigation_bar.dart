@@ -38,7 +38,7 @@ class NavigationBarWidget extends StatelessWidget {
       child: Center(
         child: Container(
           constraints: BoxConstraints(
-            maxWidth: isMobile ? screenWidth - (horizontalPadding * 2) : 400,
+            maxWidth: isMobile ? screenWidth - (horizontalPadding * 2) : 520,
           ),
           padding: EdgeInsets.symmetric(
             horizontal: isMobile ? 12 : 16,

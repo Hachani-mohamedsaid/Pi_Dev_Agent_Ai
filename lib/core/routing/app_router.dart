@@ -8,6 +8,7 @@ import '../../presentation/pages/register_page.dart';
 import '../../presentation/pages/reset_password_page.dart';
 import '../../presentation/pages/reset_password_confirm_page.dart';
 import '../../presentation/pages/verify_email_confirm_page.dart';
+import '../../presentation/pages/guest_interview_page.dart';
 import '../../presentation/pages/home_screen.dart';
 import '../../presentation/pages/profile_screen.dart';
 import '../../presentation/pages/edit_profile_page.dart';
@@ -55,12 +56,15 @@ import '../../presentation/pages/decision_support_page.dart';
 import '../../presentation/pages/goals_page.dart';
 import '../../presentation/pages/work_proposals_page.dart';
 import '../../presentation/pages/work_proposals_dashboard_page.dart';
+import '../../presentation/pages/project_personnel_management_page.dart';
+import '../../presentation/pages/team_dispatch_detail_page.dart';
 import '../../presentation/pages/project_analysis_page.dart';
 import '../../presentation/pages/how_to_work_page.dart';
 import '../../presentation/pages/create_job_page.dart';
 import '../../presentation/pages/evaluation_status_page.dart';
 import '../../presentation/pages/candidatures_page.dart';
 import '../../presentation/pages/evaluation_detail_page.dart';
+import '../../presentation/pages/candidate_interview_static_page.dart';
 import '../../data/models/evaluation.dart';
 import '../../presentation/pages/work_proposal_details_page.dart';
 import '../../presentation/widgets/premium_feature_gate.dart';
@@ -78,6 +82,7 @@ import '../../features/phone_agent/models/phone_call_model.dart';
 import '../../features/phone_agent/screens/phone_agent_screen.dart';
 import '../../features/phone_agent/screens/phone_agent_call_detail_screen.dart';
 import '../../features/social_media/screens/social_media_brief_screen.dart';
+import '../../presentation/pages/google_connect_page.dart';
 
 // Custom page transition - fade and scale from center
 Page<T> _fadeScaleTransition<T extends Object?>({
@@ -204,6 +209,35 @@ final appRouter = GoRouter(
           token: state.uri.queryParameters['token'],
         ),
       ),
+    ),
+    /// Entretien candidat sans compte (lien partagé par le recruteur).
+    GoRoute(
+      path: '/guest-interview',
+      pageBuilder: (context, state) {
+        final q = state.uri.queryParameters;
+        String? qp(String k) {
+          final v = q[k]?.trim();
+          return (v == null || v.isEmpty) ? null : v;
+        }
+
+        final evaluation = Evaluation(
+          evaluationId: qp('eid'),
+          candidateName: qp('name'),
+          jobTitle: qp('job'),
+          candidateEmail: qp('email'),
+          status: 'pending',
+        );
+
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: GuestInterviewPage(
+            evaluation: evaluation,
+            guestToken: qp('token'),
+            prefilledSessionId: qp('sid'),
+          ),
+        );
+      },
     ),
     GoRoute(
       path: '/home',
@@ -586,7 +620,10 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: const PremiumFeatureGate(child: MeetingHubScreen()),
+        child: const PremiumFeatureGate(
+          featureName: 'Meeting Hub',
+          child: MeetingHubScreen(),
+        ),
       ),
     ),
     GoRoute(
@@ -696,6 +733,14 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/google-connect',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const GoogleConnectPage(),
+      ),
+    ),
+    GoRoute(
       path: '/decisions',
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
@@ -726,6 +771,29 @@ final appRouter = GoRouter(
         state: state,
         child: const WorkProposalsDashboardPage(),
       ),
+    ),
+    GoRoute(
+      path: '/team-dispatch',
+      redirect: (_, _) => '/project-management',
+    ),
+    GoRoute(
+      path: '/project-management',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const ProjectPersonnelManagementPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/team-dispatch/:projectId',
+      pageBuilder: (context, state) {
+        final id = state.pathParameters['projectId'] ?? '';
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: TeamDispatchDetailPage(projectId: id),
+        );
+      },
     ),
     GoRoute(
       path: '/project-analysis',
@@ -794,6 +862,17 @@ final appRouter = GoRouter(
           context: context,
           state: state,
           child: EvaluationDetailPage(evaluation: evaluation),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/candidate-interview',
+      pageBuilder: (context, state) {
+        final evaluation = state.extra as Evaluation?;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: CandidateInterviewStaticPage(evaluation: evaluation),
         );
       },
     ),
@@ -912,7 +991,10 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: const PremiumFeatureGate(child: PhoneAgentScreen()),
+        child: const PremiumFeatureGate(
+          featureName: 'Phone Agent',
+          child: PhoneAgentScreen(),
+        ),
       ),
     ),
     GoRoute(
@@ -931,13 +1013,17 @@ final appRouter = GoRouter(
           return _fadeScaleTransition(
             context: context,
             state: state,
-            child: const PremiumFeatureGate(child: PhoneAgentScreen()),
+            child: const PremiumFeatureGate(
+              featureName: 'Phone Agent',
+              child: PhoneAgentScreen(),
+            ),
           );
         }
         return _fadeScaleTransition(
           context: context,
           state: state,
           child: PremiumFeatureGate(
+            featureName: 'Phone Agent',
             child: PhoneAgentCallDetailScreen(call: call),
           ),
         );

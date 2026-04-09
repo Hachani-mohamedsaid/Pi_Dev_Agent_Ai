@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
@@ -18,7 +19,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
 
   @override
   Future<AuthResponse> login(String email, String password) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/login'),
       headers: buildJsonHeaders(),
       body: jsonEncode({'email': email, 'password': password}),
@@ -37,7 +38,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
     String email,
     String password,
   ) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/register'),
       headers: buildJsonHeaders(),
       body: jsonEncode({'name': name, 'email': email, 'password': password}),
@@ -53,7 +54,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   /// Demande reset mot de passe : le backend envoie l’email (Resend, etc.) avec le lien contenant le token.
   @override
   Future<void> resetPassword(String email) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/reset-password'),
       headers: buildJsonHeaders(),
       body: jsonEncode({'email': email}),
@@ -67,7 +68,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
     required String token,
     required String newPassword,
   }) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/reset-password/confirm'),
       headers: buildJsonHeaders(),
       body: jsonEncode({'token': token, 'newPassword': newPassword}),
@@ -81,7 +82,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
     required String currentPassword,
     required String newPassword,
   }) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/change-password'),
       headers: buildJsonHeaders(bearerToken: accessToken),
       body: jsonEncode({
@@ -94,7 +95,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
 
   @override
   Future<void> requestEmailVerification(String accessToken) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/verify-email'),
       headers: buildJsonHeaders(bearerToken: accessToken),
       body: jsonEncode({}),
@@ -104,7 +105,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
 
   @override
   Future<void> confirmEmailVerification(String token) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/verify-email/confirm'),
       headers: buildJsonHeaders(),
       body: jsonEncode({'token': token}),
@@ -116,7 +117,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   /// Backend attend POST /auth/google avec body { "idToken": "..." } et renvoie { user, accessToken }.
   @override
   Future<AuthResponse> loginWithGoogle(String idToken) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/google'),
       headers: buildJsonHeaders(),
       body: jsonEncode({'idToken': idToken}),
@@ -136,7 +137,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   }) async {
     final body = <String, dynamic>{'identityToken': identityToken};
     if (user != null) body['user'] = user;
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$_baseUrl/auth/apple'),
       headers: buildJsonHeaders(),
       body: jsonEncode(body),
@@ -151,7 +152,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
 
   @override
   Future<ProfileModel> getProfile(String accessToken) async {
-    final res = await http.get(
+    final res = await _get(
       Uri.parse('$_baseUrl/auth/me'),
       headers: buildJsonHeaders(bearerToken: accessToken),
     );
@@ -184,11 +185,12 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
     if (phone != null) body['phone'] = phone;
     if (birthDate != null) body['birthDate'] = birthDate;
     if (bio != null) body['bio'] = bio;
-    if (conversationsCount != null)
+    if (conversationsCount != null) {
       body['conversationsCount'] = conversationsCount;
+    }
     if (hoursSaved != null) body['hoursSaved'] = hoursSaved;
 
-    final res = await http.patch(
+    final res = await _patch(
       Uri.parse('$_baseUrl/auth/me'),
       headers: buildJsonHeaders(bearerToken: accessToken),
       body: jsonEncode(body),
@@ -217,5 +219,35 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
     } catch (_) {
       return Exception('Request failed (${res.statusCode})');
     }
+  }
+
+  static const Duration _timeout = Duration(seconds: 30);
+
+  Future<http.Response> _post(
+    Uri uri, {
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    if (kIsWeb) {
+      return http
+          .post(uri, headers: headers, body: body)
+          .timeout(_timeout);
+    }
+    return http.post(uri, headers: headers, body: body).timeout(_timeout);
+  }
+
+  Future<http.Response> _get(
+    Uri uri, {
+    Map<String, String>? headers,
+  }) async {
+    return http.get(uri, headers: headers).timeout(_timeout);
+  }
+
+  Future<http.Response> _patch(
+    Uri uri, {
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    return http.patch(uri, headers: headers, body: body).timeout(_timeout);
   }
 }

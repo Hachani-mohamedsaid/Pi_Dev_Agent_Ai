@@ -2,13 +2,70 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
+import '../../data/services/google_connect_service.dart';
 import '../widgets/navigation_bar.dart';
 
-class ConnectedServicesPage extends StatelessWidget {
+class ConnectedServicesPage extends StatefulWidget {
   const ConnectedServicesPage({super.key});
+
+  @override
+  State<ConnectedServicesPage> createState() => _ConnectedServicesPageState();
+}
+
+class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
+  static const _tokenKey = 'auth_access_token';
+  static const _gmailIconUrl =
+      'https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico';
+
+  final _googleService = GoogleConnectService();
+
+  GoogleConnectStatus _googleStatus = GoogleConnectStatus.disconnected;
+  bool _loadingGoogleStatus = true;
+  bool _initialLoadDone = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGoogleStatus();
+  }
+
+  Future<void> _loadGoogleStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_tokenKey);
+    if (token == null || token.isEmpty) {
+      if (mounted) {
+        _initialLoadDone = true;
+        setState(() => _loadingGoogleStatus = false);
+      }
+      return;
+    }
+    try {
+      final status = await _googleService.getStatus(token);
+      if (mounted) {
+        _initialLoadDone = true;
+        setState(() {
+          _googleStatus = status;
+          _loadingGoogleStatus = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        _initialLoadDone = true;
+        setState(() => _loadingGoogleStatus = false);
+      }
+    }
+  }
+
+  /// Entrance animations only before Google status load completes (first paint).
+  Widget _withEntranceAnimation(Widget child, Animate Function(Animate) apply) {
+    if (_initialLoadDone) return child;
+    return apply(child.animate());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +148,9 @@ class ConnectedServicesPage extends StatelessWidget {
       0,
       (sum, s) => sum + (s['usage'] as int? ?? 0),
     );
+    final googleConnected = _googleStatus.connected && !_loadingGoogleStatus;
+    final connectedCountForStats =
+        connectedServices.length + (googleConnected ? 1 : 0);
 
     return Scaffold(
       body: Container(
@@ -126,10 +186,12 @@ class ConnectedServicesPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                 // Header
-                _buildHeader(context, isMobile)
-                    .animate()
-                    .fadeIn(duration: 500.ms)
-                    .slideY(begin: -0.2, end: 0, duration: 500.ms),
+                _withEntranceAnimation(
+                  _buildHeader(context, isMobile),
+                  (a) => a
+                      .fadeIn(duration: 500.ms)
+                      .slideY(begin: -0.2, end: 0, duration: 500.ms),
+                ),
 
                 SizedBox(height: Responsive.getResponsiveValue(
                   context,
@@ -139,9 +201,10 @@ class ConnectedServicesPage extends StatelessWidget {
                 )),
 
                 // Stats
-                _buildStats(context, isMobile, connectedServices.length, totalActions)
-                    .animate()
-                    .fadeIn(delay: 100.ms, duration: 300.ms),
+                _withEntranceAnimation(
+                  _buildStats(context, isMobile, connectedCountForStats, totalActions),
+                  (a) => a.fadeIn(delay: 100.ms, duration: 300.ms),
+                ),
 
                 SizedBox(height: Responsive.getResponsiveValue(
                   context,
@@ -151,21 +214,22 @@ class ConnectedServicesPage extends StatelessWidget {
                 )),
 
                 // Connected Services
-                Text(
-                  'Connected',
-                  style: TextStyle(
-                    fontSize: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 16.0,
-                      tablet: 17.0,
-                      desktop: 18.0,
+                _withEntranceAnimation(
+                  Text(
+                    'Connected',
+                    style: TextStyle(
+                      fontSize: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 16.0,
+                        tablet: 17.0,
+                        desktop: 18.0,
+                      ),
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textWhite,
                     ),
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textWhite,
                   ),
-                )
-                    .animate()
-                    .fadeIn(delay: 200.ms, duration: 300.ms),
+                  (a) => a.fadeIn(delay: 200.ms, duration: 300.ms),
+                ),
                 SizedBox(height: Responsive.getResponsiveValue(
                   context,
                   mobile: 10.0,
@@ -175,6 +239,7 @@ class ConnectedServicesPage extends StatelessWidget {
                 ...connectedServices.asMap().entries.map((entry) {
                   final index = entry.key;
                   final service = entry.value;
+                  final delayMs = 300 + (index * 100);
                   return Padding(
                     padding: EdgeInsets.only(
                       bottom: Responsive.getResponsiveValue(
@@ -184,12 +249,50 @@ class ConnectedServicesPage extends StatelessWidget {
                         desktop: 14.0,
                       ),
                     ),
-                    child: _buildConnectedServiceCard(context, isMobile, service)
-                        .animate()
-                        .fadeIn(delay: Duration(milliseconds: 300 + (index * 100)), duration: 300.ms)
-                        .slideY(begin: 0.2, end: 0, delay: Duration(milliseconds: 300 + (index * 100)), duration: 300.ms),
+                    child: _withEntranceAnimation(
+                      _buildConnectedServiceCard(context, isMobile, service),
+                      (a) => a
+                          .fadeIn(
+                            delay: Duration(milliseconds: delayMs),
+                            duration: 300.ms,
+                          )
+                          .slideY(
+                            begin: 0.2,
+                            end: 0,
+                            delay: Duration(milliseconds: delayMs),
+                            duration: 300.ms,
+                          ),
+                    ),
                   );
                 }),
+                if (googleConnected)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      bottom: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 10.0,
+                        tablet: 12.0,
+                        desktop: 14.0,
+                      ),
+                    ),
+                    child: _withEntranceAnimation(
+                      _buildGoogleConnectedLikeUberCard(context),
+                      (a) {
+                        final delayMs = 300 + (connectedServices.length * 100);
+                        return a
+                            .fadeIn(
+                              delay: Duration(milliseconds: delayMs),
+                              duration: 300.ms,
+                            )
+                            .slideY(
+                              begin: 0.2,
+                              end: 0,
+                              delay: Duration(milliseconds: delayMs),
+                              duration: 300.ms,
+                            );
+                      },
+                    ),
+                  ),
 
                 SizedBox(height: Responsive.getResponsiveValue(
                   context,
@@ -199,21 +302,22 @@ class ConnectedServicesPage extends StatelessWidget {
                 )),
 
                 // Available Services
-                Text(
-                  'Available to Connect',
-                  style: TextStyle(
-                    fontSize: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 16.0,
-                      tablet: 17.0,
-                      desktop: 18.0,
+                _withEntranceAnimation(
+                  Text(
+                    'Available to Connect',
+                    style: TextStyle(
+                      fontSize: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 16.0,
+                        tablet: 17.0,
+                        desktop: 18.0,
+                      ),
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textWhite,
                     ),
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textWhite,
                   ),
-                )
-                    .animate()
-                    .fadeIn(delay: 600.ms, duration: 300.ms),
+                  (a) => a.fadeIn(delay: 600.ms, duration: 300.ms),
+                ),
                 SizedBox(height: Responsive.getResponsiveValue(
                   context,
                   mobile: 10.0,
@@ -223,6 +327,7 @@ class ConnectedServicesPage extends StatelessWidget {
                 ...availableServices.asMap().entries.map((entry) {
                   final index = entry.key;
                   final service = entry.value;
+                  final delayMs = 600 + (index * 100);
                   return Padding(
                     padding: EdgeInsets.only(
                       bottom: Responsive.getResponsiveValue(
@@ -232,12 +337,50 @@ class ConnectedServicesPage extends StatelessWidget {
                         desktop: 14.0,
                       ),
                     ),
-                    child: _buildAvailableServiceCard(context, isMobile, service)
-                        .animate()
-                        .fadeIn(delay: Duration(milliseconds: 600 + (index * 100)), duration: 300.ms)
-                        .slideY(begin: 0.2, end: 0, delay: Duration(milliseconds: 600 + (index * 100)), duration: 300.ms),
+                    child: _withEntranceAnimation(
+                      _buildAvailableServiceCard(context, isMobile, service),
+                      (a) => a
+                          .fadeIn(
+                            delay: Duration(milliseconds: delayMs),
+                            duration: 300.ms,
+                          )
+                          .slideY(
+                            begin: 0.2,
+                            end: 0,
+                            delay: Duration(milliseconds: delayMs),
+                            duration: 300.ms,
+                          ),
+                    ),
                   );
                 }),
+                if (!googleConnected)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      bottom: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 10.0,
+                        tablet: 12.0,
+                        desktop: 14.0,
+                      ),
+                    ),
+                    child: _withEntranceAnimation(
+                      _buildGoogleDisconnectedRow(context),
+                      (a) {
+                        final delayMs = 600 + (availableServices.length * 100);
+                        return a
+                            .fadeIn(
+                              delay: Duration(milliseconds: delayMs),
+                              duration: 300.ms,
+                            )
+                            .slideY(
+                              begin: 0.2,
+                              end: 0,
+                              delay: Duration(milliseconds: delayMs),
+                              duration: 300.ms,
+                            );
+                      },
+                    ),
+                  ),
 
                 SizedBox(height: Responsive.getResponsiveValue(
                   context,
@@ -247,9 +390,10 @@ class ConnectedServicesPage extends StatelessWidget {
                 )),
 
                 // Info Footer
-                _buildInfoFooter(context, isMobile)
-                    .animate()
-                    .fadeIn(delay: 1200.ms, duration: 300.ms),
+                _withEntranceAnimation(
+                  _buildInfoFooter(context, isMobile),
+                  (a) => a.fadeIn(delay: 1200.ms, duration: 300.ms),
+                ),
                   ],
                 ),
               ),
@@ -1113,6 +1257,727 @@ class ConnectedServicesPage extends StatelessWidget {
                   ),
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _googleDualLogoLeading(BuildContext context, {required bool compact}) {
+    final boxH = Responsive.getResponsiveValue(
+      context,
+      mobile: compact ? 36.0 : 44.0,
+      tablet: compact ? 40.0 : 48.0,
+      desktop: compact ? 44.0 : 52.0,
+    );
+    final boxW = Responsive.getResponsiveValue(
+      context,
+      mobile: compact ? 58.0 : 64.0,
+      tablet: compact ? 62.0 : 68.0,
+      desktop: compact ? 66.0 : 72.0,
+    );
+    final radius = Responsive.getResponsiveValue(
+      context,
+      mobile: compact ? 8.0 : 10.0,
+      tablet: compact ? 9.0 : 11.0,
+      desktop: compact ? 10.0 : 12.0,
+    );
+    return Container(
+      width: boxW,
+      height: boxH,
+      decoration: BoxDecoration(
+        color: AppColors.cyan500.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(
+          color: AppColors.cyan500.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.network(_gmailIconUrl, width: 26, height: 26),
+            const SizedBox(width: 4),
+            Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F9D58),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Icon(Icons.table_chart, color: Colors.white, size: 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showGoogleReconnectBottomSheet(BuildContext context, String? googleEmail) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: AppColors.primaryDarker,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Gmail & Sheets Settings',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textWhite,
+                    ),
+                  ),
+                  if (googleEmail != null && googleEmail.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      googleEmail,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.cyan400,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  Divider(color: AppColors.cyan500.withOpacity(0.2), height: 1),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () async {
+                      Navigator.of(sheetContext).pop();
+                      await context.push('/google-connect');
+                      if (mounted) {
+                        _loadGoogleStatus();
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+                      child: Row(
+                        children: [
+                          Icon(LucideIcons.refreshCw, color: AppColors.cyan400, size: 22),
+                          const SizedBox(width: 14),
+                          const Expanded(
+                            child: Text(
+                              'Reconnect account',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: AppColors.textWhite,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      showDialog<void>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          backgroundColor: AppColors.primaryMedium,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          title: const Text(
+                            'Disconnect Google Account?',
+                            style: TextStyle(color: AppColors.textWhite, fontSize: 18),
+                          ),
+                          content: const Text(
+                            'This will remove access to Gmail and Google Sheets features.',
+                            style: TextStyle(color: AppColors.textCyan200, fontSize: 14),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(dialogContext).pop(),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(color: AppColors.cyan400.withOpacity(0.9)),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(dialogContext).pop();
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Disconnect feature coming soon'),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                'Disconnect',
+                                style: TextStyle(
+                                  color: Color(0xFFEF4444),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+                      child: Row(
+                        children: [
+                          const Icon(LucideIcons.unplug, color: Color(0xFFEF4444), size: 22),
+                          const SizedBox(width: 14),
+                          const Expanded(
+                            child: Text(
+                              'Disconnect',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFFEF4444),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => Navigator.of(sheetContext).pop(),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+                      child: Row(
+                        children: [
+                          Icon(Icons.close, color: AppColors.textCyan200.withOpacity(0.8), size: 22),
+                          const SizedBox(width: 14),
+                          Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppColors.textCyan200.withOpacity(0.85),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Mirrors [_buildConnectedServiceCard] (Uber) layout for the Google integration.
+  Widget _buildGoogleConnectedLikeUberCard(BuildContext context) {
+    final email = _googleStatus.googleEmail;
+    final radius = Responsive.getResponsiveValue(
+      context,
+      mobile: 16.0,
+      tablet: 18.0,
+      desktop: 20.0,
+    );
+
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      padding: EdgeInsets.all(Responsive.getResponsiveValue(
+        context,
+        mobile: 14.0,
+        tablet: 16.0,
+        desktop: 20.0,
+      )),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF1e4a66).withOpacity(0.4),
+            const Color(0xFF16384d).withOpacity(0.4),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(
+          color: AppColors.cyan500.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _googleDualLogoLeading(context, compact: false),
+                  SizedBox(width: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 10.0,
+                    tablet: 12.0,
+                    desktop: 14.0,
+                  )),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Gmail & Sheets',
+                                style: TextStyle(
+                                  fontSize: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 14.0,
+                                    tablet: 15.0,
+                                    desktop: 16.0,
+                                  ),
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textWhite,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 6.0,
+                                  tablet: 8.0,
+                                  desktop: 10.0,
+                                ),
+                                vertical: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 2.0,
+                                  tablet: 3.0,
+                                  desktop: 4.0,
+                                ),
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 4.0,
+                                  tablet: 5.0,
+                                  desktop: 6.0,
+                                )),
+                                border: Border.all(
+                                  color: const Color(0xFF10B981).withOpacity(0.2),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 5.0,
+                                      tablet: 6.0,
+                                      desktop: 7.0,
+                                    ),
+                                    height: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 5.0,
+                                      tablet: 6.0,
+                                      desktop: 7.0,
+                                    ),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF10B981),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  SizedBox(width: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 3.0,
+                                    tablet: 4.0,
+                                    desktop: 5.0,
+                                  )),
+                                  Text(
+                                    'Connected',
+                                    style: TextStyle(
+                                      fontSize: Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 10.0,
+                                        tablet: 11.0,
+                                        desktop: 12.0,
+                                      ),
+                                      color: const Color(0xFF10B981),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 4.0,
+                          tablet: 5.0,
+                          desktop: 6.0,
+                        )),
+                        Text(
+                          'Email summaries · Finance tracker',
+                          style: TextStyle(
+                            fontSize: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 13.0,
+                              desktop: 14.0,
+                            ),
+                            color: AppColors.textCyan200.withOpacity(0.6),
+                          ),
+                        ),
+                        if (email != null && email.isNotEmpty) ...[
+                          SizedBox(height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 6.0,
+                            tablet: 8.0,
+                            desktop: 10.0,
+                          )),
+                          Text(
+                            email,
+                            style: TextStyle(
+                              fontSize: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 12.0,
+                                tablet: 13.0,
+                                desktop: 14.0,
+                              ),
+                              color: const Color(0xFF10B981).withOpacity(0.85),
+                            ),
+                          ),
+                        ],
+                        SizedBox(height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 6.0,
+                          tablet: 8.0,
+                          desktop: 10.0,
+                        )),
+                        Text(
+                          'Last connected: just now',
+                          style: TextStyle(
+                            fontSize: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 11.0,
+                              tablet: 12.0,
+                              desktop: 13.0,
+                            ),
+                            color: AppColors.cyan400.withOpacity(0.5),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 6.0,
+                    tablet: 8.0,
+                    desktop: 10.0,
+                  )),
+                  GestureDetector(
+                    onTap: () => _showGoogleReconnectBottomSheet(context, email),
+                    child: Container(
+                      padding: EdgeInsets.all(Responsive.getResponsiveValue(
+                        context,
+                        mobile: 7.0,
+                        tablet: 8.0,
+                        desktop: 9.0,
+                      )),
+                      decoration: BoxDecoration(
+                        color: AppColors.cyan500.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                          context,
+                          mobile: 8.0,
+                          tablet: 9.0,
+                          desktop: 10.0,
+                        )),
+                        border: Border.all(
+                          color: AppColors.cyan500.withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(
+                        LucideIcons.settings,
+                        size: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 14.0,
+                          tablet: 16.0,
+                          desktop: 18.0,
+                        ),
+                        color: AppColors.cyan400,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: Responsive.getResponsiveValue(
+                context,
+                mobile: 10.0,
+                tablet: 12.0,
+                desktop: 14.0,
+              )),
+              Container(
+                padding: EdgeInsets.only(
+                  top: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 10.0,
+                    tablet: 12.0,
+                    desktop: 14.0,
+                  ),
+                ),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: AppColors.cyan500.withOpacity(0.1),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Wrap(
+                      spacing: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 4.0,
+                        tablet: 5.0,
+                        desktop: 6.0,
+                      ),
+                      runSpacing: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 4.0,
+                        tablet: 5.0,
+                        desktop: 6.0,
+                      ),
+                      children: ['Send emails', 'Manage sheets'].map((perm) {
+                        return Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 6.0,
+                              tablet: 8.0,
+                              desktop: 10.0,
+                            ),
+                            vertical: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 2.0,
+                              tablet: 3.0,
+                              desktop: 4.0,
+                            ),
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.cyan500.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                              context,
+                              mobile: 4.0,
+                              tablet: 5.0,
+                              desktop: 6.0,
+                            )),
+                            border: Border.all(
+                              color: AppColors.cyan500.withOpacity(0.1),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            perm,
+                            style: TextStyle(
+                              fontSize: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 10.0,
+                                tablet: 11.0,
+                                desktop: 12.0,
+                              ),
+                              color: AppColors.cyan400.withOpacity(0.7),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+    );
+  }
+
+  /// Same structure as [_buildAvailableServiceCard] for the not-connected state.
+  Widget _buildGoogleDisconnectedRow(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(Responsive.getResponsiveValue(
+        context,
+        mobile: 14.0,
+        tablet: 16.0,
+        desktop: 20.0,
+      )),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF1e4a66).withOpacity(0.2),
+            const Color(0xFF16384d).withOpacity(0.2),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+          context,
+          mobile: 12.0,
+          tablet: 13.0,
+          desktop: 14.0,
+        )),
+        border: Border.all(
+          color: AppColors.cyan500.withOpacity(0.05),
+          width: 1,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+          context,
+          mobile: 12.0,
+          tablet: 13.0,
+          desktop: 14.0,
+        )),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  _googleDualLogoLeading(context, compact: true),
+                  SizedBox(width: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 10.0,
+                    tablet: 12.0,
+                    desktop: 14.0,
+                  )),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Gmail & Sheets',
+                        style: TextStyle(
+                          fontSize: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 13.0,
+                            tablet: 14.0,
+                            desktop: 15.0,
+                          ),
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textWhite,
+                        ),
+                      ),
+                      SizedBox(height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 3.0,
+                        tablet: 4.0,
+                        desktop: 5.0,
+                      )),
+                      Text(
+                        'Email summaries · Finance tracker',
+                        style: TextStyle(
+                          fontSize: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 11.0,
+                            tablet: 12.0,
+                            desktop: 13.0,
+                          ),
+                          color: AppColors.cyan400.withOpacity(0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              _loadingGoogleStatus
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.cyan400),
+                      ),
+                    )
+                  : GestureDetector(
+                      onTap: () async {
+                        await context.push('/google-connect');
+                        if (mounted) {
+                          _loadGoogleStatus();
+                        }
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 14.0,
+                            tablet: 16.0,
+                            desktop: 18.0,
+                          ),
+                          vertical: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 7.0,
+                            tablet: 8.0,
+                            desktop: 9.0,
+                          ),
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.cyan500.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                            context,
+                            mobile: 8.0,
+                            tablet: 9.0,
+                            desktop: 10.0,
+                          )),
+                          border: Border.all(
+                            color: AppColors.cyan500.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          'Connect',
+                          style: TextStyle(
+                            fontSize: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 13.0,
+                              desktop: 14.0,
+                            ),
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.cyan400,
+                          ),
+                        ),
+                      ),
+                    ),
             ],
           ),
         ),
