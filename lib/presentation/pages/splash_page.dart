@@ -226,33 +226,16 @@ class _SplashPageState extends State<SplashPage> {
   Widget _buildSplashLogo(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
     final size = isMobile ? 92.0 : 108.0;
-    final radius = isMobile ? 26.0 : 30.0;
 
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(radius),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.cyan400.withValues(alpha: 0.22),
-            blurRadius: 24,
-            spreadRadius: 2,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: Image.asset(
-          _launcherIconPath,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => Image.asset(
-            _legacyLogoPath,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => _fallbackMonogram(radius),
-          ),
-        ),
+      child: Image.asset(
+        'assets/ava_logo.png',
+        fit: BoxFit.contain,
+        color: Colors.white,
+        colorBlendMode: BlendMode.srcIn,
+        errorBuilder: (context, error, stackTrace) => _fallbackMonogram(isMobile ? 26.0 : 30.0),
       ),
     );
   }

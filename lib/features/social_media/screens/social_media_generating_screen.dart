@@ -41,11 +41,24 @@ class _SocialMediaGeneratingScreenState
   late final List<_AgentCard> _agents;
   final List<Timer> _timers = [];
   Timer? _pollTimer;
+  Timer? _elapsedTimer;
+  Timer? _messageTimer;
   late AnimationController _pulseController;
 
   String? _campaignId;
   String? _errorMessage;
   bool _navigating = false;
+
+  DateTime? _generationStart;
+  Duration _elapsed = Duration.zero;
+
+  static const _motivationalMessages = <String>[
+    'Analyzing your target audience...',
+    'Crafting platform strategies...',
+    'Optimizing for engagement...',
+    'Finalizing your campaign...',
+  ];
+  int _motivationalMessageIndex = 0;
 
   // Polling config
   static const _pollInterval = Duration(seconds: 5);
@@ -107,7 +120,34 @@ class _SocialMediaGeneratingScreenState
           widget.brief.platforms.contains(a.platform);
     }).toList();
 
+    _startUxTimers();
     _startGeneration();
+  }
+
+  void _startUxTimers() {
+    _generationStart = DateTime.now();
+
+    _elapsedTimer?.cancel();
+    _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      final start = _generationStart;
+      if (start == null) return;
+
+      final nextElapsed = DateTime.now().difference(start);
+      setState(() {
+        _elapsed = nextElapsed;
+        _updateAgentStatusesFromElapsed(nextElapsed);
+      });
+    });
+
+    _messageTimer?.cancel();
+    _messageTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (!mounted) return;
+      setState(() {
+        _motivationalMessageIndex =
+            (_motivationalMessageIndex + 1) % _motivationalMessages.length;
+      });
+    });
   }
 
   // ─── API flow ───────────────────────────────────────────────────────────────
@@ -217,6 +257,8 @@ class _SocialMediaGeneratingScreenState
       t.cancel();
     }
     _pollTimer?.cancel();
+    _elapsedTimer?.cancel();
+    _messageTimer?.cancel();
     _pulseController.dispose();
     super.dispose();
   }
@@ -259,10 +301,55 @@ class _SocialMediaGeneratingScreenState
                     itemBuilder: (context, i) => _buildAgentCard(_agents[i], i),
                   ),
                 ),
-                const SizedBox(height: 8),
+                _buildMotivationalMessage(),
+                const SizedBox(height: 12),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMotivationalMessage() {
+    final message = _motivationalMessages[_motivationalMessageIndex];
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 250),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      transitionBuilder: (child, anim) {
+        return FadeTransition(
+          opacity: anim,
+          child: SlideTransition(
+            position: Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero)
+                .animate(anim),
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        key: ValueKey(message),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.cyan500.withOpacity(0.12)),
+        ),
+        child: Row(
+          children: [
+            Icon(LucideIcons.sparkle, color: AppColors.cyan400.withOpacity(0.9), size: 16),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: AppColors.textCyan200.withOpacity(0.85),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -337,12 +424,16 @@ class _SocialMediaGeneratingScreenState
           },
         ),
         const SizedBox(height: 20),
-        const Text(
-          'Generating Your Campaign',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: Text(
+            'Generating... ${_formatElapsed(_elapsed)}',
+            key: ValueKey(_elapsed.inSeconds),
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
         ).animate().fadeIn(duration: 400.ms),
         const SizedBox(height: 8),
@@ -356,6 +447,44 @@ class _SocialMediaGeneratingScreenState
         ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
       ],
     );
+  }
+
+  String _formatElapsed(Duration d) {
+    final totalSeconds = d.inSeconds.clamp(0, 24 * 3600);
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  void _updateAgentStatusesFromElapsed(Duration elapsed) {
+    if (_navigating || _errorMessage != null) return;
+
+    final totalSeconds = elapsed.inSeconds;
+    if (_agents.isEmpty) return;
+
+    // Simple deterministic timeline per agent:
+    // - each agent gets a start offset, then processes for a bit, then becomes done.
+    // This creates a more dynamic feel than a one-time stagger.
+    const baseStartGapSeconds = 6; // stagger between agents
+    const processingSeconds = 10; // how long each agent "processes"
+
+    for (int i = 0; i < _agents.length; i++) {
+      final startAt = i * baseStartGapSeconds;
+      final doneAt = startAt + processingSeconds;
+
+      final nextStatus = totalSeconds < startAt
+          ? _AgentStatus.waiting
+          : (totalSeconds < doneAt ? _AgentStatus.processing : _AgentStatus.done);
+
+      _agents[i].status = nextStatus;
+    }
+
+    // If everything would be "done" but backend is still generating, keep the last
+    // agent in processing so the UI still feels alive.
+    final allDone = _agents.every((a) => a.status == _AgentStatus.done);
+    if (allDone) {
+      _agents.last.status = _AgentStatus.processing;
+    }
   }
 
   Widget _buildAgentCard(_AgentCard agent, int index) {
