@@ -3,6 +3,7 @@
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/network/request_headers.dart';
 import '../core/observability/sentry_api.dart';
@@ -17,9 +18,29 @@ class N8nEmailService {
   static const String _sendUrl =
       'https://n8n-production-1e13.up.railway.app/webhook/send-reply';
 
+  Future<String?> _getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    // User id is stored inside the cached user object.
+    // Key source: `SharedPreferencesAuthLocalDataSource._keyCachedUser`
+    final cachedUserJson = prefs.getString('auth_cached_user');
+    if (cachedUserJson == null || cachedUserJson.isEmpty) return null;
+    try {
+      final decoded = json.decode(cachedUserJson);
+      if (decoded is Map<String, dynamic>) {
+        final id = decoded['id']?.toString();
+        return (id == null || id.isEmpty) ? null : id;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<List<dynamic>> fetchEmails() async {
+    final userId = await _getUserId();
+    if (userId == null) throw Exception('User not logged in');
     final response = await http.get(
-      Uri.parse(_fetchUrl),
+      Uri.parse(_fetchUrl).replace(queryParameters: {'userId': userId}),
       headers: buildJsonHeaders(),
     );
     if (response.statusCode != 200) {
@@ -98,8 +119,10 @@ class N8nEmailService {
   /// Returns { emails: List, deadlines: int?, requiredActions: int? }.
   /// Use deadlines/requiredActions if n8n includes them at top level; else compute from emails.
   Future<Map<String, dynamic>> fetchEmailsWithStats() async {
+    final userId = await _getUserId();
+    if (userId == null) throw Exception('User not logged in');
     final response = await http.get(
-      Uri.parse(_fetchUrl),
+      Uri.parse(_fetchUrl).replace(queryParameters: {'userId': userId}),
       headers: buildJsonHeaders(),
     );
     if (response.statusCode != 200) {
@@ -149,6 +172,8 @@ class N8nEmailService {
     String replyType,
     String tone,
   ) async {
+    final userId = await _getUserId();
+    if (userId == null) throw Exception('User not logged in');
     final response = await http.post(
       Uri.parse(_generateUrl),
       headers: buildJsonHeaders(),
@@ -156,6 +181,7 @@ class N8nEmailService {
         'emailId': emailId,
         'replyType': replyType,
         'tone': tone,
+        'userId': userId,
       }),
     );
     if (response.statusCode == 200) {
@@ -166,6 +192,8 @@ class N8nEmailService {
   }
 
   Future<void> sendReply(String emailId, String subject, String body) async {
+    final userId = await _getUserId();
+    if (userId == null) throw Exception('User not logged in');
     final response = await http.post(
       Uri.parse(_sendUrl),
       headers: buildJsonHeaders(),
@@ -173,6 +201,7 @@ class N8nEmailService {
         'emailId': emailId,
         'replySubject': subject,
         'replyBody': body,
+        'userId': userId,
       }),
     );
     if (response.statusCode != 200) {
