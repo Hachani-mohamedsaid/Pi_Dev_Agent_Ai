@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -110,8 +111,12 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadLocation();
     _loadDailyRule();
+    // Defer location/permission request to post-frame so the iOS view hierarchy
+    // is fully ready — otherwise the system permission dialog is silently skipped.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadLocation();
+    });
   }
 
   @override
@@ -3480,8 +3485,10 @@ out center 30;
           children: [
             GestureDetector(
               onTap: () {
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/home');
                 }
               },
               child: Container(
