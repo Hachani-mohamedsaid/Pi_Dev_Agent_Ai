@@ -343,6 +343,23 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                   tablet: 12.0,
                   desktop: 14.0,
                 )),
+                if (!googleConnected)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      bottom: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 10.0,
+                        tablet: 12.0,
+                        desktop: 14.0,
+                      ),
+                    ),
+                    child: _withEntranceAnimation(
+                      _buildGoogleDisconnectedRow(context),
+                      (a) => a
+                          .fadeIn(delay: 600.ms, duration: 300.ms)
+                          .slideY(begin: 0.2, end: 0, delay: 600.ms, duration: 300.ms),
+                    ),
+                  ),
                 Padding(
                   padding: EdgeInsets.only(
                     bottom: Responsive.getResponsiveValue(
