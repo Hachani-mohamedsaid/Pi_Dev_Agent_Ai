@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
@@ -1672,15 +1673,70 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                               ),
                             ),
                             TextButton(
-                              onPressed: () {
-                                Navigator.of(dialogContext).pop();
-                                if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Disconnect feature coming soon'),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
+                              onPressed: () async {
+                                try {
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  final token = prefs.getString(_tokenKey);
+                                  if (token == null || token.isEmpty) {
+                                    if (!mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Failed to disconnect, please try again',
+                                        ),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  final res = await http.post(
+                                    Uri.parse(
+                                      'https://backendagentai-production.up.railway.app/google-connect/disconnect',
+                                    ),
+                                    headers: {
+                                      'Authorization': 'Bearer $token',
+                                      'Content-Type': 'application/json',
+                                    },
+                                  );
+
+                                  if (!mounted) return;
+
+                                  if (res.statusCode >= 200 &&
+                                      res.statusCode < 300) {
+                                    Navigator.of(dialogContext).pop();
+                                    _loadGoogleStatus();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Google account disconnected',
+                                        ),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Failed to disconnect, please try again',
+                                      ),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                } catch (_) {
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Failed to disconnect, please try again',
+                                      ),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
                               },
                               child: const Text(
                                 'Disconnect',
