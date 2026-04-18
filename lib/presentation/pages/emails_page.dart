@@ -591,47 +591,59 @@ class _EmailsPageState extends State<EmailsPage> {
   }
 
   Widget _buildEmptyState(BuildContext context, bool isMobile) {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        vertical: Responsive.getResponsiveValue(
-          context,
-          mobile: 80.0,
-          tablet: 100.0,
-          desktop: 120.0,
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            LucideIcons.mail,
-            size: Responsive.getResponsiveValue(
-              context,
-              mobile: 48.0,
-              tablet: 52.0,
-              desktop: 56.0,
-            ),
-            color: AppColors.cyan400.withOpacity(0.3),
-          ),
-          SizedBox(height: Responsive.getResponsiveValue(
-            context,
-            mobile: 12.0,
-            tablet: 14.0,
-            desktop: 16.0,
-          )),
-          Text(
-            'No emails found',
-            style: TextStyle(
-              fontSize: Responsive.getResponsiveValue(
+    // Center empty state in the viewport (account for header + navbar space)
+    final screenHeight = MediaQuery.of(context).size.height;
+    final topPadding = MediaQuery.of(context).padding.top;
+    final headerHeight = Responsive.getResponsiveValue(
+      context,
+      mobile: 80.0,
+      tablet: 90.0,
+      desktop: 100.0,
+    );
+    final navbarHeight = Responsive.getResponsiveValue(
+      context,
+      mobile: 100.0,
+      tablet: 120.0,
+      desktop: 140.0,
+    );
+    final availableHeight = screenHeight - topPadding - headerHeight - navbarHeight;
+
+    return SizedBox(
+      height: availableHeight,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              LucideIcons.mail,
+              size: Responsive.getResponsiveValue(
                 context,
-                mobile: 13.0,
-                tablet: 14.0,
-                desktop: 15.0,
+                mobile: 48.0,
+                tablet: 52.0,
+                desktop: 56.0,
               ),
-              color: AppColors.textCyan200.withOpacity(0.7),
+              color: AppColors.cyan400.withOpacity(0.3),
             ),
-          ),
-        ],
+            SizedBox(height: Responsive.getResponsiveValue(
+              context,
+              mobile: 12.0,
+              tablet: 14.0,
+              desktop: 16.0,
+            )),
+            Text(
+              'No emails found',
+              style: TextStyle(
+                fontSize: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 13.0,
+                  tablet: 14.0,
+                  desktop: 15.0,
+                ),
+                color: AppColors.textCyan200.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -754,68 +766,91 @@ class _EmailsPageState extends State<EmailsPage> {
                         ],
                       ),
                     ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 8.0,
-                          tablet: 10.0,
-                          desktop: 12.0,
-                        ),
-                        vertical: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 4.0,
-                          tablet: 5.0,
-                          desktop: 6.0,
-                        ),
-                      ),
-                      decoration: BoxDecoration(
-                        color: badge['bg'] as Color,
-                        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                          context,
-                          mobile: 6.0,
-                          tablet: 7.0,
-                          desktop: 8.0,
-                        )),
-                        border: Border.all(
-                          color: badge['border'] as Color,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            badge['icon'] as IconData,
-                            size: Responsive.getResponsiveValue(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: Responsive.getResponsiveValue(
                               context,
-                              mobile: 13.0,
-                              tablet: 14.0,
-                              desktop: 15.0,
+                              mobile: 8.0,
+                              tablet: 10.0,
+                              desktop: 12.0,
                             ),
-                            color: badge['color'] as Color,
+                            vertical: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 4.0,
+                              tablet: 5.0,
+                              desktop: 6.0,
+                            ),
                           ),
-                          SizedBox(width: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 4.0,
-                            tablet: 5.0,
-                            desktop: 6.0,
-                          )),
-                          Text(
-                            badge['text'] as String,
-                            style: TextStyle(
-                              fontSize: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 10.0,
-                                tablet: 11.0,
-                                desktop: 12.0,
+                          decoration: BoxDecoration(
+                            color: badge['bg'] as Color,
+                            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                              context,
+                              mobile: 6.0,
+                              tablet: 7.0,
+                              desktop: 8.0,
+                            )),
+                            border: Border.all(
+                              color: badge['border'] as Color,
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                badge['icon'] as IconData,
+                                size: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 13.0,
+                                  tablet: 14.0,
+                                  desktop: 15.0,
+                                ),
+                                color: badge['color'] as Color,
                               ),
-                              fontWeight: FontWeight.w500,
-                              color: badge['color'] as Color,
+                              SizedBox(width: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 4.0,
+                                tablet: 5.0,
+                                desktop: 6.0,
+                              )),
+                              Text(
+                                badge['text'] as String,
+                                style: TextStyle(
+                                  fontSize: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 10.0,
+                                    tablet: 11.0,
+                                    desktop: 12.0,
+                                  ),
+                                  fontWeight: FontWeight.w500,
+                                  color: badge['color'] as Color,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (email.status == 'replied')
+                          Container(
+                            margin: const EdgeInsets.only(top: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(LucideIcons.checkCheck, size: 11, color: const Color(0xFF10B981)),
+                                const SizedBox(width: 3),
+                                Text('Replied', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: const Color(0xFF10B981))),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
+                      ],
                     ),
                   ],
                 ),

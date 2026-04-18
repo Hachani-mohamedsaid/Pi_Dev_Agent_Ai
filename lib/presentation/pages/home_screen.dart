@@ -147,14 +147,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   /// Does NOT call email-summaries — that runs only when the Emails page is opened.
   Future<void> _loadEmailSummary() async {
     try {
-      final stats = await _emailService.getEmailSummaryStats();
+      final emailsData = await _emailService.fetchEmails();
       if (!mounted) return;
+      int high = 0, medium = 0, low = 0, deadlines = 0, actions = 0;
+      for (final e in emailsData) {
+        final map = Map<String, dynamic>.from(e as Map);
+        final priority = map['priority'] as String? ?? '';
+        final status = map['status'] as String? ?? '';
+        if (status == 'replied') continue; // exclude replied emails from counts
+        if (priority == 'High') high++;
+        else if (priority == 'Medium') medium++;
+        else if (priority == 'Low') low++;
+        final dl = (map['deadline'] as String? ?? '').toLowerCase();
+        if (dl.isNotEmpty && !dl.contains('none') && !dl.contains('n/a')) deadlines++;
+        final ai = (map['actionItems'] as String? ?? '').toLowerCase();
+        if (ai.isNotEmpty && !ai.contains('none') && ai.length > 4) actions++;
+      }
       setState(() {
-        _emailHigh = _toInt(stats['highPriority']);
-        _emailMedium = _toInt(stats['mediumPriority']);
-        _emailLow = _toInt(stats['lowPriority']);
-        _emailDeadlines = _toInt(stats['deadlines']);
-        _emailActionsRequired = _toInt(stats['requiredActions']);
+        _emailHigh = high;
+        _emailMedium = medium;
+        _emailLow = low;
+        _emailDeadlines = deadlines;
+        _emailActionsRequired = actions;
       });
     } catch (_) {}
   }

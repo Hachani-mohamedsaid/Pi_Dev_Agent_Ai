@@ -10,6 +10,7 @@ import '../widgets/navigation_bar.dart';
 // NEW: n8n finance service for real data
 import '../../services/n8n_finance_service.dart';
 import '../../services/ml_prediction_service.dart';
+import '../../injection_container.dart';
 
 class FinancePage extends StatefulWidget {
   const FinancePage({super.key});
@@ -23,7 +24,6 @@ class _FinancePageState extends State<FinancePage> {
   bool _isLoading = true;
   String? _errorMessage;
   final _financeService = N8nFinanceService();
-  final _mlService = MlPredictionService();
 
   // NEW: Data from n8n webhooks
   Map<String, dynamic>? _monthStats;
@@ -31,6 +31,7 @@ class _FinancePageState extends State<FinancePage> {
   List<dynamic>? _categories;
   List<dynamic>? _daySpending;
   SpendingPredictionResult? _mlPrediction;
+  String? _userId;
 
 
   // NEW: Load data from n8n webhooks on init
@@ -48,18 +49,28 @@ class _FinancePageState extends State<FinancePage> {
     });
 
     try {
+      final userId = _userId ?? await InjectionContainer.instance.authLocalDataSource.getUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+      _userId = userId;
       // Fetch all finance data + ML prediction in parallel
       final results = await Future.wait([
-        _financeService.getCurrentMonthStats(),
-        _financeService.getVendorBreakdown(),
-        _financeService.getCategoryBreakdown(),
-        _financeService.getSpendingByDay(),
+        _financeService.getCurrentMonthStats(userId),
+        _financeService.getVendorBreakdown(userId),
+        _financeService.getCategoryBreakdown(userId),
+        _financeService.getSpendingByDay(userId),
       ]);
 
       // ML prediction fetched separately so a failure doesn't block the page
       SpendingPredictionResult? ml;
       try {
-        ml = await _mlService.getSpendingPrediction();
+        final mlRaw = await _financeService.getMlPredictions(userId);
+        if (mlRaw.isNotEmpty) {
+          ml = SpendingPredictionResult.fromJson(
+            Map<String, dynamic>.from(mlRaw),
+          );
+        }
       } catch (mlErr) {
         // ML is optional — page still works without it
         print('⚠️ ML prediction unavailable: $mlErr');
