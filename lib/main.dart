@@ -33,18 +33,15 @@ Future<void> main() async {
     return;
   }
 
-  await SentryFlutter.init(
-    (options) {
-      options.dsn = _sentryDsn;
-      options.environment = _sentryEnvironment;
-      if (_sentryRelease.isNotEmpty) {
-        options.release = _sentryRelease;
-      }
-      options.tracesSampleRate = kReleaseMode ? 0.1 : 1.0;
-      options.attachStacktrace = true;
-    },
-    appRunner: _startApp,
-  );
+  await SentryFlutter.init((options) {
+    options.dsn = _sentryDsn;
+    options.environment = _sentryEnvironment;
+    if (_sentryRelease.isNotEmpty) {
+      options.release = _sentryRelease;
+    }
+    options.tracesSampleRate = kReleaseMode ? 0.1 : 1.0;
+    options.attachStacktrace = true;
+  }, appRunner: _startApp);
 }
 
 Future<void> _startApp() async {

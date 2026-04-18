@@ -1,5 +1,9 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
+
+const String _appVersion = String.fromEnvironment('APP_VERSION', defaultValue: '');
+
 /// Builds JSON headers for API calls with a per-request correlation id.
 Map<String, String> buildJsonHeaders({
   String? bearerToken,
@@ -8,7 +12,12 @@ Map<String, String> buildJsonHeaders({
   final headers = <String, String>{
     'Content-Type': 'application/json',
     'x-request-id': newRequestId(),
+    'x-client-source': _detectClientSource(),
   };
+
+  if (_appVersion.isNotEmpty) {
+    headers['x-app-version'] = _appVersion;
+  }
 
   final normalizedToken = _normalizeToken(bearerToken);
   if (normalizedToken != null) {
@@ -20,6 +29,25 @@ Map<String, String> buildJsonHeaders({
   }
 
   return headers;
+}
+
+String _detectClientSource() {
+  if (kIsWeb) return 'flutter-web';
+
+  switch (defaultTargetPlatform) {
+    case TargetPlatform.android:
+      return 'flutter-android';
+    case TargetPlatform.iOS:
+      return 'flutter-ios';
+    case TargetPlatform.macOS:
+      return 'flutter-macos';
+    case TargetPlatform.windows:
+      return 'flutter-windows';
+    case TargetPlatform.linux:
+      return 'flutter-linux';
+    case TargetPlatform.fuchsia:
+      return 'flutter-fuchsia';
+  }
 }
 
 String? _normalizeToken(String? token) {

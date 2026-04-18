@@ -26,9 +26,11 @@ abstract class ChatRemoteDataSource {
 /// Backend attend : { "messages": [ ... ] } et peut lire le header Authorization pour identifier l'utilisateur.
 /// Backend renvoie : { "message": "..." } ou { "content": "..." }.
 class ApiChatRemoteDataSource implements ChatRemoteDataSource {
-  ApiChatRemoteDataSource({String? baseUrl, AuthLocalDataSource? authLocalDataSource})
-      : _baseUrl = baseUrl ?? apiRootUrl,
-        _authLocalDataSource = authLocalDataSource;
+  ApiChatRemoteDataSource({
+    String? baseUrl,
+    AuthLocalDataSource? authLocalDataSource,
+  }) : _baseUrl = baseUrl ?? apiRootUrl,
+       _authLocalDataSource = authLocalDataSource;
 
   final String _baseUrl;
   final AuthLocalDataSource? _authLocalDataSource;

@@ -15,7 +15,7 @@ import '../models/goal_model.dart';
 /// Contrat API : GET/POST/PATCH /goals (voir GOALS_API_BACKEND.md et docs NestJS Goals).
 class GoalsApiService {
   GoalsApiService({AuthLocalDataSource? authLocalDataSource})
-      : _authLocalDataSource = authLocalDataSource;
+    : _authLocalDataSource = authLocalDataSource;
 
   final AuthLocalDataSource? _authLocalDataSource;
   static const Duration _timeout = Duration(seconds: 15);
@@ -55,10 +55,16 @@ class GoalsApiService {
   Future<List<Achievement>> fetchAchievements() async {
     try {
       final response = await http
-          .get(Uri.parse('$apiRootUrl$goalsPath/achievements'), headers: await _headers())
+          .get(
+            Uri.parse('$apiRootUrl$goalsPath/achievements'),
+            headers: await _headers(),
+          )
           .timeout(_timeout);
       if (response.statusCode != 200) {
-        reportHttpResponseError(feature: 'goals.achievements', response: response);
+        reportHttpResponseError(
+          feature: 'goals.achievements',
+          response: response,
+        );
         return [];
       }
       final list = jsonDecode(response.body) as List<dynamic>?;
@@ -93,11 +99,13 @@ class GoalsApiService {
           'dailyActions': dailyActionLabels
               .asMap()
               .entries
-              .map((e) => {
-                    'id': 'action_${e.key}',
-                    'label': e.value,
-                    'completed': false,
-                  })
+              .map(
+                (e) => {
+                  'id': 'action_${e.key}',
+                  'label': e.value,
+                  'completed': false,
+                },
+              )
               .toList(),
       };
       final response = await http
@@ -135,7 +143,10 @@ class GoalsApiService {
           )
           .timeout(_timeout);
       if (response.statusCode != 200) {
-        reportHttpResponseError(feature: 'goals.update.progress', response: response);
+        reportHttpResponseError(
+          feature: 'goals.update.progress',
+          response: response,
+        );
         return null;
       }
       final map = jsonDecode(response.body) as Map<String, dynamic>?;
@@ -167,7 +178,10 @@ class GoalsApiService {
           )
           .timeout(_timeout);
       if (response.statusCode != 200) {
-        reportHttpResponseError(feature: 'goals.toggle.action', response: response);
+        reportHttpResponseError(
+          feature: 'goals.toggle.action',
+          response: response,
+        );
         return null;
       }
       final map = jsonDecode(response.body) as Map<String, dynamic>?;

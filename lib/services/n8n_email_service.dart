@@ -47,35 +47,35 @@ class N8nEmailService {
       reportHttpResponseError(feature: 'n8n_email.fetch', response: response);
       throw Exception('Failed to load emails: ${response.statusCode}');
     }
-    
+
     // Debug: Print raw response
     print('🔍 N8N Raw Response: ${response.body}');
-    
+
     final decoded = json.decode(response.body);
     print('🔍 Decoded type: ${decoded.runtimeType}');
-    
+
     // Handle different response structures from n8n
-    
+
     // 1. Direct array: [{...}, {...}]
     if (decoded is List<dynamic>) {
       print('✅ Decoded is List, count: ${decoded.length}');
       return decoded;
     }
-    
+
     // 2. Map structure from n8n
     if (decoded is Map<String, dynamic>) {
       print('🔍 Decoded is Map, keys: ${decoded.keys}');
-      
+
       // 2a. Check for 'data' field (from Aggregate node)
       if (decoded.containsKey('data')) {
         final data = decoded['data'];
         print('🔍 Found "data" field, type: ${data.runtimeType}');
-        
+
         if (data is List<dynamic>) {
           print('✅ data is List, count: ${data.length}');
           return data;
         }
-        
+
         if (data is Map<String, dynamic>) {
           // Nested structure: { data: { 0: {...}, 1: {...} } }
           // Convert map values to list
@@ -84,17 +84,17 @@ class N8nEmailService {
           return values;
         }
       }
-      
+
       // 2b. Check for 'emails' field
       if (decoded.containsKey('emails')) {
         final emails = decoded['emails'];
         print('🔍 Found "emails" field, type: ${emails.runtimeType}');
-        
+
         if (emails is List<dynamic>) {
           print('✅ emails is List, count: ${emails.length}');
           return emails;
         }
-        
+
         if (emails is Map<String, dynamic>) {
           // Check if emails contains 'data' field
           if (emails.containsKey('data')) {
@@ -104,13 +104,13 @@ class N8nEmailService {
               return emailsData;
             }
           }
-          
+
           print('⚠️ emails is Map (single item), wrapping in list');
           return [emails];
         }
       }
     }
-    
+
     print('❌ No emails found in response');
     return [];
   }
@@ -126,7 +126,10 @@ class N8nEmailService {
       headers: buildJsonHeaders(),
     );
     if (response.statusCode != 200) {
-      reportHttpResponseError(feature: 'n8n_email.fetch_with_stats', response: response);
+      reportHttpResponseError(
+        feature: 'n8n_email.fetch_with_stats',
+        response: response,
+      );
       throw Exception('Failed to load emails: ${response.statusCode}');
     }
     final decoded = json.decode(response.body);
@@ -137,14 +140,20 @@ class N8nEmailService {
     if (decoded is Map<String, dynamic>) {
       final summary = decoded['summary'] as Map<String, dynamic>?;
       final root = summary ?? decoded;
-      if (root['deadlines'] is num) deadlines = (root['deadlines'] as num).toInt();
-      if (root['requiredActions'] is num) requiredActions = (root['requiredActions'] as num).toInt();
-      if (deadlines == null && root['deadlineCount'] is num) deadlines = (root['deadlineCount'] as num).toInt();
-      if (requiredActions == null && root['actionCount'] is num) requiredActions = (root['actionCount'] as num).toInt();
+      if (root['deadlines'] is num)
+        deadlines = (root['deadlines'] as num).toInt();
+      if (root['requiredActions'] is num)
+        requiredActions = (root['requiredActions'] as num).toInt();
+      if (deadlines == null && root['deadlineCount'] is num)
+        deadlines = (root['deadlineCount'] as num).toInt();
+      if (requiredActions == null && root['actionCount'] is num)
+        requiredActions = (root['actionCount'] as num).toInt();
       if (decoded.containsKey('data')) {
         final data = decoded['data'];
-        if (data is List<dynamic>) emails = data;
-        else if (data is Map) emails = data.values.toList();
+        if (data is List<dynamic>)
+          emails = data;
+        else if (data is Map)
+          emails = data.values.toList();
       } else if (decoded.containsKey('emails')) {
         final e = decoded['emails'];
         emails = e is List<dynamic> ? e : (e is Map ? e.values.toList() : []);
@@ -152,7 +161,11 @@ class N8nEmailService {
     } else if (decoded is List<dynamic>) {
       emails = decoded;
     }
-    return {'emails': emails, 'deadlines': deadlines, 'requiredActions': requiredActions};
+    return {
+      'emails': emails,
+      'deadlines': deadlines,
+      'requiredActions': requiredActions,
+    };
   }
 
   Future<Map<String, dynamic>> getEmailSummaryStats() async {
@@ -187,7 +200,10 @@ class N8nEmailService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
-    reportHttpResponseError(feature: 'n8n_email.generate_reply', response: response);
+    reportHttpResponseError(
+      feature: 'n8n_email.generate_reply',
+      response: response,
+    );
     throw Exception('Failed to generate reply');
   }
 
@@ -205,7 +221,10 @@ class N8nEmailService {
       }),
     );
     if (response.statusCode != 200) {
-      reportHttpResponseError(feature: 'n8n_email.send_reply', response: response);
+      reportHttpResponseError(
+        feature: 'n8n_email.send_reply',
+        response: response,
+      );
       throw Exception('Failed to send reply');
     }
   }

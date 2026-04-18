@@ -9,31 +9,35 @@ import '../core/observability/sentry_api.dart';
 
 class N8nFinanceService {
   // FIXED: Use correct base URL
-  static const String _baseUrl = 'https://n8n-production-1e13.up.railway.app/webhook';
+  static const String _baseUrl =
+      'https://n8n-production-1e13.up.railway.app/webhook';
 
   /// Get current month financial statistics
   /// Returns: { status, month, income, expenses, profit, savingsRate, transactionCount }
   Future<Map<String, dynamic>> getCurrentMonthStats(String userId) async {
     try {
       print('📊 Fetching current month stats...');
-      
+
       // FIXED: Use correct URL path /webhook/current-month-stats
       final response = await http.get(
         Uri.parse('$_baseUrl/current-month-stats')
             .replace(queryParameters: {'userId': userId}),
         headers: buildJsonHeaders(),
       );
-      
+
       print('🔍 Response status: ${response.statusCode}');
       print('🔍 Response body: ${response.body}');
-      
+
       if (response.statusCode == 200) {
         final data =
             response.body.isNotEmpty ? json.decode(response.body) : <String, dynamic>{};
         print('✅ Month stats loaded: ${data['month']}');
         return data;
       }
-      reportHttpResponseError(feature: 'n8n_finance.month_stats', response: response);
+      reportHttpResponseError(
+        feature: 'n8n_finance.month_stats',
+        response: response,
+      );
       throw Exception('Failed to load month stats: ${response.statusCode}');
     } catch (e, stackTrace) {
       reportApiException(
@@ -56,15 +60,21 @@ class N8nFinanceService {
             .replace(queryParameters: {'userId': userId}),
         headers: buildJsonHeaders(),
       );
-      
+
       if (response.statusCode == 200) {
-        final data =
-            response.body.isNotEmpty ? json.decode(response.body) : <String, dynamic>{};
-        print('✅ Vendor breakdown loaded: ${data['vendors']?.length ?? 0} vendors');
+        final data = json.decode(response.body);
+        print(
+          '✅ Vendor breakdown loaded: ${data['vendors']?.length ?? 0} vendors',
+        );
         return data;
       }
-      reportHttpResponseError(feature: 'n8n_finance.vendor_breakdown', response: response);
-      throw Exception('Failed to load vendor breakdown: ${response.statusCode}');
+      reportHttpResponseError(
+        feature: 'n8n_finance.vendor_breakdown',
+        response: response,
+      );
+      throw Exception(
+        'Failed to load vendor breakdown: ${response.statusCode}',
+      );
     } catch (e, stackTrace) {
       reportApiException(
         feature: 'n8n_finance.vendor_breakdown',
@@ -86,15 +96,21 @@ class N8nFinanceService {
             .replace(queryParameters: {'userId': userId}),
         headers: buildJsonHeaders(),
       );
-      
+
       if (response.statusCode == 200) {
-        final data =
-            response.body.isNotEmpty ? json.decode(response.body) : <String, dynamic>{};
-        print('✅ Category breakdown loaded: ${data['breakdown']?.length ?? 0} categories');
+        final data = json.decode(response.body);
+        print(
+          '✅ Category breakdown loaded: ${data['breakdown']?.length ?? 0} categories',
+        );
         return data;
       }
-      reportHttpResponseError(feature: 'n8n_finance.category_breakdown', response: response);
-      throw Exception('Failed to load category breakdown: ${response.statusCode}');
+      reportHttpResponseError(
+        feature: 'n8n_finance.category_breakdown',
+        response: response,
+      );
+      throw Exception(
+        'Failed to load category breakdown: ${response.statusCode}',
+      );
     } catch (e, stackTrace) {
       reportApiException(
         feature: 'n8n_finance.category_breakdown',
@@ -116,14 +132,17 @@ class N8nFinanceService {
             .replace(queryParameters: {'userId': userId}),
         headers: buildJsonHeaders(),
       );
-      
+
       if (response.statusCode == 200) {
         final data =
             response.body.isNotEmpty ? json.decode(response.body) : <String, dynamic>{};
         print('✅ Spending by day loaded: ${data['byDay']?.length ?? 0} days');
         return data;
       }
-      reportHttpResponseError(feature: 'n8n_finance.spending_by_day', response: response);
+      reportHttpResponseError(
+        feature: 'n8n_finance.spending_by_day',
+        response: response,
+      );
       throw Exception('Failed to load spending by day: ${response.statusCode}');
     } catch (e, stackTrace) {
       reportApiException(

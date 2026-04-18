@@ -1,0 +1,361 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "Prometheus",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        { "expr": "max(up{job=\"nestjs-backend\"})", "refId": "A" }
+      ],
+      "title": "Backend Up",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.1 },
+              { "color": "red", "value": 1 }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{source=~\"flutter-.*\"}[5m]))",
+          "refId": "A"
+        }
+      ],
+      "title": "Frontend Request Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 1000 }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{source=~\"flutter-.*\"}[5m]))) * 1000",
+          "refId": "A"
+        }
+      ],
+      "title": "Frontend P95 Latency",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.1 },
+              { "color": "red", "value": 0.5 }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{source=~\"flutter-.*\",status_code=~\"5..\"}[5m]))",
+          "refId": "A"
+        }
+      ],
+      "title": "Frontend 5xx Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "req/s",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 1,
+            "showPoints": "auto"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 2 }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "id": 5,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (source) (rate(http_requests_total[5m]))",
+          "legendFormat": "{{source}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Requests by Source",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "ms",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 1,
+            "showPoints": "auto"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 1000 }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "id": 6,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, source) (rate(http_request_duration_seconds_bucket[5m]))) * 1000",
+          "legendFormat": "{{source}} p95",
+          "refId": "A"
+        }
+      ],
+      "title": "P95 Latency by Source",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "id": 7,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "orientation": "horizontal",
+        "showValue": "always",
+        "tooltip": { "mode": "single" },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "targets": [
+        {
+          "expr": "sum by (source) (increase(http_requests_total{status_code=~\"5..\"}[15m]))",
+          "legendFormat": "{{source}}",
+          "refId": "A"
+        }
+      ],
+      "title": "5xx Errors by Source (15m)",
+      "type": "barchart"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "MB",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 1,
+            "showPoints": "auto"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 512 },
+              { "color": "red", "value": 1024 }
+            ]
+          },
+          "unit": "decmbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "id": 8,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single" }
+      },
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes / (1024 * 1024)",
+          "legendFormat": "rss",
+          "refId": "A"
+        },
+        {
+          "expr": "process_heap_used_bytes / (1024 * 1024)",
+          "legendFormat": "heap",
+          "refId": "B"
+        }
+      ],
+      "title": "Backend Memory",
+      "type": "timeseries"
+    }
+  ],
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["nestjs", "frontend", "backend", "observability"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Frontend + Backend Unified Overview",
+  "uid": "frontend-backend-unified",
+  "version": 1
+}
