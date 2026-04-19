@@ -198,7 +198,7 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
       final temperatureCelsius = await WeatherService.getTemperature(cityName: city);
       List<Map<String, String>> meetings = <Map<String, String>>[];
       try {
-        final meetingList = await MeetingService().fetchMeetings();
+        final meetingList = await MeetingService().fetchMeetings(userId);
         final today = DateTime.now();
         meetings = meetingList
             .where((m) =>
@@ -284,7 +284,7 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
       final focusHours = (focusMinutes / 60).round().clamp(0, 24);
       List<Map<String, String>> meetingsForContext = <Map<String, String>>[];
       try {
-        final meetingList = await MeetingService().fetchMeetings();
+        final meetingList = await MeetingService().fetchMeetings(userId);
         final today = DateTime.now();
         meetingsForContext = meetingList
             .where((m) =>

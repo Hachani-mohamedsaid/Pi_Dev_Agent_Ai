@@ -44,11 +44,14 @@ class MeetingService {
   /// Décode le corps avec [jsonDecode], traite le résultat comme [List],
   /// mappe chaque élément avec [Meeting.fromJson].
   /// Gestion des erreurs : try/catch, timeout, codes HTTP, format.
-  Future<List<Meeting>> fetchMeetings() async {
+  Future<List<Meeting>> fetchMeetings(String userId) async {
     try {
+      final uri = endpoint.replace(
+        queryParameters: <String, String>{'userId': userId},
+      );
       final response = await httpClient
           .get(
-            endpoint,
+            uri,
             headers: buildJsonHeaders(
               extra: const {'Accept': 'application/json'},
             ),
@@ -115,15 +118,17 @@ class MeetingService {
 
   /// Envoie une décision (accept / reject / suggest) au webhook meeting-decision.
   ///
-  /// Body : { meetingId, decision, suggestedAlternative }.
+  /// Body : { userId, meetingId, decision, suggestedAlternative }.
   /// [suggestedAlternative] utilisé uniquement si decision == 'suggest'.
-  Future<void> sendDecision(
+  Future<Map<String, dynamic>> sendDecision(
+    String userId,
     String meetingId,
     MeetingDecision decision, {
     Map<String, String>? suggestedAlternative,
   }) async {
     try {
       final body = <String, dynamic>{
+        'userId': userId,
         'meetingId': meetingId,
         'decision': decision,
         'suggestedAlternative':
@@ -152,6 +157,12 @@ class MeetingService {
           response.statusCode != 204) {
         _throwForStatus(response.statusCode);
       }
+
+      final String responseBody = response.body.trim();
+      if (responseBody.isEmpty) {
+        return <String, dynamic>{};
+      }
+      return jsonDecode(responseBody) as Map<String, dynamic>;
     } on http.ClientException catch (e) {
       throw Exception(
         'Problème réseau : ${e.message}. Vérifiez votre connexion.',
