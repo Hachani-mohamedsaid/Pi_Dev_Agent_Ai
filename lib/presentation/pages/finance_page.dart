@@ -4,6 +4,11 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../data/services/google_connect_service.dart';
+import '../../data/services/telegram_connect_service.dart';
+import '../widgets/google_connect_gate_sheet.dart';
+import '../widgets/telegram_connect_gate_sheet.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../widgets/navigation_bar.dart';
@@ -32,13 +37,44 @@ class _FinancePageState extends State<FinancePage> {
   List<dynamic>? _daySpending;
   SpendingPredictionResult? _mlPrediction;
   String? _userId;
-
+  final _googleService = GoogleConnectService();
+  final _telegramService = TelegramConnectService();
+  bool _connectionsChecked = false;
 
   // NEW: Load data from n8n webhooks on init
   @override
   void initState() {
     super.initState();
+    _checkConnections();
     _loadFinanceData();
+  }
+
+  Future<void> _checkConnections() async {
+    if (_connectionsChecked) return;
+    _connectionsChecked = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_access_token') ?? '';
+      if (token.isEmpty) return;
+
+      // Check Google first
+      final googleStatus = await _googleService.getStatus(token);
+      if (!mounted) return;
+      if (!googleStatus.connected) {
+        await GoogleConnectGateSheet.show(
+          context,
+          'Connect to use the Finance Tracker',
+        );
+        return; // Don't check Telegram until Google is connected
+      }
+
+      // Then check Telegram
+      final telegramStatus = await _telegramService.getStatus(token);
+      if (!mounted) return;
+      if (!telegramStatus.linked) {
+        await TelegramConnectGateSheet.show(context);
+      }
+    } catch (_) {}
   }
 
   // NEW: Load all finance data from n8n webhooks
@@ -67,12 +103,70 @@ class _FinancePageState extends State<FinancePage> {
       try {
         final mlRaw = await _financeService.getMlPredictions(userId);
         if (mlRaw.isNotEmpty) {
-          ml = SpendingPredictionResult.fromJson(
-            Map<String, dynamic>.from(mlRaw),
+          final expenses = mlRaw['expenses'] as List? ?? [];
+
+          // Group expenses by category and compute average as prediction
+          final Map<String, List<double>> byCategory = {};
+          for (final e in expenses) {
+            final cat = e['category'] as String? ?? 'Other';
+            final total = (e['total'] as num?)?.toDouble() ?? 0.0;
+            byCategory.putIfAbsent(cat, () => []).add(total);
+          }
+
+          final now = DateTime.now();
+          final nextMonth = DateTime(now.year, now.month + 1);
+          final nextMonthStr =
+              '${nextMonth.year}-${nextMonth.month.toString().padLeft(2, '0')}';
+          final monthNames = [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'May',
+            'Jun',
+            'Jul',
+            'Aug',
+            'Sep',
+            'Oct',
+            'Nov',
+            'Dec',
+          ];
+          final nextMonthLabel =
+              '${monthNames[nextMonth.month - 1]} ${nextMonth.year}';
+
+          final predictions = byCategory.entries.map((entry) {
+            final history = entry.value;
+            final avg = history.isEmpty
+                ? 0.0
+                : history.reduce((a, b) => a + b) / history.length;
+            final budget = avg * 1.1; // 10% buffer as budget
+            final trend = history.length >= 2
+                ? (history.last > history.first
+                    ? 'up'
+                    : history.last < history.first
+                        ? 'down'
+                        : 'stable')
+                : 'stable';
+            return CategoryPrediction(
+              category: entry.key,
+              predicted: avg,
+              budget: budget,
+              overBudget: avg > budget,
+              trend: trend,
+              history: history,
+            );
+          }).toList();
+
+          predictions.sort((a, b) => b.predicted.compareTo(a.predicted));
+
+          ml = SpendingPredictionResult(
+            nextMonth: nextMonthStr,
+            nextMonthLabel: nextMonthLabel,
+            predictions: predictions,
+            overBudgetCount: 0,
           );
         }
       } catch (mlErr) {
-        // ML is optional — page still works without it
         print('⚠️ ML prediction unavailable: $mlErr');
       }
 
