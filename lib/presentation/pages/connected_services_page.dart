@@ -2655,7 +2655,13 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                 ),
                 Container(
                   child: GestureDetector(
-                    onTap: () => _showMockServiceSettingsBottomSheet(context, title),
+                    onTap: () {
+                      if (title == 'Telegram') {
+                        _showTelegramSettingsBottomSheet(context);
+                      } else {
+                        _showMockServiceSettingsBottomSheet(context, title);
+                      }
+                    },
                     child: Container(
                       padding: EdgeInsets.all(
                         Responsive.getResponsiveValue(
@@ -2801,6 +2807,226 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _showTelegramSettingsBottomSheet(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: AppColors.primaryDarker,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Telegram Settings',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textWhite,
+                    ),
+                  ),
+                  if (_telegramChatId != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Chat ID: $_telegramChatId',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.cyan400,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  Divider(
+                    color: AppColors.cyan500.withValues(alpha: 0.2),
+                    height: 1,
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () async {
+                      Navigator.of(sheetContext).pop();
+                      await _connectTelegram();
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 4,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            LucideIcons.refreshCw,
+                            color: AppColors.cyan400,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 14),
+                          const Expanded(
+                            child: Text(
+                              'Reconnect account',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: AppColors.textWhite,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () async {
+                      Navigator.of(sheetContext).pop();
+                      // Show confirmation dialog
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          backgroundColor: AppColors.primaryMedium,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          title: const Text(
+                            'Disconnect Telegram?',
+                            style: TextStyle(
+                              color: AppColors.textWhite,
+                              fontSize: 18,
+                            ),
+                          ),
+                          content: const Text(
+                            'You will no longer be able to use Jackie AI or send receipts via Telegram.',
+                            style: TextStyle(
+                              color: AppColors.textCyan200,
+                              fontSize: 14,
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.of(dialogContext).pop(false),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color:
+                                      AppColors.cyan400.withValues(alpha: 0.9),
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.of(dialogContext).pop(true),
+                              child: const Text(
+                                'Disconnect',
+                                style: TextStyle(
+                                  color: Color(0xFFEF4444),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed == true && mounted) {
+                        final prefs = await SharedPreferences.getInstance();
+                        final token = prefs.getString(_tokenKey) ?? '';
+                        if (token.isNotEmpty) {
+                          await _telegramService.disconnect(token);
+                          await _loadTelegramStatus();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Telegram disconnected'),
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+                      child: Row(
+                        children: [
+                          Icon(
+                            LucideIcons.unplug,
+                            color: Color(0xFFEF4444),
+                            size: 22,
+                          ),
+                          SizedBox(width: 14),
+                          Expanded(
+                            child: Text(
+                              'Disconnect',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFFEF4444),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => Navigator.of(sheetContext).pop(),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 4,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.close,
+                            color: AppColors.textCyan200.withValues(alpha: 0.8),
+                            size: 22,
+                          ),
+                          const SizedBox(width: 14),
+                          Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppColors.textCyan200.withValues(
+                                alpha: 0.85,
+                              ),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
