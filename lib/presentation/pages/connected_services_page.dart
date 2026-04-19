@@ -104,10 +104,160 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
     try {
       final linkToken = await _telegramService.generateLinkToken(token);
       final url = Uri.parse('https://t.me/Rocco4xbot?start=$linkToken');
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-      await Future.delayed(const Duration(seconds: 4));
+
       if (!mounted) return;
-      await _loadTelegramStatus();
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        isDismissible: true,
+        builder: (sheetContext) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: AppColors.primaryDarker,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2AABEE).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFF2AABEE).withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: const Icon(
+                        LucideIcons.send,
+                        size: 32,
+                        color: Color(0xFF2AABEE),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Connect Telegram',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textWhite,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '1. Tap "Open Telegram" below\n2. Press START in the bot\n3. Return here and tap "Done"',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.7,
+                        color: AppColors.textCyan200.withValues(alpha: 0.65),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: FilledButton.icon(
+                        onPressed: () async {
+                          await launchUrl(
+                            url,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        },
+                        icon: const Icon(LucideIcons.externalLink, size: 18),
+                        label: const Text(
+                          'Open Telegram',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF2AABEE),
+                          foregroundColor: AppColors.textWhite,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: FilledButton(
+                        onPressed: () async {
+                          Navigator.of(sheetContext).pop();
+                          await _loadTelegramStatus();
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.cyan500,
+                          foregroundColor: AppColors.textWhite,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Done — Return to AVA',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.cyan400,
+                          side: const BorderSide(
+                            color: AppColors.cyan500,
+                            width: 1.5,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text(
+                          'Maybe Later',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2030,24 +2180,6 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                             ),
                           ),
                         ],
-                        SizedBox(height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 6.0,
-                          tablet: 8.0,
-                          desktop: 10.0,
-                        )),
-                        Text(
-                          'Last connected: just now',
-                          style: TextStyle(
-                            fontSize: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 11.0,
-                              tablet: 12.0,
-                              desktop: 13.0,
-                            ),
-                            color: AppColors.cyan400.withOpacity(0.5),
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -2404,6 +2536,9 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
       secondary: _telegramChatId != null
           ? 'Chat ID: $_telegramChatId'
           : 'Last sync: just now',
+      secondaryColor: _telegramChatId != null
+          ? const Color(0xFF10B981)
+          : null,
     );
   }
 
@@ -2456,6 +2591,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
     required String subtitle,
     required List<String> chips,
     required String secondary,
+    Color? secondaryColor,
   }) {
     final radius = Responsive.getResponsiveValue(
       context,
@@ -2639,7 +2775,8 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                             tablet: 12.0,
                             desktop: 13.0,
                           ),
-                          color: AppColors.cyan400.withOpacity(0.5),
+                          color: secondaryColor ??
+                              AppColors.cyan400.withOpacity(0.5),
                         ),
                       ),
                     ],

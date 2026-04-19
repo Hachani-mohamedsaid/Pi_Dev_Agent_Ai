@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../../features/social_media/screens/social_media_brief_screen.dart';
 import '../../core/utils/responsive.dart';
@@ -175,7 +176,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _loadMeetingsToday() async {
     try {
-      final meetings = await _meetingService.fetchMeetings();
+      final prefs = await SharedPreferences.getInstance();
+      final uid = prefs.getString('user_id');
+      if (uid == null || uid.isEmpty) return;
+      final meetings = await _meetingService.fetchMeetings(uid);
       if (!mounted) return;
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);

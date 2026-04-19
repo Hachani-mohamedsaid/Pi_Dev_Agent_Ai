@@ -124,7 +124,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
     try {
       final userId =
           await InjectionContainer.instance.authLocalDataSource.getUserId();
-      final signals = await _collectSignals();
+      final signals = await _collectSignals(userId);
 
       // POST /assistant/notifications : signaux front (réunions, mails, focus, etc.)
       // + le backend ajoute contexte + ML si besoin.
@@ -188,7 +188,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
   static String _titleMessageKey(String title, String message) =>
       '$title|$message';
 
-  Future<List<Map<String, dynamic>>> _collectSignals() async {
+  Future<List<Map<String, dynamic>>> _collectSignals(String? userId) async {
     final nowUtc = DateTime.now().toUtc();
     final occurredAt = nowUtc.toIso8601String();
     final signals = <Map<String, dynamic>>[];
@@ -209,7 +209,8 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
     // Meetings -> MEETING_SOON (prochaine réunion dans 2 h).
     final meetingService = MeetingService();
     try {
-      final meetings = await meetingService.fetchMeetings();
+      if (userId != null && userId.isNotEmpty) {
+      final meetings = await meetingService.fetchMeetings(userId);
       final upcoming = meetings
           .where((m) => m.startTime.isAfter(DateTime.now()))
           .toList()
@@ -231,6 +232,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
             'source': 'n8n',
           });
         }
+      }
       }
     } catch (_) {
       // ignore
