@@ -189,7 +189,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
   static String _titleMessageKey(String title, String message) =>
       '$title|$message';
 
-  Future<List<Map<String, dynamic>>> _collectSignals() async {
+  Future<List<Map<String, dynamic>>> _collectSignals(String? userId) async {
     final nowUtc = DateTime.now().toUtc();
     final occurredAt = nowUtc.toIso8601String();
     final signals = <Map<String, dynamic>>[];
@@ -231,6 +231,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
             'source': 'n8n',
           });
         }
+      }
       }
     } catch (_) {
       // ignore

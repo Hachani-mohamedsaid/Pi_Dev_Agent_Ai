@@ -3,6 +3,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../data/services/google_connect_service.dart';
+import '../widgets/google_connect_gate_sheet.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../services/n8n_email_service.dart';
@@ -103,6 +106,8 @@ class _EmailsPageState extends State<EmailsPage> {
   String? _errorMessage;
   bool _isSendingReply = false;
   final _emailService = N8nEmailService();
+  final _googleService = GoogleConnectService();
+  bool _googleChecked = false;
   // confirm-send modal state
   bool _showConfirmSendModal = false;
   String _confirmSubject = '';
@@ -145,7 +150,26 @@ class _EmailsPageState extends State<EmailsPage> {
   @override
   void initState() {
     super.initState();
+    _checkGoogleConnection();
     _loadEmails();
+  }
+
+  Future<void> _checkGoogleConnection() async {
+    if (_googleChecked) return;
+    _googleChecked = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_access_token') ?? '';
+      if (token.isEmpty) return;
+      final status = await _googleService.getStatus(token);
+      if (!mounted) return;
+      if (!status.connected) {
+        await GoogleConnectGateSheet.show(
+          context,
+          'Connect to access your AI-powered Email Summaries',
+        );
+      }
+    } catch (_) {}
   }
 
   /// NEW: Load emails from n8n webhook (GET email-summaries). Keeps existing UI/styling.

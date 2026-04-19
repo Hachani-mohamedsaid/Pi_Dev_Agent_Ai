@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
@@ -42,6 +43,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
   String? _error;
   bool _isSubmitting = false;
   bool _isLoading = true;
+  String? _userId;
 
   @override
   void initState() {
@@ -58,7 +60,17 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
 
   Future<void> _fetchMeeting() async {
     try {
-      final meetings = await _service.fetchMeetings();
+      final prefs = await SharedPreferences.getInstance();
+      _userId = prefs.getString('user_id');
+      if (_userId == null || _userId!.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _error = 'User ID not found. Please log in again.';
+          _isLoading = false;
+        });
+        return;
+      }
+      final meetings = await _service.fetchMeetings(_userId!);
       if (!mounted) return;
       Meeting? found;
       for (final m in meetings) {
@@ -83,7 +95,8 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
 
   Future<void> _sendDecision(String decision) async {
     final meeting = _meeting;
-    if (meeting == null || _isSubmitting) return;
+    final uid = _userId;
+    if (meeting == null || _isSubmitting || uid == null || uid.isEmpty) return;
 
     setState(() => _isSubmitting = true);
 
@@ -92,7 +105,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
     );
 
     try {
-      await _service.sendDecision(meeting.meetingId, decision);
+      await _service.sendDecision(uid, meeting.meetingId, decision);
       if (!mounted) return;
       context.go('/home');
     } catch (e) {
