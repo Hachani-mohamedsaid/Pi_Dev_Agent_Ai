@@ -6,9 +6,11 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../data/services/google_connect_service.dart';
+import '../../data/services/telegram_connect_service.dart';
 import '../widgets/navigation_bar.dart';
 
 class ConnectedServicesPage extends StatefulWidget {
@@ -35,11 +37,16 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
   GoogleConnectStatus _googleStatus = GoogleConnectStatus.disconnected;
   bool _loadingGoogleStatus = true;
   bool _initialLoadDone = false;
+  final _telegramService = TelegramConnectService();
+  bool _telegramLinked = false;
+  bool _loadingTelegramStatus = true;
+  String? _telegramChatId;
 
   @override
   void initState() {
     super.initState();
     _loadGoogleStatus();
+    _loadTelegramStatus();
   }
 
   Future<void> _loadGoogleStatus() async {
@@ -69,6 +76,46 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
     }
   }
 
+  Future<void> _loadTelegramStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_tokenKey) ?? '';
+    if (token.isEmpty) {
+      if (mounted) setState(() => _loadingTelegramStatus = false);
+      return;
+    }
+    try {
+      final status = await _telegramService.getStatus(token);
+      if (mounted) {
+        setState(() {
+          _telegramLinked = status.linked;
+          _telegramChatId = status.chatId;
+          _loadingTelegramStatus = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingTelegramStatus = false);
+    }
+  }
+
+  Future<void> _connectTelegram() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_tokenKey) ?? '';
+    if (token.isEmpty) return;
+    try {
+      final linkToken = await _telegramService.generateLinkToken(token);
+      final url = Uri.parse('https://t.me/Rocco4xbot?start=$linkToken');
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+      await Future.delayed(const Duration(seconds: 4));
+      if (!mounted) return;
+      await _loadTelegramStatus();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to connect Telegram: $e')),
+      );
+    }
+  }
+
   /// Entrance animations only before Google status load completes (first paint).
   Widget _withEntranceAnimation(Widget child, Animate Function(Animate) apply) {
     if (_initialLoadDone) return child;
@@ -88,7 +135,9 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
     final connectedServices = <Map<String, dynamic>>[];
     const totalActions = 257; // mocked for now
     final googleConnected = _googleStatus.connected && !_loadingGoogleStatus;
-    final connectedCountForStats = (googleConnected ? 1 : 0) + 3; // Calendar + Telegram + LinkedIn (+ Gmail&Sheets if connected)
+    final connectedCountForStats = (googleConnected ? 1 : 0) +
+        2 +
+        (_telegramLinked ? 1 : 0); // Calendar + LinkedIn + Telegram if linked (+ Gmail if connected)
 
     return Scaffold(
       body: Container(
@@ -231,33 +280,11 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                     },
                   ),
                 ),
-                Padding(
-                  padding: EdgeInsets.only(
-                    bottom: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 10.0,
-                      tablet: 12.0,
-                      desktop: 14.0,
-                    ),
+                if (_telegramLinked)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _buildMockConnectedTelegramCard(context),
                   ),
-                  child: _withEntranceAnimation(
-                    _buildMockConnectedTelegramCard(context),
-                    (a) {
-                      final delayMs = 300 + ((connectedServices.length + 1) * 100);
-                      return a
-                          .fadeIn(
-                            delay: Duration(milliseconds: delayMs),
-                            duration: 300.ms,
-                          )
-                          .slideY(
-                            begin: 0.2,
-                            end: 0,
-                            delay: Duration(milliseconds: delayMs),
-                            duration: 300.ms,
-                          );
-                    },
-                  ),
-                ),
                 Padding(
                   padding: EdgeInsets.only(
                     bottom: Responsive.getResponsiveValue(
@@ -359,6 +386,29 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                       (a) => a
                           .fadeIn(delay: 600.ms, duration: 300.ms)
                           .slideY(begin: 0.2, end: 0, delay: 600.ms, duration: 300.ms),
+                    ),
+                  ),
+                if (!_telegramLinked)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      bottom: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 10.0,
+                        tablet: 12.0,
+                        desktop: 14.0,
+                      ),
+                    ),
+                    child: _buildMockDisconnectedLikeGoogleRow(
+                      context,
+                      leading: _mockIconLeading(
+                        context,
+                        Image.network(_telegramIconUrl, width: 26, height: 26),
+                      ),
+                      title: 'Telegram',
+                      subtitle: _loadingTelegramStatus
+                          ? 'Checking status...'
+                          : 'Chat with Jackie AI · Send receipts',
+                      onConnect: _connectTelegram,
                     ),
                   ),
                 Padding(
@@ -2351,7 +2401,9 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
       title: 'Telegram',
       subtitle: 'Chat assistant and notifications',
       chips: const ['Read messages', 'Send messages'],
-      secondary: 'Last sync: just now',
+      secondary: _telegramChatId != null
+          ? 'Chat ID: $_telegramChatId'
+          : 'Last sync: just now',
     );
   }
 
