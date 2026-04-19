@@ -4,26 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
-import '../../core/l10n/app_strings.dart';
+import '../../generated/l10n.dart';
 
-class PreOnboardingPage extends StatefulWidget {
-  const PreOnboardingPage({super.key});
+// --- Top-level widgets for onboarding ---
 
-  @override
-  State<PreOnboardingPage> createState() => _PreOnboardingPageState();
-}
-
-class _PreOnboardingPageState extends State<PreOnboardingPage>
-    with TickerProviderStateMixin {
-  final PageController _pageController = PageController();
-  late final List<AnimationController> _controllers;
-  late final AnimationController _bgController;
-  int _page = 0;
-
-  static const _prefKey = 'hasSeenPreOnboarding';
-
-  @override
-  void initState() {
+// (Déplacé à la fin du fichier pour respecter l'ordre Dart)
     super.initState();
     _controllers = List.generate(
       3,
@@ -36,10 +21,7 @@ class _PreOnboardingPageState extends State<PreOnboardingPage>
       vsync: this,
       duration: const Duration(seconds: 6),
     )..repeat(reverse: true);
-
-    // start first page animation
     scheduleMicrotask(() => _controllers[0].forward());
-
     _pageController.addListener(() {
       final p = _pageController.page ?? _page.toDouble();
       final int newPage = p.round();
@@ -52,23 +34,6 @@ class _PreOnboardingPageState extends State<PreOnboardingPage>
             _controllers[i].reset();
           }
         }
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    for (final c in _controllers) c.dispose();
-    _bgController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _complete() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_prefKey, true);
-    if (mounted) context.go('/login');
-  }
 
   Widget _buildPage({
     required int index,
@@ -79,20 +44,16 @@ class _PreOnboardingPageState extends State<PreOnboardingPage>
   }) {
     final anim = _controllers[index];
     final isMobile = Responsive.isMobile(context);
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         return AnimatedBuilder(
           animation: Listenable.merge([anim, _bgController, _pageController]),
           builder: (context, child) {
-            // parallax offset based on page position
-            final page =
-                (_pageController.hasClients && _pageController.page != null)
+            final page = (_pageController.hasClients && _pageController.page != null)
                 ? _pageController.page!
                 : _page.toDouble();
             final parallax = (page - index) * width * 0.2;
-
             return Container(
               width: double.infinity,
               height: double.infinity,
@@ -160,7 +121,6 @@ class _PreOnboardingPageState extends State<PreOnboardingPage>
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
-
     return Scaffold(
       body: AnimatedBuilder(
         animation: _bgController,
@@ -176,7 +136,6 @@ class _PreOnboardingPageState extends State<PreOnboardingPage>
             AppColors.cyan500,
             t,
           )!.withOpacity(0.95);
-
           return Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -198,8 +157,8 @@ class _PreOnboardingPageState extends State<PreOnboardingPage>
                           icon: Icons.auto_awesome,
                           color: AppColors.cyan400,
                         ),
-                        title: AppStrings.tr(context, 'welcomeToAva'),
-                        subtitle: AppStrings.tr(context, 'welcomeSubtitle'),
+                        title: S.of(context).welcome,
+                        subtitle: S.of(context).welcomeBack,
                         actions: _PageFooter(
                           isLast: false,
                           onNext: () => _pageController.nextPage(
@@ -215,8 +174,8 @@ class _PreOnboardingPageState extends State<PreOnboardingPage>
                           icon: Icons.checklist_rounded,
                           color: AppColors.blue500,
                         ),
-                        title: AppStrings.tr(context, 'keyFeatures'),
-                        subtitle: AppStrings.tr(context, 'keyFeaturesSubtitle'),
+                        title: S.of(context).features,
+                        subtitle: S.of(context).suggestions,
                         actions: _FeaturesList(controller: _controllers[1]),
                       ),
                       _buildPage(
@@ -225,8 +184,8 @@ class _PreOnboardingPageState extends State<PreOnboardingPage>
                           icon: Icons.rocket_launch,
                           color: AppColors.cyan500,
                         ),
-                        title: AppStrings.tr(context, 'getStarted'),
-                        subtitle: AppStrings.tr(context, 'getStartedSubtitle'),
+                        title: S.of(context).signUp,
+                        subtitle: S.of(context).signInSubtitle,
                         actions: _PageFooter(
                           isLast: true,
                           onNext: _complete,
@@ -239,8 +198,6 @@ class _PreOnboardingPageState extends State<PreOnboardingPage>
                       ),
                     ],
                   ),
-
-                  // Page indicator
                   Positioned(
                     bottom: isMobile ? 28 : 40,
                     left: 0,
@@ -249,9 +206,7 @@ class _PreOnboardingPageState extends State<PreOnboardingPage>
                       child: AnimatedBuilder(
                         animation: _pageController,
                         builder: (context, _) {
-                          final p =
-                              (_pageController.hasClients &&
-                                  _pageController.page != null)
+                          final p = (_pageController.hasClients && _pageController.page != null)
                               ? _pageController.page!
                               : _page.toDouble();
                           return Row(
@@ -260,9 +215,7 @@ class _PreOnboardingPageState extends State<PreOnboardingPage>
                               final selected = (p - i).abs() < 0.5;
                               final size = selected ? 12.0 : 8.0;
                               return Container(
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                ),
+                                margin: const EdgeInsets.symmetric(horizontal: 6),
                                 width: size,
                                 height: size,
                                 decoration: BoxDecoration(
@@ -286,157 +239,4 @@ class _PreOnboardingPageState extends State<PreOnboardingPage>
       ),
     );
   }
-}
 
-class _IllustrationBox extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  const _IllustrationBox({required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(child: Icon(icon, size: 120, color: color)),
-      ),
-    );
-  }
-}
-
-class _PageFooter extends StatelessWidget {
-  final bool isLast;
-  final VoidCallback? onNext;
-  final VoidCallback? onSkip;
-
-  const _PageFooter({required this.isLast, this.onNext, this.onSkip});
-
-  @override
-  Widget build(BuildContext context) {
-    final isMobile = Responsive.isMobile(context);
-    return Padding(
-      padding: EdgeInsets.only(top: isMobile ? 18 : 28),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (!isLast)
-            ElevatedButton(
-              onPressed: onNext,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.cyan500,
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(AppStrings.tr(context, 'next')),
-            ),
-          if (isLast) ...[
-            ElevatedButton(
-              onPressed: onNext,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.cyan500,
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(AppStrings.tr(context, 'createAccount')),
-            ),
-            const SizedBox(width: 12),
-            TextButton(onPressed: onSkip, child: Text(AppStrings.tr(context, 'signInAction'))),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _FeaturesList extends StatelessWidget {
-  final AnimationController controller;
-  const _FeaturesList({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    final isMobile = Responsive.isMobile(context);
-    final features = [
-      {
-        'icon': Icons.chat_bubble,
-        'title': AppStrings.tr(context, 'smartReplies'),
-        'desc': AppStrings.tr(context, 'smartRepliesDesc'),
-      },
-      {
-        'icon': Icons.calendar_today,
-        'title': AppStrings.tr(context, 'calendarSync'),
-        'desc': AppStrings.tr(context, 'calendarSyncDesc'),
-      },
-      {
-        'icon': Icons.lock,
-        'title': AppStrings.tr(context, 'privateByDesign'),
-        'desc': AppStrings.tr(context, 'privateByDesignDesc'),
-      },
-    ];
-
-    return Column(
-      children: List.generate(features.length, (i) {
-        final start = i * 0.12;
-        final end = start + 0.45;
-        final anim = CurvedAnimation(
-          parent: controller,
-          curve: Interval(start, end, curve: Curves.easeOut),
-        );
-        return FadeTransition(
-          opacity: anim,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.08),
-              end: Offset.zero,
-            ).animate(anim),
-            child: Container(
-              margin: EdgeInsets.symmetric(vertical: isMobile ? 6 : 10),
-              padding: EdgeInsets.all(isMobile ? 12 : 16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.03),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.04)),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    features[i]['icon'] as IconData,
-                    color: AppColors.cyan400,
-                  ),
-                  SizedBox(width: isMobile ? 12 : 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          features[i]['title'] as String,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          features[i]['desc'] as String,
-                          style: TextStyle(
-                            color: AppColors.textCyan200.withOpacity(0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }),
-    );
-  }
-}

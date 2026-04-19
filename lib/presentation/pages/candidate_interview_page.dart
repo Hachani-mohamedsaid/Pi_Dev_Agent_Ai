@@ -6,6 +6,18 @@ import '../../core/theme/app_colors.dart';
 import '../../data/models/evaluation.dart';
 import '../../data/services/candidate_interview_api_service.dart';
 
+Color _primaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _secondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF5B7B92);
+}
+
 /// Chat d’entretien assisté : appelle Nest `POST /interviews/start` puis
 /// `POST /interviews/:sessionId/message` (JWT).
 class CandidateInterviewPage extends StatefulWidget {
@@ -37,8 +49,8 @@ class _CandidateInterviewPageState extends State<CandidateInterviewPage> {
 
   String get _title =>
       widget.evaluation?.candidateName?.trim().isNotEmpty == true
-          ? widget.evaluation!.candidateName!.trim()
-          : 'Entretien assisté';
+      ? widget.evaluation!.candidateName!.trim()
+      : 'Entretien assisté';
 
   @override
   void dispose() {
@@ -159,15 +171,14 @@ class _CandidateInterviewPageState extends State<CandidateInterviewPage> {
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: const Color(0xFF142E42),
-          title: const Text(
-            'Synthèse',
-            style: TextStyle(color: AppColors.textWhite),
-          ),
+          backgroundColor: Theme.of(ctx).brightness == Brightness.dark
+              ? const Color(0xFF142E42)
+              : const Color(0xFFF9FCFF),
+          title: Text('Synthèse', style: TextStyle(color: _primaryText(ctx))),
           content: SingleChildScrollView(
             child: Text(
               summary,
-              style: const TextStyle(color: AppColors.textCyan200, height: 1.4),
+              style: TextStyle(color: _secondaryText(ctx), height: 1.4),
             ),
           ),
           actions: [
@@ -190,19 +201,25 @@ class _CandidateInterviewPageState extends State<CandidateInterviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final pageGradient = isDark
+        ? const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
-          ),
-        ),
+            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+          )
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
+          );
+
+    return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFF3F8FC),
+      body: Container(
+        decoration: BoxDecoration(gradient: pageGradient),
         child: SafeArea(
           child: Column(
             children: [
@@ -212,9 +229,9 @@ class _CandidateInterviewPageState extends State<CandidateInterviewPage> {
                   children: [
                     IconButton(
                       onPressed: () => context.pop(),
-                      icon: const Icon(
+                      icon: Icon(
                         LucideIcons.arrowLeft,
-                        color: AppColors.textWhite,
+                        color: _primaryText(context),
                       ),
                     ),
                     Expanded(
@@ -223,10 +240,10 @@ class _CandidateInterviewPageState extends State<CandidateInterviewPage> {
                         children: [
                           Text(
                             _title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textWhite,
+                              color: _primaryText(context),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -235,7 +252,9 @@ class _CandidateInterviewPageState extends State<CandidateInterviewPage> {
                             'Entretien assisté (IA)',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textCyan200.withValues(alpha: 0.85),
+                              color: _secondaryText(
+                                context,
+                              ).withValues(alpha: 0.85),
                             ),
                           ),
                         ],
@@ -248,7 +267,9 @@ class _CandidateInterviewPageState extends State<CandidateInterviewPage> {
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Text('Terminer'),
                       ),
@@ -264,7 +285,7 @@ class _CandidateInterviewPageState extends State<CandidateInterviewPage> {
                     child: Text(
                       widget.evaluation!.jobTitle!,
                       style: TextStyle(
-                        color: AppColors.textCyan200.withValues(alpha: 0.75),
+                        color: _secondaryText(context).withValues(alpha: 0.75),
                         fontSize: 13,
                       ),
                     ),
@@ -272,7 +293,10 @@ class _CandidateInterviewPageState extends State<CandidateInterviewPage> {
                 ),
               if (_error != null)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Material(
                     color: const Color(0xFF7f1d1d).withValues(alpha: 0.85),
                     borderRadius: BorderRadius.circular(10),
@@ -280,7 +304,10 @@ class _CandidateInterviewPageState extends State<CandidateInterviewPage> {
                       padding: const EdgeInsets.all(12),
                       child: Row(
                         children: [
-                          const Icon(Icons.error_outline, color: Colors.white70),
+                          const Icon(
+                            Icons.error_outline,
+                            color: Colors.white70,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -299,15 +326,17 @@ class _CandidateInterviewPageState extends State<CandidateInterviewPage> {
                 ),
               Expanded(
                 child: _starting
-                    ? const Center(
+                    ? Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            CircularProgressIndicator(color: AppColors.cyan400),
-                            SizedBox(height: 16),
+                            const CircularProgressIndicator(
+                              color: AppColors.cyan400,
+                            ),
+                            const SizedBox(height: 16),
                             Text(
                               'Préparation de l’entretien…',
-                              style: TextStyle(color: AppColors.textCyan200),
+                              style: TextStyle(color: _secondaryText(context)),
                             ),
                           ],
                         ),
@@ -342,10 +371,14 @@ class _CandidateInterviewPageState extends State<CandidateInterviewPage> {
                 Container(
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryDark.withValues(alpha: 0.95),
+                    color: isDark
+                        ? AppColors.primaryDark.withValues(alpha: 0.95)
+                        : const Color(0xFFF9FCFF),
                     border: Border(
                       top: BorderSide(
-                        color: AppColors.textCyan200.withValues(alpha: 0.1),
+                        color: isDark
+                            ? AppColors.textCyan200.withValues(alpha: 0.1)
+                            : const Color(0xFFC7DDE9),
                       ),
                     ),
                   ),
@@ -357,14 +390,18 @@ class _CandidateInterviewPageState extends State<CandidateInterviewPage> {
                           controller: _input,
                           minLines: 1,
                           maxLines: 4,
-                          style: const TextStyle(color: AppColors.textWhite),
+                          style: TextStyle(color: _primaryText(context)),
                           decoration: InputDecoration(
                             hintText: 'Votre message…',
                             hintStyle: TextStyle(
-                              color: AppColors.textCyan200.withValues(alpha: 0.45),
+                              color: _secondaryText(
+                                context,
+                              ).withValues(alpha: 0.7),
                             ),
                             filled: true,
-                            fillColor: AppColors.primaryDarker.withValues(alpha: 0.9),
+                            fillColor: isDark
+                                ? AppColors.primaryDarker.withValues(alpha: 0.9)
+                                : const Color(0xFFFFFFFF),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
                               borderSide: BorderSide(
@@ -374,7 +411,11 @@ class _CandidateInterviewPageState extends State<CandidateInterviewPage> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
                               borderSide: BorderSide(
-                                color: AppColors.textCyan200.withValues(alpha: 0.12),
+                                color: isDark
+                                    ? AppColors.textCyan200.withValues(
+                                        alpha: 0.12,
+                                      )
+                                    : const Color(0xFFC7DDE9),
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
@@ -423,6 +464,7 @@ class _Bubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = line.isUser;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Align(
       alignment: user ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -434,7 +476,9 @@ class _Bubble extends StatelessWidget {
         decoration: BoxDecoration(
           color: user
               ? AppColors.cyan500.withValues(alpha: 0.25)
-              : AppColors.primaryDarker.withValues(alpha: 0.95),
+              : (isDark
+                    ? AppColors.primaryDarker.withValues(alpha: 0.95)
+                    : const Color(0xFFFFFFFF)),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -444,13 +488,15 @@ class _Bubble extends StatelessWidget {
           border: Border.all(
             color: user
                 ? AppColors.cyan400.withValues(alpha: 0.35)
-                : AppColors.textCyan200.withValues(alpha: 0.12),
+                : (isDark
+                      ? AppColors.textCyan200.withValues(alpha: 0.12)
+                      : const Color(0xFFC7DDE9)),
           ),
         ),
         child: Text(
           line.text,
           style: TextStyle(
-            color: user ? AppColors.textWhite : AppColors.textCyan200,
+            color: user ? AppColors.textWhite : _primaryText(context),
             fontSize: 14,
             height: 1.45,
           ),

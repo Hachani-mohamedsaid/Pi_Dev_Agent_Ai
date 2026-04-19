@@ -15,16 +15,45 @@ import '../../core/theme/app_colors.dart';
 import '../../core/l10n/app_strings.dart';
 import '../widgets/navigation_bar.dart';
 
+Color _primaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _secondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF5B7B92);
+}
+
+List<Color> _panelGradient(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return isDark
+      ? [
+          AppColors.primaryLight.withOpacity(0.4),
+          AppColors.primaryDarker.withOpacity(0.4),
+        ]
+      : const [Color(0xFFF9FCFF), Color(0xFFEAF4FB)];
+}
+
+Color _panelBorder(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return isDark ? AppColors.cyan500.withOpacity(0.2) : const Color(0xFFC7DDE9);
+}
+
 /// Page "Dashboard des work proposals" : statistiques (En attente, Acceptées, Rejetées)
 /// sans modifier la page work proposals. Ouverture depuis le bouton Dashboard du profil.
 class WorkProposalsDashboardPage extends StatefulWidget {
   const WorkProposalsDashboardPage({super.key});
 
   @override
-  State<WorkProposalsDashboardPage> createState() => _WorkProposalsDashboardPageState();
+  State<WorkProposalsDashboardPage> createState() =>
+      _WorkProposalsDashboardPageState();
 }
 
-class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage> {
+class _WorkProposalsDashboardPageState
+    extends State<WorkProposalsDashboardPage> {
   final ProposalsApiService _apiService = ProposalsApiService();
   final ProjectService _projectService = ProjectService();
   Map<String, String> _decisionsMap = {};
@@ -47,15 +76,19 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
     final status = _decisionsMap[id] == 'accept'
         ? WorkProposalStatus.accepted
         : _decisionsMap[id] == 'reject'
-            ? WorkProposalStatus.rejected
-            : WorkProposalStatus.pending;
+        ? WorkProposalStatus.rejected
+        : WorkProposalStatus.pending;
     return WorkProposal(
       id: id,
       clientName: proposal.name,
       clientEmail: proposal.email,
-      projectName: proposal.typeProjet.isNotEmpty ? proposal.typeProjet : 'Projet sans titre',
+      projectName: proposal.typeProjet.isNotEmpty
+          ? proposal.typeProjet
+          : 'Projet sans titre',
       budget: proposal.budgetEstime,
-      period: proposal.deadlineEstime.isNotEmpty ? proposal.deadlineEstime : 'À définir',
+      period: proposal.deadlineEstime.isNotEmpty
+          ? proposal.deadlineEstime
+          : 'À définir',
       createdAt: DateTime.now(),
       status: status,
       typeProjet: proposal.typeProjet,
@@ -63,13 +96,16 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
       platforme: proposal.plateformes,
       fonctionalite: proposal.fonctionnalites,
       budgetEstime: proposal.budgetEstime,
-      deadlineEstime: proposal.deadlineEstime.isNotEmpty ? proposal.deadlineEstime : 'À définir',
+      deadlineEstime: proposal.deadlineEstime.isNotEmpty
+          ? proposal.deadlineEstime
+          : 'À définir',
       niveauComplexite: 'Moyen',
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = Responsive.isMobile(context);
     final padding = Responsive.getResponsiveValue(
       context,
@@ -77,20 +113,24 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
       tablet: 28.0,
       desktop: 32.0,
     );
-
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
+    final pageGradient = isDark
+        ? const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
-          ),
-        ),
+            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+          )
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
+          );
+
+    return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFF3F8FC),
+      body: Container(
+        decoration: BoxDecoration(gradient: pageGradient),
         child: SafeArea(
           bottom: false,
           child: Stack(
@@ -104,22 +144,27 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.cyan400),
-                            strokeWidth: 2.5,
-                          )
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.cyan400,
+                                ),
+                                strokeWidth: 2.5,
+                              )
                               .animate()
                               .fadeIn(duration: 300.ms, curve: Curves.easeOut)
-                              .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1), duration: 400.ms, curve: Curves.easeOutCubic),
+                              .scale(
+                                begin: const Offset(0.8, 0.8),
+                                end: const Offset(1, 1),
+                                duration: 400.ms,
+                                curve: Curves.easeOutCubic,
+                              ),
                           SizedBox(height: 16),
                           Text(
                             'Chargement du dashboard...',
                             style: TextStyle(
                               fontSize: 14,
-                              color: AppColors.textCyan200.withOpacity(0.8),
+                              color: _secondaryText(context).withOpacity(0.8),
                             ),
-                          )
-                              .animate()
-                              .fadeIn(delay: 150.ms, duration: 350.ms),
+                          ).animate().fadeIn(delay: 150.ms, duration: 350.ms),
                         ],
                       ),
                     );
@@ -130,23 +175,31 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(LucideIcons.alertCircle, size: 48, color: AppColors.textCyan200),
+                          Icon(
+                            LucideIcons.alertCircle,
+                            size: 48,
+                            color: _secondaryText(context),
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             'Erreur de chargement',
                             style: TextStyle(
-                              color: AppColors.textWhite,
+                              color: _primaryText(context),
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           if (kDebugMode)
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               child: Text(
                                 err,
                                 style: TextStyle(
-                                  color: AppColors.textCyan200.withOpacity(0.8),
+                                  color: _secondaryText(
+                                    context,
+                                  ).withOpacity(0.8),
                                   fontSize: 12,
                                 ),
                                 textAlign: TextAlign.center,
@@ -160,14 +213,28 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                   }
 
                   final proposals = snapshot.data ?? [];
-                  final workProposals = proposals.map((p) => _convertProposalToWorkProposal(p)).toList();
+                  final workProposals = proposals
+                      .map((p) => _convertProposalToWorkProposal(p))
+                      .toList();
                   final total = workProposals.length;
-                  final pendingCount = workProposals.where((p) => p.status == WorkProposalStatus.pending).length;
-                  final acceptedCount = workProposals.where((p) => p.status == WorkProposalStatus.accepted).length;
-                  final rejectedCount = workProposals.where((p) => p.status == WorkProposalStatus.rejected).length;
-                  final pendingPct = total > 0 ? (pendingCount / total * 100).round() : 0;
-                  final acceptedPct = total > 0 ? (acceptedCount / total * 100).round() : 0;
-                  final rejectedPct = total > 0 ? (rejectedCount / total * 100).round() : 0;
+                  final pendingCount = workProposals
+                      .where((p) => p.status == WorkProposalStatus.pending)
+                      .length;
+                  final acceptedCount = workProposals
+                      .where((p) => p.status == WorkProposalStatus.accepted)
+                      .length;
+                  final rejectedCount = workProposals
+                      .where((p) => p.status == WorkProposalStatus.rejected)
+                      .length;
+                  final pendingPct = total > 0
+                      ? (pendingCount / total * 100).round()
+                      : 0;
+                  final acceptedPct = total > 0
+                      ? (acceptedCount / total * 100).round()
+                      : 0;
+                  final rejectedPct = total > 0
+                      ? (rejectedCount / total * 100).round()
+                      : 0;
 
                   final latestProposals = workProposals.take(5).toList();
 
@@ -189,66 +256,168 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                         _buildHeader(context, isMobile)
                             .animate()
                             .fadeIn(duration: 400.ms, curve: Curves.easeOut)
-                            .slideY(begin: -0.15, end: 0, duration: 400.ms, curve: Curves.easeOutCubic)
-                            .scale(begin: const Offset(0.98, 0.98), end: const Offset(1, 1), duration: 400.ms, curve: Curves.easeOutCubic),
-                        SizedBox(height: Responsive.getResponsiveValue(
+                            .slideY(
+                              begin: -0.15,
+                              end: 0,
+                              duration: 400.ms,
+                              curve: Curves.easeOutCubic,
+                            )
+                            .scale(
+                              begin: const Offset(0.98, 0.98),
+                              end: const Offset(1, 1),
+                              duration: 400.ms,
+                              curve: Curves.easeOutCubic,
+                            ),
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 20.0,
+                            tablet: 24.0,
+                            desktop: 28.0,
+                          ),
+                        ),
+                        _buildMetricCards2x2(
                           context,
-                          mobile: 20.0,
-                          tablet: 24.0,
-                          desktop: 28.0,
-                        )),
-                        _buildMetricCards2x2(context, isMobile, total, pendingCount, acceptedCount, rejectedCount),
-                        SizedBox(height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 24.0,
-                          tablet: 28.0,
-                          desktop: 32.0,
-                        )),
+                          isMobile,
+                          total,
+                          pendingCount,
+                          acceptedCount,
+                          rejectedCount,
+                        ),
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 24.0,
+                            tablet: 28.0,
+                            desktop: 32.0,
+                          ),
+                        ),
                         _buildSectionTitle(context, 'Répartition', isMobile)
                             .animate()
-                            .fadeIn(delay: 200.ms, duration: 350.ms, curve: Curves.easeOut)
-                            .slideX(begin: -0.2, end: 0, delay: 200.ms, duration: 350.ms, curve: Curves.easeOutCubic),
-                        SizedBox(height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 12.0,
-                          tablet: 14.0,
-                          desktop: 16.0,
-                        )),
-                        _buildDonutChartCard(context, isMobile, total, pendingCount, acceptedCount, rejectedCount)
+                            .fadeIn(
+                              delay: 200.ms,
+                              duration: 350.ms,
+                              curve: Curves.easeOut,
+                            )
+                            .slideX(
+                              begin: -0.2,
+                              end: 0,
+                              delay: 200.ms,
+                              duration: 350.ms,
+                              curve: Curves.easeOutCubic,
+                            ),
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 12.0,
+                            tablet: 14.0,
+                            desktop: 16.0,
+                          ),
+                        ),
+                        _buildDonutChartCard(
+                              context,
+                              isMobile,
+                              total,
+                              pendingCount,
+                              acceptedCount,
+                              rejectedCount,
+                            )
                             .animate()
-                            .fadeIn(delay: 300.ms, duration: 450.ms, curve: Curves.easeOut)
-                            .scale(begin: const Offset(0.7, 0.7), end: const Offset(1, 1), delay: 300.ms, duration: 450.ms, curve: Curves.elasticOut),
-                        SizedBox(height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 20.0,
-                          tablet: 24.0,
-                          desktop: 28.0,
-                        )),
-                        _buildRepartitionCard(context, isMobile, pendingPct, acceptedPct, rejectedPct)
+                            .fadeIn(
+                              delay: 300.ms,
+                              duration: 450.ms,
+                              curve: Curves.easeOut,
+                            )
+                            .scale(
+                              begin: const Offset(0.7, 0.7),
+                              end: const Offset(1, 1),
+                              delay: 300.ms,
+                              duration: 450.ms,
+                              curve: Curves.elasticOut,
+                            ),
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 20.0,
+                            tablet: 24.0,
+                            desktop: 28.0,
+                          ),
+                        ),
+                        _buildRepartitionCard(
+                              context,
+                              isMobile,
+                              pendingPct,
+                              acceptedPct,
+                              rejectedPct,
+                            )
                             .animate()
-                            .fadeIn(delay: 450.ms, duration: 400.ms, curve: Curves.easeOut)
-                            .slideY(begin: 0.15, end: 0, delay: 450.ms, duration: 400.ms, curve: Curves.easeOutCubic),
-                        SizedBox(height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 24.0,
-                          tablet: 28.0,
-                          desktop: 32.0,
-                        )),
-                        _buildLatestProposalsSection(context, isMobile, latestProposals)
+                            .fadeIn(
+                              delay: 450.ms,
+                              duration: 400.ms,
+                              curve: Curves.easeOut,
+                            )
+                            .slideY(
+                              begin: 0.15,
+                              end: 0,
+                              delay: 450.ms,
+                              duration: 400.ms,
+                              curve: Curves.easeOutCubic,
+                            ),
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 24.0,
+                            tablet: 28.0,
+                            desktop: 32.0,
+                          ),
+                        ),
+                        _buildLatestProposalsSection(
+                              context,
+                              isMobile,
+                              latestProposals,
+                            )
                             .animate()
-                            .fadeIn(delay: 550.ms, duration: 400.ms, curve: Curves.easeOut)
-                            .slideY(begin: 0.12, end: 0, delay: 550.ms, duration: 400.ms, curve: Curves.easeOutCubic),
-                        SizedBox(height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 20.0,
-                          tablet: 24.0,
-                          desktop: 28.0,
-                        )),
+                            .fadeIn(
+                              delay: 550.ms,
+                              duration: 400.ms,
+                              curve: Curves.easeOut,
+                            )
+                            .slideY(
+                              begin: 0.12,
+                              end: 0,
+                              delay: 550.ms,
+                              duration: 400.ms,
+                              curve: Curves.easeOutCubic,
+                            ),
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 20.0,
+                            tablet: 24.0,
+                            desktop: 28.0,
+                          ),
+                        ),
                         _buildGoToProposalsButton(context, isMobile)
                             .animate()
-                            .fadeIn(delay: 700.ms, duration: 400.ms, curve: Curves.easeOut)
-                            .slideY(begin: 0.2, end: 0, delay: 700.ms, duration: 400.ms, curve: Curves.easeOutCubic)
-                            .scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1), delay: 700.ms, duration: 400.ms, curve: Curves.easeOutBack),
+                            .fadeIn(
+                              delay: 700.ms,
+                              duration: 400.ms,
+                              curve: Curves.easeOut,
+                            )
+                            .slideY(
+                              begin: 0.2,
+                              end: 0,
+                              delay: 700.ms,
+                              duration: 400.ms,
+                              curve: Curves.easeOutCubic,
+                            )
+                            .scale(
+                              begin: const Offset(0.95, 0.95),
+                              end: const Offset(1, 1),
+                              delay: 700.ms,
+                              duration: 400.ms,
+                              curve: Curves.easeOutBack,
+                            ),
                       ],
                     ),
                   );
@@ -258,7 +427,9 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: NavigationBarWidget(currentPath: '/work-proposals-dashboard'),
+                child: NavigationBarWidget(
+                  currentPath: '/work-proposals-dashboard',
+                ),
               ),
             ],
           ),
@@ -271,13 +442,25 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
     return Row(
       children: [
         Icon(LucideIcons.barChart3, size: 20, color: AppColors.cyan400),
-        SizedBox(width: Responsive.getResponsiveValue(context, mobile: 8.0, tablet: 10.0, desktop: 12.0)),
+        SizedBox(
+          width: Responsive.getResponsiveValue(
+            context,
+            mobile: 8.0,
+            tablet: 10.0,
+            desktop: 12.0,
+          ),
+        ),
         Text(
           title,
           style: TextStyle(
-            fontSize: Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 22.0),
+            fontSize: Responsive.getResponsiveValue(
+              context,
+              mobile: 18.0,
+              tablet: 20.0,
+              desktop: 22.0,
+            ),
             fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
       ],
@@ -292,7 +475,12 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
     int acceptedCount,
     int rejectedCount,
   ) {
-    final gap = Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 14.0, desktop: 16.0);
+    final gap = Responsive.getResponsiveValue(
+      context,
+      mobile: 12.0,
+      tablet: 14.0,
+      desktop: 16.0,
+    );
     const cardDurationMs = 380;
     const cardCurve = Curves.easeOutCubic;
     return Column(
@@ -300,31 +488,65 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
         Row(
           children: [
             Expanded(
-              child: _DashboardMetricCard(
-                value: total.toString(),
-                label: 'Total',
-                color: AppColors.cyan400,
-                icon: LucideIcons.briefcase,
-                isMobile: isMobile,
-              )
-                  .animate()
-                  .fadeIn(delay: 50.ms, duration: cardDurationMs.ms, curve: cardCurve)
-                  .scale(begin: const Offset(0.85, 0.85), end: const Offset(1, 1), delay: 50.ms, duration: cardDurationMs.ms, curve: cardCurve)
-                  .slideX(begin: -0.2, end: 0, delay: 50.ms, duration: cardDurationMs.ms, curve: cardCurve),
+              child:
+                  _DashboardMetricCard(
+                        value: total.toString(),
+                        label: 'Total',
+                        color: AppColors.cyan400,
+                        icon: LucideIcons.briefcase,
+                        isMobile: isMobile,
+                      )
+                      .animate()
+                      .fadeIn(
+                        delay: 50.ms,
+                        duration: cardDurationMs.ms,
+                        curve: cardCurve,
+                      )
+                      .scale(
+                        begin: const Offset(0.85, 0.85),
+                        end: const Offset(1, 1),
+                        delay: 50.ms,
+                        duration: cardDurationMs.ms,
+                        curve: cardCurve,
+                      )
+                      .slideX(
+                        begin: -0.2,
+                        end: 0,
+                        delay: 50.ms,
+                        duration: cardDurationMs.ms,
+                        curve: cardCurve,
+                      ),
             ),
             SizedBox(width: gap),
             Expanded(
-              child: _DashboardMetricCard(
-                value: pendingCount.toString(),
-                label: 'En attente',
-                color: AppColors.statusPending,
-                icon: LucideIcons.clock,
-                isMobile: isMobile,
-              )
-                  .animate()
-                  .fadeIn(delay: 130.ms, duration: cardDurationMs.ms, curve: cardCurve)
-                  .scale(begin: const Offset(0.85, 0.85), end: const Offset(1, 1), delay: 130.ms, duration: cardDurationMs.ms, curve: cardCurve)
-                  .slideX(begin: 0.2, end: 0, delay: 130.ms, duration: cardDurationMs.ms, curve: cardCurve),
+              child:
+                  _DashboardMetricCard(
+                        value: pendingCount.toString(),
+                        label: AppStrings.tr(context, 'pending'),
+                        color: AppColors.statusPending,
+                        icon: LucideIcons.clock,
+                        isMobile: isMobile,
+                      )
+                      .animate()
+                      .fadeIn(
+                        delay: 130.ms,
+                        duration: cardDurationMs.ms,
+                        curve: cardCurve,
+                      )
+                      .scale(
+                        begin: const Offset(0.85, 0.85),
+                        end: const Offset(1, 1),
+                        delay: 130.ms,
+                        duration: cardDurationMs.ms,
+                        curve: cardCurve,
+                      )
+                      .slideX(
+                        begin: 0.2,
+                        end: 0,
+                        delay: 130.ms,
+                        duration: cardDurationMs.ms,
+                        curve: cardCurve,
+                      ),
             ),
           ],
         ),
@@ -332,31 +554,65 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
         Row(
           children: [
             Expanded(
-              child: _DashboardMetricCard(
-                value: acceptedCount.toString(),
-                label: 'Acceptées',
-                color: AppColors.statusAccepted,
-                icon: LucideIcons.checkCircle,
-                isMobile: isMobile,
-              )
-                  .animate()
-                  .fadeIn(delay: 210.ms, duration: cardDurationMs.ms, curve: cardCurve)
-                  .scale(begin: const Offset(0.85, 0.85), end: const Offset(1, 1), delay: 210.ms, duration: cardDurationMs.ms, curve: cardCurve)
-                  .slideX(begin: -0.2, end: 0, delay: 210.ms, duration: cardDurationMs.ms, curve: cardCurve),
+              child:
+                  _DashboardMetricCard(
+                        value: acceptedCount.toString(),
+                        label: AppStrings.tr(context, 'accepted'),
+                        color: AppColors.statusAccepted,
+                        icon: LucideIcons.checkCircle,
+                        isMobile: isMobile,
+                      )
+                      .animate()
+                      .fadeIn(
+                        delay: 210.ms,
+                        duration: cardDurationMs.ms,
+                        curve: cardCurve,
+                      )
+                      .scale(
+                        begin: const Offset(0.85, 0.85),
+                        end: const Offset(1, 1),
+                        delay: 210.ms,
+                        duration: cardDurationMs.ms,
+                        curve: cardCurve,
+                      )
+                      .slideX(
+                        begin: -0.2,
+                        end: 0,
+                        delay: 210.ms,
+                        duration: cardDurationMs.ms,
+                        curve: cardCurve,
+                      ),
             ),
             SizedBox(width: gap),
             Expanded(
-              child: _DashboardMetricCard(
-                value: rejectedCount.toString(),
-                label: 'Rejetées',
-                color: AppColors.statusRejected,
-                icon: LucideIcons.xCircle,
-                isMobile: isMobile,
-              )
-                  .animate()
-                  .fadeIn(delay: 290.ms, duration: cardDurationMs.ms, curve: cardCurve)
-                  .scale(begin: const Offset(0.85, 0.85), end: const Offset(1, 1), delay: 290.ms, duration: cardDurationMs.ms, curve: cardCurve)
-                  .slideX(begin: 0.2, end: 0, delay: 290.ms, duration: cardDurationMs.ms, curve: cardCurve),
+              child:
+                  _DashboardMetricCard(
+                        value: rejectedCount.toString(),
+                        label: AppStrings.tr(context, 'rejected'),
+                        color: AppColors.statusRejected,
+                        icon: LucideIcons.xCircle,
+                        isMobile: isMobile,
+                      )
+                      .animate()
+                      .fadeIn(
+                        delay: 290.ms,
+                        duration: cardDurationMs.ms,
+                        curve: cardCurve,
+                      )
+                      .scale(
+                        begin: const Offset(0.85, 0.85),
+                        end: const Offset(1, 1),
+                        delay: 290.ms,
+                        duration: cardDurationMs.ms,
+                        curve: cardCurve,
+                      )
+                      .slideX(
+                        begin: 0.2,
+                        end: 0,
+                        delay: 290.ms,
+                        duration: cardDurationMs.ms,
+                        curve: cardCurve,
+                      ),
             ),
           ],
         ),
@@ -422,30 +678,51 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
     }
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(context, mobile: 20.0, tablet: 24.0, desktop: 28.0)),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 20.0,
+          tablet: 24.0,
+          desktop: 28.0,
+        ),
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.primaryLight.withOpacity(0.4),
-            AppColors.primaryDarker.withOpacity(0.4),
-          ],
+          colors: _panelGradient(context),
         ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.2), width: 1),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
+        border: Border.all(color: _panelBorder(context), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: Responsive.getResponsiveValue(context, mobile: 4.0, tablet: 6.0, desktop: 8.0),
+            horizontal: Responsive.getResponsiveValue(
+              context,
+              mobile: 4.0,
+              tablet: 6.0,
+              desktop: 8.0,
+            ),
           ),
           child: Column(
             children: [
               SizedBox(
-                height: Responsive.getResponsiveValue(context, mobile: 180.0, tablet: 200.0, desktop: 220.0),
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 180.0,
+                  tablet: 200.0,
+                  desktop: 220.0,
+                ),
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
@@ -453,7 +730,12 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                       PieChartData(
                         sections: sections,
                         sectionsSpace: 2,
-                        centerSpaceRadius: Responsive.getResponsiveValue(context, mobile: 44.0, tablet: 52.0, desktop: 58.0),
+                        centerSpaceRadius: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 44.0,
+                          tablet: 52.0,
+                          desktop: 58.0,
+                        ),
                       ),
                       duration: const Duration(milliseconds: 400),
                     ),
@@ -463,16 +745,26 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                         Text(
                           total.toString(),
                           style: TextStyle(
-                            fontSize: Responsive.getResponsiveValue(context, mobile: 28.0, tablet: 32.0, desktop: 36.0),
+                            fontSize: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 28.0,
+                              tablet: 32.0,
+                              desktop: 36.0,
+                            ),
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textWhite,
+                            color: _primaryText(context),
                           ),
                         ),
                         Text(
                           'Total',
                           style: TextStyle(
-                            fontSize: Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 13.0, desktop: 14.0),
-                            color: AppColors.textCyan200.withOpacity(0.9),
+                            fontSize: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 13.0,
+                              desktop: 14.0,
+                            ),
+                            color: _secondaryText(context).withOpacity(0.9),
                           ),
                         ),
                       ],
@@ -480,21 +772,46 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                   ],
                 ),
               ),
-              SizedBox(height: Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 14.0, desktop: 16.0)),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 12.0,
+                  tablet: 14.0,
+                  desktop: 16.0,
+                ),
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _buildLegendDot(AppColors.statusPending),
                   SizedBox(width: 6),
-                  Text('En attente', style: TextStyle(fontSize: 12, color: AppColors.textCyan200)),
+                  Text(
+                    AppStrings.tr(context, 'pending'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _secondaryText(context),
+                    ),
+                  ),
                   SizedBox(width: 16),
                   _buildLegendDot(AppColors.statusAccepted),
                   SizedBox(width: 6),
-                  Text('Acceptées', style: TextStyle(fontSize: 12, color: AppColors.textCyan200)),
+                  Text(
+                    AppStrings.tr(context, 'accepted'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _secondaryText(context),
+                    ),
+                  ),
                   SizedBox(width: 16),
                   _buildLegendDot(AppColors.statusRejected),
                   SizedBox(width: 6),
-                  Text('Rejetées', style: TextStyle(fontSize: 12, color: AppColors.textCyan200)),
+                  Text(
+                    AppStrings.tr(context, 'rejected'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _secondaryText(context),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -519,25 +836,41 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
   ) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(context, mobile: 20.0, tablet: 24.0, desktop: 28.0)),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 20.0,
+          tablet: 24.0,
+          desktop: 28.0,
+        ),
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.primaryLight.withOpacity(0.4),
-            AppColors.primaryDarker.withOpacity(0.4),
-          ],
+          colors: _panelGradient(context),
         ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.2), width: 1),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
+        border: Border.all(color: _panelBorder(context), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: Responsive.getResponsiveValue(context, mobile: 4.0, tablet: 6.0, desktop: 8.0),
+            horizontal: Responsive.getResponsiveValue(
+              context,
+              mobile: 4.0,
+              tablet: 6.0,
+              desktop: 8.0,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -548,9 +881,14 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                   Text(
                     'Dernières propositions',
                     style: TextStyle(
-                      fontSize: Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0),
+                      fontSize: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 16.0,
+                        tablet: 18.0,
+                        desktop: 20.0,
+                      ),
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textWhite,
+                      color: _primaryText(context),
                     ),
                   ),
                   GestureDetector(
@@ -558,7 +896,12 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                     child: Text(
                       'Voir tout >',
                       style: TextStyle(
-                        fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
+                        fontSize: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 13.0,
+                          tablet: 14.0,
+                          desktop: 15.0,
+                        ),
                         fontWeight: FontWeight.w600,
                         color: AppColors.cyan400,
                       ),
@@ -566,16 +909,30 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                   ),
                 ],
               ),
-              SizedBox(height: Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 16.0, desktop: 18.0)),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 14.0,
+                  tablet: 16.0,
+                  desktop: 18.0,
+                ),
+              ),
               if (latestProposals.isEmpty)
                 Padding(
-                  padding: EdgeInsets.symmetric(vertical: Responsive.getResponsiveValue(context, mobile: 20.0, tablet: 24.0, desktop: 28.0)),
+                  padding: EdgeInsets.symmetric(
+                    vertical: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 20.0,
+                      tablet: 24.0,
+                      desktop: 28.0,
+                    ),
+                  ),
                   child: Center(
                     child: Text(
                       'Aucune proposition',
                       style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.textCyan200.withOpacity(0.7),
+                        color: _secondaryText(context).withOpacity(0.7),
                       ),
                     ),
                   ),
@@ -586,8 +943,18 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                   final p = e.value;
                   return _buildLatestProposalTile(context, isMobile, p)
                       .animate()
-                      .fadeIn(delay: (80 + i * 70).ms, duration: 320.ms, curve: Curves.easeOut)
-                      .slideX(begin: 0.12, end: 0, delay: (80 + i * 70).ms, duration: 320.ms, curve: Curves.easeOutCubic);
+                      .fadeIn(
+                        delay: (80 + i * 70).ms,
+                        duration: 320.ms,
+                        curve: Curves.easeOut,
+                      )
+                      .slideX(
+                        begin: 0.12,
+                        end: 0,
+                        delay: (80 + i * 70).ms,
+                        duration: 320.ms,
+                        curve: Curves.easeOutCubic,
+                      );
                 }).toList(),
             ],
           ),
@@ -596,19 +963,30 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
     );
   }
 
-  Widget _buildLatestProposalTile(BuildContext context, bool isMobile, WorkProposal p) {
+  Widget _buildLatestProposalTile(
+    BuildContext context,
+    bool isMobile,
+    WorkProposal p,
+  ) {
     final statusColor = p.status == WorkProposalStatus.accepted
         ? AppColors.statusAccepted
         : p.status == WorkProposalStatus.rejected
-            ? AppColors.statusRejected
-            : AppColors.statusPending;
+        ? AppColors.statusRejected
+        : AppColors.statusPending;
     final statusLabel = p.status == WorkProposalStatus.accepted
         ? 'Acceptée'
         : p.status == WorkProposalStatus.rejected
-            ? 'Rejetée'
-            : 'En attente';
+        ? 'Rejetée'
+        : 'En attente';
     return Padding(
-      padding: EdgeInsets.only(bottom: Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 14.0, desktop: 16.0)),
+      padding: EdgeInsets.only(
+        bottom: Responsive.getResponsiveValue(
+          context,
+          mobile: 12.0,
+          tablet: 14.0,
+          desktop: 16.0,
+        ),
+      ),
       child: Row(
         children: [
           Container(
@@ -620,7 +998,14 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
             ),
             child: Icon(LucideIcons.fileText, color: statusColor, size: 22),
           ),
-          SizedBox(width: Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 14.0, desktop: 16.0)),
+          SizedBox(
+            width: Responsive.getResponsiveValue(
+              context,
+              mobile: 12.0,
+              tablet: 14.0,
+              desktop: 16.0,
+            ),
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -628,9 +1013,14 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                 Text(
                   p.projectName,
                   style: TextStyle(
-                    fontSize: Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 15.0, desktop: 16.0),
+                    fontSize: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 14.0,
+                      tablet: 15.0,
+                      desktop: 16.0,
+                    ),
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textWhite,
+                    color: _primaryText(context),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -639,7 +1029,7 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                   p.clientName,
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textCyan200.withOpacity(0.8),
+                    color: _secondaryText(context).withOpacity(0.8),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -655,7 +1045,11 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
             ),
             child: Text(
               statusLabel,
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: statusColor),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: statusColor,
+              ),
             ),
           ),
         ],
@@ -672,34 +1066,82 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
   ) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(context, mobile: 20.0, tablet: 24.0, desktop: 28.0)),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 20.0,
+          tablet: 24.0,
+          desktop: 28.0,
+        ),
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.primaryLight.withOpacity(0.4),
-            AppColors.primaryDarker.withOpacity(0.4),
-          ],
+          colors: _panelGradient(context),
         ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.2), width: 1),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
+        border: Border.all(color: _panelBorder(context), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: Responsive.getResponsiveValue(context, mobile: 4.0, tablet: 6.0, desktop: 8.0),
+            horizontal: Responsive.getResponsiveValue(
+              context,
+              mobile: 4.0,
+              tablet: 6.0,
+              desktop: 8.0,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildPercentRow(context, isMobile, 'En attente', pendingPct, AppColors.statusPending),
-              SizedBox(height: Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 14.0, desktop: 16.0)),
-              _buildPercentRow(context, isMobile, 'Acceptées', acceptedPct, AppColors.statusAccepted),
-              SizedBox(height: Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 14.0, desktop: 16.0)),
-              _buildPercentRow(context, isMobile, 'Rejetées', rejectedPct, AppColors.statusRejected),
+              _buildPercentRow(
+                context,
+                isMobile,
+                'En attente',
+                pendingPct,
+                AppColors.statusPending,
+              ),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 12.0,
+                  tablet: 14.0,
+                  desktop: 16.0,
+                ),
+              ),
+              _buildPercentRow(
+                context,
+                isMobile,
+                'Acceptées',
+                acceptedPct,
+                AppColors.statusAccepted,
+              ),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 12.0,
+                  tablet: 14.0,
+                  desktop: 16.0,
+                ),
+              ),
+              _buildPercentRow(
+                context,
+                isMobile,
+                'Rejetées',
+                rejectedPct,
+                AppColors.statusRejected,
+              ),
             ],
           ),
         ),
@@ -707,7 +1149,13 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
     );
   }
 
-  Widget _buildPercentRow(BuildContext context, bool isMobile, String label, int pct, Color color) {
+  Widget _buildPercentRow(
+    BuildContext context,
+    bool isMobile,
+    String label,
+    int pct,
+    Color color,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -717,15 +1165,25 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
             Text(
               label,
               style: TextStyle(
-                fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
-                color: AppColors.textWhite,
+                fontSize: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 13.0,
+                  tablet: 14.0,
+                  desktop: 15.0,
+                ),
+                color: _primaryText(context),
                 fontWeight: FontWeight.w500,
               ),
             ),
             Text(
               '$pct %',
               style: TextStyle(
-                fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
+                fontSize: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 13.0,
+                  tablet: 14.0,
+                  desktop: 15.0,
+                ),
                 color: color,
                 fontWeight: FontWeight.bold,
               ),
@@ -738,7 +1196,9 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
           child: LinearProgressIndicator(
             value: pct / 100,
             minHeight: 8,
-            backgroundColor: AppColors.primaryDarker.withOpacity(0.6),
+            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.primaryDarker.withOpacity(0.6)
+                : const Color(0xFFDDEAF3),
             valueColor: AlwaysStoppedAnimation<Color>(color),
           ),
         ),
@@ -752,12 +1212,14 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
         GestureDetector(
           onTap: () => context.go('/profile'),
           child: Container(
-            padding: EdgeInsets.all(Responsive.getResponsiveValue(
-              context,
-              mobile: 10.0,
-              tablet: 12.0,
-              desktop: 14.0,
-            )),
+            padding: EdgeInsets.all(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 10.0,
+                tablet: 12.0,
+                desktop: 14.0,
+              ),
+            ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -765,22 +1227,39 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                   AppColors.blue500.withOpacity(0.3),
                 ],
               ),
-              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                context,
-                mobile: 12.0,
-                tablet: 14.0,
-                desktop: 16.0,
-              )),
-              border: Border.all(color: AppColors.cyan500.withOpacity(0.4), width: 1),
+              borderRadius: BorderRadius.circular(
+                Responsive.getResponsiveValue(
+                  context,
+                  mobile: 12.0,
+                  tablet: 14.0,
+                  desktop: 16.0,
+                ),
+              ),
+              border: Border.all(
+                color: AppColors.cyan500.withOpacity(0.4),
+                width: 1,
+              ),
             ),
             child: Icon(
               LucideIcons.arrowLeft,
               color: AppColors.cyan400,
-              size: Responsive.getResponsiveValue(context, mobile: 20.0, tablet: 22.0, desktop: 24.0),
+              size: Responsive.getResponsiveValue(
+                context,
+                mobile: 20.0,
+                tablet: 22.0,
+                desktop: 24.0,
+              ),
             ),
           ),
         ),
-        SizedBox(width: Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
+        SizedBox(
+          width: Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -788,17 +1267,34 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
               Text(
                 AppStrings.tr(context, 'dashboard'),
                 style: TextStyle(
-                  fontSize: Responsive.getResponsiveValue(context, mobile: 26.0, tablet: 28.0, desktop: 32.0),
+                  fontSize: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 26.0,
+                    tablet: 28.0,
+                    desktop: 32.0,
+                  ),
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textWhite,
+                  color: _primaryText(context),
                 ),
               ),
-              SizedBox(height: Responsive.getResponsiveValue(context, mobile: 6.0, tablet: 8.0, desktop: 10.0)),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 6.0,
+                  tablet: 8.0,
+                  desktop: 10.0,
+                ),
+              ),
               Text(
                 'Propositions de travail',
                 style: TextStyle(
-                  fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
-                  color: AppColors.textCyan200.withOpacity(0.7),
+                  fontSize: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 13.0,
+                    tablet: 14.0,
+                    desktop: 15.0,
+                  ),
+                  color: _secondaryText(context).withOpacity(0.7),
                 ),
               ),
             ],
@@ -814,8 +1310,18 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
         onTap: () => context.go('/work-proposals'),
         child: Container(
           padding: EdgeInsets.symmetric(
-            horizontal: Responsive.getResponsiveValue(context, mobile: 24.0, tablet: 28.0, desktop: 32.0),
-            vertical: Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 16.0, desktop: 18.0),
+            horizontal: Responsive.getResponsiveValue(
+              context,
+              mobile: 24.0,
+              tablet: 28.0,
+              desktop: 32.0,
+            ),
+            vertical: Responsive.getResponsiveValue(
+              context,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 18.0,
+            ),
           ),
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -826,20 +1332,51 @@ class _WorkProposalsDashboardPageState extends State<WorkProposalsDashboardPage>
                 AppColors.blue500.withOpacity(0.4),
               ],
             ),
-            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 16.0, desktop: 18.0)),
-            border: Border.all(color: AppColors.cyan500.withOpacity(0.5), width: 1.5),
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 14.0,
+                tablet: 16.0,
+                desktop: 18.0,
+              ),
+            ),
+            border: Border.all(
+              color: AppColors.cyan500.withOpacity(0.5),
+              width: 1.5,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(LucideIcons.listChecks, color: AppColors.cyan400, size: Responsive.getResponsiveValue(context, mobile: 20.0, tablet: 22.0, desktop: 24.0)),
-              SizedBox(width: Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0)),
+              Icon(
+                LucideIcons.listChecks,
+                color: AppColors.cyan400,
+                size: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 20.0,
+                  tablet: 22.0,
+                  desktop: 24.0,
+                ),
+              ),
+              SizedBox(
+                width: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 10.0,
+                  tablet: 12.0,
+                  desktop: 14.0,
+                ),
+              ),
               Text(
                 'Voir les propositions',
                 style: TextStyle(
-                  fontSize: Responsive.getResponsiveValue(context, mobile: 15.0, tablet: 16.0, desktop: 17.0),
+                  fontSize: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 15.0,
+                    tablet: 16.0,
+                    desktop: 17.0,
+                  ),
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textWhite,
+                  color: _primaryText(context),
                 ),
               ),
             ],
@@ -868,17 +1405,28 @@ class _DashboardMetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 16.0,
+          tablet: 18.0,
+          desktop: 20.0,
+        ),
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            color.withOpacity(0.25),
-            color.withOpacity(0.12),
-          ],
+          colors: [color.withOpacity(0.25), color.withOpacity(0.12)],
         ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
         border: Border.all(color: color.withOpacity(0.35), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
@@ -886,7 +1434,12 @@ class _DashboardMetricCard extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: Responsive.getResponsiveValue(context, mobile: 4.0, tablet: 6.0, desktop: 8.0),
+            horizontal: Responsive.getResponsiveValue(
+              context,
+              mobile: 4.0,
+              tablet: 6.0,
+              desktop: 8.0,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -894,24 +1447,46 @@ class _DashboardMetricCard extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                size: Responsive.getResponsiveValue(context, mobile: 24.0, tablet: 26.0, desktop: 28.0),
+                size: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 24.0,
+                  tablet: 26.0,
+                  desktop: 28.0,
+                ),
                 color: color,
               ),
-              SizedBox(height: Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0)),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 10.0,
+                  tablet: 12.0,
+                  desktop: 14.0,
+                ),
+              ),
               Text(
                 value,
                 style: TextStyle(
-                  fontSize: Responsive.getResponsiveValue(context, mobile: 24.0, tablet: 26.0, desktop: 28.0),
+                  fontSize: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 24.0,
+                    tablet: 26.0,
+                    desktop: 28.0,
+                  ),
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textWhite,
+                  color: _primaryText(context),
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 13.0, desktop: 14.0),
-                  color: AppColors.textCyan200.withOpacity(0.9),
+                  fontSize: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 12.0,
+                    tablet: 13.0,
+                    desktop: 14.0,
+                  ),
+                  color: _secondaryText(context).withOpacity(0.9),
                 ),
               ),
             ],

@@ -108,6 +108,21 @@ class _EmailsPageState extends State<EmailsPage> {
   String _confirmSubject = '';
   String _confirmBody = '';
 
+  String _friendlyEmailError(Object error) {
+    final message = error.toString();
+    if (message.contains('FormatException') ||
+        message.contains('Unexpected end of JSON input') ||
+        message.contains('SyntaxError')) {
+      return 'Email service returned invalid data. Please try again in a moment.';
+    }
+    if (message.contains('SocketException') ||
+        message.contains('Connection') ||
+        message.contains('TimeoutException')) {
+      return 'Unable to reach email service. Check your connection and try again.';
+    }
+    return 'Unable to load emails right now. Please try again.';
+  }
+
   // KEEP AS COMMENTED BACKUP – static list for fallback/reference (do not delete)
   // static List<Email> _mockEmails() => [
   //   Email(id: 1, sender: 'Sarah Johnson', subject: 'Updated deadline for Q1 report',
@@ -144,15 +159,18 @@ class _EmailsPageState extends State<EmailsPage> {
       print('📧 Received emailsData count: ${emailsData.length}');
       if (!mounted) return;
       setState(() {
-        _emails = (emailsData).map((e) {
-          try {
-            return Email.fromJson(Map<String, dynamic>.from(e as Map));
-          } catch (error) {
-            print('❌ Error parsing email: $error');
-            print('   Raw email data: $e');
-            return null;
-          }
-        }).whereType<Email>().toList();
+        _emails = (emailsData)
+            .map((e) {
+              try {
+                return Email.fromJson(Map<String, dynamic>.from(e as Map));
+              } catch (error) {
+                print('❌ Error parsing email: $error');
+                print('   Raw email data: $e');
+                return null;
+              }
+            })
+            .whereType<Email>()
+            .toList();
 
         print('✅ Successfully parsed ${_emails.length} emails');
 
@@ -167,7 +185,7 @@ class _EmailsPageState extends State<EmailsPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = e.toString();
+        _errorMessage = _friendlyEmailError(e);
         _loading = false;
       });
     }
@@ -188,7 +206,9 @@ class _EmailsPageState extends State<EmailsPage> {
     if (_selectedEmail == null || _selectedEmail!.emailId == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('This email cannot be replied to (no emailId).')),
+          const SnackBar(
+            content: Text('This email cannot be replied to (no emailId).'),
+          ),
         );
       }
       return;
@@ -214,9 +234,9 @@ class _EmailsPageState extends State<EmailsPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _generatingReply = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to generate replies: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to generate replies: $e')));
     }
   }
 
@@ -253,16 +273,16 @@ class _EmailsPageState extends State<EmailsPage> {
         _confirmSubject = '';
         _confirmBody = '';
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Reply sent successfully!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Reply sent successfully!')));
       _loadEmails();
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSendingReply = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to send: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to send: $e')));
     }
   }
 
@@ -298,6 +318,7 @@ class _EmailsPageState extends State<EmailsPage> {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final padding = Responsive.getResponsiveValue(
       context,
       mobile: 24.0,
@@ -311,17 +332,25 @@ class _EmailsPageState extends State<EmailsPage> {
 
     // Same structure as history_page / home_screen: gradient, SafeArea(bottom: false), Stack
     return Scaffold(
-      backgroundColor: const Color(0xFF0f2940),
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFF3F8FC),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
+            colors: isDark
+                ? const [
+                    Color(0xFF0f2940),
+                    Color(0xFF1a3a52),
+                    Color(0xFF0f2940),
+                  ]
+                : const [
+                    Color(0xFFF8FCFF),
+                    Color(0xFFEAF4FB),
+                    Color(0xFFF3F8FC),
+                  ],
           ),
         ),
         child: SafeArea(
@@ -331,57 +360,60 @@ class _EmailsPageState extends State<EmailsPage> {
               children: [
                 // Main content – same bottom padding as other pages for nav bar space
                 SingleChildScrollView(
-                padding: EdgeInsets.only(
-                  left: padding,
-                  right: padding,
-                  top: padding,
-                  bottom: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 100.0,
-                    tablet: 120.0,
-                    desktop: 140.0,
-                  ), // Space for navigation bar (matches history_page / home_screen)
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(context, isMobile),
-
-                    SizedBox(height: Responsive.getResponsiveValue(
+                  padding: EdgeInsets.only(
+                    left: padding,
+                    right: padding,
+                    top: padding,
+                    bottom: Responsive.getResponsiveValue(
                       context,
-                      mobile: 20.0,
-                      tablet: 24.0,
-                      desktop: 28.0,
-                    )),
+                      mobile: 100.0,
+                      tablet: 120.0,
+                      desktop: 140.0,
+                    ), // Space for navigation bar (matches history_page / home_screen)
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(context, isMobile, isDark),
 
-                    if (_loading)
-                      _buildLoadingState(context, isMobile)
-                    else if (_errorMessage != null)
-                      _buildErrorState(context, isMobile)
-                    else if (_emails.isEmpty)
-                      _buildEmptyState(context, isMobile)
-                    else ...[
-                      _buildEmailList(context, isMobile),
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 20.0,
+                          tablet: 24.0,
+                          desktop: 28.0,
+                        ),
+                      ),
+
+                      if (_loading)
+                        _buildLoadingState(context, isMobile, isDark)
+                      else if (_errorMessage != null)
+                        _buildErrorState(context, isMobile, isDark)
+                      else if (_emails.isEmpty)
+                        _buildEmptyState(context, isMobile, isDark)
+                      else ...[
+                        _buildEmailList(context, isMobile, isDark),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
 
-              // Modals
-              if (_selectedEmail != null)
-                _buildEmailDetailModal(context, isMobile),
-              if (_showReplyModal) _buildReplyModal(context, isMobile),
-              if (_showConfirmSendModal) _buildConfirmSendModal(context, isMobile),
+                // Modals
+                if (_selectedEmail != null)
+                  _buildEmailDetailModal(context, isMobile),
+                if (_showReplyModal) _buildReplyModal(context, isMobile),
+                if (_showConfirmSendModal)
+                  _buildConfirmSendModal(context, isMobile),
 
-              // Navigation bar – same config as history_page / home_screen (position only when no modal)
-              if (!anyModalOpen)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: NavigationBarWidget(currentPath: '/emails'),
-                ),
-            ],
+                // Navigation bar – same config as history_page / home_screen (position only when no modal)
+                if (!anyModalOpen)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: NavigationBarWidget(currentPath: '/emails'),
+                  ),
+              ],
             ),
           ),
         ),
@@ -389,7 +421,7 @@ class _EmailsPageState extends State<EmailsPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isMobile) {
+  Widget _buildHeader(BuildContext context, bool isMobile, bool isDark) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -407,15 +439,17 @@ class _EmailsPageState extends State<EmailsPage> {
                   desktop: 32.0,
                 ),
                 fontWeight: FontWeight.bold,
-                color: AppColors.textWhite,
+                color: isDark ? AppColors.textWhite : const Color(0xFF0F2A3F),
               ),
             ),
-            SizedBox(height: Responsive.getResponsiveValue(
-              context,
-              mobile: 6.0,
-              tablet: 8.0,
-              desktop: 10.0,
-            )),
+            SizedBox(
+              height: Responsive.getResponsiveValue(
+                context,
+                mobile: 6.0,
+                tablet: 8.0,
+                desktop: 10.0,
+              ),
+            ),
             Text(
               'AI-powered inbox summary',
               style: TextStyle(
@@ -425,64 +459,78 @@ class _EmailsPageState extends State<EmailsPage> {
                   tablet: 14.0,
                   desktop: 15.0,
                 ),
-                color: AppColors.textCyan200.withOpacity(0.7),
+                color: isDark
+                    ? AppColors.textCyan200.withOpacity(0.7)
+                    : const Color(0xFF3B6D8C),
               ),
             ),
           ],
         ),
         GestureDetector(
-          onTap: (_loading || _refreshing) ? null : () => _loadEmails(),
-          child: Container(
-            padding: EdgeInsets.all(Responsive.getResponsiveValue(
-              context,
-              mobile: 12.0,
-              tablet: 14.0,
-              desktop: 16.0,
-            )),
-            decoration: BoxDecoration(
-              color: AppColors.cyan500.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                context,
-                mobile: 12.0,
-                tablet: 14.0,
-                desktop: 16.0,
-              )),
-              border: Border.all(
-                color: AppColors.cyan500.withOpacity(0.2),
-                width: 1,
-              ),
-            ),
-            child: _refreshing
-                ? SizedBox(
-                    width: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 20.0,
-                      tablet: 22.0,
-                      desktop: 24.0,
-                    ),
-                    height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 20.0,
-                      tablet: 22.0,
-                      desktop: 24.0,
-                    ),
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.cyan400,
-                    ),
-                  )
-                : Icon(
-                    LucideIcons.refreshCw,
-                    size: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 20.0,
-                      tablet: 22.0,
-                      desktop: 24.0,
-                    ),
-                    color: AppColors.cyan400,
+              onTap: (_loading || _refreshing) ? null : () => _loadEmails(),
+              child: Container(
+                padding: EdgeInsets.all(
+                  Responsive.getResponsiveValue(
+                    context,
+                    mobile: 12.0,
+                    tablet: 14.0,
+                    desktop: 16.0,
                   ),
-          ),
-        )
+                ),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.cyan500.withOpacity(0.1)
+                      : const Color(0xFF0EA5C6).withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(
+                    Responsive.getResponsiveValue(
+                      context,
+                      mobile: 12.0,
+                      tablet: 14.0,
+                      desktop: 16.0,
+                    ),
+                  ),
+                  border: Border.all(
+                    color: isDark
+                        ? AppColors.cyan500.withOpacity(0.2)
+                        : const Color(0xFF0EA5C6).withOpacity(0.24),
+                    width: 1,
+                  ),
+                ),
+                child: _refreshing
+                    ? SizedBox(
+                        width: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 20.0,
+                          tablet: 22.0,
+                          desktop: 24.0,
+                        ),
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 20.0,
+                          tablet: 22.0,
+                          desktop: 24.0,
+                        ),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: isDark
+                              ? AppColors.cyan400
+                              : const Color(0xFF0E86AA),
+                        ),
+                      )
+                    : Icon(
+                        LucideIcons.refreshCw,
+                        size: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 20.0,
+                          tablet: 22.0,
+                          desktop: 24.0,
+                        ),
+                        color: isDark
+                            ? AppColors.cyan400
+                            : const Color(0xFF0E86AA),
+                      ),
+              ),
+            )
             .animate()
             .fadeIn(duration: 300.ms)
             .scale(delay: 100.ms, duration: 300.ms),
@@ -490,7 +538,7 @@ class _EmailsPageState extends State<EmailsPage> {
     );
   }
 
-  Widget _buildLoadingState(BuildContext context, bool isMobile) {
+  Widget _buildLoadingState(BuildContext context, bool isMobile, bool isDark) {
     // Center loading indicator in the viewport (account for header + navbar space)
     final screenHeight = MediaQuery.of(context).size.height;
     final topPadding = MediaQuery.of(context).padding.top;
@@ -507,8 +555,9 @@ class _EmailsPageState extends State<EmailsPage> {
       desktop: 140.0,
     );
     // Available height for centering = screen - top padding - header - navbar
-    final availableHeight = screenHeight - topPadding - headerHeight - navbarHeight;
-    
+    final availableHeight =
+        screenHeight - topPadding - headerHeight - navbarHeight;
+
     return SizedBox(
       height: availableHeight,
       child: Center(
@@ -532,17 +581,17 @@ class _EmailsPageState extends State<EmailsPage> {
               ),
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: AppColors.cyan400,
+                color: isDark ? AppColors.cyan400 : const Color(0xFF0E86AA),
               ),
-            )
-                .animate(onPlay: (c) => c.repeat())
-                .fadeIn(duration: 300.ms),
-            SizedBox(height: Responsive.getResponsiveValue(
-              context,
-              mobile: 12.0,
-              tablet: 14.0,
-              desktop: 16.0,
-            )),
+            ).animate(onPlay: (c) => c.repeat()).fadeIn(duration: 300.ms),
+            SizedBox(
+              height: Responsive.getResponsiveValue(
+                context,
+                mobile: 12.0,
+                tablet: 14.0,
+                desktop: 16.0,
+              ),
+            ),
             Text(
               'Loading emails...',
               style: TextStyle(
@@ -552,7 +601,9 @@ class _EmailsPageState extends State<EmailsPage> {
                   tablet: 14.0,
                   desktop: 15.0,
                 ),
-                color: AppColors.textCyan200.withOpacity(0.7),
+                color: isDark
+                    ? AppColors.textCyan200.withOpacity(0.7)
+                    : const Color(0xFF3B6D8C),
               ),
             ),
           ],
@@ -562,7 +613,7 @@ class _EmailsPageState extends State<EmailsPage> {
   }
 
   /// NEW: Error state when n8n fetch fails (all existing styling kept).
-  Widget _buildErrorState(BuildContext context, bool isMobile) {
+  Widget _buildErrorState(BuildContext context, bool isMobile, bool isDark) {
     return Padding(
       padding: EdgeInsets.symmetric(
         vertical: Responsive.getResponsiveValue(
@@ -573,24 +624,100 @@ class _EmailsPageState extends State<EmailsPage> {
         ),
       ),
       child: Center(
-        child: Text(
-          _errorMessage ?? 'Unknown error',
-          style: TextStyle(
-            fontSize: Responsive.getResponsiveValue(
-              context,
-              mobile: 13.0,
-              tablet: 14.0,
-              desktop: 15.0,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              LucideIcons.alertTriangle,
+              size: Responsive.getResponsiveValue(
+                context,
+                mobile: 38.0,
+                tablet: 42.0,
+                desktop: 46.0,
+              ),
+              color: isDark ? const Color(0xFFFF6B6B) : const Color(0xFFDC5B5B),
             ),
-            color: Colors.red,
-          ),
-          textAlign: TextAlign.center,
+            SizedBox(
+              height: Responsive.getResponsiveValue(
+                context,
+                mobile: 12.0,
+                tablet: 14.0,
+                desktop: 16.0,
+              ),
+            ),
+            Text(
+              _errorMessage ?? 'Unknown error',
+              style: TextStyle(
+                fontSize: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 13.0,
+                  tablet: 14.0,
+                  desktop: 15.0,
+                ),
+                color: isDark
+                    ? AppColors.textCyan200.withOpacity(0.9)
+                    : const Color(0xFF365F7A),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(
+              height: Responsive.getResponsiveValue(
+                context,
+                mobile: 14.0,
+                tablet: 16.0,
+                desktop: 18.0,
+              ),
+            ),
+            GestureDetector(
+              onTap: _loadEmails,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 16.0,
+                    tablet: 18.0,
+                    desktop: 20.0,
+                  ),
+                  vertical: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 9.0,
+                    tablet: 10.0,
+                    desktop: 11.0,
+                  ),
+                ),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.cyan500.withOpacity(0.14)
+                      : const Color(0xFF0EA5C6).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark
+                        ? AppColors.cyan400.withOpacity(0.4)
+                        : const Color(0xFF0EA5C6).withOpacity(0.35),
+                  ),
+                ),
+                child: Text(
+                  'Retry',
+                  style: TextStyle(
+                    fontSize: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 12.0,
+                      tablet: 13.0,
+                      desktop: 14.0,
+                    ),
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.cyan400 : const Color(0xFF0E86AA),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, bool isMobile) {
+  Widget _buildEmptyState(BuildContext context, bool isMobile, bool isDark) {
     // Center empty state in the viewport (account for header + navbar space)
     final screenHeight = MediaQuery.of(context).size.height;
     final topPadding = MediaQuery.of(context).padding.top;
@@ -606,7 +733,8 @@ class _EmailsPageState extends State<EmailsPage> {
       tablet: 120.0,
       desktop: 140.0,
     );
-    final availableHeight = screenHeight - topPadding - headerHeight - navbarHeight;
+    final availableHeight =
+        screenHeight - topPadding - headerHeight - navbarHeight;
 
     return SizedBox(
       height: availableHeight,
@@ -622,14 +750,18 @@ class _EmailsPageState extends State<EmailsPage> {
                 tablet: 52.0,
                 desktop: 56.0,
               ),
-              color: AppColors.cyan400.withOpacity(0.3),
+              color: isDark
+                  ? AppColors.cyan400.withOpacity(0.3)
+                  : const Color(0xFF0E86AA).withOpacity(0.35),
             ),
-            SizedBox(height: Responsive.getResponsiveValue(
-              context,
-              mobile: 12.0,
-              tablet: 14.0,
-              desktop: 16.0,
-            )),
+            SizedBox(
+              height: Responsive.getResponsiveValue(
+                context,
+                mobile: 12.0,
+                tablet: 14.0,
+                desktop: 16.0,
+              ),
+            ),
             Text(
               'No emails found',
               style: TextStyle(
@@ -639,7 +771,9 @@ class _EmailsPageState extends State<EmailsPage> {
                   tablet: 14.0,
                   desktop: 15.0,
                 ),
-                color: AppColors.textCyan200.withOpacity(0.7),
+                color: isDark
+                    ? AppColors.textCyan200.withOpacity(0.7)
+                    : const Color(0xFF3B6D8C),
               ),
             ),
           ],
@@ -648,7 +782,7 @@ class _EmailsPageState extends State<EmailsPage> {
     );
   }
 
-  Widget _buildEmailList(BuildContext context, bool isMobile) {
+  Widget _buildEmailList(BuildContext context, bool isMobile, bool isDark) {
     return Column(
       children: _emails.asMap().entries.map((entry) {
         final index = entry.key;
@@ -662,7 +796,7 @@ class _EmailsPageState extends State<EmailsPage> {
               desktop: 16.0,
             ),
           ),
-          child: _buildEmailCard(context, isMobile, email, index),
+          child: _buildEmailCard(context, isMobile, isDark, email, index),
         );
       }).toList(),
     );
@@ -671,6 +805,7 @@ class _EmailsPageState extends State<EmailsPage> {
   Widget _buildEmailCard(
     BuildContext context,
     bool isMobile,
+    bool isDark,
     Email email,
     int index,
   ) {
@@ -679,29 +814,39 @@ class _EmailsPageState extends State<EmailsPage> {
     return GestureDetector(
       onTap: () => setState(() => _selectedEmail = email),
       child: Container(
-        padding: EdgeInsets.all(Responsive.getResponsiveValue(
-          context,
-          mobile: 14.0,
-          tablet: 16.0,
-          desktop: 20.0,
-        )),
+        padding: EdgeInsets.all(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 14.0,
+            tablet: 16.0,
+            desktop: 20.0,
+          ),
+        ),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF1e4a66).withOpacity(0.4),
-              const Color(0xFF16384d).withOpacity(0.4),
+              isDark
+                  ? const Color(0xFF1e4a66).withOpacity(0.4)
+                  : const Color(0xFFE9F5FC),
+              isDark
+                  ? const Color(0xFF16384d).withOpacity(0.4)
+                  : const Color(0xFFDCEEF8),
             ],
           ),
-          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-            context,
-            mobile: 16.0,
-            tablet: 18.0,
-            desktop: 20.0,
-          )),
+          borderRadius: BorderRadius.circular(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 16.0,
+              tablet: 18.0,
+              desktop: 20.0,
+            ),
+          ),
           border: Border.all(
-            color: AppColors.cyan500.withOpacity(0.1),
+            color: isDark
+                ? AppColors.cyan500.withOpacity(0.1)
+                : const Color(0xFF0EA5C6).withOpacity(0.2),
             width: 1,
           ),
         ),
@@ -740,17 +885,21 @@ class _EmailsPageState extends State<EmailsPage> {
                                 desktop: 17.0,
                               ),
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textWhite,
+                              color: isDark
+                                  ? AppColors.textWhite
+                                  : const Color(0xFF12344C),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 3.0,
-                            tablet: 4.0,
-                            desktop: 5.0,
-                          )),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 3.0,
+                              tablet: 4.0,
+                              desktop: 5.0,
+                            ),
+                          ),
                           Text(
                             email.time,
                             style: TextStyle(
@@ -760,7 +909,9 @@ class _EmailsPageState extends State<EmailsPage> {
                                 tablet: 13.0,
                                 desktop: 14.0,
                               ),
-                              color: AppColors.textCyan200.withOpacity(0.6),
+                              color: isDark
+                                  ? AppColors.textCyan200.withOpacity(0.6)
+                                  : const Color(0xFF4E7891),
                             ),
                           ),
                         ],
@@ -786,12 +937,14 @@ class _EmailsPageState extends State<EmailsPage> {
                           ),
                           decoration: BoxDecoration(
                             color: badge['bg'] as Color,
-                            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                              context,
-                              mobile: 6.0,
-                              tablet: 7.0,
-                              desktop: 8.0,
-                            )),
+                            borderRadius: BorderRadius.circular(
+                              Responsive.getResponsiveValue(
+                                context,
+                                mobile: 6.0,
+                                tablet: 7.0,
+                                desktop: 8.0,
+                              ),
+                            ),
                             border: Border.all(
                               color: badge['border'] as Color,
                               width: 1,
@@ -810,12 +963,14 @@ class _EmailsPageState extends State<EmailsPage> {
                                 ),
                                 color: badge['color'] as Color,
                               ),
-                              SizedBox(width: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 4.0,
-                                tablet: 5.0,
-                                desktop: 6.0,
-                              )),
+                              SizedBox(
+                                width: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 4.0,
+                                  tablet: 5.0,
+                                  desktop: 6.0,
+                                ),
+                              ),
                               Text(
                                 badge['text'] as String,
                                 style: TextStyle(
@@ -835,18 +990,34 @@ class _EmailsPageState extends State<EmailsPage> {
                         if (email.status == 'replied')
                           Container(
                             margin: const EdgeInsets.only(top: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFF10B981).withOpacity(0.15),
                               borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+                              border: Border.all(
+                                color: const Color(0xFF10B981).withOpacity(0.3),
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(LucideIcons.checkCheck, size: 11, color: const Color(0xFF10B981)),
+                                Icon(
+                                  LucideIcons.checkCheck,
+                                  size: 11,
+                                  color: const Color(0xFF10B981),
+                                ),
                                 const SizedBox(width: 3),
-                                Text('Replied', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: const Color(0xFF10B981))),
+                                Text(
+                                  'Replied',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF10B981),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -854,12 +1025,14 @@ class _EmailsPageState extends State<EmailsPage> {
                     ),
                   ],
                 ),
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 10.0,
-                  tablet: 12.0,
-                  desktop: 14.0,
-                )),
+                SizedBox(
+                  height: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 10.0,
+                    tablet: 12.0,
+                    desktop: 14.0,
+                  ),
+                ),
                 // Email Content
                 Text(
                   email.subject,
@@ -871,17 +1044,21 @@ class _EmailsPageState extends State<EmailsPage> {
                       desktop: 15.0,
                     ),
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textWhite.withOpacity(0.9),
+                    color: isDark
+                        ? AppColors.textWhite.withOpacity(0.9)
+                        : const Color(0xFF13384F),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 4.0,
-                  tablet: 5.0,
-                  desktop: 6.0,
-                )),
+                SizedBox(
+                  height: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 4.0,
+                    tablet: 5.0,
+                    desktop: 6.0,
+                  ),
+                ),
                 Text(
                   email.summary,
                   style: TextStyle(
@@ -891,7 +1068,9 @@ class _EmailsPageState extends State<EmailsPage> {
                       tablet: 12.0,
                       desktop: 13.0,
                     ),
-                    color: AppColors.textCyan200.withOpacity(0.5),
+                    color: isDark
+                        ? AppColors.textCyan200.withOpacity(0.5)
+                        : const Color(0xFF4E7891),
                     height: 1.35,
                   ),
                   maxLines: 6,
@@ -920,9 +1099,7 @@ class _EmailsPageState extends State<EmailsPage> {
             child: ClipRect(
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  color: Colors.black.withOpacity(0.6),
-                ),
+                child: Container(color: Colors.black.withOpacity(0.6)),
               ),
             ).animate().fadeIn(duration: 420.ms, curve: Curves.easeInOut),
           ),
@@ -931,337 +1108,375 @@ class _EmailsPageState extends State<EmailsPage> {
             bottom: 0,
             left: 0,
             right: 0,
-            child: GestureDetector(
-              onTap: () {}, // Prevent closing when tapping modal content
-              child: Container(
-                width: double.infinity,
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.8,
-                ),
-                padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 22.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFF1a3a52),
-                      Color(0xFF0f2940),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(Responsive.getResponsiveValue(
-                      context,
-                      mobile: 24.0,
-                      tablet: 26.0,
-                      desktop: 28.0,
-                    )),
-                    topRight: Radius.circular(Responsive.getResponsiveValue(
-                      context,
-                      mobile: 24.0,
-                      tablet: 26.0,
-                      desktop: 28.0,
-                    )),
-                  ),
-                  border: Border(
-                    top: BorderSide(
-                      color: AppColors.cyan500.withOpacity(0.2),
-                      width: 1,
+            child:
+                GestureDetector(
+                  onTap: () {}, // Prevent closing when tapping modal content
+                  child: Container(
+                    width: double.infinity,
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.8,
                     ),
-                  ),
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Email Header
-                      Row(
+                    padding: EdgeInsets.all(
+                      Responsive.getResponsiveValue(
+                        context,
+                        mobile: 22.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xFF1a3a52), Color(0xFF0f2940)],
+                      ),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 24.0,
+                            tablet: 26.0,
+                            desktop: 28.0,
+                          ),
+                        ),
+                        topRight: Radius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 24.0,
+                            tablet: 26.0,
+                            desktop: 28.0,
+                          ),
+                        ),
+                      ),
+                      border: Border(
+                        top: BorderSide(
+                          color: AppColors.cyan500.withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _selectedEmail!.sender,
-                                  style: TextStyle(
-                                    fontSize: Responsive.getResponsiveValue(
-                                      context,
-                                      mobile: 20.0,
-                                      tablet: 22.0,
-                                      desktop: 24.0,
+                          // Email Header
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _selectedEmail!.sender,
+                                      style: TextStyle(
+                                        fontSize: Responsive.getResponsiveValue(
+                                          context,
+                                          mobile: 20.0,
+                                          tablet: 22.0,
+                                          desktop: 24.0,
+                                        ),
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textWhite,
+                                      ),
                                     ),
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textWhite,
+                                    SizedBox(
+                                      height: Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 4.0,
+                                        tablet: 5.0,
+                                        desktop: 6.0,
+                                      ),
+                                    ),
+                                    Text(
+                                      _selectedEmail!.time,
+                                      style: TextStyle(
+                                        fontSize: Responsive.getResponsiveValue(
+                                          context,
+                                          mobile: 12.0,
+                                          tablet: 13.0,
+                                          desktop: 14.0,
+                                        ),
+                                        color: AppColors.textCyan200
+                                            .withOpacity(0.7),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 10.0,
+                                    tablet: 12.0,
+                                    desktop: 14.0,
+                                  ),
+                                  vertical: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 5.0,
+                                    tablet: 6.0,
+                                    desktop: 7.0,
                                   ),
                                 ),
-                                SizedBox(height: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 4.0,
-                                  tablet: 5.0,
-                                  desktop: 6.0,
-                                )),
-                                Text(
-                                  _selectedEmail!.time,
-                                  style: TextStyle(
-                                    fontSize: Responsive.getResponsiveValue(
+                                decoration: BoxDecoration(
+                                  color: badge['bg'] as Color,
+                                  borderRadius: BorderRadius.circular(
+                                    Responsive.getResponsiveValue(
                                       context,
-                                      mobile: 12.0,
-                                      tablet: 13.0,
-                                      desktop: 14.0,
+                                      mobile: 8.0,
+                                      tablet: 9.0,
+                                      desktop: 10.0,
                                     ),
-                                    color: AppColors.textCyan200.withOpacity(0.7),
+                                  ),
+                                  border: Border.all(
+                                    color: badge['border'] as Color,
+                                    width: 1,
                                   ),
                                 ),
-                              ],
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      badge['icon'] as IconData,
+                                      size: Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 14.0,
+                                        tablet: 16.0,
+                                        desktop: 18.0,
+                                      ),
+                                      color: badge['color'] as Color,
+                                    ),
+                                    SizedBox(
+                                      width: Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 4.0,
+                                        tablet: 5.0,
+                                        desktop: 6.0,
+                                      ),
+                                    ),
+                                    Text(
+                                      badge['text'] as String,
+                                      style: TextStyle(
+                                        fontSize: Responsive.getResponsiveValue(
+                                          context,
+                                          mobile: 11.0,
+                                          tablet: 12.0,
+                                          desktop: 13.0,
+                                        ),
+                                        fontWeight: FontWeight.w500,
+                                        color: badge['color'] as Color,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 14.0,
+                              desktop: 16.0,
                             ),
                           ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: Responsive.getResponsiveValue(
+                          Text(
+                            _selectedEmail!.subject,
+                            style: TextStyle(
+                              fontSize: Responsive.getResponsiveValue(
                                 context,
-                                mobile: 10.0,
-                                tablet: 12.0,
-                                desktop: 14.0,
+                                mobile: 15.0,
+                                tablet: 16.0,
+                                desktop: 17.0,
                               ),
-                              vertical: Responsive.getResponsiveValue(
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textWhite.withOpacity(0.9),
+                            ),
+                          ),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 18.0,
+                              tablet: 20.0,
+                              desktop: 24.0,
+                            ),
+                          ),
+                          // AI Summary
+                          Container(
+                            padding: EdgeInsets.all(
+                              Responsive.getResponsiveValue(
                                 context,
-                                mobile: 5.0,
-                                tablet: 6.0,
-                                desktop: 7.0,
+                                mobile: 14.0,
+                                tablet: 16.0,
+                                desktop: 20.0,
                               ),
                             ),
                             decoration: BoxDecoration(
-                              color: badge['bg'] as Color,
-                              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                context,
-                                mobile: 8.0,
-                                tablet: 9.0,
-                                desktop: 10.0,
-                              )),
+                              color: AppColors.cyan500.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(
+                                Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 12.0,
+                                  tablet: 13.0,
+                                  desktop: 14.0,
+                                ),
+                              ),
                               border: Border.all(
-                                color: badge['border'] as Color,
+                                color: AppColors.cyan500.withOpacity(0.2),
                                 width: 1,
                               ),
                             ),
                             child: Row(
-                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(
-                                  badge['icon'] as IconData,
-                                  size: Responsive.getResponsiveValue(
+                                Container(
+                                  width: Responsive.getResponsiveValue(
                                     context,
-                                    mobile: 14.0,
-                                    tablet: 16.0,
-                                    desktop: 18.0,
+                                    mobile: 30.0,
+                                    tablet: 32.0,
+                                    desktop: 36.0,
                                   ),
-                                  color: badge['color'] as Color,
-                                ),
-                                SizedBox(width: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 4.0,
-                                  tablet: 5.0,
-                                  desktop: 6.0,
-                                )),
-                                Text(
-                                  badge['text'] as String,
-                                  style: TextStyle(
-                                    fontSize: Responsive.getResponsiveValue(
-                                      context,
-                                      mobile: 11.0,
-                                      tablet: 12.0,
-                                      desktop: 13.0,
+                                  height: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 30.0,
+                                    tablet: 32.0,
+                                    desktop: 36.0,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.cyan500.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(
+                                      Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 8.0,
+                                        tablet: 9.0,
+                                        desktop: 10.0,
+                                      ),
                                     ),
-                                    fontWeight: FontWeight.w500,
-                                    color: badge['color'] as Color,
+                                  ),
+                                  child: Icon(
+                                    LucideIcons.mail,
+                                    size: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 14.0,
+                                      tablet: 16.0,
+                                      desktop: 18.0,
+                                    ),
+                                    color: AppColors.cyan400,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 10.0,
+                                    tablet: 12.0,
+                                    desktop: 14.0,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Summary',
+                                        style: TextStyle(
+                                          fontSize:
+                                              Responsive.getResponsiveValue(
+                                                context,
+                                                mobile: 13.0,
+                                                tablet: 14.0,
+                                                desktop: 15.0,
+                                              ),
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.cyan400,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        height: Responsive.getResponsiveValue(
+                                          context,
+                                          mobile: 4.0,
+                                          tablet: 5.0,
+                                          desktop: 6.0,
+                                        ),
+                                      ),
+                                      Text(
+                                        _selectedEmail!.summary,
+                                        style: TextStyle(
+                                          fontSize:
+                                              Responsive.getResponsiveValue(
+                                                context,
+                                                mobile: 12.0,
+                                                tablet: 13.0,
+                                                desktop: 14.0,
+                                              ),
+                                          color: AppColors.textCyan200
+                                              .withOpacity(0.8),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
-                      ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 12.0,
-                        tablet: 14.0,
-                        desktop: 16.0,
-                      )),
-                      Text(
-                        _selectedEmail!.subject,
-                        style: TextStyle(
-                          fontSize: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 15.0,
-                            tablet: 16.0,
-                            desktop: 17.0,
-                          ),
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textWhite.withOpacity(0.9),
-                        ),
-                      ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 18.0,
-                        tablet: 20.0,
-                        desktop: 24.0,
-                      )),
-                      // AI Summary
-                      Container(
-                        padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                          context,
-                          mobile: 14.0,
-                          tablet: 16.0,
-                          desktop: 20.0,
-                        )),
-                        decoration: BoxDecoration(
-                          color: AppColors.cyan500.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                            context,
-                            mobile: 12.0,
-                            tablet: 13.0,
-                            desktop: 14.0,
-                          )),
-                          border: Border.all(
-                            color: AppColors.cyan500.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 30.0,
-                                tablet: 32.0,
-                                desktop: 36.0,
-                              ),
-                              height: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 30.0,
-                                tablet: 32.0,
-                                desktop: 36.0,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.cyan500.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 8.0,
-                                  tablet: 9.0,
-                                  desktop: 10.0,
-                                )),
-                              ),
-                              child: Icon(
-                                LucideIcons.mail,
-                                size: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 14.0,
-                                  tablet: 16.0,
-                                  desktop: 18.0,
-                                ),
-                                color: AppColors.cyan400,
-                              ),
-                            ),
-                            SizedBox(width: Responsive.getResponsiveValue(
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
                               context,
-                              mobile: 10.0,
-                              tablet: 12.0,
-                              desktop: 14.0,
-                            )),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Summary',
-                                    style: TextStyle(
-                                      fontSize: Responsive.getResponsiveValue(
-                                        context,
-                                        mobile: 13.0,
-                                        tablet: 14.0,
-                                        desktop: 15.0,
-                                      ),
-                                      fontWeight: FontWeight.w500,
-                                      color: AppColors.cyan400,
-                                    ),
-                                  ),
-                                  SizedBox(height: Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 4.0,
-                                    tablet: 5.0,
-                                    desktop: 6.0,
-                                  )),
-                                  Text(
-                                    _selectedEmail!.summary,
-                                    style: TextStyle(
-                                      fontSize: Responsive.getResponsiveValue(
-                                        context,
-                                        mobile: 12.0,
-                                        tablet: 13.0,
-                                        desktop: 14.0,
-                                      ),
-                                      color: AppColors.textCyan200.withOpacity(0.8),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              mobile: 18.0,
+                              tablet: 20.0,
+                              desktop: 24.0,
                             ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 18.0,
-                        tablet: 20.0,
-                        desktop: 24.0,
-                      )),
-                      // Actions
-                      Column(
-                        children: [
-                          _buildDraftReplyButton(context, isMobile),
-                          SizedBox(height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 6.0,
-                            tablet: 8.0,
-                            desktop: 10.0,
-                          )),
-                          _buildActionButton(
-                            context,
-                            isMobile,
-                            'Remind me later',
-                            false,
-                            LucideIcons.clock,
                           ),
-                          SizedBox(height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 6.0,
-                            tablet: 8.0,
-                            desktop: 10.0,
-                          )),
-                          _buildActionButton(
-                            context,
-                            isMobile,
-                            'Ignore',
-                            false,
-                            LucideIcons.x,
-                            isSecondary: true,
+                          // Actions
+                          Column(
+                            children: [
+                              _buildDraftReplyButton(context, isMobile),
+                              SizedBox(
+                                height: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 6.0,
+                                  tablet: 8.0,
+                                  desktop: 10.0,
+                                ),
+                              ),
+                              _buildActionButton(
+                                context,
+                                isMobile,
+                                'Remind me later',
+                                false,
+                                LucideIcons.clock,
+                              ),
+                              SizedBox(
+                                height: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 6.0,
+                                  tablet: 8.0,
+                                  desktop: 10.0,
+                                ),
+                              ),
+                              _buildActionButton(
+                                context,
+                                isMobile,
+                                'Ignore',
+                                false,
+                                LucideIcons.x,
+                                isSecondary: true,
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
+                ).animate().slideY(
+                  begin: 1.0,
+                  end: 0.0,
+                  duration: 380.ms,
+                  curve: Curves.easeOutCubic,
                 ),
-              ),
-            )
-                .animate()
-                .slideY(begin: 1.0, end: 0.0, duration: 380.ms, curve: Curves.easeOutCubic),
           ),
         ],
       ),
@@ -1285,17 +1500,16 @@ class _EmailsPageState extends State<EmailsPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              AppColors.cyan500,
-              AppColors.cyan400,
-            ],
+            colors: [AppColors.cyan500, AppColors.cyan400],
           ),
-          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-            context,
-            mobile: 12.0,
-            tablet: 13.0,
-            desktop: 14.0,
-          )),
+          borderRadius: BorderRadius.circular(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 12.0,
+              tablet: 13.0,
+              desktop: 14.0,
+            ),
+          ),
           border: Border.all(
             color: AppColors.cyan500.withOpacity(0.3),
             width: 1,
@@ -1346,12 +1560,14 @@ class _EmailsPageState extends State<EmailsPage> {
                 ),
                 color: AppColors.textWhite,
               ),
-            SizedBox(width: Responsive.getResponsiveValue(
-              context,
-              mobile: 6.0,
-              tablet: 8.0,
-              desktop: 10.0,
-            )),
+            SizedBox(
+              width: Responsive.getResponsiveValue(
+                context,
+                mobile: 6.0,
+                tablet: 8.0,
+                desktop: 10.0,
+              ),
+            ),
             Text(
               _generatingReply ? 'Generating...' : 'Draft reply',
               style: TextStyle(
@@ -1401,23 +1617,28 @@ class _EmailsPageState extends State<EmailsPage> {
               ? LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.cyan500,
-                    AppColors.cyan400,
-                  ],
+                  colors: [AppColors.cyan500, AppColors.cyan400],
                 )
               : null,
-          color: isPrimary ? null : (isSecondary ? AppColors.textWhite.withOpacity(0.05) : AppColors.cyan500.withOpacity(0.1)),
-          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-            context,
-            mobile: 12.0,
-            tablet: 13.0,
-            desktop: 14.0,
-          )),
+          color: isPrimary
+              ? null
+              : (isSecondary
+                    ? AppColors.textWhite.withOpacity(0.05)
+                    : AppColors.cyan500.withOpacity(0.1)),
+          borderRadius: BorderRadius.circular(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 12.0,
+              tablet: 13.0,
+              desktop: 14.0,
+            ),
+          ),
           border: Border.all(
             color: isPrimary
                 ? AppColors.cyan500.withOpacity(0.3)
-                : (isSecondary ? AppColors.textWhite.withOpacity(0.1) : AppColors.cyan500.withOpacity(0.2)),
+                : (isSecondary
+                      ? AppColors.textWhite.withOpacity(0.1)
+                      : AppColors.cyan500.withOpacity(0.2)),
             width: 1,
           ),
           boxShadow: isPrimary
@@ -1448,14 +1669,18 @@ class _EmailsPageState extends State<EmailsPage> {
               ),
               color: isPrimary
                   ? AppColors.textWhite
-                  : (isSecondary ? AppColors.cyan400.withOpacity(0.7) : AppColors.textCyan300),
+                  : (isSecondary
+                        ? AppColors.cyan400.withOpacity(0.7)
+                        : AppColors.textCyan300),
             ),
-            SizedBox(width: Responsive.getResponsiveValue(
-              context,
-              mobile: 6.0,
-              tablet: 8.0,
-              desktop: 10.0,
-            )),
+            SizedBox(
+              width: Responsive.getResponsiveValue(
+                context,
+                mobile: 6.0,
+                tablet: 8.0,
+                desktop: 10.0,
+              ),
+            ),
             Text(
               label,
               style: TextStyle(
@@ -1468,7 +1693,9 @@ class _EmailsPageState extends State<EmailsPage> {
                 fontWeight: FontWeight.w500,
                 color: isPrimary
                     ? AppColors.textWhite
-                    : (isSecondary ? AppColors.cyan400.withOpacity(0.7) : AppColors.textCyan300),
+                    : (isSecondary
+                          ? AppColors.cyan400.withOpacity(0.7)
+                          : AppColors.textCyan300),
               ),
             ),
           ],
@@ -1497,9 +1724,7 @@ class _EmailsPageState extends State<EmailsPage> {
             child: ClipRect(
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  color: Colors.black.withOpacity(0.6),
-                ),
+                child: Container(color: Colors.black.withOpacity(0.6)),
               ),
             ).animate().fadeIn(duration: 420.ms, curve: Curves.easeInOut),
           ),
@@ -1507,344 +1732,90 @@ class _EmailsPageState extends State<EmailsPage> {
             bottom: 0,
             left: 0,
             right: 0,
-            child: GestureDetector(
-              onTap: () {},
-              child: Container(
-                width: double.infinity,
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.8,
-                ),
-                padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 22.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFF1a3a52),
-                      Color(0xFF0f2940),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(Responsive.getResponsiveValue(
-                      context,
-                      mobile: 24.0,
-                      tablet: 26.0,
-                      desktop: 28.0,
-                    )),
-                    topRight: Radius.circular(Responsive.getResponsiveValue(
-                      context,
-                      mobile: 24.0,
-                      tablet: 26.0,
-                      desktop: 28.0,
-                    )),
-                  ),
-                  border: Border(
-                    top: BorderSide(
-                      color: AppColors.cyan500.withOpacity(0.2),
-                      width: 1,
+            child:
+                GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                    width: double.infinity,
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.8,
                     ),
-                  ),
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Email Header
-                      Row(
+                    padding: EdgeInsets.all(
+                      Responsive.getResponsiveValue(
+                        context,
+                        mobile: 22.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xFF1a3a52), Color(0xFF0f2940)],
+                      ),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 24.0,
+                            tablet: 26.0,
+                            desktop: 28.0,
+                          ),
+                        ),
+                        topRight: Radius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 24.0,
+                            tablet: 26.0,
+                            desktop: 28.0,
+                          ),
+                        ),
+                      ),
+                      border: Border(
+                        top: BorderSide(
+                          color: AppColors.cyan500.withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  email.sender,
-                                  style: TextStyle(
-                                    fontSize: Responsive.getResponsiveValue(
-                                      context,
-                                      mobile: 20.0,
-                                      tablet: 22.0,
-                                      desktop: 24.0,
-                                    ),
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textWhite,
-                                  ),
-                                ),
-                                SizedBox(height: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 4.0,
-                                  tablet: 5.0,
-                                  desktop: 6.0,
-                                )),
-                                Text(
-                                  email.time,
-                                  style: TextStyle(
-                                    fontSize: Responsive.getResponsiveValue(
-                                      context,
-                                      mobile: 12.0,
-                                      tablet: 13.0,
-                                      desktop: 14.0,
-                                    ),
-                                    color: AppColors.textCyan200.withOpacity(0.7),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          _buildBadgeChip(context, isMobile, badge),
-                        ],
-                      ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 12.0,
-                        tablet: 14.0,
-                        desktop: 16.0,
-                      )),
-                      Text(
-                        email.subject,
-                        style: TextStyle(
-                          fontSize: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 15.0,
-                            tablet: 16.0,
-                            desktop: 17.0,
-                          ),
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textWhite.withOpacity(0.9),
-                        ),
-                      ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 18.0,
-                        tablet: 20.0,
-                        desktop: 24.0,
-                      )),
-                      // AI Summary
-                      Container(
-                        padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                          context,
-                          mobile: 14.0,
-                          tablet: 16.0,
-                          desktop: 20.0,
-                        )),
-                        decoration: BoxDecoration(
-                          color: AppColors.cyan500.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                            context,
-                            mobile: 12.0,
-                            tablet: 13.0,
-                            desktop: 14.0,
-                          )),
-                          border: Border.all(
-                            color: AppColors.cyan500.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 30.0,
-                                tablet: 32.0,
-                                desktop: 36.0,
-                              ),
-                              height: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 30.0,
-                                tablet: 32.0,
-                                desktop: 36.0,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.cyan500.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 8.0,
-                                  tablet: 9.0,
-                                  desktop: 10.0,
-                                )),
-                              ),
-                              child: Icon(
-                                LucideIcons.mail,
-                                size: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 14.0,
-                                  tablet: 16.0,
-                                  desktop: 18.0,
-                                ),
-                                color: AppColors.cyan400,
-                              ),
-                            ),
-                            SizedBox(width: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 10.0,
-                              tablet: 12.0,
-                              desktop: 14.0,
-                            )),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Summary',
-                                    style: TextStyle(
-                                      fontSize: Responsive.getResponsiveValue(
-                                        context,
-                                        mobile: 13.0,
-                                        tablet: 14.0,
-                                        desktop: 15.0,
-                                      ),
-                                      fontWeight: FontWeight.w500,
-                                      color: AppColors.cyan400,
-                                    ),
-                                  ),
-                                  SizedBox(height: Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 4.0,
-                                    tablet: 5.0,
-                                    desktop: 6.0,
-                                  )),
-                                  Text(
-                                    email.summary,
-                                    style: TextStyle(
-                                      fontSize: Responsive.getResponsiveValue(
-                                        context,
-                                        mobile: 12.0,
-                                        tablet: 13.0,
-                                        desktop: 14.0,
-                                      ),
-                                      color: AppColors.textCyan200.withOpacity(0.8),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 18.0,
-                        tablet: 20.0,
-                        desktop: 24.0,
-                      )),
-                      // Reply Options (NEW: n8n replyOptions with type, subject, body, tone)
-                      if (hasOptions)
-                        ...(_replyOptions!.map((option) {
-                          final type = (option['type'] as String?) ?? 'Reply';
-                          final typeLabel = type.isEmpty
-                              ? 'Reply'
-                              : (type.length == 1
-                                  ? type.toUpperCase()
-                                  : type[0].toUpperCase() + type.substring(1).toLowerCase());
-                          final subject = (option['subject'] as String?) ?? '';
-                          final body = (option['body'] as String?) ?? '';
-                          final bodyPreview = body.length > 150
-                              ? '${body.substring(0, 150)}...'
-                              : body;
-                          final tone = (option['tone'] as String?) ?? '';
-                          return Padding(
-                            padding: EdgeInsets.only(
-                              bottom: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 8.0,
-                                tablet: 10.0,
-                                desktop: 12.0,
-                              ),
-                            ),
-                            child: Container(
-                              width: double.infinity,
-                              padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                                context,
-                                mobile: 14.0,
-                                tablet: 16.0,
-                                desktop: 18.0,
-                              )),
-                              decoration: BoxDecoration(
-                                color: AppColors.cyan500.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 12.0,
-                                  tablet: 13.0,
-                                  desktop: 14.0,
-                                )),
-                                border: Border.all(
-                                  color: AppColors.cyan500.withOpacity(0.2),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        typeLabel,
-                                        style: TextStyle(
-                                          fontSize: Responsive.getResponsiveValue(
-                                            context,
-                                            mobile: 14.0,
-                                            tablet: 15.0,
-                                            desktop: 16.0,
-                                          ),
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.textWhite,
-                                        ),
-                                      ),
-                                      if (tone.isNotEmpty) ...[
-                                        SizedBox(width: Responsive.getResponsiveValue(
-                                          context,
-                                          mobile: 8.0,
-                                          tablet: 10.0,
-                                          desktop: 12.0,
-                                        )),
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: Responsive.getResponsiveValue(
-                                              context,
-                                              mobile: 6.0,
-                                              tablet: 8.0,
-                                              desktop: 10.0,
-                                            ),
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.cyan500.withOpacity(0.2),
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(
-                                            tone,
-                                            style: TextStyle(
-                                              fontSize: Responsive.getResponsiveValue(
-                                                context,
-                                                mobile: 10.0,
-                                                tablet: 11.0,
-                                                desktop: 12.0,
-                                              ),
-                                              color: AppColors.cyan400,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                  if (subject.isNotEmpty) ...[
-                                    SizedBox(height: Responsive.getResponsiveValue(
-                                      context,
-                                      mobile: 4.0,
-                                      tablet: 6.0,
-                                      desktop: 8.0,
-                                    )),
+                          // Email Header
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
                                     Text(
-                                      subject,
+                                      email.sender,
+                                      style: TextStyle(
+                                        fontSize: Responsive.getResponsiveValue(
+                                          context,
+                                          mobile: 20.0,
+                                          tablet: 22.0,
+                                          desktop: 24.0,
+                                        ),
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textWhite,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 4.0,
+                                        tablet: 5.0,
+                                        desktop: 6.0,
+                                      ),
+                                    ),
+                                    Text(
+                                      email.time,
                                       style: TextStyle(
                                         fontSize: Responsive.getResponsiveValue(
                                           context,
@@ -1852,155 +1823,487 @@ class _EmailsPageState extends State<EmailsPage> {
                                           tablet: 13.0,
                                           desktop: 14.0,
                                         ),
-                                        fontWeight: FontWeight.w500,
-                                        color: AppColors.textCyan200.withOpacity(0.9),
+                                        color: AppColors.textCyan200
+                                            .withOpacity(0.7),
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
-                                  if (bodyPreview.isNotEmpty) ...[
-                                    SizedBox(height: Responsive.getResponsiveValue(
+                                ),
+                              ),
+                              _buildBadgeChip(context, isMobile, badge),
+                            ],
+                          ),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 14.0,
+                              desktop: 16.0,
+                            ),
+                          ),
+                          Text(
+                            email.subject,
+                            style: TextStyle(
+                              fontSize: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 15.0,
+                                tablet: 16.0,
+                                desktop: 17.0,
+                              ),
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textWhite.withOpacity(0.9),
+                            ),
+                          ),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 18.0,
+                              tablet: 20.0,
+                              desktop: 24.0,
+                            ),
+                          ),
+                          // AI Summary
+                          Container(
+                            padding: EdgeInsets.all(
+                              Responsive.getResponsiveValue(
+                                context,
+                                mobile: 14.0,
+                                tablet: 16.0,
+                                desktop: 20.0,
+                              ),
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.cyan500.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(
+                                Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 12.0,
+                                  tablet: 13.0,
+                                  desktop: 14.0,
+                                ),
+                              ),
+                              border: Border.all(
+                                color: AppColors.cyan500.withOpacity(0.2),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 30.0,
+                                    tablet: 32.0,
+                                    desktop: 36.0,
+                                  ),
+                                  height: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 30.0,
+                                    tablet: 32.0,
+                                    desktop: 36.0,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.cyan500.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(
+                                      Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 8.0,
+                                        tablet: 9.0,
+                                        desktop: 10.0,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    LucideIcons.mail,
+                                    size: Responsive.getResponsiveValue(
                                       context,
-                                      mobile: 4.0,
-                                      tablet: 6.0,
-                                      desktop: 8.0,
-                                    )),
-                                    Text(
-                                      bodyPreview,
-                                      style: TextStyle(
-                                        fontSize: Responsive.getResponsiveValue(
-                                          context,
-                                          mobile: 11.0,
-                                          tablet: 12.0,
-                                          desktop: 13.0,
-                                        ),
-                                        color: AppColors.textCyan200.withOpacity(0.7),
-                                      ),
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis,
+                                      mobile: 14.0,
+                                      tablet: 16.0,
+                                      desktop: 18.0,
                                     ),
-                                  ],
-                                  SizedBox(height: Responsive.getResponsiveValue(
+                                    color: AppColors.cyan400,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: Responsive.getResponsiveValue(
                                     context,
                                     mobile: 10.0,
                                     tablet: 12.0,
                                     desktop: 14.0,
-                                  )),
-                                  GestureDetector(
-                                    onTap: () =>
-                                        _openConfirmSendModal(subject, body),
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: Responsive.getResponsiveValue(
-                                          context,
-                                          mobile: 8.0,
-                                          tablet: 10.0,
-                                          desktop: 12.0,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Summary',
+                                        style: TextStyle(
+                                          fontSize:
+                                              Responsive.getResponsiveValue(
+                                                context,
+                                                mobile: 13.0,
+                                                tablet: 14.0,
+                                                desktop: 15.0,
+                                              ),
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.cyan400,
                                         ),
                                       ),
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            AppColors.cyan500.withOpacity(0.3),
-                                            AppColors.cyan400.withOpacity(0.3),
-                                          ],
-                                        ),
-                                        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                                      SizedBox(
+                                        height: Responsive.getResponsiveValue(
                                           context,
-                                          mobile: 10.0,
-                                          tablet: 11.0,
-                                          desktop: 12.0,
-                                        )),
-                                        border: Border.all(
-                                          color: AppColors.cyan500.withOpacity(0.3),
-                                          width: 1,
+                                          mobile: 4.0,
+                                          tablet: 5.0,
+                                          desktop: 6.0,
                                         ),
                                       ),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            LucideIcons.send,
-                                            size: Responsive.getResponsiveValue(
-                                              context,
-                                              mobile: 14.0,
-                                              tablet: 16.0,
-                                              desktop: 18.0,
-                                            ),
-                                            color: AppColors.textCyan300,
-                                          ),
-                                          SizedBox(width: Responsive.getResponsiveValue(
-                                            context,
-                                            mobile: 6.0,
-                                            tablet: 8.0,
-                                            desktop: 10.0,
-                                          )),
-                                          Text(
-                                            'Use this reply',
-                                            style: TextStyle(
-                                              fontSize: Responsive.getResponsiveValue(
+                                      Text(
+                                        email.summary,
+                                        style: TextStyle(
+                                          fontSize:
+                                              Responsive.getResponsiveValue(
                                                 context,
                                                 mobile: 12.0,
                                                 tablet: 13.0,
                                                 desktop: 14.0,
                                               ),
-                                              fontWeight: FontWeight.w600,
-                                              color: AppColors.textCyan300,
-                                            ),
-                                          ),
-                                        ],
+                                          color: AppColors.textCyan200
+                                              .withOpacity(0.8),
+                                        ),
                                       ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 18.0,
+                              tablet: 20.0,
+                              desktop: 24.0,
+                            ),
+                          ),
+                          // Reply Options (NEW: n8n replyOptions with type, subject, body, tone)
+                          if (hasOptions)
+                            ...(_replyOptions!.map((option) {
+                              final type =
+                                  (option['type'] as String?) ?? 'Reply';
+                              final typeLabel = type.isEmpty
+                                  ? 'Reply'
+                                  : (type.length == 1
+                                        ? type.toUpperCase()
+                                        : type[0].toUpperCase() +
+                                              type.substring(1).toLowerCase());
+                              final subject =
+                                  (option['subject'] as String?) ?? '';
+                              final body = (option['body'] as String?) ?? '';
+                              final bodyPreview = body.length > 150
+                                  ? '${body.substring(0, 150)}...'
+                                  : body;
+                              final tone = (option['tone'] as String?) ?? '';
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 8.0,
+                                    tablet: 10.0,
+                                    desktop: 12.0,
+                                  ),
+                                ),
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: EdgeInsets.all(
+                                    Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 14.0,
+                                      tablet: 16.0,
+                                      desktop: 18.0,
                                     ),
                                   ),
-                                ],
+                                  decoration: BoxDecoration(
+                                    color: AppColors.cyan500.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(
+                                      Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 12.0,
+                                        tablet: 13.0,
+                                        desktop: 14.0,
+                                      ),
+                                    ),
+                                    border: Border.all(
+                                      color: AppColors.cyan500.withOpacity(0.2),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            typeLabel,
+                                            style: TextStyle(
+                                              fontSize:
+                                                  Responsive.getResponsiveValue(
+                                                    context,
+                                                    mobile: 14.0,
+                                                    tablet: 15.0,
+                                                    desktop: 16.0,
+                                                  ),
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.textWhite,
+                                            ),
+                                          ),
+                                          if (tone.isNotEmpty) ...[
+                                            SizedBox(
+                                              width:
+                                                  Responsive.getResponsiveValue(
+                                                    context,
+                                                    mobile: 8.0,
+                                                    tablet: 10.0,
+                                                    desktop: 12.0,
+                                                  ),
+                                            ),
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal:
+                                                    Responsive.getResponsiveValue(
+                                                      context,
+                                                      mobile: 6.0,
+                                                      tablet: 8.0,
+                                                      desktop: 10.0,
+                                                    ),
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.cyan500
+                                                    .withOpacity(0.2),
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                tone,
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      Responsive.getResponsiveValue(
+                                                        context,
+                                                        mobile: 10.0,
+                                                        tablet: 11.0,
+                                                        desktop: 12.0,
+                                                      ),
+                                                  color: AppColors.cyan400,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                      if (subject.isNotEmpty) ...[
+                                        SizedBox(
+                                          height: Responsive.getResponsiveValue(
+                                            context,
+                                            mobile: 4.0,
+                                            tablet: 6.0,
+                                            desktop: 8.0,
+                                          ),
+                                        ),
+                                        Text(
+                                          subject,
+                                          style: TextStyle(
+                                            fontSize:
+                                                Responsive.getResponsiveValue(
+                                                  context,
+                                                  mobile: 12.0,
+                                                  tablet: 13.0,
+                                                  desktop: 14.0,
+                                                ),
+                                            fontWeight: FontWeight.w500,
+                                            color: AppColors.textCyan200
+                                                .withOpacity(0.9),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                      if (bodyPreview.isNotEmpty) ...[
+                                        SizedBox(
+                                          height: Responsive.getResponsiveValue(
+                                            context,
+                                            mobile: 4.0,
+                                            tablet: 6.0,
+                                            desktop: 8.0,
+                                          ),
+                                        ),
+                                        Text(
+                                          bodyPreview,
+                                          style: TextStyle(
+                                            fontSize:
+                                                Responsive.getResponsiveValue(
+                                                  context,
+                                                  mobile: 11.0,
+                                                  tablet: 12.0,
+                                                  desktop: 13.0,
+                                                ),
+                                            color: AppColors.textCyan200
+                                                .withOpacity(0.7),
+                                          ),
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                      SizedBox(
+                                        height: Responsive.getResponsiveValue(
+                                          context,
+                                          mobile: 10.0,
+                                          tablet: 12.0,
+                                          desktop: 14.0,
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () => _openConfirmSendModal(
+                                          subject,
+                                          body,
+                                        ),
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                            vertical:
+                                                Responsive.getResponsiveValue(
+                                                  context,
+                                                  mobile: 8.0,
+                                                  tablet: 10.0,
+                                                  desktop: 12.0,
+                                                ),
+                                          ),
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                AppColors.cyan500.withOpacity(
+                                                  0.3,
+                                                ),
+                                                AppColors.cyan400.withOpacity(
+                                                  0.3,
+                                                ),
+                                              ],
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              Responsive.getResponsiveValue(
+                                                context,
+                                                mobile: 10.0,
+                                                tablet: 11.0,
+                                                desktop: 12.0,
+                                              ),
+                                            ),
+                                            border: Border.all(
+                                              color: AppColors.cyan500
+                                                  .withOpacity(0.3),
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                LucideIcons.send,
+                                                size:
+                                                    Responsive.getResponsiveValue(
+                                                      context,
+                                                      mobile: 14.0,
+                                                      tablet: 16.0,
+                                                      desktop: 18.0,
+                                                    ),
+                                                color: AppColors.textCyan300,
+                                              ),
+                                              SizedBox(
+                                                width:
+                                                    Responsive.getResponsiveValue(
+                                                      context,
+                                                      mobile: 6.0,
+                                                      tablet: 8.0,
+                                                      desktop: 10.0,
+                                                    ),
+                                              ),
+                                              Text(
+                                                'Use this reply',
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      Responsive.getResponsiveValue(
+                                                        context,
+                                                        mobile: 12.0,
+                                                        tablet: 13.0,
+                                                        desktop: 14.0,
+                                                      ),
+                                                  fontWeight: FontWeight.w600,
+                                                  color: AppColors.textCyan300,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }))
+                          else
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(
+                                Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 14.0,
+                                  tablet: 16.0,
+                                  desktop: 20.0,
+                                ),
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFB800).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(
+                                  Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 12.0,
+                                    tablet: 13.0,
+                                    desktop: 14.0,
+                                  ),
+                                ),
+                                border: Border.all(
+                                  color: const Color(
+                                    0xFFFFB800,
+                                  ).withOpacity(0.2),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                'No reply options available at this time',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 13.0,
+                                    tablet: 14.0,
+                                    desktop: 15.0,
+                                  ),
+                                  color: const Color(0xFFFFB800),
+                                ),
                               ),
                             ),
-                          );
-                        }))
-                      else
-                        Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                            context,
-                            mobile: 14.0,
-                            tablet: 16.0,
-                            desktop: 20.0,
-                          )),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFB800).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                              context,
-                              mobile: 12.0,
-                              tablet: 13.0,
-                              desktop: 14.0,
-                            )),
-                            border: Border.all(
-                              color: const Color(0xFFFFB800).withOpacity(0.2),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            'No reply options available at this time',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 13.0,
-                                tablet: 14.0,
-                                desktop: 15.0,
-                              ),
-                              color: const Color(0xFFFFB800),
-                            ),
-                          ),
-                        ),
-                    ],
+                        ],
+                      ),
+                    ),
                   ),
+                ).animate().slideY(
+                  begin: 1.0,
+                  end: 0.0,
+                  duration: 380.ms,
+                  curve: Curves.easeOutCubic,
                 ),
-              ),
-            )
-                .animate()
-                .slideY(begin: 1.0, end: 0.0, duration: 380.ms, curve: Curves.easeOutCubic),
           ),
         ],
       ),
@@ -2020,9 +2323,7 @@ class _EmailsPageState extends State<EmailsPage> {
             child: ClipRect(
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  color: Colors.black.withOpacity(0.6),
-                ),
+                child: Container(color: Colors.black.withOpacity(0.6)),
               ),
             ).animate().fadeIn(duration: 420.ms, curve: Curves.easeInOut),
           ),
@@ -2030,288 +2331,324 @@ class _EmailsPageState extends State<EmailsPage> {
             bottom: 0,
             left: 0,
             right: 0,
-            child: GestureDetector(
-              onTap: () {},
-              child: Container(
-                width: double.infinity,
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.8,
-                ),
-                padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 22.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFF1a3a52),
-                      Color(0xFF0f2940),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(Responsive.getResponsiveValue(
-                      context,
-                      mobile: 24.0,
-                      tablet: 26.0,
-                      desktop: 28.0,
-                    )),
-                    topRight: Radius.circular(Responsive.getResponsiveValue(
-                      context,
-                      mobile: 24.0,
-                      tablet: 26.0,
-                      desktop: 28.0,
-                    )),
-                  ),
-                  border: Border(
-                    top: BorderSide(
-                      color: AppColors.cyan500.withOpacity(0.2),
-                      width: 1,
+            child:
+                GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                    width: double.infinity,
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.8,
                     ),
-                  ),
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Send reply',
-                        style: TextStyle(
-                          fontSize: Responsive.getResponsiveValue(
+                    padding: EdgeInsets.all(
+                      Responsive.getResponsiveValue(
+                        context,
+                        mobile: 22.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xFF1a3a52), Color(0xFF0f2940)],
+                      ),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(
+                          Responsive.getResponsiveValue(
                             context,
-                            mobile: 20.0,
-                            tablet: 22.0,
-                            desktop: 24.0,
+                            mobile: 24.0,
+                            tablet: 26.0,
+                            desktop: 28.0,
                           ),
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textWhite,
+                        ),
+                        topRight: Radius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 24.0,
+                            tablet: 26.0,
+                            desktop: 28.0,
+                          ),
                         ),
                       ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 16.0,
-                        tablet: 18.0,
-                        desktop: 20.0,
-                      )),
-                      Text(
-                        'To: $to',
-                        style: TextStyle(
-                          fontSize: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 13.0,
-                            tablet: 14.0,
-                            desktop: 15.0,
-                          ),
-                          color: AppColors.textCyan200.withOpacity(0.8),
+                      border: Border(
+                        top: BorderSide(
+                          color: AppColors.cyan500.withOpacity(0.2),
+                          width: 1,
                         ),
                       ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 8.0,
-                        tablet: 10.0,
-                        desktop: 12.0,
-                      )),
-                      Text(
-                        'Subject: $_confirmSubject',
-                        style: TextStyle(
-                          fontSize: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 13.0,
-                            tablet: 14.0,
-                            desktop: 15.0,
-                          ),
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textWhite.withOpacity(0.9),
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 12.0,
-                        tablet: 14.0,
-                        desktop: 16.0,
-                      )),
-                      Container(
-                        constraints: BoxConstraints(
-                          maxHeight: MediaQuery.of(context).size.height * 0.25,
-                        ),
-                        padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                          context,
-                          mobile: 12.0,
-                          tablet: 14.0,
-                          desktop: 16.0,
-                        )),
-                        decoration: BoxDecoration(
-                          color: AppColors.textWhite.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                            context,
-                            mobile: 12.0,
-                            tablet: 13.0,
-                            desktop: 14.0,
-                          )),
-                          border: Border.all(
-                            color: AppColors.cyan500.withOpacity(0.1),
-                            width: 1,
-                          ),
-                        ),
-                        child: SingleChildScrollView(
-                          child: Text(
-                            _confirmBody,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Send reply',
                             style: TextStyle(
                               fontSize: Responsive.getResponsiveValue(
                                 context,
+                                mobile: 20.0,
+                                tablet: 22.0,
+                                desktop: 24.0,
+                              ),
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textWhite,
+                            ),
+                          ),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 16.0,
+                              tablet: 18.0,
+                              desktop: 20.0,
+                            ),
+                          ),
+                          Text(
+                            'To: $to',
+                            style: TextStyle(
+                              fontSize: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 13.0,
+                                tablet: 14.0,
+                                desktop: 15.0,
+                              ),
+                              color: AppColors.textCyan200.withOpacity(0.8),
+                            ),
+                          ),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 8.0,
+                              tablet: 10.0,
+                              desktop: 12.0,
+                            ),
+                          ),
+                          Text(
+                            'Subject: $_confirmSubject',
+                            style: TextStyle(
+                              fontSize: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 13.0,
+                                tablet: 14.0,
+                                desktop: 15.0,
+                              ),
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textWhite.withOpacity(0.9),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 14.0,
+                              desktop: 16.0,
+                            ),
+                          ),
+                          Container(
+                            constraints: BoxConstraints(
+                              maxHeight:
+                                  MediaQuery.of(context).size.height * 0.25,
+                            ),
+                            padding: EdgeInsets.all(
+                              Responsive.getResponsiveValue(
+                                context,
                                 mobile: 12.0,
-                                tablet: 13.0,
-                                desktop: 14.0,
+                                tablet: 14.0,
+                                desktop: 16.0,
                               ),
-                              color: AppColors.textCyan200.withOpacity(0.9),
-                              height: 1.4,
                             ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 18.0,
-                        tablet: 20.0,
-                        desktop: 24.0,
-                      )),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: _closeConfirmSendModal,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 12.0,
-                                    tablet: 14.0,
-                                    desktop: 16.0,
-                                  ),
+                            decoration: BoxDecoration(
+                              color: AppColors.textWhite.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(
+                                Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 12.0,
+                                  tablet: 13.0,
+                                  desktop: 14.0,
                                 ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.textWhite.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                              ),
+                              border: Border.all(
+                                color: AppColors.cyan500.withOpacity(0.1),
+                                width: 1,
+                              ),
+                            ),
+                            child: SingleChildScrollView(
+                              child: Text(
+                                _confirmBody,
+                                style: TextStyle(
+                                  fontSize: Responsive.getResponsiveValue(
                                     context,
                                     mobile: 12.0,
                                     tablet: 13.0,
                                     desktop: 14.0,
-                                  )),
-                                  border: Border.all(
-                                    color: AppColors.textWhite.withOpacity(0.1),
-                                    width: 1,
                                   ),
+                                  color: AppColors.textCyan200.withOpacity(0.9),
+                                  height: 1.4,
                                 ),
-                                child: Center(
-                                  child: Text(
-                                    'Cancel',
-                                    style: TextStyle(
-                                      fontSize: Responsive.getResponsiveValue(
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 18.0,
+                              tablet: 20.0,
+                              desktop: 24.0,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: _closeConfirmSendModal,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: Responsive.getResponsiveValue(
                                         context,
-                                        mobile: 13.0,
+                                        mobile: 12.0,
                                         tablet: 14.0,
-                                        desktop: 15.0,
+                                        desktop: 16.0,
                                       ),
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textCyan300,
                                     ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 10.0,
-                            tablet: 12.0,
-                            desktop: 14.0,
-                          )),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: _isSendingReply
-                                  ? null
-                                  : () => _handleSendReply(
-                                        _confirmSubject,
-                                        _confirmBody,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.textWhite.withOpacity(
+                                        0.05,
                                       ),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 12.0,
-                                    tablet: 14.0,
-                                    desktop: 16.0,
-                                  ),
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      AppColors.cyan500,
-                                      AppColors.cyan400,
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 12.0,
-                                    tablet: 13.0,
-                                    desktop: 14.0,
-                                  )),
-                                  border: Border.all(
-                                    color: AppColors.cyan500.withOpacity(0.3),
-                                    width: 1,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.cyan400.withOpacity(0.3),
-                                      blurRadius: 12,
-                                      spreadRadius: 0,
-                                    ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: _isSendingReply
-                                      ? SizedBox(
-                                          width: 22,
-                                          height: 22,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: AppColors.textWhite,
-                                          ),
-                                        )
-                                      : Text(
-                                          'Send Reply',
-                                          style: TextStyle(
-                                            fontSize: Responsive.getResponsiveValue(
-                                              context,
-                                              mobile: 13.0,
-                                              tablet: 14.0,
-                                              desktop: 15.0,
-                                            ),
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.textWhite,
-                                          ),
+                                      borderRadius: BorderRadius.circular(
+                                        Responsive.getResponsiveValue(
+                                          context,
+                                          mobile: 12.0,
+                                          tablet: 13.0,
+                                          desktop: 14.0,
                                         ),
+                                      ),
+                                      border: Border.all(
+                                        color: AppColors.textWhite.withOpacity(
+                                          0.1,
+                                        ),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'Cancel',
+                                        style: TextStyle(
+                                          fontSize:
+                                              Responsive.getResponsiveValue(
+                                                context,
+                                                mobile: 13.0,
+                                                tablet: 14.0,
+                                                desktop: 15.0,
+                                              ),
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textCyan300,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                              SizedBox(
+                                width: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 10.0,
+                                  tablet: 12.0,
+                                  desktop: 14.0,
+                                ),
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: _isSendingReply
+                                      ? null
+                                      : () => _handleSendReply(
+                                          _confirmSubject,
+                                          _confirmBody,
+                                        ),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 12.0,
+                                        tablet: 14.0,
+                                        desktop: 16.0,
+                                      ),
+                                    ),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          AppColors.cyan500,
+                                          AppColors.cyan400,
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        Responsive.getResponsiveValue(
+                                          context,
+                                          mobile: 12.0,
+                                          tablet: 13.0,
+                                          desktop: 14.0,
+                                        ),
+                                      ),
+                                      border: Border.all(
+                                        color: AppColors.cyan500.withOpacity(
+                                          0.3,
+                                        ),
+                                        width: 1,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.cyan400.withOpacity(
+                                            0.3,
+                                          ),
+                                          blurRadius: 12,
+                                          spreadRadius: 0,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: _isSendingReply
+                                          ? SizedBox(
+                                              width: 22,
+                                              height: 22,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: AppColors.textWhite,
+                                              ),
+                                            )
+                                          : Text(
+                                              'Send Reply',
+                                              style: TextStyle(
+                                                fontSize:
+                                                    Responsive.getResponsiveValue(
+                                                      context,
+                                                      mobile: 13.0,
+                                                      tablet: 14.0,
+                                                      desktop: 15.0,
+                                                    ),
+                                                fontWeight: FontWeight.w600,
+                                                color: AppColors.textWhite,
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
+                ).animate().slideY(
+                  begin: 1.0,
+                  end: 0.0,
+                  duration: 380.ms,
+                  curve: Curves.easeOutCubic,
                 ),
-              ),
-            )
-                .animate()
-                .slideY(begin: 1.0, end: 0.0, duration: 380.ms, curve: Curves.easeOutCubic),
           ),
         ],
       ),
@@ -2340,16 +2677,15 @@ class _EmailsPageState extends State<EmailsPage> {
       ),
       decoration: BoxDecoration(
         color: badge['bg'] as Color,
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 8.0,
-          tablet: 9.0,
-          desktop: 10.0,
-        )),
-        border: Border.all(
-          color: badge['border'] as Color,
-          width: 1,
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 8.0,
+            tablet: 9.0,
+            desktop: 10.0,
+          ),
         ),
+        border: Border.all(color: badge['border'] as Color, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -2364,12 +2700,14 @@ class _EmailsPageState extends State<EmailsPage> {
             ),
             color: badge['color'] as Color,
           ),
-          SizedBox(width: Responsive.getResponsiveValue(
-            context,
-            mobile: 4.0,
-            tablet: 5.0,
-            desktop: 6.0,
-          )),
+          SizedBox(
+            width: Responsive.getResponsiveValue(
+              context,
+              mobile: 4.0,
+              tablet: 5.0,
+              desktop: 6.0,
+            ),
+          ),
           Text(
             badge['text'] as String,
             style: TextStyle(

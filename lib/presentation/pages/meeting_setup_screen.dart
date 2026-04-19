@@ -9,6 +9,30 @@ import '../../data/services/meeting_intelligence_service.dart';
 import '../../injection_container.dart';
 import 'briefing/briefing_shared.dart';
 
+Color _flowPrimaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _flowSecondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF5B7B92);
+}
+
+Color _flowSurface(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.primaryDarker
+      : const Color(0xFFFFFFFF);
+}
+
+Color _flowSurfaceBorder(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.cyan500.withValues(alpha: 0.22)
+      : const Color(0xFFC7DDE9);
+}
+
 /// Page 2 — Meeting setup (3 steps). Wired from `/investor-meeting-setup`.
 class MeetingSetupScreen extends StatefulWidget {
   const MeetingSetupScreen({super.key});
@@ -110,18 +134,19 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
           }
         },
         child: const Icon(
+          // keep icon visible in both modes
           Icons.arrow_back_ios_new_rounded,
           color: AvaColors.muted,
           size: 18,
         ),
       ),
-      title: const Text(
+      title: Text(
         'Meeting Setup',
         style: TextStyle(
           fontFamily: 'Georgia',
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: AppColors.textWhite,
+          color: _flowPrimaryText(context),
         ),
       ),
       centerTitle: true,
@@ -198,22 +223,47 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
   }
 
   Widget _step1() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('INVESTOR', style: AvaText.label),
         const SizedBox(height: 5),
-        const Text('Who are you\nmeeting?', style: AvaText.display),
+        Text(
+          'Who are you\nmeeting?',
+          style: AvaText.display.copyWith(
+            color: isDark ? AvaColors.text : const Color(0xFF12344C),
+          ),
+        ),
         const SizedBox(height: 28),
-        _field('Investor Name', _investorName, hint: 'e.g. Marco Rossi', requiredField: true),
+        _field(
+          'Investor Name',
+          _investorName,
+          hint: 'e.g. Marco Rossi',
+          requiredField: true,
+        ),
         const SizedBox(height: 14),
         _field('Company', _investorCompany, hint: 'e.g. Venture Italia'),
         const SizedBox(height: 14),
         Row(
           children: [
-            Expanded(child: _field('Country', _country, hint: 'e.g. France', requiredField: true)),
+            Expanded(
+              child: _field(
+                'Country',
+                _country,
+                hint: 'e.g. France',
+                requiredField: true,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _field('City', _city, hint: 'e.g. Paris', requiredField: true)),
+            Expanded(
+              child: _field(
+                'City',
+                _city,
+                hint: 'e.g. Paris',
+                requiredField: true,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 14),
@@ -224,12 +274,18 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
   }
 
   Widget _step2() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('DEAL TERMS', style: AvaText.label),
         const SizedBox(height: 5),
-        const Text('Context &\nstructure', style: AvaText.display),
+        Text(
+          'Context &\nstructure',
+          style: AvaText.display.copyWith(
+            color: isDark ? AvaColors.text : const Color(0xFF12344C),
+          ),
+        ),
         const SizedBox(height: 28),
         Row(
           children: [
@@ -257,7 +313,9 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
         const SizedBox(height: 14),
         Row(
           children: [
-            Expanded(child: _field('Valuation', _valuation, hint: '€1,000,000')),
+            Expanded(
+              child: _field('Valuation', _valuation, hint: '€1,000,000'),
+            ),
             const SizedBox(width: 12),
             Expanded(child: _field('Equity %', _equity, hint: '15%')),
           ],
@@ -265,7 +323,13 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
         const SizedBox(height: 14),
         Row(
           children: [
-            Expanded(child: _field('Investment Asked', _investmentAsked, hint: '€150,000')),
+            Expanded(
+              child: _field(
+                'Investment Asked',
+                _investmentAsked,
+                hint: '€150,000',
+              ),
+            ),
             const SizedBox(width: 12),
             Expanded(child: _field('Team Size', _teamSize, hint: '4')),
           ],
@@ -284,12 +348,18 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
   }
 
   Widget _step3() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('CONFIRM', style: AvaText.label),
         const SizedBox(height: 5),
-        const Text('Review your\nmeeting context', style: AvaText.display),
+        Text(
+          'Review your\nmeeting context',
+          style: AvaText.display.copyWith(
+            color: isDark ? AvaColors.text : const Color(0xFF12344C),
+          ),
+        ),
         const SizedBox(height: 24),
         _avaConfirmBubble(),
         const SizedBox(height: 14),
@@ -302,6 +372,7 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
   }
 
   Widget _avaConfirmBubble() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final text = _confirmationText.isEmpty
         ? 'Reviewing your meeting details…'
         : _confirmationText;
@@ -309,10 +380,18 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: AppColors.cardGradient,
+        gradient: isDark
+            ? AppColors.cardGradient
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFF9FCFF), Color(0xFFEAF4FB)],
+              ),
         borderRadius: BorderRadius.circular(13),
         border: Border.all(
-          color: AppColors.cyan500.withValues(alpha: 0.28),
+          color: isDark
+              ? AppColors.cyan500.withValues(alpha: 0.28)
+              : const Color(0xFFC7DDE9),
         ),
       ),
       child: Column(
@@ -334,7 +413,13 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          Text(text, style: AvaText.body.copyWith(fontSize: 13)),
+          Text(
+            text,
+            style: AvaText.body.copyWith(
+              fontSize: 13,
+              color: _flowSecondaryText(context),
+            ),
+          ),
         ],
       ),
     );
@@ -348,15 +433,18 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
       _SummaryRow('Location', '${_city.text.trim()}, ${_country.text.trim()}'),
       _SummaryRow('Deal Type', _dealType),
       _SummaryRow('Format', _meetingType),
-      if (_sector.text.trim().isNotEmpty) _SummaryRow('Sector', _sector.text.trim()),
+      if (_sector.text.trim().isNotEmpty)
+        _SummaryRow('Sector', _sector.text.trim()),
       if (_valuation.text.trim().isNotEmpty)
         _SummaryRow('Valuation', _valuation.text.trim()),
       if (_equity.text.trim().isNotEmpty)
         _SummaryRow('Equity', _equity.text.trim(), accent: AppColors.cyan400),
       if (_investmentAsked.text.trim().isNotEmpty)
         _SummaryRow('Investment asked', _investmentAsked.text.trim()),
-      if (_revenue.text.trim().isNotEmpty) _SummaryRow('Revenue', _revenue.text.trim()),
-      if (_teamSize.text.trim().isNotEmpty) _SummaryRow('Team size', _teamSize.text.trim()),
+      if (_revenue.text.trim().isNotEmpty)
+        _SummaryRow('Revenue', _revenue.text.trim()),
+      if (_teamSize.text.trim().isNotEmpty)
+        _SummaryRow('Team size', _teamSize.text.trim()),
       if (_meetingAt != null) _SummaryRow('Date', _formatDate(_meetingAt!)),
       if (_investorBio.text.trim().isNotEmpty)
         _SummaryRow('Bio', _investorBio.text.trim()),
@@ -367,11 +455,9 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.primaryDarker,
+        color: _flowSurface(context),
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(
-          color: AppColors.cyan500.withValues(alpha: 0.22),
-        ),
+        border: Border.all(color: _flowSurfaceBorder(context)),
       ),
       child: Column(
         children: rows.asMap().entries.map((e) {
@@ -380,7 +466,10 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -396,7 +485,7 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: r.accent ?? AppColors.textWhite,
+                          color: r.accent ?? _flowPrimaryText(context),
                         ),
                       ),
                     ),
@@ -417,25 +506,28 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
   }
 
   Widget _readyBanner() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.cyan500.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: AppColors.cyan400.withValues(alpha: 0.28),
-        ),
+        border: Border.all(color: AppColors.cyan400.withValues(alpha: 0.28)),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.info_outline_rounded, color: AppColors.cyan400, size: 18),
-          SizedBox(width: 9),
+          const Icon(
+            Icons.info_outline_rounded,
+            color: AppColors.cyan400,
+            size: 18,
+          ),
+          const SizedBox(width: 9),
           Expanded(
             child: Text(
               'All 5 agents loaded. AVA is preparing your briefing.',
               style: TextStyle(
                 fontSize: 11,
-                color: AppColors.textCyan200,
+                color: isDark ? AppColors.textCyan200 : const Color(0xFF3F6983),
                 height: 1.5,
               ),
             ),
@@ -446,12 +538,24 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
   }
 
   Widget _bottomBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.paddingOf(context).bottom + 16),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        MediaQuery.paddingOf(context).bottom + 16,
+      ),
       decoration: BoxDecoration(
-        color: AppColors.primaryDark.withValues(alpha: 0.94),
+        color: isDark
+            ? AppColors.primaryDark.withValues(alpha: 0.94)
+            : const Color(0xFFF7FBFF).withValues(alpha: 0.96),
         border: Border(
-          top: BorderSide(color: AppColors.cyan500.withValues(alpha: 0.25)),
+          top: BorderSide(
+            color: isDark
+                ? AppColors.cyan500.withValues(alpha: 0.25)
+                : const Color(0xFFC7DDE9),
+          ),
         ),
       ),
       child: Row(
@@ -471,10 +575,7 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
                   child: const Center(
                     child: Text(
                       'Back',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textCyan200,
-                      ),
+                      style: TextStyle(fontSize: 14, color: AppColors.cyan400),
                     ),
                   ),
                 ),
@@ -488,8 +589,8 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
               _step == 0
                   ? 'Continue →'
                   : _step == 1
-                      ? 'Continue →'
-                      : 'Start Briefing →',
+                  ? 'Continue →'
+                  : 'Start Briefing →',
               _loading ? null : _onNext,
               loading: _loading,
             ),
@@ -578,8 +679,7 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
         final start = await _api.startBriefing(draftId: _draftId!);
         if (!mounted) return;
         final sid = start.meetingId?.trim();
-        final sessionId =
-            (sid != null && sid.isNotEmpty) ? sid : _draftId!;
+        final sessionId = (sid != null && sid.isNotEmpty) ? sid : _draftId!;
         final invName = _investorName.text.trim();
         final loadQ = briefingTabsQuery(
           sessionId,
@@ -618,6 +718,7 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
     String? hint,
     bool requiredField = false,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -628,29 +729,37 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
         const SizedBox(height: 6),
         TextField(
           controller: ctrl,
-          style: AvaText.body.copyWith(fontSize: 13),
+          style: AvaText.body.copyWith(
+            fontSize: 13,
+            color: _flowPrimaryText(context),
+          ),
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             hintText: hint ?? label,
-            hintStyle: const TextStyle(color: AvaColors.muted, fontSize: 13),
+            hintStyle: TextStyle(
+              color: isDark ? AvaColors.muted : const Color(0xFF7A96AA),
+              fontSize: 13,
+            ),
             filled: true,
-            fillColor: AppColors.primaryDarker,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            fillColor: _flowSurface(context),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 13,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(
-                color: AppColors.cyan500.withValues(alpha: 0.22),
-              ),
+              borderSide: BorderSide(color: _flowSurfaceBorder(context)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(
-                color: AppColors.cyan500.withValues(alpha: 0.22),
-              ),
+              borderSide: BorderSide(color: _flowSurfaceBorder(context)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.cyan400, width: 1.5),
+              borderSide: const BorderSide(
+                color: AppColors.cyan400,
+                width: 1.5,
+              ),
             ),
           ),
         ),
@@ -659,6 +768,7 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
   }
 
   Widget _textArea(String label, TextEditingController ctrl, {int lines = 4}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -667,29 +777,34 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
         TextField(
           controller: ctrl,
           maxLines: lines,
-          style: AvaText.body.copyWith(fontSize: 13),
+          style: AvaText.body.copyWith(
+            fontSize: 13,
+            color: _flowPrimaryText(context),
+          ),
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             hintText: 'Paste text here…',
-            hintStyle: const TextStyle(color: AvaColors.muted, fontSize: 13),
+            hintStyle: TextStyle(
+              color: isDark ? AvaColors.muted : const Color(0xFF7A96AA),
+              fontSize: 13,
+            ),
             filled: true,
-            fillColor: AppColors.primaryDarker,
+            fillColor: _flowSurface(context),
             contentPadding: const EdgeInsets.all(14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(
-                color: AppColors.cyan500.withValues(alpha: 0.22),
-              ),
+              borderSide: BorderSide(color: _flowSurfaceBorder(context)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(
-                color: AppColors.cyan500.withValues(alpha: 0.22),
-              ),
+              borderSide: BorderSide(color: _flowSurfaceBorder(context)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.cyan400, width: 1.5),
+              borderSide: const BorderSide(
+                color: AppColors.cyan400,
+                width: 1.5,
+              ),
             ),
           ),
         ),
@@ -703,6 +818,7 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
     String value,
     void Function(String?) onChanged,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -711,37 +827,48 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
         DropdownButtonFormField<String>(
           value: value, // ignore: deprecated_member_use
           onChanged: onChanged,
-          dropdownColor: AppColors.primaryDarker,
-          style: AvaText.body.copyWith(fontSize: 13),
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AvaColors.muted),
+          dropdownColor: _flowSurface(context),
+          style: AvaText.body.copyWith(
+            fontSize: 13,
+            color: _flowPrimaryText(context),
+          ),
+          icon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: isDark ? AvaColors.muted : const Color(0xFF7A96AA),
+          ),
           decoration: InputDecoration(
             filled: true,
-            fillColor: AppColors.primaryDarker,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            fillColor: _flowSurface(context),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 13,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(
-                color: AppColors.cyan500.withValues(alpha: 0.22),
-              ),
+              borderSide: BorderSide(color: _flowSurfaceBorder(context)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(
-                color: AppColors.cyan500.withValues(alpha: 0.22),
-              ),
+              borderSide: BorderSide(color: _flowSurfaceBorder(context)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.cyan400, width: 1.5),
+              borderSide: const BorderSide(
+                color: AppColors.cyan400,
+                width: 1.5,
+              ),
             ),
           ),
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+          items: items
+              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+              .toList(),
         ),
       ],
     );
   }
 
   Widget _datePicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -753,12 +880,12 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             decoration: BoxDecoration(
-              color: AppColors.primaryDarker,
+              color: _flowSurface(context),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: _meetingAt != null
                     ? AppColors.cyan400
-                    : AppColors.cyan500.withValues(alpha: 0.22),
+                    : _flowSurfaceBorder(context),
                 width: _meetingAt != null ? 1.5 : 1,
               ),
             ),
@@ -780,8 +907,8 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       color: _meetingAt == null
-                          ? AvaColors.muted
-                          : AppColors.textWhite,
+                          ? (isDark ? AvaColors.muted : const Color(0xFF7A96AA))
+                          : _flowPrimaryText(context),
                     ),
                   ),
                 ),
@@ -831,7 +958,13 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
     if (time == null || !mounted) return;
 
     setState(() {
-      _meetingAt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      _meetingAt = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
     });
   }
 
@@ -847,26 +980,32 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 20),
             decoration: BoxDecoration(
-              color: AppColors.primaryDarker,
+              color: _flowSurface(context),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: _uploadedFile.isNotEmpty
                     ? AvaColors.green
-                    : AppColors.cyan500.withValues(alpha: 0.22),
+                    : _flowSurfaceBorder(context),
               ),
             ),
             child: _uploadedFile.isNotEmpty
                 ? Column(
                     children: [
-                      const Icon(Icons.check_circle_outline_rounded,
-                          color: AvaColors.green, size: 22),
+                      const Icon(
+                        Icons.check_circle_outline_rounded,
+                        color: AvaColors.green,
+                        size: 22,
+                      ),
                       const SizedBox(height: 6),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text(
                           _uploadedFile,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 11, color: AvaColors.green),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AvaColors.green,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -878,7 +1017,11 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
                   )
                 : const Column(
                     children: [
-                      Icon(Icons.upload_file_outlined, color: AvaColors.muted, size: 24),
+                      Icon(
+                        Icons.upload_file_outlined,
+                        color: AvaColors.muted,
+                        size: 24,
+                      ),
                       SizedBox(height: 8),
                       Text(
                         'Tap to upload PDF',
@@ -904,9 +1047,12 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
     final city = _city.text.trim();
     final country = _country.text.trim();
     final loc = [city, country].where((s) => s.isNotEmpty).join(', ');
-    final dateStr =
-        _meetingAt != null ? _formatDate(_meetingAt!) : 'your scheduled date';
-    final who = co.isNotEmpty ? '$inv ($co)' : (inv.isNotEmpty ? inv : 'your investor');
+    final dateStr = _meetingAt != null
+        ? _formatDate(_meetingAt!)
+        : 'your scheduled date';
+    final who = co.isNotEmpty
+        ? '$inv ($co)'
+        : (inv.isNotEmpty ? inv : 'your investor');
     final s1 = loc.isNotEmpty
         ? "You're meeting $who in $loc on $dateStr for a $_dealType discussion ($_meetingType)."
         : "You're meeting $who on $dateStr for a $_dealType discussion ($_meetingType).";
@@ -936,8 +1082,18 @@ class _MeetingSetupScreenState extends State<MeetingSetupScreen> {
 
   String _formatDate(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');

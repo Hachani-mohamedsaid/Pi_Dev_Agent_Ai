@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:pi_dev_agentia/generated/l10n.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
@@ -35,9 +36,11 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
   late final AssistantService _assistantService = AssistantService(
     authLocalDataSource: InjectionContainer.instance.authLocalDataSource,
   );
+
   /// null = checking, true = ready.
   bool? _allowRequest;
   Future<List<Suggestion>>? _futureSuggestions;
+
   /// Current list shown; set when load completes or from cache when re-opening.
   List<Suggestion>? _currentSuggestions;
   String? _userId;
@@ -75,12 +78,14 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
     _autoRefreshTimer = Timer.periodic(const Duration(minutes: 10), (_) async {
       if (!mounted) return;
       try {
-        final list = await _loadSuggestionsWithContext(userId)
-            .timeout(const Duration(seconds: 25), onTimeout: () => <Suggestion>[]);
+        final list = await _loadSuggestionsWithContext(
+          userId,
+        ).timeout(const Duration(seconds: 25), onTimeout: () => <Suggestion>[]);
         _cachedSuggestions = list;
         if (mounted) setState(() => _currentSuggestions = list);
       } catch (_) {
-        if (mounted) setState(() => _currentSuggestions = _currentSuggestions ?? []);
+        if (mounted)
+          setState(() => _currentSuggestions = _currentSuggestions ?? []);
       }
     });
   }
@@ -103,14 +108,17 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
           onTimeout: () {},
         );
       }
-      location = await LocationService.getLogicalLocation()
-          .timeout(const Duration(seconds: 5), onTimeout: () => 'home');
+      location = await LocationService.getLogicalLocation().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => 'home',
+      );
       final city =
           widget.controller.currentProfile?.location?.trim().isNotEmpty == true
-              ? widget.controller.currentProfile!.location!
-              : null;
-      weather = await WeatherService.getWeatherCondition(cityName: city)
-          .timeout(const Duration(seconds: 5), onTimeout: () => 'sunny');
+          ? widget.controller.currentProfile!.location!
+          : null;
+      weather = await WeatherService.getWeatherCondition(
+        cityName: city,
+      ).timeout(const Duration(seconds: 5), onTimeout: () => 'sunny');
     } catch (_) {
       // keep defaults: location = home, weather = sunny
     }
@@ -126,7 +134,9 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
   /// On first enter: load suggestions. When re-opening after close: show cached list, no auto-refresh.
   Future<void> _initLoad() async {
     final userId = await getUserId();
-    final effectiveUserId = (userId != null && userId.isNotEmpty) ? userId : 'ml_test_user';
+    final effectiveUserId = (userId != null && userId.isNotEmpty)
+        ? userId
+        : 'ml_test_user';
     if (!mounted) return;
     setState(() => _userId = effectiveUserId);
 
@@ -151,13 +161,14 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
       _futureSuggestions = _loadSuggestionsWithContext(effectiveUserId)
           .timeout(const Duration(seconds: 25), onTimeout: () => <Suggestion>[])
           .then((list) {
-        _cachedSuggestions = list;
-        if (mounted) setState(() => _currentSuggestions = list);
-        return list;
-      }).catchError((_, __) {
-        if (mounted) setState(() => _currentSuggestions = []);
-        return <Suggestion>[];
-      });
+            _cachedSuggestions = list;
+            if (mounted) setState(() => _currentSuggestions = list);
+            return list;
+          })
+          .catchError((_, __) {
+            if (mounted) setState(() => _currentSuggestions = []);
+            return <Suggestion>[];
+          });
     });
     _startAutoRefreshTimer(effectiveUserId);
   }
@@ -192,24 +203,30 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
       final location = await LocationService.getLogicalLocation();
       final city =
           widget.controller.currentProfile?.location?.trim().isNotEmpty == true
-              ? widget.controller.currentProfile!.location!
-              : null;
+          ? widget.controller.currentProfile!.location!
+          : null;
       final weather = await WeatherService.getWeatherCondition(cityName: city);
-      final temperatureCelsius = await WeatherService.getTemperature(cityName: city);
+      final temperatureCelsius = await WeatherService.getTemperature(
+        cityName: city,
+      );
       List<Map<String, String>> meetings = <Map<String, String>>[];
       try {
         final meetingList = await MeetingService().fetchMeetings();
         final today = DateTime.now();
         meetings = meetingList
-            .where((m) =>
-                m.startTime.year == today.year &&
-                m.startTime.month == today.month &&
-                m.startTime.day == today.day)
-            .map((m) => {
-                  'title': m.subject,
-                  'time':
-                      '${m.startTime.hour.toString().padLeft(2, '0')}:${m.startTime.minute.toString().padLeft(2, '0')}',
-                })
+            .where(
+              (m) =>
+                  m.startTime.year == today.year &&
+                  m.startTime.month == today.month &&
+                  m.startTime.day == today.day,
+            )
+            .map(
+              (m) => {
+                'title': m.subject,
+                'time':
+                    '${m.startTime.hour.toString().padLeft(2, '0')}:${m.startTime.minute.toString().padLeft(2, '0')}',
+              },
+            )
             .toList();
       } catch (_) {
         // keep meetings empty
@@ -222,11 +239,13 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
           _contextLocation = location;
           _contextTime = timeDisplay;
           _contextWeather = weather;
-          _contextMeetingsLabel =
-              meetings.isEmpty ? 'No meetings' : '${meetings.length} meetings today';
+          _contextMeetingsLabel = meetings.isEmpty
+              ? 'No meetings'
+              : '${meetings.length} meetings today';
         });
       }
-      final learnedPreferences = await SuggestionPreferencesStore.getLearnedSummary();
+      final learnedPreferences =
+          await SuggestionPreferencesStore.getLearnedSummary();
       final ctx = OpenAISuggestionContext(
         time: timeDisplay,
         focusMinutes: focusMinutes,
@@ -238,8 +257,12 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
         userEmail: profile?.email,
         userRole: profile?.role,
         userBio: profile?.bio,
-        meetingsLabel: meetings.isEmpty ? 'No meetings' : '${meetings.length} meetings today',
-        learnedPreferences: learnedPreferences.isEmpty ? null : learnedPreferences,
+        meetingsLabel: meetings.isEmpty
+            ? 'No meetings'
+            : '${meetings.length} meetings today',
+        learnedPreferences: learnedPreferences.isEmpty
+            ? null
+            : learnedPreferences,
       );
       final list = await OpenAISuggestionService.getSuggestions(
         ctx,
@@ -253,7 +276,8 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
         if (mounted) {
           for (final s in capped) {
             final msg = s.message.trim();
-            if (msg.isNotEmpty && !_recentlyShownSuggestionMessages.contains(msg)) {
+            if (msg.isNotEmpty &&
+                !_recentlyShownSuggestionMessages.contains(msg)) {
               _recentlyShownSuggestionMessages.add(msg);
               while (_recentlyShownSuggestionMessages.length > 15) {
                 _recentlyShownSuggestionMessages.removeAt(0);
@@ -287,15 +311,19 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
         final meetingList = await MeetingService().fetchMeetings();
         final today = DateTime.now();
         meetingsForContext = meetingList
-            .where((m) =>
-                m.startTime.year == today.year &&
-                m.startTime.month == today.month &&
-                m.startTime.day == today.day)
-            .map((m) => {
-                  'title': m.subject,
-                  'time':
-                      '${m.startTime.hour.toString().padLeft(2, '0')}:${m.startTime.minute.toString().padLeft(2, '0')}',
-                })
+            .where(
+              (m) =>
+                  m.startTime.year == today.year &&
+                  m.startTime.month == today.month &&
+                  m.startTime.day == today.day,
+            )
+            .map(
+              (m) => {
+                'title': m.subject,
+                'time':
+                    '${m.startTime.hour.toString().padLeft(2, '0')}:${m.startTime.minute.toString().padLeft(2, '0')}',
+              },
+            )
             .toList();
       } catch (_) {}
       final payload = AssistantContextPayload(
@@ -309,7 +337,8 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
       final list = await _assistantService.sendContext(payload);
       final deduped = _deduplicateSuggestionsById(list);
       final capped = deduped.take(3).toList();
-      if (capped.isNotEmpty) await FocusSessionManager.instance.markSuggestionShown();
+      if (capped.isNotEmpty)
+        await FocusSessionManager.instance.markSuggestionShown();
       return capped;
     } on AssistantUnauthorizedException {
       if (mounted) widget.controller.logout();
@@ -369,7 +398,7 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not send feedback. Try again.')),
+          SnackBar(content: Text(S.of(context).feedbackSendError)),
         );
       }
       return;
@@ -388,9 +417,9 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
         _cachedSuggestions = _currentSuggestions;
       }
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Great! I will learn from this 👍')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(S.of(context).feedbackAccepted)));
     await FocusSessionManager.instance.markSuggestionShown();
   }
 
@@ -411,7 +440,7 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not send feedback. Try again.')),
+          SnackBar(content: Text(S.of(context).feedbackSendError)),
         );
       }
       return;
@@ -430,9 +459,9 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
         _cachedSuggestions = _currentSuggestions;
       }
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Got it. I'll improve next time 👌")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(S.of(context).feedbackDismissed)));
     await FocusSessionManager.instance.markSuggestionShown();
   }
 
@@ -483,6 +512,7 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = Responsive.isMobile(context);
     final padding = Responsive.getResponsiveValue(
       context,
@@ -492,21 +522,29 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
     );
 
     // Même bleu que le dégradé pour éviter la bande noire sous la nav (safe area).
-    const Color _scaffoldBg = Color(0xFF0f2940);
+    final Color scaffoldBg = isDark
+        ? const Color(0xFF0f2940)
+        : const Color(0xFFF3F8FC);
     return Scaffold(
-      backgroundColor: _scaffoldBg,
+      backgroundColor: scaffoldBg,
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
+            colors: isDark
+                ? const [
+                    Color(0xFF0f2940),
+                    Color(0xFF1a3a52),
+                    Color(0xFF0f2940),
+                  ]
+                : const [
+                    Color(0xFFF8FCFF),
+                    Color(0xFFEAF4FB),
+                    Color(0xFFF3F8FC),
+                  ],
           ),
         ),
         child: SafeArea(
@@ -525,60 +563,77 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
                     top: padding,
                     bottom: Responsive.getResponsiveValue(
                       context,
-                      mobile: 100.0,
-                      tablet: 120.0,
-                      desktop: 140.0,
+                      mobile: 150.0,
+                      tablet: 160.0,
+                      desktop: 170.0,
                     ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildHeader(context, isMobile)
+                      _buildHeader(context, isMobile, isDark)
                           .animate()
                           .fadeIn(duration: 500.ms)
                           .slideY(begin: -0.2, end: 0, duration: 500.ms),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 20.0,
-                        tablet: 24.0,
-                        desktop: 28.0,
-                      )),
-                      _buildCurrentContext(context, isMobile)
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 20.0,
+                          tablet: 24.0,
+                          desktop: 28.0,
+                        ),
+                      ),
+                      _buildCurrentContext(context, isMobile, isDark)
                           .animate()
                           .fadeIn(delay: 100.ms, duration: 300.ms)
-                          .scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1), delay: 100.ms, duration: 300.ms),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 12.0,
-                        tablet: 14.0,
-                        desktop: 16.0,
-                      )),
-                      _buildNewSuggestionsButton(context, isMobile),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 12.0,
-                        tablet: 14.0,
-                        desktop: 16.0,
-                      )),
+                          .scale(
+                            begin: const Offset(0.95, 0.95),
+                            end: const Offset(1, 1),
+                            delay: 100.ms,
+                            duration: 300.ms,
+                          ),
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 12.0,
+                          tablet: 14.0,
+                          desktop: 16.0,
+                        ),
+                      ),
+                      _buildNewSuggestionsButton(context, isMobile, isDark),
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 12.0,
+                          tablet: 14.0,
+                          desktop: 16.0,
+                        ),
+                      ),
                       _buildSuggestionsSection(context, isMobile),
-                      SizedBox(height: Responsive.getResponsiveValue(
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 20.0,
+                          tablet: 24.0,
+                          desktop: 28.0,
+                        ),
+                      ),
+                      _buildSettingsButton(
                         context,
-                        mobile: 20.0,
-                        tablet: 24.0,
-                        desktop: 28.0,
-                      )),
-                      _buildSettingsButton(context, isMobile)
-                          .animate()
-                          .fadeIn(delay: 800.ms, duration: 300.ms),
-                      SizedBox(height: Responsive.getResponsiveValue(
+                        isMobile,
+                      ).animate().fadeIn(delay: 800.ms, duration: 300.ms),
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 12.0,
+                          tablet: 14.0,
+                          desktop: 16.0,
+                        ),
+                      ),
+                      _buildInfo(
                         context,
-                        mobile: 12.0,
-                        tablet: 14.0,
-                        desktop: 16.0,
-                      )),
-                      _buildInfo(context, isMobile)
-                          .animate()
-                          .fadeIn(delay: 900.ms, duration: 300.ms),
+                        isMobile,
+                      ).animate().fadeIn(delay: 900.ms, duration: 300.ms),
                     ],
                   ),
                 ),
@@ -598,7 +653,7 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isMobile) {
+  Widget _buildHeader(BuildContext context, bool isMobile, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -612,15 +667,17 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
               desktop: 32.0,
             ),
             fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
+            color: isDark ? AppColors.textWhite : const Color(0xFF0F2A3F),
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 6.0,
-          tablet: 8.0,
-          desktop: 10.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 6.0,
+            tablet: 8.0,
+            desktop: 10.0,
+          ),
+        ),
         Text(
           'Personalized recommendations from AVA',
           style: TextStyle(
@@ -630,46 +687,64 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
               tablet: 14.0,
               desktop: 15.0,
             ),
-            color: AppColors.textCyan200.withOpacity(0.7),
+            color: isDark
+                ? AppColors.textCyan200.withOpacity(0.7)
+                : const Color(0xFF3B6D8C),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildCurrentContext(BuildContext context, bool isMobile) {
+  Widget _buildCurrentContext(
+    BuildContext context,
+    bool isMobile,
+    bool isDark,
+  ) {
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 18.0,
-        tablet: 20.0,
-        desktop: 24.0,
-      )),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 18.0,
+          tablet: 20.0,
+          desktop: 24.0,
+        ),
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF9333EA).withOpacity(0.1),
-            AppColors.blue500.withOpacity(0.1),
+            isDark
+                ? const Color(0xFF9333EA).withOpacity(0.1)
+                : const Color(0xFF7C3AED).withOpacity(0.07),
+            isDark
+                ? AppColors.blue500.withOpacity(0.1)
+                : const Color(0xFF0EA5C6).withOpacity(0.08),
           ],
         ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
         border: Border.all(
-          color: const Color(0xFF9333EA).withOpacity(0.2),
+          color: isDark
+              ? const Color(0xFF9333EA).withOpacity(0.2)
+              : const Color(0xFF7C3AED).withOpacity(0.18),
           width: 1,
         ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Row(
@@ -689,13 +764,17 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
                   desktop: 44.0,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF9333EA).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                    context,
-                    mobile: 10.0,
-                    tablet: 11.0,
-                    desktop: 12.0,
-                  )),
+                  color: isDark
+                      ? const Color(0xFF9333EA).withOpacity(0.2)
+                      : const Color(0xFF7C3AED).withOpacity(0.16),
+                  borderRadius: BorderRadius.circular(
+                    Responsive.getResponsiveValue(
+                      context,
+                      mobile: 10.0,
+                      tablet: 11.0,
+                      desktop: 12.0,
+                    ),
+                  ),
                 ),
                 child: Icon(
                   LucideIcons.sun,
@@ -705,15 +784,19 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
                     tablet: 20.0,
                     desktop: 22.0,
                   ),
-                  color: const Color(0xFFC084FC),
+                  color: isDark
+                      ? const Color(0xFFC084FC)
+                      : const Color(0xFF7C3AED),
                 ),
               ),
-              SizedBox(width: Responsive.getResponsiveValue(
-                context,
-                mobile: 10.0,
-                tablet: 12.0,
-                desktop: 14.0,
-              )),
+              SizedBox(
+                width: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 10.0,
+                  tablet: 12.0,
+                  desktop: 14.0,
+                ),
+              ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -728,46 +811,75 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
                           desktop: 16.0,
                         ),
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textWhite,
+                        color: isDark
+                            ? AppColors.textWhite
+                            : const Color(0xFF12344C),
                       ),
                     ),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 6.0,
-                      tablet: 8.0,
-                      desktop: 10.0,
-                    )),
-                    _buildContextItem(LucideIcons.mapPin, _contextLocation ?? '—'),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 3.0,
-                      tablet: 4.0,
-                      desktop: 5.0,
-                    )),
-                    _buildContextItem(LucideIcons.clock, _contextTime ?? '—'),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 3.0,
-                      tablet: 4.0,
-                      desktop: 5.0,
-                    )),
-                    _buildContextItem(LucideIcons.cloudSun, _contextWeather ?? '—'),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 3.0,
-                      tablet: 4.0,
-                      desktop: 5.0,
-                    )),
-                    _buildContextItem(LucideIcons.calendar, _contextMeetingsLabel),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 3.0,
-                      tablet: 4.0,
-                      desktop: 5.0,
-                    )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 6.0,
+                        tablet: 8.0,
+                        desktop: 10.0,
+                      ),
+                    ),
+                    _buildContextItem(
+                      LucideIcons.mapPin,
+                      _contextLocation ?? '—',
+                      isDark,
+                    ),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 3.0,
+                        tablet: 4.0,
+                        desktop: 5.0,
+                      ),
+                    ),
+                    _buildContextItem(
+                      LucideIcons.clock,
+                      _contextTime ?? '—',
+                      isDark,
+                    ),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 3.0,
+                        tablet: 4.0,
+                        desktop: 5.0,
+                      ),
+                    ),
+                    _buildContextItem(
+                      LucideIcons.cloudSun,
+                      _contextWeather ?? '—',
+                      isDark,
+                    ),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 3.0,
+                        tablet: 4.0,
+                        desktop: 5.0,
+                      ),
+                    ),
+                    _buildContextItem(
+                      LucideIcons.calendar,
+                      _contextMeetingsLabel,
+                      isDark,
+                    ),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 3.0,
+                        tablet: 4.0,
+                        desktop: 5.0,
+                      ),
+                    ),
                     _buildContextItem(
                       LucideIcons.clock,
                       'Time in app: ${FocusSessionManager.instance.getFocusMinutes()} min (stops when you exit)',
+                      isDark,
                     ),
                   ],
                 ),
@@ -779,7 +891,7 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
     );
   }
 
-  Widget _buildContextItem(IconData icon, String text) {
+  Widget _buildContextItem(IconData icon, String text, bool isDark) {
     return Row(
       children: [
         Icon(
@@ -790,14 +902,18 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
             tablet: 13.0,
             desktop: 14.0,
           ),
-          color: const Color(0xFFC084FC).withOpacity(0.7),
+          color: isDark
+              ? const Color(0xFFC084FC).withOpacity(0.7)
+              : const Color(0xFF7C3AED).withOpacity(0.75),
         ),
-        SizedBox(width: Responsive.getResponsiveValue(
-          context,
-          mobile: 6.0,
-          tablet: 7.0,
-          desktop: 8.0,
-        )),
+        SizedBox(
+          width: Responsive.getResponsiveValue(
+            context,
+            mobile: 6.0,
+            tablet: 7.0,
+            desktop: 8.0,
+          ),
+        ),
         Expanded(
           child: Text(
             text,
@@ -808,7 +924,9 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
                 tablet: 13.0,
                 desktop: 14.0,
               ),
-              color: const Color(0xFFC084FC).withOpacity(0.7),
+              color: isDark
+                  ? const Color(0xFFC084FC).withOpacity(0.7)
+                  : const Color(0xFF5A4C7A),
             ),
           ),
         ),
@@ -816,30 +934,74 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
     );
   }
 
-  Widget _buildNewSuggestionsButton(BuildContext context, bool isMobile) {
+  Widget _buildNewSuggestionsButton(
+    BuildContext context,
+    bool isMobile,
+    bool isDark,
+  ) {
     return GestureDetector(
       onTap: () => _loadNewSuggestions(),
       child: Container(
         padding: EdgeInsets.symmetric(
-          vertical: Responsive.getResponsiveValue(context, mobile: 10.0, tablet: 12.0, desktop: 14.0),
-          horizontal: Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0),
+          vertical: Responsive.getResponsiveValue(
+            context,
+            mobile: 10.0,
+            tablet: 12.0,
+            desktop: 14.0,
+          ),
+          horizontal: Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
         ),
         decoration: BoxDecoration(
-          color: AppColors.cyan500.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 14.0, desktop: 16.0)),
-          border: Border.all(color: AppColors.cyan400.withOpacity(0.4), width: 1),
+          color: isDark
+              ? AppColors.cyan500.withOpacity(0.15)
+              : const Color(0xFF0EA5C6).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 12.0,
+              tablet: 14.0,
+              desktop: 16.0,
+            ),
+          ),
+          border: Border.all(
+            color: isDark
+                ? AppColors.cyan400.withOpacity(0.4)
+                : const Color(0xFF0EA5C6).withOpacity(0.4),
+            width: 1,
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(LucideIcons.refreshCw, size: 18, color: AppColors.cyan400),
-            SizedBox(width: Responsive.getResponsiveValue(context, mobile: 8.0, tablet: 10.0, desktop: 12.0)),
+            Icon(
+              LucideIcons.refreshCw,
+              size: 18,
+              color: isDark ? AppColors.cyan400 : const Color(0xFF0E86AA),
+            ),
+            SizedBox(
+              width: Responsive.getResponsiveValue(
+                context,
+                mobile: 8.0,
+                tablet: 10.0,
+                desktop: 12.0,
+              ),
+            ),
             Text(
               'Nouvelles suggestions',
               style: TextStyle(
-                fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
+                fontSize: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 13.0,
+                  tablet: 14.0,
+                  desktop: 15.0,
+                ),
                 fontWeight: FontWeight.w600,
-                color: AppColors.cyan400,
+                color: isDark ? AppColors.cyan400 : const Color(0xFF0E86AA),
               ),
             ),
           ],
@@ -853,17 +1015,38 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
       return Center(
         child: Padding(
           padding: EdgeInsets.only(
-            top: Responsive.getResponsiveValue(context, mobile: 40.0, tablet: 50.0, desktop: 60.0),
+            top: Responsive.getResponsiveValue(
+              context,
+              mobile: 40.0,
+              tablet: 50.0,
+              desktop: 60.0,
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(LucideIcons.logIn, size: 48, color: AppColors.cyan400.withOpacity(0.6)),
-              SizedBox(height: Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 14.0, desktop: 16.0)),
+              Icon(
+                LucideIcons.logIn,
+                size: 48,
+                color: AppColors.cyan400.withOpacity(0.6),
+              ),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 12.0,
+                  tablet: 14.0,
+                  desktop: 16.0,
+                ),
+              ),
               Text(
                 'Please sign in to see suggestions',
                 style: TextStyle(
-                  fontSize: Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 15.0, desktop: 16.0),
+                  fontSize: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 14.0,
+                    tablet: 15.0,
+                    desktop: 16.0,
+                  ),
                   color: AppColors.cyan400.withOpacity(0.8),
                 ),
                 textAlign: TextAlign.center,
@@ -877,7 +1060,12 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
       return Center(
         child: Padding(
           padding: EdgeInsets.only(
-            top: Responsive.getResponsiveValue(context, mobile: 40.0, tablet: 50.0, desktop: 60.0),
+            top: Responsive.getResponsiveValue(
+              context,
+              mobile: 40.0,
+              tablet: 50.0,
+              desktop: 60.0,
+            ),
           ),
           child: const CircularProgressIndicator(),
         ),
@@ -887,29 +1075,62 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
       return Center(
         child: Padding(
           padding: EdgeInsets.only(
-            top: Responsive.getResponsiveValue(context, mobile: 40.0, tablet: 50.0, desktop: 60.0),
+            top: Responsive.getResponsiveValue(
+              context,
+              mobile: 40.0,
+              tablet: 50.0,
+              desktop: 60.0,
+            ),
             left: 24,
             right: 24,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(LucideIcons.clock, size: 56, color: AppColors.cyan400.withOpacity(0.7)),
-              SizedBox(height: Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
+              Icon(
+                LucideIcons.clock,
+                size: 56,
+                color: AppColors.cyan400.withOpacity(0.7),
+              ),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 16.0,
+                  tablet: 18.0,
+                  desktop: 20.0,
+                ),
+              ),
               Text(
                 "Keep going! I'll suggest something when you need it.",
                 style: TextStyle(
-                  fontSize: Responsive.getResponsiveValue(context, mobile: 15.0, tablet: 16.0, desktop: 17.0),
+                  fontSize: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 15.0,
+                    tablet: 16.0,
+                    desktop: 17.0,
+                  ),
                   color: AppColors.cyan400.withOpacity(0.9),
                   fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: Responsive.getResponsiveValue(context, mobile: 8.0, tablet: 10.0, desktop: 12.0)),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 8.0,
+                  tablet: 10.0,
+                  desktop: 12.0,
+                ),
+              ),
               Text(
                 'Time in app: ${FocusSessionManager.instance.getFocusMinutes()} min',
                 style: TextStyle(
-                  fontSize: Responsive.getResponsiveValue(context, mobile: 12.0, tablet: 13.0, desktop: 14.0),
+                  fontSize: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 12.0,
+                    tablet: 13.0,
+                    desktop: 14.0,
+                  ),
                   color: AppColors.cyan400.withOpacity(0.5),
                 ),
               ),
@@ -923,19 +1144,40 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
       return Center(
         child: Padding(
           padding: EdgeInsets.only(
-            top: Responsive.getResponsiveValue(context, mobile: 40.0, tablet: 50.0, desktop: 60.0),
+            top: Responsive.getResponsiveValue(
+              context,
+              mobile: 40.0,
+              tablet: 50.0,
+              desktop: 60.0,
+            ),
             left: 24,
             right: 24,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(LucideIcons.sparkles, size: 56, color: AppColors.cyan400.withOpacity(0.7)),
-              SizedBox(height: Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
+              Icon(
+                LucideIcons.sparkles,
+                size: 56,
+                color: AppColors.cyan400.withOpacity(0.7),
+              ),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 16.0,
+                  tablet: 18.0,
+                  desktop: 20.0,
+                ),
+              ),
               Text(
                 "Tap 'Nouvelles suggestions' to load suggestions.",
                 style: TextStyle(
-                  fontSize: Responsive.getResponsiveValue(context, mobile: 15.0, tablet: 16.0, desktop: 17.0),
+                  fontSize: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 15.0,
+                    tablet: 16.0,
+                    desktop: 17.0,
+                  ),
                   color: AppColors.cyan400.withOpacity(0.9),
                   fontWeight: FontWeight.w500,
                 ),
@@ -969,11 +1211,23 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const CircularProgressIndicator(),
-                  SizedBox(height: Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
+                  SizedBox(
+                    height: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 16.0,
+                      tablet: 18.0,
+                      desktop: 20.0,
+                    ),
+                  ),
                   Text(
                     'Loading AI suggestion...',
                     style: TextStyle(
-                      fontSize: Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 15.0, desktop: 16.0),
+                      fontSize: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 14.0,
+                        tablet: 15.0,
+                        desktop: 16.0,
+                      ),
                       color: AppColors.cyan400.withOpacity(0.8),
                     ),
                   ),
@@ -1160,336 +1414,385 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
   ) {
     final colors = _getGradientForType(suggestion.type);
     final status = _feedbackStatus[suggestion.id];
-    final alreadyAnswered =
-        status == 'accepted' || status == 'dismissed';
+    final alreadyAnswered = status == 'accepted' || status == 'dismissed';
     final borderColor = status == 'accepted'
         ? Colors.green
         : status == 'dismissed'
-            ? Colors.red
-            : _getBorderForType(suggestion.type);
-    final confidencePercent =
-        (suggestion.confidence * 100).clamp(0, 100).round();
+        ? Colors.red
+        : _getBorderForType(suggestion.type);
+    final confidencePercent = (suggestion.confidence * 100)
+        .clamp(0, 100)
+        .round();
 
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: colors,
-        ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
-        border: Border.all(
-          color: borderColor,
-          width: alreadyAnswered ? 2 : 1,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Stack(
-            children: [
-              Padding(
-                padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 14.0,
-                  tablet: 16.0,
-                  desktop: 20.0,
-                )),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    Row(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: colors),
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 16.0,
+                tablet: 18.0,
+                desktop: 20.0,
+              ),
+            ),
+            border: Border.all(
+              color: borderColor,
+              width: alreadyAnswered ? 2 : 1,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 16.0,
+                tablet: 18.0,
+                desktop: 20.0,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Stack(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(
+                      Responsive.getResponsiveValue(
+                        context,
+                        mobile: 14.0,
+                        tablet: 16.0,
+                        desktop: 20.0,
+                      ),
+                    ),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 44.0,
-                                  tablet: 48.0,
-                                  desktop: 52.0,
-                                ),
-                                height: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 44.0,
-                                  tablet: 48.0,
-                                  desktop: 52.0,
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: colors,
-                                  ),
-                                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 10.0,
-                                    tablet: 11.0,
-                                    desktop: 12.0,
-                                  )),
-                                  border: Border.all(
-                                    color: borderColor,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Icon(
-                                  suggestion.icon,
-                                  size: Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 22.0,
-                                    tablet: 24.0,
-                                    desktop: 26.0,
-                                  ),
-                                  color: AppColors.cyan400,
-                                ),
-                              ),
-                              SizedBox(width: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 10.0,
-                                tablet: 12.0,
-                                desktop: 14.0,
-                              )),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      suggestion.message,
-                                      style: TextStyle(
-                                        fontSize: Responsive.getResponsiveValue(
+                        // Header
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 44.0,
+                                      tablet: 48.0,
+                                      desktop: 52.0,
+                                    ),
+                                    height: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 44.0,
+                                      tablet: 48.0,
+                                      desktop: 52.0,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: colors,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        Responsive.getResponsiveValue(
                                           context,
-                                          mobile: 14.0,
-                                          tablet: 15.0,
-                                          desktop: 16.0,
+                                          mobile: 10.0,
+                                          tablet: 11.0,
+                                          desktop: 12.0,
                                         ),
-                                        fontWeight: FontWeight.w500,
-                                        height: 1.35,
-                                        color: AppColors.textWhite,
+                                      ),
+                                      border: Border.all(
+                                        color: borderColor,
+                                        width: 1,
                                       ),
                                     ),
-                                    SizedBox(height: Responsive.getResponsiveValue(
+                                    child: Icon(
+                                      suggestion.icon,
+                                      size: Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 22.0,
+                                        tablet: 24.0,
+                                        desktop: 26.0,
+                                      ),
+                                      color: AppColors.cyan400,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: Responsive.getResponsiveValue(
                                       context,
-                                      mobile: 6.0,
-                                      tablet: 7.0,
-                                      desktop: 8.0,
-                                    )),
-                                    Row(
+                                      mobile: 10.0,
+                                      tablet: 12.0,
+                                      desktop: 14.0,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Icon(
-                                          LucideIcons.sparkles,
-                                          size: Responsive.getResponsiveValue(
-                                            context,
-                                            mobile: 11.0,
-                                            tablet: 12.0,
-                                            desktop: 13.0,
-                                          ),
-                                          color: AppColors.cyan400.withOpacity(0.5),
-                                        ),
-                                        SizedBox(width: Responsive.getResponsiveValue(
-                                          context,
-                                          mobile: 4.0,
-                                          tablet: 5.0,
-                                          desktop: 6.0,
-                                        )),
                                         Text(
-                                          'Relevance $confidencePercent%',
+                                          suggestion.message,
                                           style: TextStyle(
-                                            fontSize: Responsive.getResponsiveValue(
-                                              context,
-                                              mobile: 10.0,
-                                              tablet: 11.0,
-                                              desktop: 12.0,
-                                            ),
-                                            color: AppColors.cyan400.withOpacity(0.5),
-                                            letterSpacing: 0.2,
+                                            fontSize:
+                                                Responsive.getResponsiveValue(
+                                                  context,
+                                                  mobile: 14.0,
+                                                  tablet: 15.0,
+                                                  desktop: 16.0,
+                                                ),
+                                            fontWeight: FontWeight.w500,
+                                            height: 1.35,
+                                            color: AppColors.textWhite,
                                           ),
+                                        ),
+                                        SizedBox(
+                                          height: Responsive.getResponsiveValue(
+                                            context,
+                                            mobile: 6.0,
+                                            tablet: 7.0,
+                                            desktop: 8.0,
+                                          ),
+                                        ),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              LucideIcons.sparkles,
+                                              size:
+                                                  Responsive.getResponsiveValue(
+                                                    context,
+                                                    mobile: 11.0,
+                                                    tablet: 12.0,
+                                                    desktop: 13.0,
+                                                  ),
+                                              color: AppColors.cyan400
+                                                  .withOpacity(0.5),
+                                            ),
+                                            SizedBox(
+                                              width:
+                                                  Responsive.getResponsiveValue(
+                                                    context,
+                                                    mobile: 4.0,
+                                                    tablet: 5.0,
+                                                    desktop: 6.0,
+                                                  ),
+                                            ),
+                                            Text(
+                                              'Relevance $confidencePercent%',
+                                              style: TextStyle(
+                                                fontSize:
+                                                    Responsive.getResponsiveValue(
+                                                      context,
+                                                      mobile: 10.0,
+                                                      tablet: 11.0,
+                                                      desktop: 12.0,
+                                                    ),
+                                                color: AppColors.cyan400
+                                                    .withOpacity(0.5),
+                                                letterSpacing: 0.2,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => _handleDismiss(suggestion),
-                          child: Container(
-                            padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                              context,
-                              mobile: 6.0,
-                              tablet: 7.0,
-                              desktop: 8.0,
-                            )),
-                            decoration: BoxDecoration(
-                              color: AppColors.textWhite.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                context,
-                                mobile: 6.0,
-                                tablet: 7.0,
-                                desktop: 8.0,
-                              )),
-                              border: Border.all(
-                                color: AppColors.textWhite.withOpacity(0.1),
-                                width: 1,
+                                  ),
+                                ],
                               ),
                             ),
-                            child: Icon(
-                              LucideIcons.x,
-                              size: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 14.0,
-                                tablet: 16.0,
-                                desktop: 18.0,
-                              ),
-                              color: AppColors.cyan400.withOpacity(0.7),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    // Accepter / Refuser – un seul feedback par suggestion
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 10.0,
-                      tablet: 12.0,
-                      desktop: 14.0,
-                    )),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: alreadyAnswered
-                                ? null
-                                : () => _handleAccept(suggestion),
-                            child: Opacity(
-                              opacity: alreadyAnswered ? 0.5 : 1,
+                            GestureDetector(
+                              onTap: () => _handleDismiss(suggestion),
                               child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: Responsive.getResponsiveValue(
+                                padding: EdgeInsets.all(
+                                  Responsive.getResponsiveValue(
                                     context,
-                                    mobile: 9.0,
-                                    tablet: 10.0,
-                                    desktop: 11.0,
-                                  ),
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      AppColors.cyan500.withOpacity(0.3),
-                                      AppColors.blue500.withOpacity(0.3),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 12.0,
-                                    tablet: 13.0,
-                                    desktop: 14.0,
-                                  )),
-                                  border: Border.all(
-                                    color: AppColors.cyan500.withOpacity(0.5),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    'Accepter',
-                                    style: TextStyle(
-                                      fontSize: Responsive.getResponsiveValue(
-                                        context,
-                                        mobile: 12.0,
-                                        tablet: 13.0,
-                                        desktop: 14.0,
-                                      ),
-                                      fontWeight: FontWeight.w500,
-                                      color: AppColors.textCyan300,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 8.0,
-                          tablet: 10.0,
-                          desktop: 12.0,
-                        )),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: alreadyAnswered
-                                ? null
-                                : () => _handleDismiss(suggestion),
-                            child: Opacity(
-                              opacity: alreadyAnswered ? 0.5 : 1,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 9.0,
-                                    tablet: 10.0,
-                                    desktop: 11.0,
+                                    mobile: 6.0,
+                                    tablet: 7.0,
+                                    desktop: 8.0,
                                   ),
                                 ),
                                 decoration: BoxDecoration(
                                   color: AppColors.textWhite.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 12.0,
-                                    tablet: 13.0,
-                                    desktop: 14.0,
-                                  )),
+                                  borderRadius: BorderRadius.circular(
+                                    Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 6.0,
+                                      tablet: 7.0,
+                                      desktop: 8.0,
+                                    ),
+                                  ),
                                   border: Border.all(
-                                    color: AppColors.textWhite.withOpacity(0.2),
+                                    color: AppColors.textWhite.withOpacity(0.1),
                                     width: 1,
                                   ),
                                 ),
-                                child: Center(
-                                  child: Text(
-                                    'Refuser',
-                                    style: TextStyle(
-                                      fontSize: Responsive.getResponsiveValue(
+                                child: Icon(
+                                  LucideIcons.x,
+                                  size: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 14.0,
+                                    tablet: 16.0,
+                                    desktop: 18.0,
+                                  ),
+                                  color: AppColors.cyan400.withOpacity(0.7),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Accepter / Refuser – un seul feedback par suggestion
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 10.0,
+                            tablet: 12.0,
+                            desktop: 14.0,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: alreadyAnswered
+                                    ? null
+                                    : () => _handleAccept(suggestion),
+                                child: Opacity(
+                                  opacity: alreadyAnswered ? 0.5 : 1,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: Responsive.getResponsiveValue(
                                         context,
-                                        mobile: 12.0,
-                                        tablet: 13.0,
-                                        desktop: 14.0,
+                                        mobile: 9.0,
+                                        tablet: 10.0,
+                                        desktop: 11.0,
                                       ),
-                                      fontWeight: FontWeight.w500,
-                                      color: AppColors.cyan400.withOpacity(0.8),
+                                    ),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          AppColors.cyan500.withOpacity(0.3),
+                                          AppColors.blue500.withOpacity(0.3),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        Responsive.getResponsiveValue(
+                                          context,
+                                          mobile: 12.0,
+                                          tablet: 13.0,
+                                          desktop: 14.0,
+                                        ),
+                                      ),
+                                      border: Border.all(
+                                        color: AppColors.cyan500.withOpacity(
+                                          0.5,
+                                        ),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'Accepter',
+                                        style: TextStyle(
+                                          fontSize:
+                                              Responsive.getResponsiveValue(
+                                                context,
+                                                mobile: 12.0,
+                                                tablet: 13.0,
+                                                desktop: 14.0,
+                                              ),
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.textCyan300,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
+                            SizedBox(
+                              width: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 8.0,
+                                tablet: 10.0,
+                                desktop: 12.0,
+                              ),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: alreadyAnswered
+                                    ? null
+                                    : () => _handleDismiss(suggestion),
+                                child: Opacity(
+                                  opacity: alreadyAnswered ? 0.5 : 1,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 9.0,
+                                        tablet: 10.0,
+                                        desktop: 11.0,
+                                      ),
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.textWhite.withOpacity(
+                                        0.05,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        Responsive.getResponsiveValue(
+                                          context,
+                                          mobile: 12.0,
+                                          tablet: 13.0,
+                                          desktop: 14.0,
+                                        ),
+                                      ),
+                                      border: Border.all(
+                                        color: AppColors.textWhite.withOpacity(
+                                          0.2,
+                                        ),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'Refuser',
+                                        style: TextStyle(
+                                          fontSize:
+                                              Responsive.getResponsiveValue(
+                                                context,
+                                                mobile: 12.0,
+                                                tablet: 13.0,
+                                                desktop: 14.0,
+                                              ),
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.cyan400.withOpacity(
+                                            0.8,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-    )
+        )
         .animate()
-        .fadeIn(delay: Duration(milliseconds: 200 + (index * 100)), duration: 300.ms)
-        .slideX(begin: -0.2, end: 0, delay: Duration(milliseconds: 200 + (index * 100)), duration: 300.ms);
+        .fadeIn(
+          delay: Duration(milliseconds: 200 + (index * 100)),
+          duration: 300.ms,
+        )
+        .slideX(
+          begin: -0.2,
+          end: 0,
+          delay: Duration(milliseconds: 200 + (index * 100)),
+          duration: 300.ms,
+        );
   }
 
   Widget _buildSettingsButton(BuildContext context, bool isMobile) {
@@ -1509,12 +1812,14 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
         ),
         decoration: BoxDecoration(
           color: AppColors.textWhite.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-            context,
-            mobile: 12.0,
-            tablet: 13.0,
-            desktop: 14.0,
-          )),
+          borderRadius: BorderRadius.circular(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 12.0,
+              tablet: 13.0,
+              desktop: 14.0,
+            ),
+          ),
           border: Border.all(
             color: AppColors.textWhite.withOpacity(0.1),
             width: 1,
@@ -1574,24 +1879,25 @@ class _SuggestionsFeedPageState extends State<SuggestionsFeedPage> {
 
   Widget _buildInfo(BuildContext context, bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 14.0,
-        tablet: 16.0,
-        desktop: 20.0,
-      )),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 14.0,
+          tablet: 16.0,
+          desktop: 20.0,
+        ),
+      ),
       decoration: BoxDecoration(
         color: AppColors.cyan500.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 12.0,
-          tablet: 13.0,
-          desktop: 14.0,
-        )),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 13.0,
+            desktop: 14.0,
+          ),
         ),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.1), width: 1),
       ),
       child: Text(
         'Suggestions are personalized by AI from your profile and context (time, weather, habits). Your Accept/Refuse choices help AVA learn your preferences. Tap "Nouvelles suggestions" for more.',

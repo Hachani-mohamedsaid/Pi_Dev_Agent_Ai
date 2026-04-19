@@ -116,9 +116,10 @@ class _ExecutiveBriefingScreenState extends State<ExecutiveBriefingScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     );
-    _gaugeAnim = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _gaugeCtrl, curve: Curves.easeOut),
-    );
+    _gaugeAnim = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _gaugeCtrl, curve: Curves.easeOut));
     unawaited(_startReportFlow());
   }
 
@@ -226,7 +227,9 @@ class _ExecutiveBriefingScreenState extends State<ExecutiveBriefingScreen>
           content: const Text('PDF exported successfully'),
           backgroundColor: AvaColors.green,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -332,8 +335,11 @@ class _ExecutiveBriefingScreenState extends State<ExecutiveBriefingScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.wifi_off_rounded,
-                color: AvaColors.muted, size: 36),
+            const Icon(
+              Icons.wifi_off_rounded,
+              color: AvaColors.muted,
+              size: 36,
+            ),
             const SizedBox(height: 16),
             Text(
               _error ?? 'Unknown error',
@@ -417,7 +423,7 @@ class _ExecutiveBriefingScreenState extends State<ExecutiveBriefingScreen>
             border: Border.all(color: r.overallColor.withValues(alpha: 0.3)),
           ),
           child: Text(
-            r.overallLabel,
+            r.overallLabel(context),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -751,7 +757,5 @@ class _ReportGaugePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ReportGaugePainter old) =>
-      old.value != value ||
-      old.score != score ||
-      old.gaugeColor != gaugeColor;
+      old.value != value || old.score != score || old.gaugeColor != gaugeColor;
 }

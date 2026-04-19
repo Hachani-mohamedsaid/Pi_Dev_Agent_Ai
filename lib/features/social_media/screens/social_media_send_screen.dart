@@ -17,8 +17,9 @@ class SocialMediaSendScreen extends StatefulWidget {
 class _SocialMediaSendScreenState extends State<SocialMediaSendScreen>
     with SingleTickerProviderStateMixin {
   final _recipientsCtrl = TextEditingController();
-  final _departmentCtrl =
-      TextEditingController(text: 'Social Media Department');
+  final _departmentCtrl = TextEditingController(
+    text: 'Social Media Department',
+  );
   final _notesCtrl = TextEditingController();
   bool _attachPdf = true;
   bool _isSending = false;
@@ -115,31 +116,46 @@ class _SocialMediaSendScreenState extends State<SocialMediaSendScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFF3F8FC),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+            colors: isDark
+                ? const [
+                    Color(0xFF0f2940),
+                    Color(0xFF1a3a52),
+                    Color(0xFF0f2940),
+                  ]
+                : const [
+                    Color(0xFFF8FCFF),
+                    Color(0xFFEAF4FB),
+                    Color(0xFFF3F8FC),
+                  ],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              _buildAppBar(context),
+              _buildAppBar(context, isDark),
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildCampaignSummary(),
+                      _buildCampaignSummary(isDark),
                       const SizedBox(height: 24),
-                      if (_errorMessage != null) _buildErrorBanner(),
-                      _sectionLabel('Recipients'),
+                      if (_errorMessage != null) _buildErrorBanner(isDark),
+                      _sectionLabel('Recipients', isDark),
                       const SizedBox(height: 8),
                       _buildTextField(
+                        isDark: isDark,
                         controller: _recipientsCtrl,
                         hint: 'email1@company.com, email2@company.com',
                         keyboardType: TextInputType.emailAddress,
@@ -151,27 +167,31 @@ class _SocialMediaSendScreenState extends State<SocialMediaSendScreen>
                           'Separate multiple emails with commas',
                           style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.textCyan200.withOpacity(0.5),
+                            color: isDark
+                                ? AppColors.textCyan200.withOpacity(0.5)
+                                : const Color(0xFF6D8BA0),
                           ),
                         ),
                       ),
                       const SizedBox(height: 20),
-                      _sectionLabel('Department'),
+                      _sectionLabel('Department', isDark),
                       const SizedBox(height: 8),
                       _buildTextField(
+                        isDark: isDark,
                         controller: _departmentCtrl,
                         hint: 'Social Media Department',
                       ),
                       const SizedBox(height: 20),
-                      _sectionLabel('Additional Notes (optional)'),
+                      _sectionLabel('Additional Notes (optional)', isDark),
                       const SizedBox(height: 8),
                       _buildTextField(
+                        isDark: isDark,
                         controller: _notesCtrl,
                         hint: 'Any special instructions or context…',
                         maxLines: 4,
                       ),
                       const SizedBox(height: 24),
-                      _buildPdfToggle(),
+                      _buildPdfToggle(isDark),
                       const SizedBox(height: 32),
                       _buildSendButton(),
                     ],
@@ -185,7 +205,7 @@ class _SocialMediaSendScreenState extends State<SocialMediaSendScreen>
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
+  Widget _buildAppBar(BuildContext context, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -196,22 +216,31 @@ class _SocialMediaSendScreenState extends State<SocialMediaSendScreen>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.07),
+                color: isDark
+                    ? Colors.white.withOpacity(0.07)
+                    : const Color(0xFF0EA5C6).withOpacity(0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
+                border: Border.all(
+                  color: isDark
+                      ? AppColors.cyan500.withOpacity(0.2)
+                      : const Color(0xFF0EA5C6).withOpacity(0.22),
+                ),
               ),
-              child: const Icon(LucideIcons.arrowLeft,
-                  color: Colors.white, size: 20),
+              child: Icon(
+                LucideIcons.arrowLeft,
+                color: isDark ? Colors.white : const Color(0xFF12344C),
+                size: 20,
+              ),
             ),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Text(
               'Send to Department',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: isDark ? Colors.white : const Color(0xFF12344C),
               ),
             ),
           ),
@@ -220,18 +249,22 @@ class _SocialMediaSendScreenState extends State<SocialMediaSendScreen>
             decoration: BoxDecoration(
               color: const Color(0xFFEC4899).withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: const Color(0xFFEC4899).withOpacity(0.3)),
+              border: Border.all(
+                color: const Color(0xFFEC4899).withOpacity(0.3),
+              ),
             ),
-            child: const Icon(LucideIcons.send,
-                color: Color(0xFFEC4899), size: 20),
+            child: const Icon(
+              LucideIcons.send,
+              color: Color(0xFFEC4899),
+              size: 20,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCampaignSummary() {
+  Widget _buildCampaignSummary(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -255,8 +288,11 @@ class _SocialMediaSendScreenState extends State<SocialMediaSendScreen>
               ),
               borderRadius: BorderRadius.circular(11),
             ),
-            child:
-                const Icon(LucideIcons.megaphone, color: Colors.white, size: 20),
+            child: const Icon(
+              LucideIcons.megaphone,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -265,10 +301,10 @@ class _SocialMediaSendScreenState extends State<SocialMediaSendScreen>
               children: [
                 Text(
                   widget.result.productName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : const Color(0xFF12263A),
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -276,7 +312,9 @@ class _SocialMediaSendScreenState extends State<SocialMediaSendScreen>
                   '${widget.result.platforms.join(', ')} • ${widget.result.toneOfVoice}',
                   style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.textCyan200.withOpacity(0.65),
+                    color: isDark
+                        ? AppColors.textCyan200.withOpacity(0.65)
+                        : const Color(0xFF3F6983),
                   ),
                 ),
               ],
@@ -302,24 +340,36 @@ class _SocialMediaSendScreenState extends State<SocialMediaSendScreen>
     ).animate().fadeIn(duration: 400.ms);
   }
 
-  Widget _buildErrorBanner() {
+  Widget _buildErrorBanner(bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.red.shade900.withOpacity(0.4),
+        color: isDark
+            ? Colors.red.shade900.withOpacity(0.4)
+            : const Color(0xFFFDECEC),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.red.withOpacity(0.4)),
+        border: Border.all(
+          color: isDark
+              ? Colors.red.withOpacity(0.4)
+              : const Color(0xFFDC5B5B).withOpacity(0.35),
+        ),
       ),
       child: Row(
         children: [
-          const Icon(LucideIcons.alertCircle,
-              color: Colors.redAccent, size: 18),
+          const Icon(
+            LucideIcons.alertCircle,
+            color: Colors.redAccent,
+            size: 18,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               _errorMessage!,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF7A2D2D),
+                fontSize: 13,
+              ),
             ),
           ),
         ],
@@ -327,19 +377,22 @@ class _SocialMediaSendScreenState extends State<SocialMediaSendScreen>
     );
   }
 
-  Widget _sectionLabel(String text) {
+  Widget _sectionLabel(String text, bool isDark) {
     return Text(
       text,
       style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w600,
-        color: AppColors.textCyan200.withOpacity(0.85),
+        color: isDark
+            ? AppColors.textCyan200.withOpacity(0.85)
+            : const Color(0xFF3F6983),
         letterSpacing: 0.3,
       ),
     );
   }
 
   Widget _buildTextField({
+    required bool isDark,
     required TextEditingController controller,
     required String hint,
     int maxLines = 1,
@@ -349,37 +402,60 @@ class _SocialMediaSendScreenState extends State<SocialMediaSendScreen>
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      style: TextStyle(
+        color: isDark ? Colors.white : const Color(0xFF12344C),
+        fontSize: 14,
+      ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle:
-            TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 14),
+        hintStyle: TextStyle(
+          color: isDark
+              ? Colors.white.withOpacity(0.3)
+              : const Color(0xFF6D8BA0),
+          fontSize: 14,
+        ),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        fillColor: isDark
+            ? Colors.white.withOpacity(0.05)
+            : const Color(0xFFFFFFFF).withOpacity(0.84),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.cyan500.withOpacity(0.2)),
+          borderSide: BorderSide(
+            color: isDark
+                ? AppColors.cyan500.withOpacity(0.2)
+                : const Color(0xFFC7DDE9),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide:
-              BorderSide(color: AppColors.cyan400.withOpacity(0.6), width: 1.5),
+          borderSide: BorderSide(
+            color: AppColors.cyan400.withOpacity(0.6),
+            width: 1.5,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildPdfToggle() {
+  Widget _buildPdfToggle(bool isDark) {
     return GestureDetector(
       onTap: () => setState(() => _attachPdf = !_attachPdf),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: isDark
+              ? Colors.white.withOpacity(0.05)
+              : const Color(0xFFFFFFFF).withOpacity(0.84),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.cyan500.withOpacity(0.15)),
+          border: Border.all(
+            color: isDark
+                ? AppColors.cyan500.withOpacity(0.15)
+                : const Color(0xFFC7DDE9),
+          ),
         ),
         child: Row(
           children: [
@@ -390,11 +466,14 @@ class _SocialMediaSendScreenState extends State<SocialMediaSendScreen>
                 color: AppColors.cyan500.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child:
-                  Icon(LucideIcons.fileText, color: AppColors.cyan400, size: 20),
+              child: Icon(
+                LucideIcons.fileText,
+                color: AppColors.cyan400,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 14),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -403,14 +482,18 @@ class _SocialMediaSendScreenState extends State<SocialMediaSendScreen>
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : const Color(0xFF12263A),
                     ),
                   ),
                   SizedBox(height: 3),
                   Text(
                     'Includes all platform strategies & analytics',
-                    style:
-                        TextStyle(fontSize: 11, color: Color(0xFFA5F3FC)),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark
+                          ? const Color(0xFFA5F3FC)
+                          : const Color(0xFF5B7B92),
+                    ),
                   ),
                 ],
               ),
@@ -463,8 +546,7 @@ class _SocialMediaSendScreenState extends State<SocialMediaSendScreen>
                   height: 22,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 )
               : const Row(
@@ -495,20 +577,20 @@ class _SuccessSheet extends StatelessWidget {
   final AnimationController animController;
   final VoidCallback onDone;
 
-  const _SuccessSheet({
-    required this.animController,
-    required this.onDone,
-  });
+  const _SuccessSheet({required this.animController, required this.onDone});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.fromLTRB(32, 40, 32, 48),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF1a3a52), Color(0xFF0f2940)],
+          colors: isDark
+              ? const [Color(0xFF1a3a52), Color(0xFF0f2940)]
+              : const [Color(0xFFF8FCFF), Color(0xFFEAF4FB)],
         ),
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -545,17 +627,20 @@ class _SuccessSheet extends StatelessWidget {
                   ),
                 ],
               ),
-              child:
-                  const Icon(LucideIcons.check, color: Colors.white, size: 40),
+              child: const Icon(
+                LucideIcons.check,
+                color: Colors.white,
+                size: 40,
+              ),
             ),
           ),
           const SizedBox(height: 28),
-          const Text(
+          Text(
             'Campaign Report Sent!',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: isDark ? Colors.white : const Color(0xFF12263A),
             ),
           ).animate().fadeIn(delay: 300.ms, duration: 400.ms),
           const SizedBox(height: 10),
@@ -563,7 +648,9 @@ class _SuccessSheet extends StatelessWidget {
             'Your campaign report has been sent to the Social Media Department successfully.',
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.textCyan200.withOpacity(0.7),
+              color: isDark
+                  ? AppColors.textCyan200.withOpacity(0.7)
+                  : const Color(0xFF3F6983),
               height: 1.5,
             ),
             textAlign: TextAlign.center,

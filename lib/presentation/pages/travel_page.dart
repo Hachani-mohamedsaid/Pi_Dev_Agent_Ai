@@ -18,6 +18,8 @@ import '../../data/services/mobility_api_service.dart';
 import 'travel_schedule_page.dart';
 import '../widgets/navigation_bar.dart';
 
+// ignore_for_file: unused_field, unused_element
+
 class TravelPage extends StatefulWidget {
   const TravelPage({super.key});
 
@@ -911,14 +913,17 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
           return StatefulBuilder(
             builder: (context, setModalState) {
               return Scaffold(
-                backgroundColor: const Color(0xFF0f2940),
+                backgroundColor: const Color(0xFFF8FCFF),
                 appBar: AppBar(
                   title: const Text('Full Map Selection (A -> B)'),
-                  backgroundColor: const Color(0xFF16384d),
+                  backgroundColor: const Color(0xFFF7FBFF),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Done'),
+                      child: const Text(
+                        'Done',
+                        style: TextStyle(color: Color(0xFF0B6A88)),
+                      ),
                     ),
                   ],
                 ),

@@ -8,6 +8,7 @@
 
 import 'package:camera_web/camera_web.dart';
 import 'package:file_picker/_internal/file_picker_web.dart';
+import 'package:flutter_secure_storage_web/flutter_secure_storage_web.dart';
 import 'package:flutter_sound_web/flutter_sound_web.dart';
 import 'package:flutter_tts/flutter_tts_web.dart';
 import 'package:geolocator_web/geolocator_web.dart';
@@ -29,6 +30,7 @@ void registerPlugins([final Registrar? pluginRegistrar]) {
   final Registrar registrar = pluginRegistrar ?? webPluginRegistrar;
   CameraPlugin.registerWith(registrar);
   FilePickerWeb.registerWith(registrar);
+  FlutterSecureStorageWeb.registerWith(registrar);
   FlutterSoundPlugin.registerWith(registrar);
   FlutterTtsPlugin.registerWith(registrar);
   GeolocatorPlugin.registerWith(registrar);

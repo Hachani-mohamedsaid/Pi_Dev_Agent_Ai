@@ -7,6 +7,7 @@ import '../../core/utils/responsive.dart';
 import '../../data/services/team_dispatch_api_service.dart';
 import '../widgets/employee_editor_sheet.dart';
 import '../widgets/navigation_bar.dart';
+import '../../core/l10n/app_strings.dart';
 
 /// Hub professionnel : projets acceptés (dispatch / sprints) et annuaire du personnel.
 class ProjectPersonnelManagementPage extends StatelessWidget {
@@ -32,21 +33,21 @@ class ProjectPersonnelManagementPage extends StatelessWidget {
       child: Scaffold(
         backgroundColor: const Color(0xFF0f2940),
         appBar: AppBar(
-          title: const Text('Gestion projets & équipe'),
+          title: Text(AppStrings.tr(context, 'projectTeamManagement')),
           backgroundColor: AppColors.primaryDark,
           foregroundColor: AppColors.textWhite,
-          bottom: const TabBar(
+          bottom: TabBar(
             indicatorColor: AppColors.cyan400,
             labelColor: AppColors.cyan400,
             unselectedLabelColor: AppColors.textCyan200,
             tabs: [
               Tab(
                 icon: Icon(LucideIcons.folderKanban, size: 20),
-                text: 'Projets acceptés',
+                text: AppStrings.tr(context, 'acceptedProjects'),
               ),
               Tab(
                 icon: Icon(LucideIcons.users, size: 20),
-                text: 'Personnel',
+                text: AppStrings.tr(context, 'personnel'),
               ),
             ],
           ),
@@ -67,14 +68,8 @@ class ProjectPersonnelManagementPage extends StatelessWidget {
               ),
               child: TabBarView(
                 children: [
-                  _AcceptedProjectsTab(
-                    pad: pad,
-                    bottomInset: bottomInset,
-                  ),
-                  _EmployeesTab(
-                    pad: pad,
-                    bottomInset: bottomInset,
-                  ),
+                  _AcceptedProjectsTab(pad: pad, bottomInset: bottomInset),
+                  _EmployeesTab(pad: pad, bottomInset: bottomInset),
                 ],
               ),
             ),
@@ -82,9 +77,7 @@ class ProjectPersonnelManagementPage extends StatelessWidget {
               left: 0,
               right: 0,
               bottom: 0,
-              child: NavigationBarWidget(
-                currentPath: '/project-management',
-              ),
+              child: NavigationBarWidget(currentPath: '/project-management'),
             ),
           ],
         ),
@@ -94,10 +87,7 @@ class ProjectPersonnelManagementPage extends StatelessWidget {
 }
 
 class _AcceptedProjectsTab extends StatefulWidget {
-  const _AcceptedProjectsTab({
-    required this.pad,
-    required this.bottomInset,
-  });
+  const _AcceptedProjectsTab({required this.pad, required this.bottomInset});
 
   final double pad;
   final double bottomInset;
@@ -223,8 +213,8 @@ class _AcceptedProjectDetailCard extends StatelessWidget {
     final title = project['title']?.toString() ?? 'Sans titre';
     final desc = project['description']?.toString();
     final status = project['status']?.toString();
-    final typeProjet = project['type_projet']?.toString() ??
-        project['typeProjet']?.toString();
+    final typeProjet =
+        project['type_projet']?.toString() ?? project['typeProjet']?.toString();
     final budget = project['budget_estime'];
     final periode = project['periode']?.toString();
     final row = project['row_number'] ?? project['rowNumber'];
@@ -279,8 +269,9 @@ class _AcceptedProjectDetailCard extends StatelessWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.statusAccepted
-                                    .withValues(alpha: 0.25),
+                                color: AppColors.statusAccepted.withValues(
+                                  alpha: 0.25,
+                                ),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: AppColors.cyan400.withValues(
@@ -368,10 +359,7 @@ class _AcceptedProjectDetailCard extends StatelessWidget {
                   children: techStack
                       .map(
                         (s) => Chip(
-                          label: Text(
-                            s,
-                            style: const TextStyle(fontSize: 11),
-                          ),
+                          label: Text(s, style: const TextStyle(fontSize: 11)),
                           backgroundColor: AppColors.primaryDark,
                           side: const BorderSide(
                             color: AppColors.cyan400,
@@ -403,10 +391,7 @@ class _AcceptedProjectDetailCard extends StatelessWidget {
                   children: tags
                       .map(
                         (t) => Chip(
-                          label: Text(
-                            t,
-                            style: const TextStyle(fontSize: 11),
-                          ),
+                          label: Text(t, style: const TextStyle(fontSize: 11)),
                           backgroundColor: AppColors.primaryDarker,
                           side: BorderSide(
                             color: AppColors.textCyan200.withValues(
@@ -476,7 +461,11 @@ class _DetailRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 14, color: AppColors.textCyan200.withValues(alpha: 0.7)),
+          Icon(
+            icon,
+            size: 14,
+            color: AppColors.textCyan200.withValues(alpha: 0.7),
+          ),
           const SizedBox(width: 8),
           SizedBox(
             width: 88,
@@ -505,10 +494,7 @@ class _DetailRow extends StatelessWidget {
 }
 
 class _EmployeesTab extends StatefulWidget {
-  const _EmployeesTab({
-    required this.pad,
-    required this.bottomInset,
-  });
+  const _EmployeesTab({required this.pad, required this.bottomInset});
 
   final double pad;
   final double bottomInset;
@@ -561,8 +547,11 @@ class _EmployeesTabState extends State<_EmployeesTab> {
   }
 
   String _initials(String name) {
-    final parts =
-        name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.length >= 2) {
       final a = parts[0].isNotEmpty ? parts[0][0] : '';
       final b = parts[1].isNotEmpty ? parts[1][0] : '';
@@ -631,7 +620,8 @@ class _EmployeesTabState extends State<_EmployeesTab> {
       _toast('Impossible de supprimer : identifiant manquant.', error: true);
       return;
     }
-    final name = row['fullName']?.toString() ??
+    final name =
+        row['fullName']?.toString() ??
         row['full_name']?.toString() ??
         'ce collaborateur';
     final ok = await showDialog<bool>(
@@ -644,9 +634,7 @@ class _EmployeesTabState extends State<_EmployeesTab> {
         ),
         content: Text(
           '« $name » sera retiré de l’annuaire. Cette action est définitive.',
-          style: TextStyle(
-            color: AppColors.textCyan200.withValues(alpha: 0.9),
-          ),
+          style: TextStyle(color: AppColors.textCyan200.withValues(alpha: 0.9)),
         ),
         actions: [
           TextButton(
@@ -838,8 +826,9 @@ class _EmployeesTabState extends State<_EmployeesTab> {
                                 'Ajoutez des membres pour les assigner aux tâches '
                                 'et aux envois de sprint.',
                                 style: TextStyle(
-                                  color: AppColors.textCyan200
-                                      .withValues(alpha: 0.8),
+                                  color: AppColors.textCyan200.withValues(
+                                    alpha: 0.8,
+                                  ),
                                   fontSize: 14,
                                   height: 1.4,
                                 ),
@@ -848,15 +837,19 @@ class _EmployeesTabState extends State<_EmployeesTab> {
                               const SizedBox(height: 24),
                               FilledButton.icon(
                                 onPressed: _openCreate,
-                                icon: const Icon(LucideIcons.userPlus, size: 20),
+                                icon: const Icon(
+                                  LucideIcons.userPlus,
+                                  size: 20,
+                                ),
                                 label: const Text('Ajouter un collaborateur'),
                                 style: FilledButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 22,
                                     vertical: 14,
                                   ),
-                                  backgroundColor:
-                                      AppColors.cyan400.withValues(alpha: 0.9),
+                                  backgroundColor: AppColors.cyan400.withValues(
+                                    alpha: 0.9,
+                                  ),
                                   foregroundColor: const Color(0xFF0a1628),
                                 ),
                               ),
@@ -891,7 +884,8 @@ class _EmployeesTabState extends State<_EmployeesTab> {
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, i) {
                     final e = list[i];
-                    final name = e['fullName']?.toString() ??
+                    final name =
+                        e['fullName']?.toString() ??
                         e['full_name']?.toString() ??
                         'Employé';
                     final email = e['email']?.toString() ?? '—';
@@ -989,8 +983,9 @@ class _EmployeesTabState extends State<_EmployeesTab> {
                                   PopupMenuButton<String>(
                                     icon: Icon(
                                       LucideIcons.moreVertical,
-                                      color: AppColors.textCyan200
-                                          .withValues(alpha: 0.75),
+                                      color: AppColors.textCyan200.withValues(
+                                        alpha: 0.75,
+                                      ),
                                       size: 20,
                                     ),
                                     color: const Color(0xFF152f45),
@@ -1045,12 +1040,14 @@ class _EmployeesTabState extends State<_EmployeesTab> {
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primaryDark
-                                        .withValues(alpha: 0.65),
+                                    color: AppColors.primaryDark.withValues(
+                                      alpha: 0.65,
+                                    ),
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
-                                      color: AppColors.textCyan200
-                                          .withValues(alpha: 0.12),
+                                      color: AppColors.textCyan200.withValues(
+                                        alpha: 0.12,
+                                      ),
                                     ),
                                   ),
                                   child: Row(
@@ -1059,8 +1056,9 @@ class _EmployeesTabState extends State<_EmployeesTab> {
                                       Icon(
                                         LucideIcons.briefcase,
                                         size: 14,
-                                        color: AppColors.cyan400
-                                            .withValues(alpha: 0.85),
+                                        color: AppColors.cyan400.withValues(
+                                          alpha: 0.85,
+                                        ),
                                       ),
                                       const SizedBox(width: 8),
                                       Flexible(
@@ -1083,8 +1081,9 @@ class _EmployeesTabState extends State<_EmployeesTab> {
                                 Text(
                                   'Compétences',
                                   style: TextStyle(
-                                    color: AppColors.textCyan200
-                                        .withValues(alpha: 0.55),
+                                    color: AppColors.textCyan200.withValues(
+                                      alpha: 0.55,
+                                    ),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                     letterSpacing: 0.4,
@@ -1104,17 +1103,16 @@ class _EmployeesTabState extends State<_EmployeesTab> {
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
-                                          backgroundColor: AppColors
-                                              .primaryDark
+                                          backgroundColor: AppColors.primaryDark
                                               .withValues(alpha: 0.9),
                                           side: BorderSide(
-                                            color: AppColors.cyan400
-                                                .withValues(alpha: 0.35),
+                                            color: AppColors.cyan400.withValues(
+                                              alpha: 0.35,
+                                            ),
                                           ),
                                           padding: EdgeInsets.zero,
                                           materialTapTargetSize:
-                                              MaterialTapTargetSize
-                                                  .shrinkWrap,
+                                              MaterialTapTargetSize.shrinkWrap,
                                           visualDensity: VisualDensity.compact,
                                         ),
                                       )
@@ -1126,8 +1124,9 @@ class _EmployeesTabState extends State<_EmployeesTab> {
                                 Text(
                                   'Étiquettes',
                                   style: TextStyle(
-                                    color: AppColors.textCyan200
-                                        .withValues(alpha: 0.55),
+                                    color: AppColors.textCyan200.withValues(
+                                      alpha: 0.55,
+                                    ),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                     letterSpacing: 0.4,
@@ -1154,8 +1153,7 @@ class _EmployeesTabState extends State<_EmployeesTab> {
                                           ),
                                           padding: EdgeInsets.zero,
                                           materialTapTargetSize:
-                                              MaterialTapTargetSize
-                                                  .shrinkWrap,
+                                              MaterialTapTargetSize.shrinkWrap,
                                           visualDensity: VisualDensity.compact,
                                         ),
                                       )

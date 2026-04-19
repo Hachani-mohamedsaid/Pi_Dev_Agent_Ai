@@ -9,6 +9,8 @@ import '../../models/challenge_model.dart';
 import '../../data/services/challenges_service.dart';
 import '../../injection_container.dart';
 
+import '../../generated/l10n.dart';
+
 class ChallengesScreen extends StatefulWidget {
   const ChallengesScreen({super.key});
 
@@ -152,7 +154,45 @@ class _ChallengesScreenState extends State<ChallengesScreen>
     return AppShellGradient(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: _buildAppBar(),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          leading: GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: AvaColors.muted,
+              size: 18,
+            ),
+          ),
+          title: Text(
+            S.of(context).challengesAndRewards,
+            style: const TextStyle(
+              fontFamily: 'Georgia',
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textWhite,
+            ),
+          ),
+          actions: [
+            IconButton(
+              onPressed: () async {
+                setState(() {
+                  _isLoadingChallenges = true;
+                  _isSyncingChallengeState = true;
+                  _isLoadingLeaderboard = true;
+                });
+                await _loadChallengesCatalog();
+                await _loadChallengeState();
+                await _loadLeaderboard();
+              },
+              icon: const Icon(LucideIcons.refreshCw, color: AvaColors.muted),
+              tooltip: S.of(context).retry,
+            ),
+          ],
+          centerTitle: true,
+        ),
         body: Column(
           children: [
             _buildPointsCard(),
@@ -162,9 +202,9 @@ class _ChallengesScreenState extends State<ChallengesScreen>
               labelColor: AppColors.cyan400,
               unselectedLabelColor: AvaColors.muted,
               indicatorColor: AppColors.cyan400,
-              tabs: const [
-                Tab(text: 'Challenges'),
-                Tab(text: 'Leaderboard'),
+              tabs: [
+                Tab(text: S.of(context).challengesTab),
+                Tab(text: S.of(context).leaderboardTab),
               ],
             ),
             Expanded(
@@ -259,9 +299,9 @@ class _ChallengesScreenState extends State<ChallengesScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Your Points',
-                      style: TextStyle(
+                    Text(
+                      S.of(context).yourPoints,
+                      style: const TextStyle(
                         fontSize: 12,
                         color: AvaColors.muted,
                         fontWeight: FontWeight.w500,
@@ -312,9 +352,12 @@ class _ChallengesScreenState extends State<ChallengesScreen>
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Rank',
-                    style: TextStyle(fontSize: 10, color: AvaColors.muted),
+                  Text(
+                    S.of(context).rank,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AvaColors.muted,
+                    ),
                   ),
                 ],
               ),
@@ -341,8 +384,13 @@ class _ChallengesScreenState extends State<ChallengesScreen>
               const SizedBox(width: 8),
               Text(
                 _isSyncingChallengeState
-                    ? 'Syncing challenge status from system...'
-                    : 'Progression: $completed / $total completed',
+                    ? S.of(context).syncingChallengeStatus
+                    : S
+                          .of(context)
+                          .progressionCompleted(
+                            completed.toString(),
+                            total.toString(),
+                          ),
                 style: const TextStyle(
                   fontSize: 12,
                   color: AvaColors.muted,
@@ -378,9 +426,9 @@ class _ChallengesScreenState extends State<ChallengesScreen>
               valueColor: AlwaysStoppedAnimation<Color>(AppColors.cyan400),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Loading challenges...',
-              style: TextStyle(color: AvaColors.muted, fontSize: 14),
+            Text(
+              S.of(context).loadingChallenges,
+              style: const TextStyle(color: AvaColors.muted, fontSize: 14),
             ),
           ],
         ),
@@ -409,8 +457,8 @@ class _ChallengesScreenState extends State<ChallengesScreen>
       onTap: () {
         if (!isUnlocked) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Complete previous challenge to unlock this one.'),
+            SnackBar(
+              content: Text(S.of(context).completePreviousChallenge),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -484,7 +532,9 @@ class _ChallengesScreenState extends State<ChallengesScreen>
                         child: Text(
                           isUnlocked
                               ? challenge.title
-                              : 'Locked Challenge #${index + 1}',
+                              : S
+                                    .of(context)
+                                    .lockedChallenge((index + 1).toString()),
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -571,7 +621,7 @@ class _ChallengesScreenState extends State<ChallengesScreen>
                   Text(
                     isUnlocked
                         ? challenge.description
-                        : 'Finish the previous challenge to unlock this mission',
+                        : S.of(context).finishPreviousChallenge,
                     style: const TextStyle(
                       fontSize: 12,
                       color: AvaColors.muted,
@@ -601,12 +651,19 @@ class _ChallengesScreenState extends State<ChallengesScreen>
                   )
                 else if (!isUnlocked)
                   Column(
-                    children: const [
-                      Icon(LucideIcons.lock, size: 18, color: AvaColors.muted),
-                      SizedBox(height: 2),
+                    children: [
+                      const Icon(
+                        LucideIcons.lock,
+                        size: 18,
+                        color: AvaColors.muted,
+                      ),
+                      const SizedBox(height: 2),
                       Text(
-                        'locked',
-                        style: TextStyle(fontSize: 10, color: AvaColors.muted),
+                        S.of(context).locked,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AvaColors.muted,
+                        ),
                       ),
                     ],
                   )
@@ -614,16 +671,21 @@ class _ChallengesScreenState extends State<ChallengesScreen>
                   Column(
                     children: [
                       Text(
-                        '+${challenge.points}',
+                        S
+                            .of(context)
+                            .pointsWithPlus(challenge.points.toString()),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: challenge.color,
                         ),
                       ),
-                      const Text(
-                        'pts',
-                        style: TextStyle(fontSize: 10, color: AvaColors.muted),
+                      Text(
+                        S.of(context).pts,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AvaColors.muted,
+                        ),
                       ),
                     ],
                   ),
@@ -645,9 +707,9 @@ class _ChallengesScreenState extends State<ChallengesScreen>
               valueColor: AlwaysStoppedAnimation<Color>(AppColors.cyan400),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Loading leaderboard...',
-              style: TextStyle(color: AvaColors.muted, fontSize: 14),
+            Text(
+              S.of(context).loadingLeaderboard,
+              style: const TextStyle(color: AvaColors.muted, fontSize: 14),
             ),
           ],
         ),
@@ -780,18 +842,18 @@ class _ChallengesScreenState extends State<ChallengesScreen>
                               ).withValues(alpha: 0.45),
                             ),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
+                              const Icon(
                                 LucideIcons.badge,
                                 size: 10,
                                 color: Color(0xFFF59E0B),
                               ),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
-                                'Monthly Champion',
-                                style: TextStyle(
+                                S.of(context).monthlyChampion,
+                                style: const TextStyle(
                                   fontSize: 9,
                                   color: Color(0xFFF59E0B),
                                   fontWeight: FontWeight.w700,
@@ -815,18 +877,18 @@ class _ChallengesScreenState extends State<ChallengesScreen>
                             ).withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
+                              const Icon(
                                 LucideIcons.crown,
                                 size: 10,
                                 color: Color(0xFFD946EF),
                               ),
-                              SizedBox(width: 2),
+                              const SizedBox(width: 2),
                               Text(
-                                'Pro',
-                                style: TextStyle(
+                                S.of(context).pro,
+                                style: const TextStyle(
                                   fontSize: 9,
                                   color: Color(0xFFD946EF),
                                 ),
@@ -839,7 +901,11 @@ class _ChallengesScreenState extends State<ChallengesScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${user.completedChallengeIds.length} challenges completed',
+                  S
+                      .of(context)
+                      .challengesCompleted(
+                        user.completedChallengeIds.length.toString(),
+                      ),
                   style: const TextStyle(fontSize: 11, color: AvaColors.muted),
                 ),
               ],
@@ -858,9 +924,9 @@ class _ChallengesScreenState extends State<ChallengesScreen>
                   color: isTop3 ? _getMedalColor(index) : AppColors.cyan400,
                 ),
               ),
-              const Text(
-                'points',
-                style: TextStyle(fontSize: 10, color: AvaColors.muted),
+              Text(
+                S.of(context).points,
+                style: const TextStyle(fontSize: 10, color: AvaColors.muted),
               ),
             ],
           ),
@@ -978,9 +1044,9 @@ class _ChallengesScreenState extends State<ChallengesScreen>
                 ),
                 const SizedBox(height: 20),
               ],
-              const Text(
-                'Steps to Complete:',
-                style: TextStyle(
+              Text(
+                S.of(context).stepsToComplete,
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textWhite,
@@ -1038,16 +1104,16 @@ class _ChallengesScreenState extends State<ChallengesScreen>
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(
+                    children: [
+                      const Icon(
                         LucideIcons.check,
                         size: 18,
                         color: AppColors.statusAccepted,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
-                        'Completed',
-                        style: TextStyle(
+                        S.of(context).completed,
+                        style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           color: AppColors.statusAccepted,
                         ),
