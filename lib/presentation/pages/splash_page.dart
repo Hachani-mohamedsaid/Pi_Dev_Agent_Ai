@@ -14,9 +14,6 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
-  static const String _launcherIconPath = 'assets/app_icon.png';
-  static const String _legacyLogoPath = 'assets/images/app_logo.png';
-
   @override
   void initState() {
     super.initState();
@@ -47,10 +44,21 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final splashGradient = isDark
+        ? AppColors.primaryGradient
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
+          );
 
     return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFF3F8FC),
       body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        decoration: BoxDecoration(gradient: splashGradient),
         child: Stack(
           children: [
             // Background decorative elements
@@ -124,7 +132,7 @@ class _SplashPageState extends State<SplashPage> {
                       .then(delay: 200.ms),
                   SizedBox(height: isMobile ? 24 : 32),
                   // App Name
-                  const Text(
+                  Text(
                         'AVA',
                         style: TextStyle(
                           fontSize: 44,
@@ -139,7 +147,9 @@ class _SplashPageState extends State<SplashPage> {
                               offset: Offset(0, 4),
                             ),
                           ],
-                          color: Colors.white,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF12263A),
                         ),
                       )
                       .animate()
@@ -159,7 +169,9 @@ class _SplashPageState extends State<SplashPage> {
                           fontWeight: FontWeight.w400,
                           letterSpacing: 1.8,
                           height: 1.4,
-                          color: AppColors.textCyan200.withValues(alpha: 0.75),
+                          color: isDark
+                              ? AppColors.textCyan200.withValues(alpha: 0.75)
+                              : const Color(0xFF3F6983),
                         ),
                         textAlign: TextAlign.center,
                       )
@@ -233,9 +245,12 @@ class _SplashPageState extends State<SplashPage> {
       child: Image.asset(
         'assets/ava_logo.png',
         fit: BoxFit.contain,
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Colors.white
+            : const Color(0xFF12263A),
         colorBlendMode: BlendMode.srcIn,
-        errorBuilder: (context, error, stackTrace) => _fallbackMonogram(isMobile ? 26.0 : 30.0),
+        errorBuilder: (context, error, stackTrace) =>
+            _fallbackMonogram(isMobile ? 26.0 : 30.0),
       ),
     );
   }

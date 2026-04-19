@@ -2,216 +2,143 @@ import 'package:flutter/material.dart';
 
 /// Chaînes traduites pour l'app. Utiliser AppStrings.tr(context, key)
 class AppStrings {
+  // ...existing code...
+  /// Retourne la traduction pour la clé donnée selon la locale du contexte.
+  static String tr(BuildContext context, String key) {
+    final locale = Localizations.localeOf(context).languageCode;
+    if (_strings.containsKey(locale) && _strings[locale]!.containsKey(key)) {
+      return _strings[locale]![key]!;
+    }
+    if (_strings['en']!.containsKey(key)) {
+      return _strings['en']![key]!;
+    }
+    return key; // fallback
+  }
+
   AppStrings._();
 
   static const Map<String, Map<String, String>> _strings = {
     'en': {
-      "language": "Language",
-      "selectPreferredLanguage": "Select your preferred language for the app",
-      "settings": "SETTINGS",
-      "darkMode": "Dark Mode",
-      "editProfile": "Edit Profile",
-      "changeLanguage": "Change Language",
-      "notifications": "Notifications",
-      "privacySecurity": "Privacy & Security",
-      "helpSupport": "Help & Support",
-      "logOut": "Log Out",
-      "premiumSubscription": "Premium & Subscription",
-      "subscriptionSubtitle":
-          "Manage your plan, billing, and premium features.",
-      "subscriptionPlaceholder":
-          "Subscription and payment options will be available here soon.",
-      "subscriptionPlansIntro":
-          "Unlock every Premium feature. Pick a billing cycle that fits you.",
-      "subscriptionMonthly": "Monthly",
-      "subscriptionYearly": "Yearly",
-      "subscriptionBilledMonthly": "Billed monthly · cancel anytime",
-      "subscriptionBilledYearly": "Billed yearly · cancel anytime",
-      "subscriptionPromoBadge": "PROMO",
-      "subscriptionBestValue": "Best value",
-      "subscriptionYearlyPromoLine": "~17% less than paying monthly",
-      "subscriptionPriceMonth": "9.99",
-      "subscriptionPriceYear": "99.99",
-      "subscriptionPriceYearWas": "119.88",
-      "subscriptionPerMonthSuffix": "/ month",
-      "subscriptionPerYearSuffix": "/ year",
-      "subscriptionCurrencySuffix": " €",
-      "subscriptionWhatsIncluded": "What's included",
-      "subscriptionFeature1": "Unlimited AI chat & voice assistant",
-      "subscriptionFeature2": "Meeting hub & advanced transcripts",
-      "subscriptionFeature3": "Priority support & early features",
-      "subscriptionContinue": "Continue",
-      "subscriptionPaymentNote":
-          "Payment opens inside the app via Stripe Checkout (secure).",
-      "subscriptionConfirmPaymentTitle": "Confirm payment",
-      "subscriptionConfirmPaymentMessage":
-          "Do you want to pay for the {PLAN} plan inside the app?",
-      "payNow": "Pay now",
-      "subscriptionOpeningStripe": "Opening secure payment…",
-      "subscriptionLoginRequired": "Please sign in to subscribe.",
-      "subscriptionCheckoutFailed":
-          "Could not start checkout. Check your connection or try again later.",
-      "subscriptionBackendMissing":
-          "Payment server not ready yet. Add POST /billing/create-checkout-session on your API.",
-      "subscriptionSuccessTitle": "Payment successful",
-      "subscriptionSuccessDescriptionMonthly":
-          "Your monthly plan is now active. Your premium features are enabled and your account is updated.",
-      "subscriptionSuccessDescriptionYearly":
-          "Your yearly plan is now active. Enjoy premium access and the best annual value.",
-      "subscriptionSuccessBackToProfile": "Go to profile",
-      "subscriptionSuccessBackToHome": "Back to home",
-      "subscriptionActiveBadge": "Active plan",
-
-      "goodMorning": "Good morning",
-      "goodAfternoon": "Good afternoon",
-      "goodEvening": "Good evening",
-
       "home": "Home",
-      "profile": "Profile",
-      "dashboard": "Dashboard",
-      "voiceAssistant": "Voice Assistant",
-      "suggestions": "Suggestions",
-      "agenda": "Agenda",
-      "emails": "Emails",
-      "history": "History",
-      "insights": "Insights",
-      "goals": "Goals",
-
-      "email": "Email",
-      "password": "Password",
-      "enterEmail": "Enter your email",
-      "enterPassword": "Enter your password",
-      "rememberMe": "Remember me",
-      "login": "Login",
-      "signIn": "Sign In",
-      "signInSubtitle": "Sign in to your account to continue",
-      "forgotPassword": "Forgot password?",
-      "dontHaveAccount": "Don't have an account?",
-      "register": "Register",
-
-      "welcome": "Welcome!",
-      "welcomeBack": "Welcome Back",
-      "createAccount": "Create Account",
-      "signUp": "Sign Up",
-
-      "changePassword": "Change Password",
-      "currentPassword": "Current Password",
-      "enterCurrentPassword": "Enter current password",
-      "newPassword": "New Password",
-      "enterNewPassword": "Enter new password",
-      "confirmNewPassword": "Confirm New Password",
-      "confirmNewPasswordHint": "Confirm new password",
-      "passwordsDoNotMatch": "Passwords do not match",
-      "passwordsMatch": "Passwords match",
-      "updatePassword": "Update Password",
-      "passwordUpdated": "Password updated successfully",
-      "failedToChangePassword": "Failed to change password",
-
-      "automationInfo":
-          "AVA learns from your patterns and preferences to automate routine decisions. You can edit or disable any rule at any time.",
-
-      "talkToBuddy": "Talk to buddy",
-      "listeningPrompt": "Go ahead, I'm listening...",
-      "thinkingPrompt": "Thinking...",
-      "helloHowCanIHelp": "Hello! How can I help you today?",
-      "readyToHelp": "Ready to help with",
-      "everythingYouNeedToday": "everything you need today!",
-      "enterPromptHere": "Enter your prompt here...",
-
-      "createJobPost": "Create a job post",
-
-      "back": "Back",
-      "cancel": "Cancel",
-      "done": "Done",
-      "continue": "Continue",
-      "save": "Save",
+      "sprintsAcceptedProjects": "Sprints → Accepted Projects",
+      "refreshList": "Refresh list",
+      "noAcceptedProjects": "No accepted project to display.",
+      "projectTeamManagement": "Project & Team Management",
+      "acceptedProjects": "Accepted Projects",
+      "personnel": "Personnel",
+      "projectAnalysis": "Project Analysis",
+      "toolsAnalysisInProgress": "Tools analysis in progress...",
+      "technicalAnalysisInProgress": "Technical analysis in progress...",
+      "methodologyAnalysisInProgress": "Methodology analysis in progress...",
+      "recommendationsAnalysisInProgress":
+          "Recommendations analysis in progress...",
+      "finance": "Finance",
+      "loadingFinanceData": "Loading finance data...",
+      "failedToLoadFinanceData": "Failed to load finance data",
+      "financeTemporarilyUnavailable":
+          "Finance service temporarily unavailable. Please retry in a moment.",
+      "financeSignInAgain": "Please sign in again to load your finance data.",
+      "financeUnableToLoad":
+          "Unable to load finance data right now. Please try again.",
+      "retry": "Retry",
+      "workProposalsTitle": "Job Proposals",
+      "manageOpportunities": "Manage your professional opportunities",
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "loadingError": "Loading error",
+      "noProposals": "No proposals",
+      "noWorkProposalsAvailable": "No job proposals available",
+      "budget": "Budget",
+      "period": "Period",
+      "details": "Details",
+      "analysis": "Analysis",
+      "howToWork": "How to work",
+      "accept": "Accept",
+      "reject": "Reject",
+      "confirmRejection": "Confirm rejection",
+      "areYouSureReject": "Are you sure you want to reject this proposal?",
+      "sprintsAndEmailsByEmployee": "Sprints & emails by employee",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      // doublons supprimés ici
+      "proposalRejected": "Proposal rejected.",
+      "proposalRejectError": "Failed to reject proposal.",
+      "sprints": "Sprints",
     },
-
     'fr': {
-      "language": "Langue",
-      "settings": "PARAMÈTRES",
-      "darkMode": "Mode sombre",
-      "editProfile": "Modifier le profil",
-      "changeLanguage": "Changer la langue",
-      "notifications": "Notifications",
-      "privacySecurity": "Confidentialité et sécurité",
-      "helpSupport": "Aide et support",
-      "logOut": "Déconnexion",
-      "premiumSubscription": "Premium & Abonnement",
-      "subscriptionSubtitle":
-          "Gérez votre offre, la facturation et les fonctionnalités premium.",
-      "subscriptionPlaceholder":
-          "L'abonnement et les moyens de paiement seront bientôt disponibles ici.",
-      "subscriptionPlansIntro":
-          "Profitez de toutes les fonctionnalités Premium. Choisissez votre rythme.",
-      "subscriptionMonthly": "Mensuel",
-      "subscriptionYearly": "Annuel",
-      "subscriptionBilledMonthly":
-          "Facturé chaque mois · résiliation à tout moment",
-      "subscriptionBilledYearly":
-          "Facturé une fois par an · résiliation à tout moment",
-      "subscriptionPromoBadge": "PROMO",
-      "subscriptionBestValue": "Meilleure offre",
-      "subscriptionYearlyPromoLine": "~17% d'économie vs le mensuel",
-      "subscriptionPriceMonth": "9.99",
-      "subscriptionPriceYear": "99.99",
-      "subscriptionPriceYearWas": "119.88",
-      "subscriptionPerMonthSuffix": "/ mois",
-      "subscriptionPerYearSuffix": "/ an",
-      "subscriptionCurrencySuffix": " €",
-      "subscriptionWhatsIncluded": "Inclus",
-      "subscriptionFeature1": "Assistant IA & vocal illimités",
-      "subscriptionFeature2": "Réunions & transcriptions avancées",
-      "subscriptionFeature3":
-          "Support prioritaire & nouveautés en avant-première",
-      "subscriptionContinue": "Continuer",
-      "subscriptionPaymentNote":
-          "Le paiement s’ouvre dans l’application via Stripe Checkout (sécurisé).",
-      "subscriptionConfirmPaymentTitle": "Confirmer le paiement",
-      "subscriptionConfirmPaymentMessage":
-          "Souhaitez-vous payer le forfait {PLAN} dans l’application ?",
-      "payNow": "Payer maintenant",
-      "subscriptionOpeningStripe": "Ouverture du paiement sécurisé…",
-      "subscriptionLoginRequired": "Connectez-vous pour vous abonner.",
-      "subscriptionCheckoutFailed":
-          "Impossible de démarrer le paiement. Réessayez plus tard.",
-      "subscriptionBackendMissing":
-          "Le serveur de paiement n’est pas prêt. Ajoutez POST /billing/create-checkout-session sur l’API.",
-      "subscriptionSuccessTitle": "Paiement réussi",
-      "subscriptionSuccessDescriptionMonthly":
-          "Votre forfait mensuel est activé. Les fonctionnalités premium sont accessibles et votre compte est mis à jour.",
-      "subscriptionSuccessDescriptionYearly":
-          "Votre forfait annuel est activé. Profitez de l’accès premium et de la meilleure valeur annuelle.",
-      "subscriptionSuccessBackToProfile": "Aller au profil",
-      "subscriptionSuccessBackToHome": "Retour à l’accueil",
-      "subscriptionActiveBadge": "Forfait actif",
-
-      "goodMorning": "Bonjour",
-      "goodAfternoon": "Bon après-midi",
-      "goodEvening": "Bonsoir",
-
       "home": "Accueil",
-      "profile": "Profil",
-      "dashboard": "Tableau de bord",
-      "voiceAssistant": "Assistant vocal",
-
-      "email": "E-mail",
-      "password": "Mot de passe",
-      "enterEmail": "Entrez votre e-mail",
+      "sprintsAcceptedProjects": "Sprints → projets acceptés",
+      "refreshList": "Actualiser la liste",
+      "noAcceptedProjects": "Aucun projet accepté à afficher.",
+      "projectTeamManagement": "Gestion projets & équipe",
+      "acceptedProjects": "Projets acceptés",
+      "personnel": "Personnel",
+      "projectAnalysis": "Analyse du projet",
+      "toolsAnalysisInProgress": "Analyse des outils en cours...",
+      "technicalAnalysisInProgress": "Analyse technique en cours...",
+      "methodologyAnalysisInProgress": "Analyse méthodologie en cours...",
+      "recommendationsAnalysisInProgress":
+          "Analyse recommandations en cours...",
+      "finance": "Finances",
+      "loadingFinanceData": "Chargement des données financières...",
+      // doublons supprimés ici
+      "workProposalsTitle": "Propositions de travail",
+      "manageOpportunities": "Gérez vos opportunités professionnelles",
+      "pending": "En attente",
+      "accepted": "Acceptées",
+      "rejected": "Rejetées",
+      "loadingError": "Erreur de chargement",
+      "noProposals": "Aucune proposition",
+      "noWorkProposalsAvailable": "Aucune proposition de travail disponible",
+      "budget": "Budget",
+      "period": "Période",
+      "details": "Détails",
+      "analysis": "Analyse",
+      "howToWork": "Comment travailler",
+      "accept": "Accepter",
+      "reject": "Rejeter",
+      "confirmRejection": "Confirmer le rejet",
+      "areYouSureReject":
+          "Êtes-vous sûr de vouloir rejeter cette proposition ?",
+      "sprintsAndEmailsByEmployee": "Sprints & e-mails par employé",
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "daysAgo": "Il y a {days} jours",
+      "untitledProject": "Projet sans titre",
+      "toBeDefined": "À définir",
+      "proposalAccepted": "Proposition acceptée !",
+      "proposalAcceptError": "Échec de l'acceptation de la proposition.",
+      "proposalRejected": "Proposition rejetée.",
+      "proposalRejectError": "Échec du rejet de la proposition.",
+      "sprints": "Sprints",
+      // ...existing code...
+      "failedToLoadFinanceData": "Échec du chargement des données financières",
+      "financeTemporarilyUnavailable":
+          "Service financier temporairement indisponible. Veuillez réessayer dans un instant.",
+      "financeSignInAgain":
+          "Veuillez vous reconnecter pour charger vos données financières.",
+      "financeUnableToLoad":
+          "Impossible de charger les données financières pour le moment. Veuillez réessayer.",
+      "retry": "Réessayer",
+      "goodMorning": "Bonjour",
+      "todayIs": "Nous sommes le",
+      "upToDate": "Vous êtes à jour !",
+      "welcomeBack": "Bon retour",
+      // doublons supprimés ici
       "enterPassword": "Entrez votre mot de passe",
       "rememberMe": "Se souvenir de moi",
-      "login": "Connexion",
-      "signIn": "Se connecter",
-      "signInSubtitle": "Connectez-vous pour continuer",
       "forgotPassword": "Mot de passe oublié ?",
       "dontHaveAccount": "Vous n'avez pas de compte ?",
       "register": "S'inscrire",
-
-      "welcome": "Bienvenue !",
-      "welcomeBack": "Bon retour",
       "createAccount": "Créer un compte",
       "signUp": "S'inscrire",
-
+      "fullName": "Nom complet",
+      "enterName": "Entrez votre nom",
+      "confirmPassword": "Confirmer le mot de passe",
+      "confirmYourPassword": "Confirmez votre mot de passe",
+      "orContinueWith": "Ou continuer avec",
+      "orSignUpWith": "Ou s'inscrire avec",
       "changePassword": "Changer le mot de passe",
       "currentPassword": "Mot de passe actuel",
       "enterCurrentPassword": "Entrez le mot de passe actuel",
@@ -224,10 +151,8 @@ class AppStrings {
       "updatePassword": "Mettre à jour le mot de passe",
       "passwordUpdated": "Mot de passe mis à jour avec succès",
       "failedToChangePassword": "Échec du changement de mot de passe",
-
       "automationInfo":
           "AVA apprend de vos habitudes et préférences pour automatiser les décisions routinières. Vous pouvez modifier ou désactiver n'importe quelle règle à tout moment.",
-
       "talkToBuddy": "Parler à l'assistant",
       "listeningPrompt": "Allez-y, j'écoute...",
       "thinkingPrompt": "Réflexion...",
@@ -235,30 +160,146 @@ class AppStrings {
       "readyToHelp": "Prêt à vous aider pour",
       "everythingYouNeedToday": "tout ce dont vous avez besoin aujourd'hui !",
       "enterPromptHere": "Entrez votre message ici...",
-
       "history": "Historique",
       "createJobPost": "Créer un poste",
-
       "back": "Retour",
       "cancel": "Annuler",
       "done": "Terminé",
       "continue": "Continuer",
       "save": "Enregistrer",
     },
+    'ar': {
+      "home": "الرئيسية",
+      // doublons supprimés ici
+      "workProposalsTitle": "اقتراحات العمل",
+      "manageOpportunities": "إدارة فرصك المهنية",
+      "pending": "قيد الانتظار",
+      "accepted": "مقبولة",
+      "rejected": "مرفوضة",
+      "loadingError": "خطأ في التحميل",
+      "noProposals": "لا توجد اقتراحات",
+      "noWorkProposalsAvailable": "لا توجد اقتراحات عمل متاحة",
+      "budget": "الميزانية",
+      "period": "الفترة",
+      "details": "تفاصيل",
+      "analysis": "تحليل",
+      "howToWork": "كيفية العمل",
+      "accept": "قبول",
+      "reject": "رفض",
+      "confirmRejection": "تأكيد الرفض",
+      "areYouSureReject": "هل أنت متأكد أنك تريد رفض هذا الاقتراح؟",
+      "sprintsAndEmailsByEmployee": "السباقات والبريد حسب الموظف",
+      "today": "اليوم",
+      "yesterday": "أمس",
+      "daysAgo": "منذ {days} يوم",
+      "untitledProject": "مشروع بدون عنوان",
+      "toBeDefined": "يحدد لاحقًا",
+      "proposalAccepted": "تم قبول الاقتراح!",
+      "proposalAcceptError": "فشل في قبول الاقتراح.",
+      "proposalRejected": "تم رفض الاقتراح.",
+      "proposalRejectError": "فشل في رفض الاقتراح.",
+      "sprints": "سباقات",
+      // ...existing code...
+      "sprintsAcceptedProjects": "سباقات → المشاريع المقبولة",
+      "refreshList": "تحديث القائمة",
+      "noAcceptedProjects": "لا يوجد مشاريع مقبولة للعرض.",
+      "projectTeamManagement": "إدارة المشاريع والفريق",
+      "acceptedProjects": "المشاريع المقبولة",
+      "personnel": "الموظفون",
+      "projectAnalysis": "تحليل المشروع",
+      "toolsAnalysisInProgress": "جاري تحليل الأدوات...",
+      "technicalAnalysisInProgress": "جاري التحليل التقني...",
+      "methodologyAnalysisInProgress": "جاري تحليل المنهجية...",
+      "recommendationsAnalysisInProgress": "جاري تحليل التوصيات...",
+      "finance": "المالية",
+      "loadingFinanceData": "جاري تحميل بيانات المالية...",
+      "failedToLoadFinanceData": "فشل تحميل بيانات المالية",
+      "financeTemporarilyUnavailable":
+          "خدمة المالية غير متوفرة مؤقتًا. يرجى المحاولة مرة أخرى بعد قليل.",
+      "financeSignInAgain":
+          "يرجى تسجيل الدخول مرة أخرى لتحميل بياناتك المالية.",
+      "financeUnableToLoad":
+          "تعذر تحميل بيانات المالية الآن. يرجى المحاولة مرة أخرى.",
+      "retry": "إعادة المحاولة",
+      "goodMorning": "صباح الخير",
+      "todayIs": "اليوم هو",
+      "upToDate": "أنت على اطلاع دائم!",
+      "welcomeBack": "مرحبًا بعودتك",
+      "signIn": "تسجيل الدخول",
+      "signInSubtitle": "سجّل الدخول إلى حسابك للمتابعة",
+      "email": "البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "enterEmail": "أدخل بريدك الإلكتروني",
+      "enterPassword": "أدخل كلمة المرور",
+      "rememberMe": "تذكرني",
+      "forgotPassword": "هل نسيت كلمة المرور؟",
+      "dontHaveAccount": "ليس لديك حساب؟",
+      "register": "إنشاء حساب",
+      "createAccount": "إنشاء حساب",
+      "signUp": "تسجيل",
+      "fullName": "الاسم الكامل",
+      "enterName": "أدخل اسمك",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "confirmYourPassword": "أكد كلمة المرور",
+      "orContinueWith": "أو تابع باستخدام",
+      "orSignUpWith": "أو سجل باستخدام",
+      "changePassword": "تغيير كلمة المرور",
+      "currentPassword": "كلمة المرور الحالية",
+      "enterCurrentPassword": "أدخل كلمة المرور الحالية",
+      "newPassword": "كلمة مرور جديدة",
+      "enterNewPassword": "أدخل كلمة المرور الجديدة",
+      "confirmNewPassword": "تأكيد كلمة المرور الجديدة",
+      "confirmNewPasswordHint": "أكد كلمة المرور الجديدة",
+      "passwordsDoNotMatch": "كلمات المرور غير متطابقة",
+      "passwordsMatch": "كلمات المرور متطابقة",
+      "updatePassword": "تحديث كلمة المرور",
+      "passwordUpdated": "تم تحديث كلمة المرور بنجاح",
+      "failedToChangePassword": "فشل تغيير كلمة المرور",
+      "automationInfo":
+          "يتعلم AVA من عاداتك وتفضيلاتك لأتمتة القرارات الروتينية. يمكنك تعديل أو تعطيل أي قاعدة في أي وقت.",
+      "talkToBuddy": "تحدث مع المساعد",
+      "listeningPrompt": "تفضل، أنا أستمع...",
+      "thinkingPrompt": "يفكر...",
+      "helloHowCanIHelp": "مرحبًا! كيف يمكنني مساعدتك اليوم؟",
+      "readyToHelp": "جاهز للمساعدة في",
+      "everythingYouNeedToday": "كل ما تحتاجه اليوم!",
+      "enterPromptHere": "أدخل رسالتك هنا...",
+      "history": "السجل",
+      "createJobPost": "إنشاء وظيفة",
+      "back": "رجوع",
+      "cancel": "إلغاء",
+      "done": "تم",
+      "continue": "متابعة",
+      "save": "حفظ",
+      "dailySummaryBody":
+          "لديك اجتماع مهم واحد، واثنان من رسائل البريد الإلكتروني التي تحتاج إلى اهتمام، وفترة زمنية بعد الظهر يمكن تحسينها.",
+      "teamMeeting": "اجتماع الفريق الساعة 10:00",
+      "urgentEmail": "بريد عاجل من قسم الموارد البشرية",
+      "freeTime": "فترة فراغ بين 15:00–16:30",
+      "Team meeting at 10:00": "اجتماع الفريق الساعة 10:00",
+      "Urgent email from HR": "بريد عاجل من قسم الموارد البشرية",
+      "Free time between 15:00–16:30": "فترة فراغ بين 15:00–16:30",
+      "summarizedEmails": "رسائل البريد الملخصة",
+      "priority": "الأولوية",
+      "high": "عالي",
+      "medium": "متوسط",
+      "low": "منخفض",
+      "deadlines": "المواعيد النهائية",
+      "actions": "الإجراءات",
+      "viewAllEmails": "عرض جميع الرسائل",
+      "aiFeatures": "ميزات الذكاء الاصطناعي",
+      "learningInsights": "التعلم والرؤى",
+      "connectedServices": "الخدمات المتصلة",
+      "learningInsightsDesc": "نصائح وملخصات مخصصة بناءً على نشاطك.",
+      "dashboard": "لوحة التحكم",
+      "voiceAssistant": "مساعد صوتي",
+      "suggestions": "اقتراحات",
+      "agenda": "جدول الأعمال",
+      "emails": "البريد الإلكتروني",
+      "insights": "رؤى",
+      "goals": "أهداف",
+      "You have one important meeting, two emails that need attention, and a time gap this afternoon that could be optimized.":
+          "لديك اجتماع مهم واحد، واثنان من رسائل البريد الإلكتروني التي تحتاج إلى اهتمام، وفترة زمنية بعد الظهر يمكن تحسينها.",
+    },
   };
-
-  /// Traduction sécurisée
-  static String tr(BuildContext context, String key) {
-    final locale = Localizations.localeOf(context).languageCode;
-
-    if (_strings.containsKey(locale) && _strings[locale]!.containsKey(key)) {
-      return _strings[locale]![key]!;
-    }
-
-    if (_strings['en']!.containsKey(key)) {
-      return _strings['en']![key]!;
-    }
-
-    return key; // fallback final
-  }
 }

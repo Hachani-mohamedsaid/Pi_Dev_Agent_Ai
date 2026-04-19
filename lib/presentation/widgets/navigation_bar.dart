@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:pi_dev_agentia/core/l10n/app_strings.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
@@ -18,6 +19,7 @@ class NavigationBarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isHomeActive = currentPath == '/home';
     final isProfileActive = currentPath == '/profile';
     final isFinanceActive = currentPath == '/finance';
@@ -45,15 +47,21 @@ class NavigationBarWidget extends StatelessWidget {
             vertical: isMobile ? 8 : 10,
           ),
           decoration: BoxDecoration(
-            color: AppColors.primaryDark.withOpacity(0.6),
+            color: isDark
+                ? AppColors.primaryDark.withOpacity(0.6)
+                : const Color(0xFFF7FBFF).withOpacity(0.92),
             borderRadius: BorderRadius.circular(isMobile ? 30 : 35),
             border: Border.all(
-              color: AppColors.cyan500.withOpacity(0.2),
+              color: isDark
+                  ? AppColors.cyan500.withOpacity(0.2)
+                  : const Color(0xFFC0D8E6),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.cyan500.withOpacity(0.1),
+                color: isDark
+                    ? AppColors.cyan500.withOpacity(0.1)
+                    : const Color(0xFFB4CBD8).withOpacity(0.22),
                 blurRadius: 20,
                 spreadRadius: 5,
               ),
@@ -224,7 +232,9 @@ class _NavButtonState extends State<_NavButton> {
                           size: widget.isMobile ? 20 : 22,
                           color: widget.isActive
                               ? AppColors.cyan400
-                              : AppColors.textCyan200.withOpacity(0.5),
+                              : (Theme.of(context).brightness == Brightness.dark
+                                    ? AppColors.textCyan200.withOpacity(0.5)
+                                    : const Color(0xFF6D879B)),
                         ),
                         if (widget.isActive) ...[
                           SizedBox(height: widget.isMobile ? 4 : 6),

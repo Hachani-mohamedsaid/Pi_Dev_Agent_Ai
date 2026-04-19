@@ -7,7 +7,20 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../widgets/navigation_bar.dart';
 
+Color _primaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _secondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF5B7B92);
+}
+
 enum ActionStatus { available, pending, completed }
+
 enum ActionCategory { all, transport, food, communication, finance }
 
 class SmartAction {
@@ -146,6 +159,7 @@ class _ActionsHubPageState extends State<ActionsHubPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = Responsive.isMobile(context);
     final padding = Responsive.getResponsiveValue(
       context,
@@ -153,20 +167,24 @@ class _ActionsHubPageState extends State<ActionsHubPage> {
       tablet: 28.0,
       desktop: 32.0,
     );
-
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
+    final pageGradient = isDark
+        ? const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
-          ),
-        ),
+            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+          )
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
+          );
+
+    return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFF3F8FC),
+      body: Container(
+        decoration: BoxDecoration(gradient: pageGradient),
         child: SafeArea(
           bottom: false,
           child: Stack(
@@ -187,53 +205,62 @@ class _ActionsHubPageState extends State<ActionsHubPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                // Header
-                _buildHeader(context, isMobile)
-                    .animate()
-                    .fadeIn(duration: 500.ms)
-                    .slideY(begin: -0.2, end: 0, duration: 500.ms),
+                    // Header
+                    _buildHeader(context, isMobile)
+                        .animate()
+                        .fadeIn(duration: 500.ms)
+                        .slideY(begin: -0.2, end: 0, duration: 500.ms),
 
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 20.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
+                    ),
 
-                // Stats
-                _buildStats(context, isMobile),
+                    // Stats
+                    _buildStats(context, isMobile),
 
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 20.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
+                    ),
 
-                // Category Filter
-                _buildCategoryFilter(context, isMobile),
+                    // Category Filter
+                    _buildCategoryFilter(context, isMobile),
 
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 20.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
+                    ),
 
-                // Actions List
-                _buildActionsList(context, isMobile),
+                    // Actions List
+                    _buildActionsList(context, isMobile),
 
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 20.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
+                    ),
 
-                // Info Footer
-                _buildInfoFooter(context, isMobile)
-                    .animate()
-                    .fadeIn(delay: 800.ms, duration: 300.ms),
+                    // Info Footer
+                    _buildInfoFooter(
+                      context,
+                      isMobile,
+                    ).animate().fadeIn(delay: 800.ms, duration: 300.ms),
                   ],
                 ),
               ),
@@ -266,15 +293,17 @@ class _ActionsHubPageState extends State<ActionsHubPage> {
               desktop: 32.0,
             ),
             fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 6.0,
-          tablet: 8.0,
-          desktop: 10.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 6.0,
+            tablet: 8.0,
+            desktop: 10.0,
+          ),
+        ),
         Text(
           'Automated tasks AVA can perform for you',
           style: TextStyle(
@@ -284,7 +313,7 @@ class _ActionsHubPageState extends State<ActionsHubPage> {
               tablet: 14.0,
               desktop: 15.0,
             ),
-            color: AppColors.textCyan200.withOpacity(0.7),
+            color: _secondaryText(context).withOpacity(0.7),
           ),
         ),
       ],
@@ -292,13 +321,33 @@ class _ActionsHubPageState extends State<ActionsHubPage> {
   }
 
   Widget _buildStats(BuildContext context, bool isMobile) {
-    final availableCount = _actions.where((a) => a.status == ActionStatus.available).length;
-    final pendingCount = _actions.where((a) => a.status == ActionStatus.pending).length;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final availableCount = _actions
+        .where((a) => a.status == ActionStatus.available)
+        .length;
+    final pendingCount = _actions
+        .where((a) => a.status == ActionStatus.pending)
+        .length;
 
     final stats = [
-      {'icon': LucideIcons.checkCircle, 'value': '$availableCount', 'label': 'Available', 'color': const Color(0xFF4ADE80)},
-      {'icon': LucideIcons.clock, 'value': '$pendingCount', 'label': 'Pending', 'color': const Color(0xFFFFD93D)},
-      {'icon': LucideIcons.zap, 'value': '24', 'label': 'This week', 'color': AppColors.cyan400},
+      {
+        'icon': LucideIcons.checkCircle,
+        'value': '$availableCount',
+        'label': 'Available',
+        'color': const Color(0xFF4ADE80),
+      },
+      {
+        'icon': LucideIcons.clock,
+        'value': '$pendingCount',
+        'label': 'Pending',
+        'color': const Color(0xFFFFD93D),
+      },
+      {
+        'icon': LucideIcons.zap,
+        'value': '24',
+        'label': 'This week',
+        'color': AppColors.cyan400,
+      },
     ];
 
     return Row(
@@ -306,112 +355,135 @@ class _ActionsHubPageState extends State<ActionsHubPage> {
         final index = entry.key;
         final stat = entry.value;
         return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(
-              right: index < stats.length - 1
-                  ? Responsive.getResponsiveValue(
-                      context,
-                      mobile: 8.0,
-                      tablet: 10.0,
-                      desktop: 12.0,
-                    )
-                  : 0,
-            ),
-            child: Container(
-              padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                context,
-                mobile: 14.0,
-                tablet: 16.0,
-                desktop: 20.0,
-              )),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF1e4a66).withOpacity(0.4),
-                    const Color(0xFF16384d).withOpacity(0.4),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 12.0,
-                  tablet: 13.0,
-                  desktop: 14.0,
-                )),
-                border: Border.all(
-                  color: AppColors.cyan500.withOpacity(0.1),
-                  width: 1,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 12.0,
-                  tablet: 13.0,
-                  desktop: 14.0,
-                )),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        stat['icon'] as IconData,
-                        size: Responsive.getResponsiveValue(
+          child:
+              Padding(
+                    padding: EdgeInsets.only(
+                      right: index < stats.length - 1
+                          ? Responsive.getResponsiveValue(
+                              context,
+                              mobile: 8.0,
+                              tablet: 10.0,
+                              desktop: 12.0,
+                            )
+                          : 0,
+                    ),
+                    child: Container(
+                      padding: EdgeInsets.all(
+                        Responsive.getResponsiveValue(
                           context,
-                          mobile: 18.0,
-                          tablet: 20.0,
-                          desktop: 22.0,
+                          mobile: 14.0,
+                          tablet: 16.0,
+                          desktop: 20.0,
                         ),
-                        color: stat['color'] as Color,
                       ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 6.0,
-                        tablet: 8.0,
-                        desktop: 10.0,
-                      )),
-                      Text(
-                        stat['value'] as String,
-                        style: TextStyle(
-                          fontSize: Responsive.getResponsiveValue(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            isDark
+                                ? const Color(0xFF1e4a66).withOpacity(0.4)
+                                : const Color(0xFFF9FCFF),
+                            isDark
+                                ? const Color(0xFF16384d).withOpacity(0.4)
+                                : const Color(0xFFEAF4FB),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
                             context,
-                            mobile: 20.0,
-                            tablet: 22.0,
-                            desktop: 24.0,
+                            mobile: 12.0,
+                            tablet: 13.0,
+                            desktop: 14.0,
                           ),
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textWhite,
+                        ),
+                        border: Border.all(
+                          color: AppColors.cyan500.withOpacity(0.1),
+                          width: 1,
                         ),
                       ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 3.0,
-                        tablet: 4.0,
-                        desktop: 5.0,
-                      )),
-                      Text(
-                        stat['label'] as String,
-                        style: TextStyle(
-                          fontSize: Responsive.getResponsiveValue(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
                             context,
-                            mobile: 10.0,
-                            tablet: 11.0,
-                            desktop: 12.0,
+                            mobile: 12.0,
+                            tablet: 13.0,
+                            desktop: 14.0,
                           ),
-                          color: AppColors.cyan400.withOpacity(0.6),
+                        ),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                stat['icon'] as IconData,
+                                size: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 18.0,
+                                  tablet: 20.0,
+                                  desktop: 22.0,
+                                ),
+                                color: stat['color'] as Color,
+                              ),
+                              SizedBox(
+                                height: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 6.0,
+                                  tablet: 8.0,
+                                  desktop: 10.0,
+                                ),
+                              ),
+                              Text(
+                                stat['value'] as String,
+                                style: TextStyle(
+                                  fontSize: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 20.0,
+                                    tablet: 22.0,
+                                    desktop: 24.0,
+                                  ),
+                                  fontWeight: FontWeight.bold,
+                                  color: _primaryText(context),
+                                ),
+                              ),
+                              SizedBox(
+                                height: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 3.0,
+                                  tablet: 4.0,
+                                  desktop: 5.0,
+                                ),
+                              ),
+                              Text(
+                                stat['label'] as String,
+                                style: TextStyle(
+                                  fontSize: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 10.0,
+                                    tablet: 11.0,
+                                    desktop: 12.0,
+                                  ),
+                                  color: AppColors.cyan400.withOpacity(0.6),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ],
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(
+                    delay: Duration(milliseconds: 100 + (index * 100)),
+                    duration: 300.ms,
+                  )
+                  .scale(
+                    begin: const Offset(0.9, 0.9),
+                    end: const Offset(1, 1),
+                    delay: Duration(milliseconds: 100 + (index * 100)),
+                    duration: 300.ms,
                   ),
-                ),
-              ),
-            ),
-          )
-              .animate()
-              .fadeIn(delay: Duration(milliseconds: 100 + (index * 100)), duration: 300.ms)
-              .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), delay: Duration(milliseconds: 100 + (index * 100)), duration: 300.ms),
         );
       }).toList(),
     );
@@ -420,10 +492,26 @@ class _ActionsHubPageState extends State<ActionsHubPage> {
   Widget _buildCategoryFilter(BuildContext context, bool isMobile) {
     final categories = [
       {'category': ActionCategory.all, 'icon': LucideIcons.zap, 'label': 'All'},
-      {'category': ActionCategory.transport, 'icon': LucideIcons.car, 'label': 'Transport'},
-      {'category': ActionCategory.food, 'icon': LucideIcons.coffee, 'label': 'Food'},
-      {'category': ActionCategory.communication, 'icon': LucideIcons.phone, 'label': 'Comm'},
-      {'category': ActionCategory.finance, 'icon': LucideIcons.dollarSign, 'label': 'Finance'},
+      {
+        'category': ActionCategory.transport,
+        'icon': LucideIcons.car,
+        'label': 'Transport',
+      },
+      {
+        'category': ActionCategory.food,
+        'icon': LucideIcons.coffee,
+        'label': 'Food',
+      },
+      {
+        'category': ActionCategory.communication,
+        'icon': LucideIcons.phone,
+        'label': 'Comm',
+      },
+      {
+        'category': ActionCategory.finance,
+        'icon': LucideIcons.dollarSign,
+        'label': 'Finance',
+      },
     ];
 
     return SingleChildScrollView(
@@ -467,17 +555,21 @@ class _ActionsHubPageState extends State<ActionsHubPage> {
                           ],
                         )
                       : null,
-                  color: isSelected ? null : AppColors.textWhite.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                    context,
-                    mobile: 12.0,
-                    tablet: 13.0,
-                    desktop: 14.0,
-                  )),
+                  color: isSelected
+                      ? null
+                      : _primaryText(context).withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(
+                    Responsive.getResponsiveValue(
+                      context,
+                      mobile: 12.0,
+                      tablet: 13.0,
+                      desktop: 14.0,
+                    ),
+                  ),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.cyan500.withOpacity(0.5)
-                        : AppColors.textWhite.withOpacity(0.1),
+                        : _primaryText(context).withOpacity(0.1),
                     width: 1,
                   ),
                 ),
@@ -496,12 +588,14 @@ class _ActionsHubPageState extends State<ActionsHubPage> {
                           ? AppColors.textCyan300
                           : AppColors.cyan400.withOpacity(0.7),
                     ),
-                    SizedBox(width: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 6.0,
-                      tablet: 8.0,
-                      desktop: 10.0,
-                    )),
+                    SizedBox(
+                      width: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 6.0,
+                        tablet: 8.0,
+                        desktop: 10.0,
+                      ),
+                    ),
                     Text(
                       cat['label'] as String,
                       style: TextStyle(
@@ -553,499 +647,584 @@ class _ActionsHubPageState extends State<ActionsHubPage> {
     SmartAction action,
     int index,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final statusConfig = _getStatusConfig(action.status);
     final isExpanded = _expandedAction == action.id;
 
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF1e4a66).withOpacity(0.4),
-            const Color(0xFF16384d).withOpacity(0.4),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Column(
-            children: [
-              // Main Content
-              GestureDetector(
-                onTap: () => setState(() => _expandedAction = isExpanded ? null : action.id),
-                child: Padding(
-                  padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                    context,
-                    mobile: 14.0,
-                    tablet: 16.0,
-                    desktop: 20.0,
-                  )),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Icon
-                      Container(
-                        width: Responsive.getResponsiveValue(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                isDark
+                    ? const Color(0xFF1e4a66).withOpacity(0.4)
+                    : const Color(0xFFF9FCFF),
+                isDark
+                    ? const Color(0xFF16384d).withOpacity(0.4)
+                    : const Color(0xFFEAF4FB),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 16.0,
+                tablet: 18.0,
+                desktop: 20.0,
+              ),
+            ),
+            border: Border.all(
+              color: AppColors.cyan500.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 16.0,
+                tablet: 18.0,
+                desktop: 20.0,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Column(
+                children: [
+                  // Main Content
+                  GestureDetector(
+                    onTap: () => setState(
+                      () => _expandedAction = isExpanded ? null : action.id,
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(
+                        Responsive.getResponsiveValue(
                           context,
-                          mobile: 44.0,
-                          tablet: 48.0,
-                          desktop: 52.0,
-                        ),
-                        height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 44.0,
-                          tablet: 48.0,
-                          desktop: 52.0,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppColors.cyan500.withOpacity(0.2),
-                              AppColors.blue500.withOpacity(0.2),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                            context,
-                            mobile: 10.0,
-                            tablet: 11.0,
-                            desktop: 12.0,
-                          )),
-                          border: Border.all(
-                            color: AppColors.cyan500.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Icon(
-                          action.icon,
-                          size: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 22.0,
-                            tablet: 24.0,
-                            desktop: 26.0,
-                          ),
-                          color: AppColors.cyan400,
+                          mobile: 14.0,
+                          tablet: 16.0,
+                          desktop: 20.0,
                         ),
                       ),
-                      SizedBox(width: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 12.0,
-                        tablet: 14.0,
-                        desktop: 16.0,
-                      )),
-                      // Info
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Icon
+                          Container(
+                            width: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 44.0,
+                              tablet: 48.0,
+                              desktop: 52.0,
+                            ),
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 44.0,
+                              tablet: 48.0,
+                              desktop: 52.0,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  AppColors.cyan500.withOpacity(0.2),
+                                  AppColors.blue500.withOpacity(0.2),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 10.0,
+                                  tablet: 11.0,
+                                  desktop: 12.0,
+                                ),
+                              ),
+                              border: Border.all(
+                                color: AppColors.cyan500.withOpacity(0.2),
+                                width: 1,
+                              ),
+                            ),
+                            child: Icon(
+                              action.icon,
+                              size: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 22.0,
+                                tablet: 24.0,
+                                desktop: 26.0,
+                              ),
+                              color: AppColors.cyan400,
+                            ),
+                          ),
+                          SizedBox(
+                            width: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 14.0,
+                              desktop: 16.0,
+                            ),
+                          ),
+                          // Info
+                          Expanded(
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(
-                                  child: Text(
-                                    action.title,
-                                    style: TextStyle(
-                                      fontSize: Responsive.getResponsiveValue(
-                                        context,
-                                        mobile: 15.0,
-                                        tablet: 16.0,
-                                        desktop: 17.0,
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        action.title,
+                                        style: TextStyle(
+                                          fontSize:
+                                              Responsive.getResponsiveValue(
+                                                context,
+                                                mobile: 15.0,
+                                                tablet: 16.0,
+                                                desktop: 17.0,
+                                              ),
+                                          fontWeight: FontWeight.w600,
+                                          color: _primaryText(context),
+                                        ),
                                       ),
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textWhite,
                                     ),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal:
+                                            Responsive.getResponsiveValue(
+                                              context,
+                                              mobile: 8.0,
+                                              tablet: 10.0,
+                                              desktop: 12.0,
+                                            ),
+                                        vertical: Responsive.getResponsiveValue(
+                                          context,
+                                          mobile: 4.0,
+                                          tablet: 5.0,
+                                          desktop: 6.0,
+                                        ),
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: statusConfig['bg'] as Color,
+                                        borderRadius: BorderRadius.circular(
+                                          Responsive.getResponsiveValue(
+                                            context,
+                                            mobile: 6.0,
+                                            tablet: 7.0,
+                                            desktop: 8.0,
+                                          ),
+                                        ),
+                                        border: Border.all(
+                                          color:
+                                              statusConfig['border'] as Color,
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            statusConfig['icon'] as IconData,
+                                            size: Responsive.getResponsiveValue(
+                                              context,
+                                              mobile: 13.0,
+                                              tablet: 14.0,
+                                              desktop: 15.0,
+                                            ),
+                                            color:
+                                                statusConfig['color'] as Color,
+                                          ),
+                                          SizedBox(
+                                            width:
+                                                Responsive.getResponsiveValue(
+                                                  context,
+                                                  mobile: 4.0,
+                                                  tablet: 5.0,
+                                                  desktop: 6.0,
+                                                ),
+                                          ),
+                                          Text(
+                                            statusConfig['label'] as String,
+                                            style: TextStyle(
+                                              fontSize:
+                                                  Responsive.getResponsiveValue(
+                                                    context,
+                                                    mobile: 11.0,
+                                                    tablet: 12.0,
+                                                    desktop: 13.0,
+                                                  ),
+                                              fontWeight: FontWeight.w500,
+                                              color:
+                                                  statusConfig['color']
+                                                      as Color,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(
+                                  height: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 6.0,
+                                    tablet: 8.0,
+                                    desktop: 10.0,
                                   ),
                                 ),
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: Responsive.getResponsiveValue(
+                                Text(
+                                  action.description,
+                                  style: TextStyle(
+                                    fontSize: Responsive.getResponsiveValue(
                                       context,
-                                      mobile: 8.0,
-                                      tablet: 10.0,
-                                      desktop: 12.0,
+                                      mobile: 12.0,
+                                      tablet: 13.0,
+                                      desktop: 14.0,
                                     ),
-                                    vertical: Responsive.getResponsiveValue(
+                                    color: _secondaryText(
                                       context,
-                                      mobile: 4.0,
-                                      tablet: 5.0,
-                                      desktop: 6.0,
-                                    ),
+                                    ).withOpacity(0.6),
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: statusConfig['bg'] as Color,
-                                    borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                                ),
+                                SizedBox(
+                                  height: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 8.0,
+                                    tablet: 10.0,
+                                    desktop: 12.0,
+                                  ),
+                                ),
+                                // Meta Info
+                                Wrap(
+                                  spacing: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 10.0,
+                                    tablet: 12.0,
+                                    desktop: 14.0,
+                                  ),
+                                  runSpacing: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 6.0,
+                                    tablet: 8.0,
+                                    desktop: 10.0,
+                                  ),
+                                  children: [
+                                    if (action.confidence != null)
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width:
+                                                Responsive.getResponsiveValue(
+                                                  context,
+                                                  mobile: 5.0,
+                                                  tablet: 6.0,
+                                                  desktop: 7.0,
+                                                ),
+                                            height:
+                                                Responsive.getResponsiveValue(
+                                                  context,
+                                                  mobile: 5.0,
+                                                  tablet: 6.0,
+                                                  desktop: 7.0,
+                                                ),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.cyan400,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            width:
+                                                Responsive.getResponsiveValue(
+                                                  context,
+                                                  mobile: 4.0,
+                                                  tablet: 5.0,
+                                                  desktop: 6.0,
+                                                ),
+                                          ),
+                                          Text(
+                                            '${action.confidence}% confidence',
+                                            style: TextStyle(
+                                              fontSize:
+                                                  Responsive.getResponsiveValue(
+                                                    context,
+                                                    mobile: 10.0,
+                                                    tablet: 11.0,
+                                                    desktop: 12.0,
+                                                  ),
+                                              color: AppColors.cyan400
+                                                  .withOpacity(0.7),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    if (action.lastUsed != null)
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            LucideIcons.clock,
+                                            size: Responsive.getResponsiveValue(
+                                              context,
+                                              mobile: 12.0,
+                                              tablet: 13.0,
+                                              desktop: 14.0,
+                                            ),
+                                            color: AppColors.cyan400
+                                                .withOpacity(0.5),
+                                          ),
+                                          SizedBox(
+                                            width:
+                                                Responsive.getResponsiveValue(
+                                                  context,
+                                                  mobile: 4.0,
+                                                  tablet: 5.0,
+                                                  desktop: 6.0,
+                                                ),
+                                          ),
+                                          Text(
+                                            action.lastUsed!,
+                                            style: TextStyle(
+                                              fontSize:
+                                                  Responsive.getResponsiveValue(
+                                                    context,
+                                                    mobile: 10.0,
+                                                    tablet: 11.0,
+                                                    desktop: 12.0,
+                                                  ),
+                                              color: AppColors.cyan400
+                                                  .withOpacity(0.5),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    if (action.requiresConfirmation)
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            LucideIcons.alertCircle,
+                                            size: Responsive.getResponsiveValue(
+                                              context,
+                                              mobile: 12.0,
+                                              tablet: 13.0,
+                                              desktop: 14.0,
+                                            ),
+                                            color: const Color(
+                                              0xFFFFD93D,
+                                            ).withOpacity(0.7),
+                                          ),
+                                          SizedBox(
+                                            width:
+                                                Responsive.getResponsiveValue(
+                                                  context,
+                                                  mobile: 4.0,
+                                                  tablet: 5.0,
+                                                  desktop: 6.0,
+                                                ),
+                                          ),
+                                          Text(
+                                            'Needs approval',
+                                            style: TextStyle(
+                                              fontSize:
+                                                  Responsive.getResponsiveValue(
+                                                    context,
+                                                    mobile: 10.0,
+                                                    tablet: 11.0,
+                                                    desktop: 12.0,
+                                                  ),
+                                              color: const Color(
+                                                0xFFFFD93D,
+                                              ).withOpacity(0.7),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Expanded Actions
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    height: isExpanded ? null : 0,
+                    child: isExpanded
+                        ? Container(
+                            padding: EdgeInsets.only(
+                              left: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 14.0,
+                                tablet: 16.0,
+                                desktop: 20.0,
+                              ),
+                              right: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 14.0,
+                                tablet: 16.0,
+                                desktop: 20.0,
+                              ),
+                              bottom: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 14.0,
+                                tablet: 16.0,
+                                desktop: 20.0,
+                              ),
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                top: BorderSide(
+                                  color: AppColors.cyan500.withOpacity(0.1),
+                                  width: 1,
+                                ),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                SizedBox(
+                                  height: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 10.0,
+                                    tablet: 12.0,
+                                    desktop: 14.0,
+                                  ),
+                                ),
+                                if (action.status ==
+                                    ActionStatus.available) ...[
+                                  _buildActionButton(
+                                    context,
+                                    isMobile,
+                                    'Execute Action',
+                                    true,
+                                  ),
+                                  SizedBox(
+                                    height: Responsive.getResponsiveValue(
                                       context,
                                       mobile: 6.0,
-                                      tablet: 7.0,
-                                      desktop: 8.0,
-                                    )),
-                                    border: Border.all(
-                                      color: statusConfig['border'] as Color,
-                                      width: 1,
+                                      tablet: 8.0,
+                                      desktop: 10.0,
                                     ),
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        statusConfig['icon'] as IconData,
-                                        size: Responsive.getResponsiveValue(
-                                          context,
-                                          mobile: 13.0,
-                                          tablet: 14.0,
-                                          desktop: 15.0,
-                                        ),
-                                        color: statusConfig['color'] as Color,
-                                      ),
-                                      SizedBox(width: Responsive.getResponsiveValue(
-                                        context,
-                                        mobile: 4.0,
-                                        tablet: 5.0,
-                                        desktop: 6.0,
-                                      )),
-                                      Text(
-                                        statusConfig['label'] as String,
-                                        style: TextStyle(
-                                          fontSize: Responsive.getResponsiveValue(
-                                            context,
-                                            mobile: 11.0,
-                                            tablet: 12.0,
-                                            desktop: 13.0,
-                                          ),
-                                          fontWeight: FontWeight.w500,
-                                          color: statusConfig['color'] as Color,
-                                        ),
-                                      ),
-                                    ],
+                                  _buildActionButton(
+                                    context,
+                                    isMobile,
+                                    'Configure Settings',
+                                    false,
                                   ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 6.0,
-                              tablet: 8.0,
-                              desktop: 10.0,
-                            )),
-                            Text(
-                              action.description,
-                              style: TextStyle(
-                                fontSize: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 12.0,
-                                  tablet: 13.0,
-                                  desktop: 14.0,
-                                ),
-                                color: AppColors.textCyan200.withOpacity(0.6),
-                              ),
-                            ),
-                            SizedBox(height: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 8.0,
-                              tablet: 10.0,
-                              desktop: 12.0,
-                            )),
-                            // Meta Info
-                            Wrap(
-                              spacing: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 10.0,
-                                tablet: 12.0,
-                                desktop: 14.0,
-                              ),
-                              runSpacing: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 6.0,
-                                tablet: 8.0,
-                                desktop: 10.0,
-                              ),
-                              children: [
-                                if (action.confidence != null)
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        width: Responsive.getResponsiveValue(
+                                ],
+                                if (action.status == ActionStatus.pending)
+                                  Container(
+                                    padding: EdgeInsets.all(
+                                      Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 10.0,
+                                        tablet: 12.0,
+                                        desktop: 14.0,
+                                      ),
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFFFFB800,
+                                      ).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(
+                                        Responsive.getResponsiveValue(
                                           context,
-                                          mobile: 5.0,
-                                          tablet: 6.0,
-                                          desktop: 7.0,
+                                          mobile: 12.0,
+                                          tablet: 13.0,
+                                          desktop: 14.0,
                                         ),
-                                        height: Responsive.getResponsiveValue(
+                                      ),
+                                      border: Border.all(
+                                        color: const Color(
+                                          0xFFFFB800,
+                                        ).withOpacity(0.2),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'This action is being processed...',
+                                        style: TextStyle(
+                                          fontSize:
+                                              Responsive.getResponsiveValue(
+                                                context,
+                                                mobile: 12.0,
+                                                tablet: 13.0,
+                                                desktop: 14.0,
+                                              ),
+                                          color: const Color(0xFFFFD93D),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                if (action.status == ActionStatus.completed)
+                                  Container(
+                                    padding: EdgeInsets.all(
+                                      Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 10.0,
+                                        tablet: 12.0,
+                                        desktop: 14.0,
+                                      ),
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.cyan500.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(
+                                        Responsive.getResponsiveValue(
                                           context,
-                                          mobile: 5.0,
-                                          tablet: 6.0,
-                                          desktop: 7.0,
+                                          mobile: 12.0,
+                                          tablet: 13.0,
+                                          desktop: 14.0,
                                         ),
-                                        decoration: BoxDecoration(
+                                      ),
+                                      border: Border.all(
+                                        color: AppColors.cyan500.withOpacity(
+                                          0.2,
+                                        ),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'Completed ${action.lastUsed ?? ''}',
+                                        style: TextStyle(
+                                          fontSize:
+                                              Responsive.getResponsiveValue(
+                                                context,
+                                                mobile: 12.0,
+                                                tablet: 13.0,
+                                                desktop: 14.0,
+                                              ),
                                           color: AppColors.cyan400,
-                                          shape: BoxShape.circle,
                                         ),
                                       ),
-                                      SizedBox(width: Responsive.getResponsiveValue(
-                                        context,
-                                        mobile: 4.0,
-                                        tablet: 5.0,
-                                        desktop: 6.0,
-                                      )),
-                                      Text(
-                                        '${action.confidence}% confidence',
-                                        style: TextStyle(
-                                          fontSize: Responsive.getResponsiveValue(
-                                            context,
-                                            mobile: 10.0,
-                                            tablet: 11.0,
-                                            desktop: 12.0,
-                                          ),
-                                          color: AppColors.cyan400.withOpacity(0.7),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                if (action.lastUsed != null)
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        LucideIcons.clock,
-                                        size: Responsive.getResponsiveValue(
-                                          context,
-                                          mobile: 12.0,
-                                          tablet: 13.0,
-                                          desktop: 14.0,
-                                        ),
-                                        color: AppColors.cyan400.withOpacity(0.5),
-                                      ),
-                                      SizedBox(width: Responsive.getResponsiveValue(
-                                        context,
-                                        mobile: 4.0,
-                                        tablet: 5.0,
-                                        desktop: 6.0,
-                                      )),
-                                      Text(
-                                        action.lastUsed!,
-                                        style: TextStyle(
-                                          fontSize: Responsive.getResponsiveValue(
-                                            context,
-                                            mobile: 10.0,
-                                            tablet: 11.0,
-                                            desktop: 12.0,
-                                          ),
-                                          color: AppColors.cyan400.withOpacity(0.5),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                if (action.requiresConfirmation)
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        LucideIcons.alertCircle,
-                                        size: Responsive.getResponsiveValue(
-                                          context,
-                                          mobile: 12.0,
-                                          tablet: 13.0,
-                                          desktop: 14.0,
-                                        ),
-                                        color: const Color(0xFFFFD93D).withOpacity(0.7),
-                                      ),
-                                      SizedBox(width: Responsive.getResponsiveValue(
-                                        context,
-                                        mobile: 4.0,
-                                        tablet: 5.0,
-                                        desktop: 6.0,
-                                      )),
-                                      Text(
-                                        'Needs approval',
-                                        style: TextStyle(
-                                          fontSize: Responsive.getResponsiveValue(
-                                            context,
-                                            mobile: 10.0,
-                                            tablet: 11.0,
-                                            desktop: 12.0,
-                                          ),
-                                          color: const Color(0xFFFFD93D).withOpacity(0.7),
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
+                          )
+                        : const SizedBox.shrink(),
                   ),
-                ),
+                ],
               ),
-              // Expanded Actions
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                height: isExpanded ? null : 0,
-                child: isExpanded
-                    ? Container(
-                        padding: EdgeInsets.only(
-                          left: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 14.0,
-                            tablet: 16.0,
-                            desktop: 20.0,
-                          ),
-                          right: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 14.0,
-                            tablet: 16.0,
-                            desktop: 20.0,
-                          ),
-                          bottom: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 14.0,
-                            tablet: 16.0,
-                            desktop: 20.0,
-                          ),
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            top: BorderSide(
-                              color: AppColors.cyan500.withOpacity(0.1),
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            SizedBox(height: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 10.0,
-                              tablet: 12.0,
-                              desktop: 14.0,
-                            )),
-                            if (action.status == ActionStatus.available) ...[
-                              _buildActionButton(
-                                context,
-                                isMobile,
-                                'Execute Action',
-                                true,
-                              ),
-                              SizedBox(height: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 6.0,
-                                tablet: 8.0,
-                                desktop: 10.0,
-                              )),
-                              _buildActionButton(
-                                context,
-                                isMobile,
-                                'Configure Settings',
-                                false,
-                              ),
-                            ],
-                            if (action.status == ActionStatus.pending)
-                              Container(
-                                padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 10.0,
-                                  tablet: 12.0,
-                                  desktop: 14.0,
-                                )),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFB800).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 12.0,
-                                    tablet: 13.0,
-                                    desktop: 14.0,
-                                  )),
-                                  border: Border.all(
-                                    color: const Color(0xFFFFB800).withOpacity(0.2),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    'This action is being processed...',
-                                    style: TextStyle(
-                                      fontSize: Responsive.getResponsiveValue(
-                                        context,
-                                        mobile: 12.0,
-                                        tablet: 13.0,
-                                        desktop: 14.0,
-                                      ),
-                                      color: const Color(0xFFFFD93D),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            if (action.status == ActionStatus.completed)
-                              Container(
-                                padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 10.0,
-                                  tablet: 12.0,
-                                  desktop: 14.0,
-                                )),
-                                decoration: BoxDecoration(
-                                  color: AppColors.cyan500.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 12.0,
-                                    tablet: 13.0,
-                                    desktop: 14.0,
-                                  )),
-                                  border: Border.all(
-                                    color: AppColors.cyan500.withOpacity(0.2),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    'Completed ${action.lastUsed ?? ''}',
-                                    style: TextStyle(
-                                      fontSize: Responsive.getResponsiveValue(
-                                        context,
-                                        mobile: 12.0,
-                                        tablet: 13.0,
-                                        desktop: 14.0,
-                                      ),
-                                      color: AppColors.cyan400,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    )
+        )
         .animate()
-        .fadeIn(delay: Duration(milliseconds: 400 + (index * 100)), duration: 300.ms)
-        .slideY(begin: 0.2, end: 0, delay: Duration(milliseconds: 400 + (index * 100)), duration: 300.ms);
+        .fadeIn(
+          delay: Duration(milliseconds: 400 + (index * 100)),
+          duration: 300.ms,
+        )
+        .slideY(
+          begin: 0.2,
+          end: 0,
+          delay: Duration(milliseconds: 400 + (index * 100)),
+          duration: 300.ms,
+        );
   }
 
   Widget _buildActionButton(
@@ -1073,23 +1252,22 @@ class _ActionsHubPageState extends State<ActionsHubPage> {
               ? LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.cyan500,
-                    AppColors.cyan400,
-                  ],
+                  colors: [AppColors.cyan500, AppColors.cyan400],
                 )
               : null,
-          color: isPrimary ? null : AppColors.textWhite.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-            context,
-            mobile: 12.0,
-            tablet: 13.0,
-            desktop: 14.0,
-          )),
+          color: isPrimary ? null : _primaryText(context).withOpacity(0.05),
+          borderRadius: BorderRadius.circular(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 12.0,
+              tablet: 13.0,
+              desktop: 14.0,
+            ),
+          ),
           border: Border.all(
             color: isPrimary
                 ? AppColors.cyan500.withOpacity(0.3)
-                : AppColors.textWhite.withOpacity(0.1),
+                : _primaryText(context).withOpacity(0.1),
             width: 1,
           ),
           boxShadow: isPrimary
@@ -1118,7 +1296,9 @@ class _ActionsHubPageState extends State<ActionsHubPage> {
                 desktop: 15.0,
               ),
               fontWeight: FontWeight.w500,
-              color: isPrimary ? AppColors.textWhite : AppColors.cyan400.withOpacity(0.7),
+              color: isPrimary
+                  ? _primaryText(context)
+                  : AppColors.cyan400.withOpacity(0.7),
             ),
           ),
         ),
@@ -1128,24 +1308,25 @@ class _ActionsHubPageState extends State<ActionsHubPage> {
 
   Widget _buildInfoFooter(BuildContext context, bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 14.0,
-        tablet: 16.0,
-        desktop: 20.0,
-      )),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 14.0,
+          tablet: 16.0,
+          desktop: 20.0,
+        ),
+      ),
       decoration: BoxDecoration(
         color: AppColors.cyan500.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 12.0,
-          tablet: 13.0,
-          desktop: 14.0,
-        )),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 13.0,
+            desktop: 14.0,
+          ),
         ),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.1), width: 1),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1160,12 +1341,14 @@ class _ActionsHubPageState extends State<ActionsHubPage> {
             ),
             color: AppColors.cyan400.withOpacity(0.7),
           ),
-          SizedBox(width: Responsive.getResponsiveValue(
-            context,
-            mobile: 6.0,
-            tablet: 8.0,
-            desktop: 10.0,
-          )),
+          SizedBox(
+            width: Responsive.getResponsiveValue(
+              context,
+              mobile: 6.0,
+              tablet: 8.0,
+              desktop: 10.0,
+            ),
+          ),
           Text(
             'Actions marked require your confirmation before execution',
             textAlign: TextAlign.center,

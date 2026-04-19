@@ -6,12 +6,33 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shell.dart';
 import '../../core/theme/ava_theme.dart';
 
+Color _flowPrimaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _flowSecondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF5B7B92);
+}
+
+Color _flowSurface(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.primaryDarker
+      : const Color(0xFFFFFFFF);
+}
+
+Color _flowSurfaceBorder(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.cyan500.withValues(alpha: 0.22)
+      : const Color(0xFFC7DDE9);
+}
+
 /// Step 1 — enter deal terms, then navigate to swipe comparables.
 class MarketIntelligenceFormScreen extends StatefulWidget {
-  const MarketIntelligenceFormScreen({
-    super.key,
-    this.sessionId = '',
-  });
+  const MarketIntelligenceFormScreen({super.key, this.sessionId = ''});
 
   final String sessionId;
 
@@ -74,8 +95,9 @@ class _MarketIntelligenceFormScreenState
   String _barLabel(double n) {
     if (n >= 1000000) {
       final m = n / 1000000;
-      final s =
-          (m - m.round()).abs() < 0.05 ? m.round().toString() : m.toStringAsFixed(1);
+      final s = (m - m.round()).abs() < 0.05
+          ? m.round().toString()
+          : m.toStringAsFixed(1);
       return '€${s}M';
     }
     if (n >= 1000) return '€${(n / 1000).round()}K';
@@ -91,7 +113,9 @@ class _MarketIntelligenceFormScreenState
           content: const Text('Enter a proposed valuation amount.'),
           backgroundColor: AppColors.statusRejected,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -103,7 +127,9 @@ class _MarketIntelligenceFormScreenState
           content: const Text('Enter the equity you are offering.'),
           backgroundColor: AppColors.statusRejected,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -128,8 +154,9 @@ class _MarketIntelligenceFormScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final focused = _focusValuation.hasFocus;
-    final edge = AppColors.cyan500.withValues(alpha: 0.22);
+    final edge = _flowSurfaceBorder(context);
 
     return AppShellGradient(
       child: Scaffold(
@@ -139,9 +166,9 @@ class _MarketIntelligenceFormScreenState
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios_new_rounded,
-              color: AppColors.textCyan200,
+              color: isDark ? AppColors.textCyan200 : const Color(0xFF5B7B92),
               size: 18,
             ),
             onPressed: () {
@@ -152,13 +179,13 @@ class _MarketIntelligenceFormScreenState
               }
             },
           ),
-          title: const Text(
+          title: Text(
             'Market Intelligence',
             style: TextStyle(
               fontFamily: 'Georgia',
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppColors.textWhite,
+              color: _flowPrimaryText(context),
             ),
           ),
           centerTitle: true,
@@ -175,9 +202,11 @@ class _MarketIntelligenceFormScreenState
           children: [
             const Text('YOUR DEAL', style: AvaText.label),
             const SizedBox(height: 5),
-            const Text(
+            Text(
               'What are you\nproposing?',
-              style: AvaText.display,
+              style: AvaText.display.copyWith(
+                color: isDark ? AvaColors.text : const Color(0xFF12344C),
+              ),
             ),
             const SizedBox(height: 28),
             _avaMessageCard(),
@@ -188,15 +217,22 @@ class _MarketIntelligenceFormScreenState
               controller: _valuationCtrl,
               focusNode: _focusValuation,
               keyboardType: TextInputType.text,
-              style: AvaText.body.copyWith(fontSize: 13),
+              style: AvaText.body.copyWith(
+                fontSize: 13,
+                color: _flowPrimaryText(context),
+              ),
               decoration: InputDecoration(
                 hintText: 'e.g. € 1,000,000',
-                hintStyle:
-                    const TextStyle(color: AvaColors.muted, fontSize: 13),
+                hintStyle: TextStyle(
+                  color: isDark ? AvaColors.muted : const Color(0xFF7A96AA),
+                  fontSize: 13,
+                ),
                 filled: true,
-                fillColor: AppColors.primaryDarker,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                fillColor: _flowSurface(context),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 13,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide(
@@ -210,8 +246,10 @@ class _MarketIntelligenceFormScreenState
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide:
-                      const BorderSide(color: AppColors.cyan400, width: 1.5),
+                  borderSide: const BorderSide(
+                    color: AppColors.cyan400,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
@@ -220,11 +258,16 @@ class _MarketIntelligenceFormScreenState
             const SizedBox(height: 6),
             TextField(
               controller: _equityCtrl,
-              style: AvaText.body.copyWith(fontSize: 13),
+              style: AvaText.body.copyWith(
+                fontSize: 13,
+                color: _flowPrimaryText(context),
+              ),
               decoration: _inputDecoration().copyWith(
                 hintText: 'e.g. 15%',
-                hintStyle:
-                    const TextStyle(color: AvaColors.muted, fontSize: 13),
+                hintStyle: TextStyle(
+                  color: isDark ? AvaColors.muted : const Color(0xFF7A96AA),
+                  fontSize: 13,
+                ),
               ),
             ),
             const SizedBox(height: 14),
@@ -317,10 +360,10 @@ class _MarketIntelligenceFormScreenState
   Widget _fieldLabel(String t) => Text(t, style: AvaText.label);
 
   InputDecoration _inputDecoration() {
-    final edge = AppColors.cyan500.withValues(alpha: 0.22);
+    final edge = _flowSurfaceBorder(context);
     return InputDecoration(
       filled: true,
-      fillColor: AppColors.primaryDarker,
+      fillColor: _flowSurface(context),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
@@ -342,20 +385,28 @@ class _MarketIntelligenceFormScreenState
     required List<T> items,
     required ValueChanged<T?> onChanged,
   }) {
-    final edge = AppColors.cyan500.withValues(alpha: 0.22);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final edge = _flowSurfaceBorder(context);
     return DropdownButtonFormField<T>(
       // ignore: deprecated_member_use
       value: value,
       onChanged: onChanged,
-      dropdownColor: AppColors.primaryDarker,
-      style: AvaText.body.copyWith(fontSize: 13),
-      icon: const Icon(Icons.keyboard_arrow_down_rounded,
-          color: AvaColors.muted),
+      dropdownColor: _flowSurface(context),
+      style: AvaText.body.copyWith(
+        fontSize: 13,
+        color: _flowPrimaryText(context),
+      ),
+      icon: Icon(
+        Icons.keyboard_arrow_down_rounded,
+        color: isDark ? AvaColors.muted : const Color(0xFF7A96AA),
+      ),
       decoration: InputDecoration(
         filled: true,
-        fillColor: AppColors.primaryDarker,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        fillColor: _flowSurface(context),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 13,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: edge),
@@ -376,14 +427,23 @@ class _MarketIntelligenceFormScreenState
   }
 
   Widget _avaMessageCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: AppColors.cardGradient,
+        gradient: isDark
+            ? AppColors.cardGradient
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFF9FCFF), Color(0xFFEAF4FB)],
+              ),
         borderRadius: BorderRadius.circular(13),
         border: Border.all(
-          color: AppColors.cyan500.withValues(alpha: 0.28),
+          color: isDark
+              ? AppColors.cyan500.withValues(alpha: 0.28)
+              : const Color(0xFFC7DDE9),
         ),
       ),
       child: Column(
@@ -408,7 +468,10 @@ class _MarketIntelligenceFormScreenState
           Text(
             'Enter your proposed deal terms and I will find real comparable '
             'companies that raised under the same conditions.',
-            style: AvaText.body.copyWith(fontSize: 13),
+            style: AvaText.body.copyWith(
+              fontSize: 13,
+              color: _flowSecondaryText(context),
+            ),
           ),
         ],
       ),

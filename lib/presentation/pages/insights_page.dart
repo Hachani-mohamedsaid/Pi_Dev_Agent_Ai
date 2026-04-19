@@ -7,6 +7,57 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../widgets/navigation_bar.dart';
 
+Color _primaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _secondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF5B7B92);
+}
+
+LinearGradient _pageGradient(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return isDark
+      ? const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+        )
+      : const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
+        );
+}
+
+LinearGradient _cardGradient(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return isDark
+      ? LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF1e4a66).withOpacity(0.4),
+            const Color(0xFF16384d).withOpacity(0.4),
+          ],
+        )
+      : const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF9FCFF), Color(0xFFEAF4FB)],
+        );
+}
+
+Color _cardBorder(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.cyan500.withOpacity(0.1)
+      : const Color(0xFFC7DDE9);
+}
+
 class InsightsPage extends StatelessWidget {
   const InsightsPage({super.key});
 
@@ -21,45 +72,100 @@ class InsightsPage extends StatelessWidget {
     );
 
     final workPatterns = [
-      {'emoji': '☀️', 'label': 'Most productive', 'value': '9:00-11:00 AM', 'confidence': 'High'},
-      {'emoji': '🎯', 'label': 'Focus time needed', 'value': '2 hours/day', 'confidence': 'High'},
-      {'emoji': '⏰', 'label': 'Preferred meeting time', 'value': '2:00-4:00 PM', 'confidence': 'Medium'},
-      {'emoji': '🌙', 'label': 'Energy dip', 'value': '3:00-4:00 PM', 'confidence': 'High'},
+      {
+        'emoji': '☀️',
+        'label': 'Most productive',
+        'value': '9:00-11:00 AM',
+        'confidence': 'High',
+      },
+      {
+        'emoji': '🎯',
+        'label': 'Focus time needed',
+        'value': '2 hours/day',
+        'confidence': 'High',
+      },
+      {
+        'emoji': '⏰',
+        'label': 'Preferred meeting time',
+        'value': '2:00-4:00 PM',
+        'confidence': 'Medium',
+      },
+      {
+        'emoji': '🌙',
+        'label': 'Energy dip',
+        'value': '3:00-4:00 PM',
+        'confidence': 'High',
+      },
     ];
 
     final communicationStyle = [
-      {'emoji': '📧', 'label': 'Response time', 'value': 'Within 2 hours', 'confidence': 'High'},
-      {'emoji': '💬', 'label': 'Preferred channel', 'value': 'Email > Slack', 'confidence': 'Medium'},
-      {'emoji': '✍️', 'label': 'Message length', 'value': 'Concise', 'confidence': 'High'},
+      {
+        'emoji': '📧',
+        'label': 'Response time',
+        'value': 'Within 2 hours',
+        'confidence': 'High',
+      },
+      {
+        'emoji': '💬',
+        'label': 'Preferred channel',
+        'value': 'Email > Slack',
+        'confidence': 'Medium',
+      },
+      {
+        'emoji': '✍️',
+        'label': 'Message length',
+        'value': 'Concise',
+        'confidence': 'High',
+      },
     ];
 
     final decisionPatterns = [
-      {'emoji': '🎲', 'label': 'Risk tolerance', 'value': 'Moderate', 'confidence': 'Medium'},
-      {'emoji': '🤔', 'label': 'Decision speed', 'value': 'Thoughtful', 'confidence': 'High'},
-      {'emoji': '🙋', 'label': 'Delegation style', 'value': 'Collaborative', 'confidence': 'Medium'},
+      {
+        'emoji': '🎲',
+        'label': 'Risk tolerance',
+        'value': 'Moderate',
+        'confidence': 'Medium',
+      },
+      {
+        'emoji': '🤔',
+        'label': 'Decision speed',
+        'value': 'Thoughtful',
+        'confidence': 'High',
+      },
+      {
+        'emoji': '🙋',
+        'label': 'Delegation style',
+        'value': 'Collaborative',
+        'confidence': 'Medium',
+      },
     ];
 
     final habits = [
-      {'emoji': '☕', 'label': 'Coffee at 9 AM', 'frequency': 'Daily', 'icon': LucideIcons.coffee},
-      {'emoji': '🏃', 'label': 'Gym on Tuesdays', 'frequency': 'Weekly', 'icon': LucideIcons.target},
-      {'emoji': '📅', 'label': 'Friday afternoon buffer', 'frequency': 'Weekly', 'icon': LucideIcons.calendar},
+      {
+        'emoji': '☕',
+        'label': 'Coffee at 9 AM',
+        'frequency': 'Daily',
+        'icon': LucideIcons.coffee,
+      },
+      {
+        'emoji': '🏃',
+        'label': 'Gym on Tuesdays',
+        'frequency': 'Weekly',
+        'icon': LucideIcons.target,
+      },
+      {
+        'emoji': '📅',
+        'label': 'Friday afternoon buffer',
+        'frequency': 'Weekly',
+        'icon': LucideIcons.calendar,
+      },
     ];
 
     const accuracyScore = 87;
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
-          ),
-        ),
+        decoration: BoxDecoration(gradient: _pageGradient(context)),
         child: SafeArea(
           bottom: false,
           child: Stack(
@@ -80,99 +186,119 @@ class InsightsPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                // Header
-                _buildHeader(context, isMobile)
-                    .animate()
-                    .fadeIn(duration: 500.ms)
-                    .slideY(begin: -0.2, end: 0, duration: 500.ms),
+                    // Header
+                    _buildHeader(context, isMobile)
+                        .animate()
+                        .fadeIn(duration: 500.ms)
+                        .slideY(begin: -0.2, end: 0, duration: 500.ms),
 
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 20.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
+                    ),
 
-                // Accuracy Score
-                _buildAccuracyScore(context, isMobile, accuracyScore)
-                    .animate()
-                    .fadeIn(delay: 100.ms, duration: 300.ms)
-                    .scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1), delay: 100.ms, duration: 300.ms),
+                    // Accuracy Score
+                    _buildAccuracyScore(context, isMobile, accuracyScore)
+                        .animate()
+                        .fadeIn(delay: 100.ms, duration: 300.ms)
+                        .scale(
+                          begin: const Offset(0.95, 0.95),
+                          end: const Offset(1, 1),
+                          delay: 100.ms,
+                          duration: 300.ms,
+                        ),
 
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 20.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
+                    ),
 
-                // Work Patterns
-                _buildSection(
-                  context,
-                  isMobile,
-                  title: 'Work Patterns',
-                  icon: LucideIcons.clock,
-                  items: workPatterns,
-                  startDelay: 200,
-                ),
+                    // Work Patterns
+                    _buildSection(
+                      context,
+                      isMobile,
+                      title: 'Work Patterns',
+                      icon: LucideIcons.clock,
+                      items: workPatterns,
+                      startDelay: 200,
+                    ),
 
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 20.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
+                    ),
 
-                // Communication Style
-                _buildSection(
-                  context,
-                  isMobile,
-                  title: 'Communication Style',
-                  icon: LucideIcons.messageSquare,
-                  items: communicationStyle,
-                  startDelay: 500,
-                ),
+                    // Communication Style
+                    _buildSection(
+                      context,
+                      isMobile,
+                      title: 'Communication Style',
+                      icon: LucideIcons.messageSquare,
+                      items: communicationStyle,
+                      startDelay: 500,
+                    ),
 
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 20.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
+                    ),
 
-                // Decision Patterns
-                _buildSection(
-                  context,
-                  isMobile,
-                  title: 'Decision Patterns',
-                  icon: LucideIcons.target,
-                  items: decisionPatterns,
-                  startDelay: 700,
-                ),
+                    // Decision Patterns
+                    _buildSection(
+                      context,
+                      isMobile,
+                      title: 'Decision Patterns',
+                      icon: LucideIcons.target,
+                      items: decisionPatterns,
+                      startDelay: 700,
+                    ),
 
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 20.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
+                    ),
 
-                // Habits
-                _buildHabitsSection(context, isMobile, habits)
-                    .animate()
-                    .fadeIn(delay: 1000.ms, duration: 300.ms),
+                    // Habits
+                    _buildHabitsSection(
+                      context,
+                      isMobile,
+                      habits,
+                    ).animate().fadeIn(delay: 1000.ms, duration: 300.ms),
 
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 20.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
+                    ),
 
-                // Timeline
-                _buildTimeline(context, isMobile)
-                    .animate()
-                    .fadeIn(delay: 1300.ms, duration: 300.ms),
+                    // Timeline
+                    _buildTimeline(
+                      context,
+                      isMobile,
+                    ).animate().fadeIn(delay: 1300.ms, duration: 300.ms),
                   ],
                 ),
               ),
@@ -205,15 +331,17 @@ class InsightsPage extends StatelessWidget {
               desktop: 32.0,
             ),
             fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 6.0,
-          tablet: 8.0,
-          desktop: 10.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 6.0,
+            tablet: 8.0,
+            desktop: 10.0,
+          ),
+        ),
         Text(
           'What AVA has learned about you',
           style: TextStyle(
@@ -223,21 +351,27 @@ class InsightsPage extends StatelessWidget {
               tablet: 14.0,
               desktop: 15.0,
             ),
-            color: AppColors.textCyan200.withOpacity(0.7),
+            color: _secondaryText(context),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildAccuracyScore(BuildContext context, bool isMobile, int accuracyScore) {
+  Widget _buildAccuracyScore(
+    BuildContext context,
+    bool isMobile,
+    int accuracyScore,
+  ) {
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 20.0,
-        tablet: 24.0,
-        desktop: 28.0,
-      )),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 20.0,
+          tablet: 24.0,
+          desktop: 28.0,
+        ),
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -245,67 +379,64 @@ class InsightsPage extends StatelessWidget {
             AppColors.blue500.withOpacity(0.1),
           ],
         ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
         border: Border.all(
           color: const Color(0xFF9333EA).withOpacity(0.2),
           width: 1,
         ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Stack(
             children: [
               // Animated glow effect
               Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: Alignment.topLeft,
-                      radius: 0.6,
-                      colors: [
-                        const Color(0xFFA855F7).withOpacity(0.1),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                )
-                    .animate(onPlay: (controller) => controller.repeat())
-                    .scale(
-                      begin: const Offset(1, 1),
-                      end: const Offset(1.1, 1.1),
-                      duration: 3000.ms,
-                      curve: Curves.easeInOut,
-                    )
-                    .then()
-                    .scale(
-                      begin: const Offset(1.1, 1.1),
-                      end: const Offset(1, 1),
-                      duration: 3000.ms,
-                      curve: Curves.easeInOut,
-                    )
-                    .fade(
-                      begin: 0.3,
-                      end: 0.5,
-                      duration: 3000.ms,
-                    )
-                    .then()
-                    .fade(
-                      begin: 0.5,
-                      end: 0.3,
-                      duration: 3000.ms,
-                    ),
+                child:
+                    Container(
+                          decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                              center: Alignment.topLeft,
+                              radius: 0.6,
+                              colors: [
+                                const Color(0xFFA855F7).withOpacity(0.1),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                        )
+                        .animate(onPlay: (controller) => controller.repeat())
+                        .scale(
+                          begin: const Offset(1, 1),
+                          end: const Offset(1.1, 1.1),
+                          duration: 3000.ms,
+                          curve: Curves.easeInOut,
+                        )
+                        .then()
+                        .scale(
+                          begin: const Offset(1.1, 1.1),
+                          end: const Offset(1, 1),
+                          duration: 3000.ms,
+                          curve: Curves.easeInOut,
+                        )
+                        .fade(begin: 0.3, end: 0.5, duration: 3000.ms)
+                        .then()
+                        .fade(begin: 0.5, end: 0.3, duration: 3000.ms),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -334,12 +465,14 @@ class InsightsPage extends StatelessWidget {
                               AppColors.blue500.withOpacity(0.3),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                            context,
-                            mobile: 16.0,
-                            tablet: 18.0,
-                            desktop: 20.0,
-                          )),
+                          borderRadius: BorderRadius.circular(
+                            Responsive.getResponsiveValue(
+                              context,
+                              mobile: 16.0,
+                              tablet: 18.0,
+                              desktop: 20.0,
+                            ),
+                          ),
                           border: Border.all(
                             color: const Color(0xFF9333EA).withOpacity(0.3),
                             width: 1,
@@ -356,12 +489,14 @@ class InsightsPage extends StatelessWidget {
                           color: const Color(0xFFC084FC),
                         ),
                       ),
-                      SizedBox(width: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 14.0,
-                        tablet: 16.0,
-                        desktop: 18.0,
-                      )),
+                      SizedBox(
+                        width: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 14.0,
+                          tablet: 16.0,
+                          desktop: 18.0,
+                        ),
+                      ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -375,15 +510,17 @@ class InsightsPage extends StatelessWidget {
                                 desktop: 18.0,
                               ),
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textWhite,
+                              color: _primaryText(context),
                             ),
                           ),
-                          SizedBox(height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 3.0,
-                            tablet: 4.0,
-                            desktop: 5.0,
-                          )),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 3.0,
+                              tablet: 4.0,
+                              desktop: 5.0,
+                            ),
+                          ),
                           Text(
                             'Prediction success rate',
                             style: TextStyle(
@@ -413,15 +550,17 @@ class InsightsPage extends StatelessWidget {
                             desktop: 40.0,
                           ),
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textWhite,
+                          color: _primaryText(context),
                         ),
                       ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 4.0,
-                        tablet: 5.0,
-                        desktop: 6.0,
-                      )),
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 4.0,
+                          tablet: 5.0,
+                          desktop: 6.0,
+                        ),
+                      ),
                       Row(
                         children: [
                           Icon(
@@ -434,12 +573,14 @@ class InsightsPage extends StatelessWidget {
                             ),
                             color: const Color(0xFF10B981),
                           ),
-                          SizedBox(width: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 3.0,
-                            tablet: 4.0,
-                            desktop: 5.0,
-                          )),
+                          SizedBox(
+                            width: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 3.0,
+                              tablet: 4.0,
+                              desktop: 5.0,
+                            ),
+                          ),
                           Text(
                             '+5% this week',
                             style: TextStyle(
@@ -488,12 +629,14 @@ class InsightsPage extends StatelessWidget {
               ),
               color: AppColors.cyan400,
             ),
-            SizedBox(width: Responsive.getResponsiveValue(
-              context,
-              mobile: 6.0,
-              tablet: 8.0,
-              desktop: 10.0,
-            )),
+            SizedBox(
+              width: Responsive.getResponsiveValue(
+                context,
+                mobile: 6.0,
+                tablet: 8.0,
+                desktop: 10.0,
+              ),
+            ),
             Text(
               title,
               style: TextStyle(
@@ -504,17 +647,19 @@ class InsightsPage extends StatelessWidget {
                   desktop: 18.0,
                 ),
                 fontWeight: FontWeight.w600,
-                color: AppColors.textWhite,
+                color: _primaryText(context),
               ),
             ),
           ],
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 10.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 10.0,
+            tablet: 12.0,
+            desktop: 14.0,
+          ),
+        ),
         ...items.asMap().entries.map((entry) {
           final index = entry.key;
           final item = entry.value;
@@ -527,17 +672,26 @@ class InsightsPage extends StatelessWidget {
                 desktop: 10.0,
               ),
             ),
-            child: _buildPatternCard(
-              context,
-              isMobile,
-              emoji: item['emoji']!,
-              label: item['label']!,
-              value: item['value']!,
-              confidence: item['confidence']!,
-            )
-                .animate()
-                .fadeIn(delay: Duration(milliseconds: startDelay + (index * 100)), duration: 300.ms)
-                .slideX(begin: -0.2, end: 0, delay: Duration(milliseconds: startDelay + (index * 100)), duration: 300.ms),
+            child:
+                _buildPatternCard(
+                      context,
+                      isMobile,
+                      emoji: item['emoji']!,
+                      label: item['label']!,
+                      value: item['value']!,
+                      confidence: item['confidence']!,
+                    )
+                    .animate()
+                    .fadeIn(
+                      delay: Duration(milliseconds: startDelay + (index * 100)),
+                      duration: 300.ms,
+                    )
+                    .slideX(
+                      begin: -0.2,
+                      end: 0,
+                      delay: Duration(milliseconds: startDelay + (index * 100)),
+                      duration: 300.ms,
+                    ),
           );
         }),
       ],
@@ -554,39 +708,35 @@ class InsightsPage extends StatelessWidget {
   }) {
     final isHighConfidence = confidence == 'High';
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 14.0,
-        tablet: 16.0,
-        desktop: 20.0,
-      )),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF1e4a66).withOpacity(0.4),
-            const Color(0xFF16384d).withOpacity(0.4),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
           context,
-          mobile: 12.0,
-          tablet: 13.0,
-          desktop: 14.0,
-        )),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
+          mobile: 14.0,
+          tablet: 16.0,
+          desktop: 20.0,
         ),
       ),
+      decoration: BoxDecoration(
+        gradient: _cardGradient(context),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 13.0,
+            desktop: 14.0,
+          ),
+        ),
+        border: Border.all(color: _cardBorder(context), width: 1),
+      ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 12.0,
-          tablet: 13.0,
-          desktop: 14.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 13.0,
+            desktop: 14.0,
+          ),
+        ),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Row(
@@ -603,12 +753,14 @@ class InsightsPage extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(width: Responsive.getResponsiveValue(
-                context,
-                mobile: 10.0,
-                tablet: 12.0,
-                desktop: 14.0,
-              )),
+              SizedBox(
+                width: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 10.0,
+                  tablet: 12.0,
+                  desktop: 14.0,
+                ),
+              ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -628,7 +780,7 @@ class InsightsPage extends StatelessWidget {
                                 desktop: 15.0,
                               ),
                               fontWeight: FontWeight.w500,
-                              color: AppColors.textWhite,
+                              color: _primaryText(context),
                             ),
                           ),
                         ),
@@ -651,12 +803,14 @@ class InsightsPage extends StatelessWidget {
                             color: isHighConfidence
                                 ? const Color(0xFF10B981).withOpacity(0.1)
                                 : const Color(0xFFF59E0B).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                              context,
-                              mobile: 4.0,
-                              tablet: 5.0,
-                              desktop: 6.0,
-                            )),
+                            borderRadius: BorderRadius.circular(
+                              Responsive.getResponsiveValue(
+                                context,
+                                mobile: 4.0,
+                                tablet: 5.0,
+                                desktop: 6.0,
+                              ),
+                            ),
                             border: Border.all(
                               color: isHighConfidence
                                   ? const Color(0xFF10B981).withOpacity(0.2)
@@ -681,12 +835,14 @@ class InsightsPage extends StatelessWidget {
                         ),
                       ],
                     ),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 4.0,
-                      tablet: 5.0,
-                      desktop: 6.0,
-                    )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 4.0,
+                        tablet: 5.0,
+                        desktop: 6.0,
+                      ),
+                    ),
                     Text(
                       value,
                       style: TextStyle(
@@ -710,7 +866,11 @@ class InsightsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHabitsSection(BuildContext context, bool isMobile, List<Map<String, dynamic>> habits) {
+  Widget _buildHabitsSection(
+    BuildContext context,
+    bool isMobile,
+    List<Map<String, dynamic>> habits,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -726,12 +886,14 @@ class InsightsPage extends StatelessWidget {
               ),
               color: AppColors.cyan400,
             ),
-            SizedBox(width: Responsive.getResponsiveValue(
-              context,
-              mobile: 6.0,
-              tablet: 8.0,
-              desktop: 10.0,
-            )),
+            SizedBox(
+              width: Responsive.getResponsiveValue(
+                context,
+                mobile: 6.0,
+                tablet: 8.0,
+                desktop: 10.0,
+              ),
+            ),
             Text(
               'Recognized Habits',
               style: TextStyle(
@@ -742,17 +904,19 @@ class InsightsPage extends StatelessWidget {
                   desktop: 18.0,
                 ),
                 fontWeight: FontWeight.w600,
-                color: AppColors.textWhite,
+                color: _primaryText(context),
               ),
             ),
           ],
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 10.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 10.0,
+            tablet: 12.0,
+            desktop: 14.0,
+          ),
+        ),
         ...habits.asMap().entries.map((entry) {
           final index = entry.key;
           final habit = entry.value;
@@ -765,129 +929,145 @@ class InsightsPage extends StatelessWidget {
                 desktop: 14.0,
               ),
             ),
-            child: Container(
-              padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                context,
-                mobile: 14.0,
-                tablet: 16.0,
-                desktop: 20.0,
-              )),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF1e4a66).withOpacity(0.4),
-                    const Color(0xFF16384d).withOpacity(0.4),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 12.0,
-                  tablet: 13.0,
-                  desktop: 14.0,
-                )),
-                border: Border.all(
-                  color: AppColors.cyan500.withOpacity(0.1),
-                  width: 1,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 12.0,
-                  tablet: 13.0,
-                  desktop: 14.0,
-                )),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: Responsive.getResponsiveValue(
+            child:
+                Container(
+                      padding: EdgeInsets.all(
+                        Responsive.getResponsiveValue(
                           context,
-                          mobile: 36.0,
-                          tablet: 40.0,
-                          desktop: 44.0,
+                          mobile: 14.0,
+                          tablet: 16.0,
+                          desktop: 20.0,
                         ),
-                        height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 36.0,
-                          tablet: 40.0,
-                          desktop: 44.0,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.cyan500.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: _cardGradient(context),
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
                             context,
-                            mobile: 10.0,
-                            tablet: 11.0,
-                            desktop: 12.0,
-                          )),
-                        ),
-                        child: Icon(
-                          habit['icon'] as IconData,
-                          size: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 18.0,
-                            tablet: 20.0,
-                            desktop: 22.0,
+                            mobile: 12.0,
+                            tablet: 13.0,
+                            desktop: 14.0,
                           ),
-                          color: AppColors.cyan400,
+                        ),
+                        border: Border.all(
+                          color: _cardBorder(context),
+                          width: 1,
                         ),
                       ),
-                      SizedBox(width: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 10.0,
-                        tablet: 12.0,
-                        desktop: 14.0,
-                      )),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              habit['label'] as String,
-                              style: TextStyle(
-                                fontSize: Responsive.getResponsiveValue(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 12.0,
+                            tablet: 13.0,
+                            desktop: 14.0,
+                          ),
+                        ),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: Responsive.getResponsiveValue(
                                   context,
-                                  mobile: 13.0,
-                                  tablet: 14.0,
-                                  desktop: 15.0,
+                                  mobile: 36.0,
+                                  tablet: 40.0,
+                                  desktop: 44.0,
                                 ),
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textWhite,
-                              ),
-                            ),
-                            SizedBox(height: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 3.0,
-                              tablet: 4.0,
-                              desktop: 5.0,
-                            )),
-                            Text(
-                              habit['frequency'] as String,
-                              style: TextStyle(
-                                fontSize: Responsive.getResponsiveValue(
+                                height: Responsive.getResponsiveValue(
                                   context,
-                                  mobile: 11.0,
+                                  mobile: 36.0,
+                                  tablet: 40.0,
+                                  desktop: 44.0,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.cyan500.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(
+                                    Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 10.0,
+                                      tablet: 11.0,
+                                      desktop: 12.0,
+                                    ),
+                                  ),
+                                ),
+                                child: Icon(
+                                  habit['icon'] as IconData,
+                                  size: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 18.0,
+                                    tablet: 20.0,
+                                    desktop: 22.0,
+                                  ),
+                                  color: AppColors.cyan400,
+                                ),
+                              ),
+                              SizedBox(
+                                width: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 10.0,
                                   tablet: 12.0,
-                                  desktop: 13.0,
+                                  desktop: 14.0,
                                 ),
-                                color: AppColors.cyan400.withOpacity(0.6),
                               ),
-                            ),
-                          ],
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      habit['label'] as String,
+                                      style: TextStyle(
+                                        fontSize: Responsive.getResponsiveValue(
+                                          context,
+                                          mobile: 13.0,
+                                          tablet: 14.0,
+                                          desktop: 15.0,
+                                        ),
+                                        fontWeight: FontWeight.w500,
+                                        color: _primaryText(context),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: Responsive.getResponsiveValue(
+                                        context,
+                                        mobile: 3.0,
+                                        tablet: 4.0,
+                                        desktop: 5.0,
+                                      ),
+                                    ),
+                                    Text(
+                                      habit['frequency'] as String,
+                                      style: TextStyle(
+                                        fontSize: Responsive.getResponsiveValue(
+                                          context,
+                                          mobile: 11.0,
+                                          tablet: 12.0,
+                                          desktop: 13.0,
+                                        ),
+                                        color: AppColors.cyan400.withOpacity(
+                                          0.6,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            )
-                .animate()
-                .fadeIn(delay: Duration(milliseconds: 1000 + (index * 100)), duration: 300.ms)
-                .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), delay: Duration(milliseconds: 1000 + (index * 100)), duration: 300.ms),
+                    )
+                    .animate()
+                    .fadeIn(
+                      delay: Duration(milliseconds: 1000 + (index * 100)),
+                      duration: 300.ms,
+                    )
+                    .scale(
+                      begin: const Offset(0.9, 0.9),
+                      end: const Offset(1, 1),
+                      delay: Duration(milliseconds: 1000 + (index * 100)),
+                      duration: 300.ms,
+                    ),
           );
         }),
       ],
@@ -896,24 +1076,25 @@ class InsightsPage extends StatelessWidget {
 
   Widget _buildTimeline(BuildContext context, bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 14.0,
-        tablet: 16.0,
-        desktop: 20.0,
-      )),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 14.0,
+          tablet: 16.0,
+          desktop: 20.0,
+        ),
+      ),
       decoration: BoxDecoration(
         color: AppColors.cyan500.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 12.0,
-          tablet: 13.0,
-          desktop: 14.0,
-        )),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 13.0,
+            desktop: 14.0,
+          ),
         ),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.1), width: 1),
       ),
       child: Column(
         children: [
@@ -930,12 +1111,14 @@ class InsightsPage extends StatelessWidget {
               color: AppColors.cyan400.withOpacity(0.7),
             ),
           ),
-          SizedBox(height: Responsive.getResponsiveValue(
-            context,
-            mobile: 6.0,
-            tablet: 8.0,
-            desktop: 10.0,
-          )),
+          SizedBox(
+            height: Responsive.getResponsiveValue(
+              context,
+              mobile: 6.0,
+              tablet: 8.0,
+              desktop: 10.0,
+            ),
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -977,12 +1160,14 @@ class InsightsPage extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: Responsive.getResponsiveValue(
-            context,
-            mobile: 6.0,
-            tablet: 8.0,
-            desktop: 10.0,
-          )),
+          SizedBox(
+            height: Responsive.getResponsiveValue(
+              context,
+              mobile: 6.0,
+              tablet: 8.0,
+              desktop: 10.0,
+            ),
+          ),
           Container(
             height: Responsive.getResponsiveValue(
               context,
@@ -992,20 +1177,24 @@ class InsightsPage extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: AppColors.cyan500.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                context,
-                mobile: 2.0,
-                tablet: 2.5,
-                desktop: 3.0,
-              )),
+              borderRadius: BorderRadius.circular(
+                Responsive.getResponsiveValue(
+                  context,
+                  mobile: 2.0,
+                  tablet: 2.5,
+                  desktop: 3.0,
+                ),
+              ),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                context,
-                mobile: 2.0,
-                tablet: 2.5,
-                desktop: 3.0,
-              )),
+              borderRadius: BorderRadius.circular(
+                Responsive.getResponsiveValue(
+                  context,
+                  mobile: 2.0,
+                  tablet: 2.5,
+                  desktop: 3.0,
+                ),
+              ),
               child: Container(
                 width: double.infinity,
                 height: double.infinity,
@@ -1014,15 +1203,10 @@ class InsightsPage extends StatelessWidget {
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          AppColors.cyan500,
-                          AppColors.blue500,
-                        ],
+                        colors: [AppColors.cyan500, AppColors.blue500],
                       ),
                     ),
-                  )
-                      .animate()
-                      .fadeIn(delay: 1500.ms, duration: 1000.ms),
+                  ).animate().fadeIn(delay: 1500.ms, duration: 1000.ms),
                 ),
               ),
             ),

@@ -15,8 +15,9 @@ import 'package:openai_tts/openai_tts.dart';
 
 import '../../core/config/api_config.dart'
     show openaiApiKey, realtimeVoiceWsUrl;
-import '../../core/l10n/app_strings.dart';
+import 'package:pi_dev_agentia/generated/l10n.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../data/datasources/chat_remote_data_source.dart';
 import '../../data/datasources/realtime_voice_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -70,7 +71,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
       messages.add(
         ChatMessage(
           id: 1,
-          text: AppStrings.tr(context, 'helloHowCanIHelp'),
+          text: S.of(context).helloHowCanIHelp,
           sender: MessageSender.ai,
           timestamp: DateTime.now(),
         ),
@@ -841,15 +842,15 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
 
   @override
   Widget build(BuildContext context) {
-    // Background Gradient Colors
-    const bgStart = Color(0xFF0f2940);
-    const bgMid = Color(0xFF1a3a52);
-    const bgEnd = Color(0xFF0f2940);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgStart = isDark ? const Color(0xFF0f2940) : const Color(0xFFF7FBFF);
+    final bgMid = isDark ? const Color(0xFF1a3a52) : const Color(0xFFEAF4FB);
+    final bgEnd = isDark ? const Color(0xFF0f2940) : const Color(0xFFF7FBFF);
 
     return Scaffold(
       resizeToAvoidBottomInset: false, // Handle keyboard manually if needed
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -902,7 +903,6 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final screenHeight = MediaQuery.of(context).size.height;
-                  final screenWidth = MediaQuery.of(context).size.width;
 
                   // Responsive calculations - Reduced to move waveform up
                   final topSectionHeight = Responsive.getResponsiveValue(
@@ -925,31 +925,12 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                     tablet: 36.0,
                     desktop: 40.0,
                   );
-                  final inputFieldHeight = Responsive.getResponsiveValue(
-                    context,
-                    mobile: 70.0,
-                    tablet: 75.0,
-                    desktop: 80.0,
-                  );
                   final bottomPadding = Responsive.getResponsiveValue(
                     context,
                     mobile: 24.0,
                     tablet: 28.0,
                     desktop: 32.0,
                   );
-
-                  final bottomSectionHeight =
-                      micButtonHeight +
-                      spacingHeight +
-                      inputFieldHeight +
-                      bottomPadding;
-
-                  // Available height for waveform area (with safety margin)
-                  final availableHeight =
-                      (constraints.maxHeight -
-                              topSectionHeight -
-                              bottomSectionHeight)
-                          .clamp(200.0, double.infinity);
 
                   return Column(
                     children: [
@@ -1001,7 +982,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                             desktop: 28.0,
                           ),
                         ),
-                        child: _buildInputArea(),
+                        child: _buildInputArea(isDark: isDark),
                       ),
                     ],
                   );
@@ -1039,7 +1020,9 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                             children: [
                               Icon(
                                 LucideIcons.chevronLeft,
-                                color: const Color(0xFF22d3ee),
+                                color: isDark
+                                    ? const Color(0xFF22d3ee)
+                                    : const Color(0xFF0B6A88),
                                 size: Responsive.getResponsiveValue(
                                   context,
                                   mobile: 22.0,
@@ -1056,9 +1039,11 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                                 ),
                               ),
                               Text(
-                                "Home",
+                                AppStrings.tr(context, 'home'),
                                 style: TextStyle(
-                                  color: const Color(0xFF22d3ee),
+                                  color: isDark
+                                      ? const Color(0xFF22d3ee)
+                                      : const Color(0xFF0B6A88),
                                   fontSize: Responsive.getResponsiveValue(
                                     context,
                                     mobile: 14.0,
@@ -1074,6 +1059,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                         Row(
                           children: [
                             _buildGlassIconButton(
+                              isDark: isDark,
                               icon: LucideIcons.messageSquare,
                               onTap: () => setState(() => showChat = !showChat),
                               badgeCount: messages.length > 1
@@ -1089,6 +1075,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                               ),
                             ),
                             _buildGlassIconButton(
+                              isDark: isDark,
                               icon: LucideIcons.menu,
                               onTap: () => setState(() => showHistory = true),
                             ),
@@ -1102,9 +1089,11 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                   Column(
                     children: [
                       Text(
-                        AppStrings.tr(context, 'talkToBuddy'),
+                        S.of(context).talkToBuddy,
                         style: TextStyle(
-                          color: Colors.cyan[200]!.withOpacity(0.6),
+                          color: isDark
+                              ? Colors.cyan[200]!.withOpacity(0.6)
+                              : const Color(0xFF5B7B92),
                           fontSize: Responsive.getResponsiveValue(
                             context,
                             mobile: 12.0,
@@ -1141,12 +1130,14 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                             children: [
                               Text(
                                 isListening
-                                    ? AppStrings.tr(context, 'listeningPrompt')
+                                    ? S.of(context).listeningPrompt
                                     : isSpeaking
-                                    ? AppStrings.tr(context, 'thinkingPrompt')
-                                    : AppStrings.tr(context, 'readyToHelp'),
+                                    ? S.of(context).thinkingPrompt
+                                    : S.of(context).readyToHelp,
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF12263A),
                                   fontSize: Responsive.getResponsiveValue(
                                     context,
                                     mobile: 18.0,
@@ -1158,12 +1149,11 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                               ),
                               if (!isListening && !isSpeaking)
                                 Text(
-                                  AppStrings.tr(
-                                    context,
-                                    'everythingYouNeedToday',
-                                  ),
+                                  S.of(context).everythingYouNeedToday,
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: isDark
+                                        ? Colors.white
+                                        : const Color(0xFF12263A),
                                     fontSize: Responsive.getResponsiveValue(
                                       context,
                                       mobile: 18.0,
@@ -1226,6 +1216,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
   }
 
   Widget _buildGlassIconButton({
+    required bool isDark,
     required IconData icon,
     required VoidCallback onTap,
     int badgeCount = 0,
@@ -1241,17 +1232,29 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF1e4a66).withOpacity(0.6),
-              const Color(0xFF16384d).withOpacity(0.6),
+              isDark
+                  ? const Color(0xFF1e4a66).withOpacity(0.6)
+                  : const Color(0xFFF9FCFF),
+              isDark
+                  ? const Color(0xFF16384d).withOpacity(0.6)
+                  : const Color(0xFFEAF4FB),
             ],
           ),
-          border: Border.all(color: Colors.cyan.withOpacity(0.2)),
+          border: Border.all(
+            color: isDark
+                ? Colors.cyan.withOpacity(0.2)
+                : const Color(0xFFC7DDE9),
+          ),
         ),
         child: Stack(
           alignment: Alignment.center,
           clipBehavior: Clip.none,
           children: [
-            Icon(icon, color: const Color(0xFF22d3ee), size: 20),
+            Icon(
+              icon,
+              color: isDark ? const Color(0xFF22d3ee) : const Color(0xFF0B6A88),
+              size: 20,
+            ),
             if (badgeCount > 0)
               Positioned(
                 top: -2,
@@ -1282,7 +1285,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
     );
   }
 
-  Widget _buildInputArea() {
+  Widget _buildInputArea({required bool isDark}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(
         Responsive.getResponsiveValue(
@@ -1322,11 +1325,19 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                const Color(0xFF1e4a66).withOpacity(0.6),
-                const Color(0xFF16384d).withOpacity(0.6),
+                isDark
+                    ? const Color(0xFF1e4a66).withOpacity(0.6)
+                    : const Color(0xFFF9FCFF),
+                isDark
+                    ? const Color(0xFF16384d).withOpacity(0.6)
+                    : const Color(0xFFEAF4FB),
               ],
             ),
-            border: Border.all(color: Colors.cyan.withOpacity(0.2)),
+            border: Border.all(
+              color: isDark
+                  ? Colors.cyan.withOpacity(0.2)
+                  : const Color(0xFFC7DDE9),
+            ),
           ),
           child: Row(
             children: [
@@ -1334,7 +1345,7 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                 child: TextField(
                   controller: _textController,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: isDark ? Colors.white : const Color(0xFF12263A),
                     fontSize: Responsive.getResponsiveValue(
                       context,
                       mobile: 15.0,
@@ -1343,9 +1354,11 @@ class _VoiceAssistantPageState extends State<VoiceAssistantPage>
                     ),
                   ),
                   decoration: InputDecoration(
-                    hintText: AppStrings.tr(context, 'enterPromptHere'),
+                    hintText: S.of(context).enterPromptHere,
                     hintStyle: TextStyle(
-                      color: Colors.cyan[200]!.withOpacity(0.3),
+                      color: isDark
+                          ? Colors.cyan[200]!.withOpacity(0.3)
+                          : const Color(0xFF7A96AA),
                     ),
                     border: InputBorder.none,
                     isDense: true,
@@ -1671,19 +1684,36 @@ class _HistoryOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryText = isDark ? Colors.white : const Color(0xFF12263A);
+    final secondaryText = isDark
+        ? Colors.white.withOpacity(0.6)
+        : const Color(0xFF5B7B92);
     final width = MediaQuery.of(context).size.width * 0.85;
     return SizedBox(
       width: width > 400 ? 400 : width,
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+            colors: isDark
+                ? const [
+                    Color(0xFF0f2940),
+                    Color(0xFF1a3a52),
+                    Color(0xFF0f2940),
+                  ]
+                : const [
+                    Color(0xFFF8FCFF),
+                    Color(0xFFEAF4FB),
+                    Color(0xFFF3F8FC),
+                  ],
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black26,
+              color: isDark
+                  ? Colors.black26
+                  : const Color(0xFF9FB6C5).withOpacity(0.35),
               blurRadius: 20,
               offset: Offset(-4, 0),
             ),
@@ -1703,9 +1733,9 @@ class _HistoryOverlay extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      AppStrings.tr(context, 'history'),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      S.of(context).history,
+                      style: TextStyle(
+                        color: primaryText,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1715,15 +1745,21 @@ class _HistoryOverlay extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1e4a66).withOpacity(0.6),
+                          color: isDark
+                              ? const Color(0xFF1e4a66).withOpacity(0.6)
+                              : const Color(0xFFEAF4FB),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.cyan.withOpacity(0.2),
+                            color: isDark
+                                ? Colors.cyan.withOpacity(0.2)
+                                : const Color(0xFFC7DDE9),
                           ),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           LucideIcons.x,
-                          color: Color(0xFF22d3ee),
+                          color: isDark
+                              ? const Color(0xFF22d3ee)
+                              : const Color(0xFF0B6A88),
                           size: 20,
                         ),
                       ),
@@ -1731,17 +1767,19 @@ class _HistoryOverlay extends StatelessWidget {
                   ],
                 ),
               ),
-              const Divider(height: 1, color: Color(0xFF1e4a66)),
+              Divider(
+                height: 1,
+                color: isDark
+                    ? const Color(0xFF1e4a66)
+                    : const Color(0xFFC7DDE9),
+              ),
               Expanded(
                 child: messages.isEmpty
                     ? Center(
                         child: Text(
-                          AppStrings.tr(context, 'helloHowCanIHelp'),
+                          S.of(context).helloHowCanIHelp,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
-                            fontSize: 14,
-                          ),
+                          style: TextStyle(color: secondaryText, fontSize: 14),
                         ),
                       )
                     : ListView.builder(
@@ -1779,20 +1817,24 @@ class _HistoryOverlay extends StatelessWidget {
                                               begin: Alignment.topLeft,
                                               end: Alignment.bottomRight,
                                               colors: [
-                                                const Color(
-                                                  0xFF1e4a66,
-                                                ).withOpacity(0.6),
-                                                const Color(
-                                                  0xFF16384d,
-                                                ).withOpacity(0.6),
+                                                isDark
+                                                    ? const Color(
+                                                        0xFF1e4a66,
+                                                      ).withOpacity(0.6)
+                                                    : const Color(0xFFF9FCFF),
+                                                isDark
+                                                    ? const Color(
+                                                        0xFF16384d,
+                                                      ).withOpacity(0.6)
+                                                    : const Color(0xFFEAF4FB),
                                               ],
                                             ),
                                       border: isUser
                                           ? null
                                           : Border.all(
-                                              color: Colors.cyan.withOpacity(
-                                                0.2,
-                                              ),
+                                              color: isDark
+                                                  ? Colors.cyan.withOpacity(0.2)
+                                                  : const Color(0xFFC7DDE9),
                                             ),
                                     ),
                                     child: Column(
@@ -1801,8 +1843,10 @@ class _HistoryOverlay extends StatelessWidget {
                                       children: [
                                         Text(
                                           msg.text,
-                                          style: const TextStyle(
-                                            color: Colors.white,
+                                          style: TextStyle(
+                                            color: isUser
+                                                ? Colors.white
+                                                : primaryText,
                                             fontSize: 13,
                                           ),
                                         ),
@@ -1812,7 +1856,9 @@ class _HistoryOverlay extends StatelessWidget {
                                           style: TextStyle(
                                             color: isUser
                                                 ? Colors.white.withOpacity(0.7)
-                                                : Colors.cyan.withOpacity(0.5),
+                                                : isDark
+                                                ? Colors.cyan.withOpacity(0.5)
+                                                : const Color(0xFF6A879B),
                                             fontSize: 10,
                                           ),
                                         ),
@@ -1854,12 +1900,19 @@ class _ChatOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryText = isDark ? Colors.white : const Color(0xFF12263A);
+    final secondaryText = isDark
+        ? Colors.white.withOpacity(0.5)
+        : const Color(0xFF7A96AA);
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+          colors: isDark
+              ? const [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)]
+              : const [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
         ),
       ),
       child: SafeArea(
@@ -1871,10 +1924,10 @@ class _ChatOverlay extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     "Conversation",
                     style: TextStyle(
-                      color: Colors.white,
+                      color: primaryText,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1884,13 +1937,21 @@ class _ChatOverlay extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1e4a66).withOpacity(0.6),
+                        color: isDark
+                            ? const Color(0xFF1e4a66).withOpacity(0.6)
+                            : const Color(0xFFEAF4FB),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.cyan.withOpacity(0.2)),
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.cyan.withOpacity(0.2)
+                              : const Color(0xFFC7DDE9),
+                        ),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         LucideIcons.x,
-                        color: Color(0xFF22d3ee),
+                        color: isDark
+                            ? const Color(0xFF22d3ee)
+                            : const Color(0xFF0B6A88),
                         size: 20,
                       ),
                     ),
@@ -1907,21 +1968,23 @@ class _ChatOverlay extends StatelessWidget {
                 itemCount: messages.length + (isLoadingAI ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (isLoadingAI && index == messages.length) {
-                    return const Padding(
-                      padding: EdgeInsets.only(bottom: 16),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           Flexible(
                             child: Padding(
-                              padding: EdgeInsets.symmetric(
+                              padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 12,
                               ),
                               child: Text(
                                 "Buddy is typing...",
                                 style: TextStyle(
-                                  color: Color(0xFF94a3b8),
+                                  color: isDark
+                                      ? const Color(0xFF94a3b8)
+                                      : const Color(0xFF6A879B),
                                   fontSize: 14,
                                   fontStyle: FontStyle.italic,
                                 ),
@@ -1949,7 +2012,6 @@ class _ChatOverlay extends StatelessWidget {
                               vertical: 12,
                             ),
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
                               gradient: isUser
                                   ? const LinearGradient(
                                       colors: [
@@ -1961,18 +2023,24 @@ class _ChatOverlay extends StatelessWidget {
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
-                                        const Color(
-                                          0xFF1e4a66,
-                                        ).withOpacity(0.6),
-                                        const Color(
-                                          0xFF16384d,
-                                        ).withOpacity(0.6),
+                                        isDark
+                                            ? const Color(
+                                                0xFF1e4a66,
+                                              ).withOpacity(0.6)
+                                            : const Color(0xFFF9FCFF),
+                                        isDark
+                                            ? const Color(
+                                                0xFF16384d,
+                                              ).withOpacity(0.6)
+                                            : const Color(0xFFEAF4FB),
                                       ],
                                     ),
                               border: isUser
                                   ? null
                                   : Border.all(
-                                      color: Colors.cyan.withOpacity(0.2),
+                                      color: isDark
+                                          ? Colors.cyan.withOpacity(0.2)
+                                          : const Color(0xFFC7DDE9),
                                     ),
                             ),
                             child: Column(
@@ -1980,8 +2048,8 @@ class _ChatOverlay extends StatelessWidget {
                               children: [
                                 Text(
                                   msg.text,
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: isUser ? Colors.white : primaryText,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -1991,7 +2059,9 @@ class _ChatOverlay extends StatelessWidget {
                                   style: TextStyle(
                                     color: isUser
                                         ? Colors.white.withOpacity(0.7)
-                                        : Colors.cyan[200]!.withOpacity(0.5),
+                                        : isDark
+                                        ? Colors.cyan[200]!.withOpacity(0.5)
+                                        : const Color(0xFF6A879B),
                                     fontSize: 10,
                                   ),
                                 ),
@@ -2012,10 +2082,14 @@ class _ChatOverlay extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1e4a66).withOpacity(0.5),
+                    color: isDark
+                        ? const Color(0xFF1e4a66).withOpacity(0.5)
+                        : const Color(0xFFF9FCFF),
                     borderRadius: BorderRadius.circular(28),
                     border: Border.all(
-                      color: Colors.cyan.withOpacity(0.25),
+                      color: isDark
+                          ? Colors.cyan.withOpacity(0.25)
+                          : const Color(0xFFC7DDE9),
                       width: 1,
                     ),
                   ),
@@ -2024,14 +2098,11 @@ class _ChatOverlay extends StatelessWidget {
                       Expanded(
                         child: TextField(
                           controller: textController,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                          ),
+                          style: TextStyle(color: primaryText, fontSize: 15),
                           decoration: InputDecoration(
-                            hintText: AppStrings.tr(context, 'enterPromptHere'),
+                            hintText: S.of(context).enterPromptHere,
                             hintStyle: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
+                              color: secondaryText,
                               fontSize: 15,
                             ),
                             border: InputBorder.none,

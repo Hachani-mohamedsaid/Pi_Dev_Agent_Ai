@@ -8,11 +8,13 @@ import 'package:uni_links/uni_links.dart';
 
 import '../core/routing/app_router.dart';
 import '../core/services/locale_service.dart';
+import '../core/services/theme_service.dart';
 import '../features/ai_analysis/providers/analysis_provider.dart';
 import '../features/financial_advisor/providers/advisor_provider.dart';
 import '../injection_container.dart';
 import '../presentation/state/chat_provider.dart';
 import '../services/focus_session_manager.dart';
+import '../generated/l10n.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -30,6 +32,8 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     FocusSessionManager.instance.onResume();
     _initDeepLinkListener();
+    // Force la langue arabe au démarrage
+    LocaleService.instance.setLocale('ar');
   }
 
   @override
@@ -115,47 +119,128 @@ class _AppState extends State<App> with WidgetsBindingObserver {
       valueListenable: LocaleService.instance.localeNotifier,
       builder: (context, locale, _) {
         final appLocale = locale ?? const Locale('en');
-        return MultiProvider(
-          providers: [
-            ChangeNotifierProvider<ChatProvider>(
-              create: (_) => InjectionContainer.instance.buildChatProvider(),
-            ),
-            ChangeNotifierProvider<AnalysisProvider>(
-              create: (_) => AnalysisProvider(),
-            ),
-            ChangeNotifierProvider<AdvisorProvider>(
-              create: (_) => AdvisorProvider(),
-            ),
-          ],
-          child: MaterialApp.router(
-            title: 'Ava',
-            debugShowCheckedModeBanner: false,
-            locale: appLocale,
-            supportedLocales: const [
-              Locale('en'),
-              Locale('fr'),
-              Locale('es'),
-              Locale('de'),
-              Locale('it'),
-              Locale('pt'),
-              Locale('ar'),
-            ],
-            localizationsDelegates: const [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            theme: ThemeData(
-              useMaterial3: true,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFF06B6D4),
-                brightness: Brightness.dark,
+        return ValueListenableBuilder<ThemeMode>(
+          valueListenable: ThemeService.instance.themeModeNotifier,
+          builder: (context, themeMode, __) => MultiProvider(
+            providers: [
+              ChangeNotifierProvider<ChatProvider>(
+                create: (_) => InjectionContainer.instance.buildChatProvider(),
               ),
+              ChangeNotifierProvider<AnalysisProvider>(
+                create: (_) => AnalysisProvider(),
+              ),
+              ChangeNotifierProvider<AdvisorProvider>(
+                create: (_) => AdvisorProvider(),
+              ),
+            ],
+            child: MaterialApp.router(
+              title: 'Ava',
+              debugShowCheckedModeBanner: false,
+              locale: appLocale,
+              supportedLocales: S.delegate.supportedLocales,
+              localizationsDelegates: const [
+                S.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              themeMode: themeMode,
+              theme: _buildLightTheme(),
+              darkTheme: _buildDarkTheme(),
+              routerConfig: appRouter,
             ),
-            routerConfig: appRouter,
           ),
         );
       },
     );
   }
+}
+
+ThemeData _buildLightTheme() {
+  final colorScheme =
+      ColorScheme.fromSeed(
+        seedColor: const Color(0xFF0EA5C6),
+        brightness: Brightness.light,
+      ).copyWith(
+        surface: const Color(0xFFF6FBFF),
+        surfaceContainerHighest: const Color(0xFFE9F4FB),
+        outline: const Color(0xFFB8D6E3),
+      );
+
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: colorScheme,
+    scaffoldBackgroundColor: const Color(0xFFEFF7FC),
+    cardColor: const Color(0xFFFFFFFF),
+    dividerColor: const Color(0xFFD8EAF4),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Color(0xFFEFF7FC),
+      foregroundColor: Color(0xFF11263A),
+      elevation: 0,
+      scrolledUnderElevation: 0,
+    ),
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      backgroundColor: const Color(0xFFF8FCFF),
+      selectedItemColor: colorScheme.primary,
+      unselectedItemColor: const Color(0xFF557189),
+      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+      type: BottomNavigationBarType.fixed,
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return colorScheme.primary;
+        }
+        return const Color(0xFF6B7F92);
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return colorScheme.primary.withOpacity(0.35);
+        }
+        return const Color(0xFFCCD9E2);
+      }),
+    ),
+  );
+}
+
+ThemeData _buildDarkTheme() {
+  final colorScheme = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF06B6D4),
+    brightness: Brightness.dark,
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: colorScheme,
+    scaffoldBackgroundColor: const Color(0xFF0F2940),
+    cardColor: const Color(0xFF1A3A52),
+    dividerColor: const Color(0xFF235878),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Color(0xFF0F2940),
+      foregroundColor: Colors.white,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+    ),
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      backgroundColor: const Color(0xFF16384D),
+      selectedItemColor: colorScheme.primary,
+      unselectedItemColor: const Color(0xFF7FB8CF),
+      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+      type: BottomNavigationBarType.fixed,
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return colorScheme.primary;
+        }
+        return const Color(0xFF96A9B7);
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return colorScheme.primary.withOpacity(0.35);
+        }
+        return const Color(0xFF2E4558);
+      }),
+    ),
+  );
 }

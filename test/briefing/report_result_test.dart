@@ -83,34 +83,54 @@ void main() {
   });
 
   group('ReportResult score thresholds', () {
-    test('>= 75 green labels', () {
+    testWidgets('>= 75 green labels (ar)', (tester) async {
       final r = ReportResult.fromJson({
         'readinessScore': 75,
         'section_statuses': {},
       });
-      expect(r.overallLabel, '✓ Ready to Pitch');
+      final context = await _pumpWithLocale(tester, 'ar');
+      expect(r.overallLabel(context), '✓ جاهز للعرض');
       expect(r.overallColor, AvaColors.green);
       expect(r.gaugeColor, AvaColors.green);
     });
 
-    test('55–74 gold', () {
+    testWidgets('55–74 gold (ar)', (tester) async {
       final r = ReportResult.fromJson({
         'readinessScore': 55,
         'section_statuses': {},
       });
-      expect(r.overallLabel, '◐ Almost Ready');
+      final context = await _pumpWithLocale(tester, 'ar');
+      expect(r.overallLabel(context), '◐ شبه جاهز');
       expect(r.overallColor, AvaColors.gold);
       expect(r.gaugeColor, AvaColors.gold);
     });
 
-    test('< 55 amber', () {
+    testWidgets('< 55 amber (ar)', (tester) async {
       final r = ReportResult.fromJson({
         'readinessScore': 54,
         'section_statuses': {},
       });
-      expect(r.overallLabel, '⚠ Needs Work');
+      final context = await _pumpWithLocale(tester, 'ar');
+      expect(r.overallLabel(context), '⚠ يحتاج إلى عمل');
       expect(r.overallColor, AvaColors.amber);
       expect(r.gaugeColor, AvaColors.amber);
     });
+  });
+
+}
+
+// Helper to pump a widget with a given locale and return the BuildContext
+Future<BuildContext> _pumpWithLocale(WidgetTester tester, String localeCode) async {
+  late BuildContext ctx;
+  await tester.pumpWidget(
+    MaterialApp(
+      locale: Locale(localeCode),
+      home: Builder(builder: (context) {
+        ctx = context;
+        return const SizedBox();
+      }),
+    ),
+  );
+  return ctx;
   });
 }

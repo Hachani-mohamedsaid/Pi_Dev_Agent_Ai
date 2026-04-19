@@ -9,6 +9,18 @@ import '../../core/theme/app_colors.dart';
 import '../../data/services/create_job_service.dart';
 import '../widgets/navigation_bar.dart';
 
+Color _primaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _secondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF5B7B92);
+}
+
 /// Assistant de publication LinkedIn : mêmes champs et même payload JSON
 /// que l’ancien formulaire (`CreateJobService.createJob`).
 class CreateJobPage extends StatefulWidget {
@@ -36,8 +48,7 @@ class _CreateJobPageState extends State<CreateJobPage> {
   static const List<_DescriptionTemplate> _templates = [
     _DescriptionTemplate(
       label: 'Missions',
-      body:
-          'Missions principales :\n• \n• \n• ',
+      body: 'Missions principales :\n• \n• \n• ',
     ),
     _DescriptionTemplate(
       label: 'Profil',
@@ -68,31 +79,47 @@ class _CreateJobPageState extends State<CreateJobPage> {
     super.dispose();
   }
 
-  InputDecoration _dec(String label, {String? hint, int? maxLines}) {
+  InputDecoration _dec(
+    BuildContext context,
+    String label, {
+    String? hint,
+    int? maxLines,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
       labelText: label,
       hintText: hint,
       alignLabelWithHint: maxLines != null && maxLines > 1,
       labelStyle: TextStyle(
-        color: AppColors.textCyan200.withValues(alpha: 0.85),
+        color: isDark
+            ? AppColors.textCyan200.withValues(alpha: 0.85)
+            : const Color(0xFF56768C),
         fontSize: 13,
       ),
       hintStyle: TextStyle(
-        color: AppColors.textCyan200.withValues(alpha: 0.4),
+        color: isDark
+            ? AppColors.textCyan200.withValues(alpha: 0.4)
+            : const Color(0xFF7A96AA),
         fontSize: 13,
       ),
       filled: true,
-      fillColor: AppColors.primaryDark.withValues(alpha: 0.95),
+      fillColor: isDark
+          ? AppColors.primaryDark.withValues(alpha: 0.95)
+          : const Color(0xFFF8FCFF),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: AppColors.cyan400.withValues(alpha: 0.25),
+          color: isDark
+              ? AppColors.cyan400.withValues(alpha: 0.25)
+              : const Color(0xFFC7DDE9),
         ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: AppColors.textCyan200.withValues(alpha: 0.15),
+          color: isDark
+              ? AppColors.textCyan200.withValues(alpha: 0.15)
+              : const Color(0xFFC7DDE9),
         ),
       ),
       focusedBorder: OutlineInputBorder(
@@ -194,16 +221,26 @@ class _CreateJobPageState extends State<CreateJobPage> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF142E42),
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF142E42)
+            : const Color(0xFFF7FBFF),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 28),
-            SizedBox(width: 10),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: Color(0xFF10B981),
+              size: 28,
+            ),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 'Publication prête',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: _primaryText(ctx),
+                ),
               ),
             ),
           ],
@@ -218,9 +255,13 @@ class _CreateJobPageState extends State<CreateJobPage> {
                 const SizedBox(height: 14),
               ],
               if (postUrl.isNotEmpty) ...[
-                const Text(
+                Text(
                   'Lien vers le post LinkedIn',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: _primaryText(ctx),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 GestureDetector(
@@ -237,9 +278,13 @@ class _CreateJobPageState extends State<CreateJobPage> {
                 const SizedBox(height: 14),
               ],
               if (applyFormUrl.isNotEmpty) ...[
-                const Text(
+                Text(
                   'Candidature (formulaire)',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: _primaryText(ctx),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 GestureDetector(
@@ -257,7 +302,11 @@ class _CreateJobPageState extends State<CreateJobPage> {
                 ),
                 const SizedBox(height: 14),
               ],
-              const Divider(color: Colors.white24),
+              Divider(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white24
+                    : const Color(0xFFD6E4EE),
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -297,7 +346,7 @@ class _CreateJobPageState extends State<CreateJobPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Fermer'),
+            child: Text('Fermer', style: TextStyle(color: _primaryText(ctx))),
           ),
         ],
       ),
@@ -308,7 +357,10 @@ class _CreateJobPageState extends State<CreateJobPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('$label : ', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+        Text(
+          '$label : ',
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        ),
         Expanded(
           child: SelectableText(
             value,
@@ -357,10 +409,14 @@ class _CreateJobPageState extends State<CreateJobPage> {
                             child: LinearProgressIndicator(
                               value: done || active ? 1 : 0,
                               minHeight: 4,
-                              backgroundColor: AppColors.textCyan200.withValues(alpha: 0.12),
+                              backgroundColor: AppColors.textCyan200.withValues(
+                                alpha: 0.12,
+                              ),
                               color: done || active
                                   ? AppColors.cyan400
-                                  : AppColors.textCyan200.withValues(alpha: 0.2),
+                                  : AppColors.textCyan200.withValues(
+                                      alpha: 0.2,
+                                    ),
                             ),
                           ),
                         ),
@@ -386,8 +442,8 @@ class _CreateJobPageState extends State<CreateJobPage> {
         const SizedBox(height: 16),
         Text(
           titles[_step],
-          style: const TextStyle(
-            color: AppColors.textWhite,
+          style: TextStyle(
+            color: _primaryText(context),
             fontSize: 20,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
@@ -397,7 +453,7 @@ class _CreateJobPageState extends State<CreateJobPage> {
         Text(
           hints[_step],
           style: TextStyle(
-            color: AppColors.textCyan200.withValues(alpha: 0.78),
+            color: _secondaryText(context),
             fontSize: 13,
             height: 1.4,
           ),
@@ -412,22 +468,31 @@ class _CreateJobPageState extends State<CreateJobPage> {
       children: [
         TextFormField(
           controller: _titleCtl,
-          style: const TextStyle(color: AppColors.textWhite),
-          decoration: _dec('Intitulé du poste *', hint: 'Ex. Ingénieur logiciel senior'),
-          validator: (v) =>
-              (v == null || v.trim().isEmpty) ? 'Ce champ est obligatoire' : null,
+          style: TextStyle(color: _primaryText(context)),
+          decoration: _dec(
+            context,
+            'Intitulé du poste *',
+            hint: 'Ex. Ingénieur logiciel senior',
+          ),
+          validator: (v) => (v == null || v.trim().isEmpty)
+              ? 'Ce champ est obligatoire'
+              : null,
         ),
         const SizedBox(height: 16),
         TextFormField(
           controller: _companyCtl,
-          style: const TextStyle(color: AppColors.textWhite),
-          decoration: _dec('Entreprise', hint: 'Ex. Acme SAS'),
+          style: TextStyle(color: _primaryText(context)),
+          decoration: _dec(context, 'Entreprise', hint: 'Ex. Acme SAS'),
         ),
         const SizedBox(height: 16),
         TextFormField(
           controller: _departmentCtl,
-          style: const TextStyle(color: AppColors.textWhite),
-          decoration: _dec('Service / direction', hint: 'Ex. Ingénierie produit'),
+          style: TextStyle(color: _primaryText(context)),
+          decoration: _dec(
+            context,
+            'Service / direction',
+            hint: 'Ex. Ingénierie produit',
+          ),
         ),
       ],
     );
@@ -440,7 +505,7 @@ class _CreateJobPageState extends State<CreateJobPage> {
         Text(
           'Blocs suggérés',
           style: TextStyle(
-            color: AppColors.textCyan200.withValues(alpha: 0.65),
+            color: _secondaryText(context),
             fontSize: 12,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.3,
@@ -456,7 +521,9 @@ class _CreateJobPageState extends State<CreateJobPage> {
                   label: Text(t.label),
                   onPressed: () => _appendTemplate(t.body),
                   backgroundColor: AppColors.primaryDark.withValues(alpha: 0.9),
-                  side: BorderSide(color: AppColors.cyan400.withValues(alpha: 0.35)),
+                  side: BorderSide(
+                    color: AppColors.cyan400.withValues(alpha: 0.35),
+                  ),
                   labelStyle: const TextStyle(
                     color: AppColors.textWhite,
                     fontSize: 13,
@@ -469,9 +536,10 @@ class _CreateJobPageState extends State<CreateJobPage> {
         const SizedBox(height: 18),
         TextFormField(
           controller: _descriptionCtl,
-          style: const TextStyle(color: AppColors.textWhite),
+          style: TextStyle(color: _primaryText(context)),
           maxLines: 8,
           decoration: _dec(
+            context,
             'Description de l’offre',
             hint: 'Contexte, missions, profil, avantages…',
             maxLines: 8,
@@ -489,24 +557,25 @@ class _CreateJobPageState extends State<CreateJobPage> {
   }
 
   Widget _buildStep2() {
-    final host = Uri.tryParse(baseGoogleFormUrl)?.host ?? 'formulaire configuré';
+    final host =
+        Uri.tryParse(baseGoogleFormUrl)?.host ?? 'formulaire configuré';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
-          title: const Text(
+          title: Text(
             'Publier sur LinkedIn',
-            style: TextStyle(color: AppColors.textWhite, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: _primaryText(context),
+              fontWeight: FontWeight.w600,
+            ),
           ),
           subtitle: Text(
             _publish
                 ? 'Le workflow tentera une publication immédiate selon votre automatisation.'
                 : 'Brouillon ou étape manuelle côté automatisation — selon votre scénario n8n.',
-            style: TextStyle(
-              color: AppColors.textCyan200.withValues(alpha: 0.8),
-              fontSize: 12,
-            ),
+            style: TextStyle(color: _secondaryText(context), fontSize: 12),
           ),
           value: _publish,
           activeThumbColor: AppColors.cyan400,
@@ -564,13 +633,20 @@ class _CreateJobPageState extends State<CreateJobPage> {
               TextButton.icon(
                 onPressed: () => setState(() => _showFormUrl = !_showFormUrl),
                 icon: Icon(
-                  _showFormUrl ? LucideIcons.chevronUp : LucideIcons.chevronDown,
+                  _showFormUrl
+                      ? LucideIcons.chevronUp
+                      : LucideIcons.chevronDown,
                   size: 18,
                   color: AppColors.cyan400,
                 ),
                 label: Text(
-                  _showFormUrl ? 'Masquer l’URL technique' : 'Voir l’URL du formulaire',
-                  style: const TextStyle(color: AppColors.cyan400, fontSize: 13),
+                  _showFormUrl
+                      ? 'Masquer l’URL technique'
+                      : 'Voir l’URL du formulaire',
+                  style: const TextStyle(
+                    color: AppColors.cyan400,
+                    fontSize: 13,
+                  ),
                 ),
               ),
               if (_showFormUrl) ...[
@@ -592,13 +668,24 @@ class _CreateJobPageState extends State<CreateJobPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+            colors: isDark
+                ? const [
+                    Color(0xFF0f2940),
+                    Color(0xFF1a3a52),
+                    Color(0xFF0f2940),
+                  ]
+                : const [
+                    Color(0xFFF8FCFF),
+                    Color(0xFFEAF4FB),
+                    Color(0xFFF3F8FC),
+                  ],
           ),
         ),
         child: SafeArea(
@@ -610,9 +697,12 @@ class _CreateJobPageState extends State<CreateJobPage> {
                   children: [
                     IconButton(
                       onPressed: () => context.go('/home'),
-                      icon: const Icon(LucideIcons.arrowLeft, color: AppColors.textWhite),
+                      icon: Icon(
+                        LucideIcons.arrowLeft,
+                        color: _primaryText(context),
+                      ),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -621,14 +711,14 @@ class _CreateJobPageState extends State<CreateJobPage> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textWhite,
+                              color: _primaryText(context),
                             ),
                           ),
                           Text(
                             'Assistant en 3 étapes',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textCyan200,
+                              color: _secondaryText(context),
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -638,7 +728,10 @@ class _CreateJobPageState extends State<CreateJobPage> {
                     IconButton(
                       tooltip: 'Candidatures',
                       onPressed: () => context.push('/candidatures'),
-                      icon: const Icon(LucideIcons.clipboardList, color: AppColors.cyan400),
+                      icon: const Icon(
+                        LucideIcons.clipboardList,
+                        color: AppColors.cyan400,
+                      ),
                     ),
                   ],
                 ),
@@ -663,8 +756,8 @@ class _CreateJobPageState extends State<CreateJobPage> {
                               child: _step == 0
                                   ? _buildStep0()
                                   : _step == 1
-                                      ? _buildStep1()
-                                      : _buildStep2(),
+                                  ? _buildStep1()
+                                  : _buildStep2(),
                             ),
                           ),
                         ),
@@ -672,10 +765,14 @@ class _CreateJobPageState extends State<CreateJobPage> {
                       Container(
                         padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryDark.withValues(alpha: 0.92),
+                          color: isDark
+                              ? AppColors.primaryDark.withValues(alpha: 0.92)
+                              : const Color(0xFFF7FBFF),
                           border: Border(
                             top: BorderSide(
-                              color: AppColors.textCyan200.withValues(alpha: 0.1),
+                              color: isDark
+                                  ? AppColors.textCyan200.withValues(alpha: 0.1)
+                                  : const Color(0xFFD6E4EE),
                             ),
                           ),
                         ),
@@ -686,11 +783,16 @@ class _CreateJobPageState extends State<CreateJobPage> {
                               if (_step > 0)
                                 OutlinedButton.icon(
                                   onPressed: _isLoading ? null : _goBack,
-                                  icon: const Icon(LucideIcons.arrowLeft, size: 18),
+                                  icon: const Icon(
+                                    LucideIcons.arrowLeft,
+                                    size: 18,
+                                  ),
                                   label: const Text('Retour'),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: AppColors.cyan400,
-                                    side: const BorderSide(color: AppColors.cyan400),
+                                    side: const BorderSide(
+                                      color: AppColors.cyan400,
+                                    ),
                                   ),
                                 ),
                               if (_step > 0) const SizedBox(width: 12),
@@ -699,11 +801,13 @@ class _CreateJobPageState extends State<CreateJobPage> {
                                   onPressed: _isLoading
                                       ? null
                                       : _step < _stepCount - 1
-                                          ? _goNext
-                                          : _submit,
+                                      ? _goNext
+                                      : _submit,
                                   style: FilledButton.styleFrom(
                                     backgroundColor: AppColors.cyan500,
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
                                   ),
                                   child: _isLoading
                                       ? const SizedBox(
@@ -801,8 +905,14 @@ class _LinkedInStylePreview extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 22,
-                    backgroundColor: const Color(0xFF0a66c2).withValues(alpha: 0.35),
-                    child: const Icon(LucideIcons.building2, color: Color(0xFF93c5fd), size: 22),
+                    backgroundColor: const Color(
+                      0xFF0a66c2,
+                    ).withValues(alpha: 0.35),
+                    child: const Icon(
+                      LucideIcons.building2,
+                      color: Color(0xFF93c5fd),
+                      size: 22,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -827,7 +937,11 @@ class _LinkedInStylePreview extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Icon(LucideIcons.linkedin, color: const Color(0xFF0a66c2), size: 22),
+                  Icon(
+                    LucideIcons.linkedin,
+                    color: const Color(0xFF0a66c2),
+                    size: 22,
+                  ),
                 ],
               ),
               const SizedBox(height: 14),
