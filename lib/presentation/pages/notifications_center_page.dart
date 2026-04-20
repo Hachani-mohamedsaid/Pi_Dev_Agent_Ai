@@ -124,7 +124,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
     try {
       final userId = await InjectionContainer.instance.authLocalDataSource
           .getUserId();
-      final signals = await _collectSignals();
+      final signals = await _collectSignals(userId);
 
       // POST /assistant/notifications : signaux front (réunions, mails, focus, etc.)
       // + le backend ajoute contexte + ML si besoin.
@@ -210,7 +210,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
     // Meetings -> MEETING_SOON (prochaine réunion dans 2 h).
     final meetingService = MeetingService();
     try {
-      final meetings = await meetingService.fetchMeetings();
+      final meetings = await meetingService.fetchMeetings(userId ?? '');
       final upcoming =
           meetings.where((m) => m.startTime.isAfter(DateTime.now())).toList()
             ..sort((a, b) => a.startTime.compareTo(b.startTime));
@@ -231,7 +231,6 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
             'source': 'n8n',
           });
         }
-      }
       }
     } catch (_) {
       // ignore

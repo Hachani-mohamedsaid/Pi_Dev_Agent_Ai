@@ -27,7 +27,7 @@ Color _secondaryText(BuildContext context) {
 }
 
 /// Agenda screen: review schedule / agenda. Placeholder for now.
-class AgendaPage extends StatelessWidget {
+class AgendaPage extends StatefulWidget {
   const AgendaPage({super.key});
 
   @override

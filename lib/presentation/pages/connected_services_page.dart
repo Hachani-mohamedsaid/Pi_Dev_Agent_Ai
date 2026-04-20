@@ -324,7 +324,17 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(gradient: pageGradient),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF0f2940),
+              Color(0xFF1a3a52),
+              Color(0xFF0f2940),
+            ],
+          ),
+        ),
         child: SafeArea(
           bottom: false,
           child: Stack(
@@ -352,77 +362,35 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                           .fadeIn(duration: 500.ms)
                           .slideY(begin: -0.2, end: 0, duration: 500.ms),
                     ),
-
-                    SizedBox(
-                      height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 20.0,
-                        tablet: 24.0,
-                        desktop: 28.0,
-                      ),
-                    ),
-
+                    SizedBox(height: Responsive.getResponsiveValue(
+                      context, mobile: 20.0, tablet: 24.0, desktop: 28.0,
+                    )),
                     // Stats
                     _withEntranceAnimation(
-                      _buildStats(
-                        context,
-                        isMobile,
-                        connectedCountForStats,
-                        totalActions,
-                      ),
+                      _buildStats(context, isMobile, connectedCountForStats, totalActions),
                       (a) => a.fadeIn(delay: 100.ms, duration: 300.ms),
                     ),
-
-                    SizedBox(
-                      height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 20.0,
-                        tablet: 24.0,
-                        desktop: 28.0,
+                    SizedBox(height: Responsive.getResponsiveValue(
+                      context, mobile: 20.0, tablet: 24.0, desktop: 28.0,
+                    )),
+                    // Connected Services label
+                    _withEntranceAnimation(
+                      Text(
+                        'Connected',
+                        style: TextStyle(
+                          fontSize: Responsive.getResponsiveValue(
+                            context, mobile: 16.0, tablet: 17.0, desktop: 18.0,
+                          ),
+                          fontWeight: FontWeight.w600,
+                          color: _primaryText(context),
+                        ),
                       ),
+                      (a) => a.fadeIn(delay: 200.ms, duration: 300.ms),
                     ),
-                  ),
-                  child: _withEntranceAnimation(
-                    googleConnected
-                        ? _buildConnectedCalendarCard(context)
-                        : const SizedBox.shrink(),
-                    (a) {
-                      final delayMs = 300 + (connectedServices.length * 100);
-                      return a
-                          .fadeIn(
-                            delay: Duration(milliseconds: delayMs),
-                            duration: 300.ms,
-                          )
-                          .slideY(
-                            begin: 0.2,
-                            end: 0,
-                            delay: Duration(milliseconds: delayMs),
-                            duration: 300.ms,
-                          );
-                    },
-                  ),
-                ),
-                if (_telegramLinked)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _buildMockConnectedTelegramCard(context),
-                  ),
-                Padding(
-                  padding: EdgeInsets.only(
-                    bottom: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 10.0,
-                      tablet: 12.0,
-                      desktop: 14.0,
-                    ),
-                    SizedBox(
-                      height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 10.0,
-                        tablet: 12.0,
-                        desktop: 14.0,
-                      ),
-                    ),
+                    SizedBox(height: Responsive.getResponsiveValue(
+                      context, mobile: 10.0, tablet: 12.0, desktop: 14.0,
+                    )),
+                    // Dynamic connected services
                     ...connectedServices.asMap().entries.map((entry) {
                       final index = entry.key;
                       final service = entry.value;
@@ -430,114 +398,55 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                       return Padding(
                         padding: EdgeInsets.only(
                           bottom: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 10.0,
-                            tablet: 12.0,
-                            desktop: 14.0,
+                            context, mobile: 10.0, tablet: 12.0, desktop: 14.0,
                           ),
                         ),
                         child: _withEntranceAnimation(
-                          _buildConnectedServiceCard(
-                            context,
-                            isMobile,
-                            service,
-                          ),
+                          _buildConnectedServiceCard(context, isMobile, service),
                           (a) => a
-                              .fadeIn(
-                                delay: Duration(milliseconds: delayMs),
-                                duration: 300.ms,
-                              )
-                              .slideY(
-                                begin: 0.2,
-                                end: 0,
-                                delay: Duration(milliseconds: delayMs),
-                                duration: 300.ms,
-                              ),
+                              .fadeIn(delay: Duration(milliseconds: delayMs), duration: 300.ms)
+                              .slideY(begin: 0.2, end: 0, delay: Duration(milliseconds: delayMs), duration: 300.ms),
                         ),
                       );
                     }),
-                    // Mocked "connected" cards (same design as Gmail & Sheets)
+                    // Mocked "connected" calendar card
                     Padding(
                       padding: EdgeInsets.only(
                         bottom: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 10.0,
-                          tablet: 12.0,
-                          desktop: 14.0,
+                          context, mobile: 10.0, tablet: 12.0, desktop: 14.0,
                         ),
                       ),
                       child: _withEntranceAnimation(
-                        _buildMockConnectedCalendarCard(context),
+                        googleConnected
+                            ? _buildConnectedCalendarCard(context)
+                            : const SizedBox.shrink(),
                         (a) {
-                          final delayMs =
-                              300 + (connectedServices.length * 100);
+                          final delayMs = 300 + (connectedServices.length * 100);
                           return a
-                              .fadeIn(
-                                delay: Duration(milliseconds: delayMs),
-                                duration: 300.ms,
-                              )
-                              .slideY(
-                                begin: 0.2,
-                                end: 0,
-                                delay: Duration(milliseconds: delayMs),
-                                duration: 300.ms,
-                              );
+                              .fadeIn(delay: Duration(milliseconds: delayMs), duration: 300.ms)
+                              .slideY(begin: 0.2, end: 0, delay: Duration(milliseconds: delayMs), duration: 300.ms);
                         },
                       ),
                     ),
+                    if (_telegramLinked)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _buildMockConnectedTelegramCard(context),
+                      ),
+                    // Mocked LinkedIn card
                     Padding(
                       padding: EdgeInsets.only(
                         bottom: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 10.0,
-                          tablet: 12.0,
-                          desktop: 14.0,
-                        ),
-                      ),
-                      child: _withEntranceAnimation(
-                        _buildMockConnectedTelegramCard(context),
-                        (a) {
-                          final delayMs =
-                              300 + ((connectedServices.length + 1) * 100);
-                          return a
-                              .fadeIn(
-                                delay: Duration(milliseconds: delayMs),
-                                duration: 300.ms,
-                              )
-                              .slideY(
-                                begin: 0.2,
-                                end: 0,
-                                delay: Duration(milliseconds: delayMs),
-                                duration: 300.ms,
-                              );
-                        },
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(
-                        bottom: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 10.0,
-                          tablet: 12.0,
-                          desktop: 14.0,
+                          context, mobile: 10.0, tablet: 12.0, desktop: 14.0,
                         ),
                       ),
                       child: _withEntranceAnimation(
                         _buildMockConnectedLinkedInCard(context),
                         (a) {
-                          final delayMs =
-                              300 + ((connectedServices.length + 2) * 100);
+                          final delayMs = 300 + ((connectedServices.length + 2) * 100);
                           return a
-                              .fadeIn(
-                                delay: Duration(milliseconds: delayMs),
-                                duration: 300.ms,
-                              )
-                              .slideY(
-                                begin: 0.2,
-                                end: 0,
-                                delay: Duration(milliseconds: delayMs),
-                                duration: 300.ms,
-                              );
+                              .fadeIn(delay: Duration(milliseconds: delayMs), duration: 300.ms)
+                              .slideY(begin: 0.2, end: 0, delay: Duration(milliseconds: delayMs), duration: 300.ms);
                         },
                       ),
                     ),
@@ -545,51 +454,29 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                       Padding(
                         padding: EdgeInsets.only(
                           bottom: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 10.0,
-                            tablet: 12.0,
-                            desktop: 14.0,
+                            context, mobile: 10.0, tablet: 12.0, desktop: 14.0,
                           ),
                         ),
                         child: _withEntranceAnimation(
                           _buildGoogleConnectedLikeUberCard(context),
                           (a) {
-                            final delayMs =
-                                300 + ((connectedServices.length + 3) * 100);
+                            final delayMs = 300 + ((connectedServices.length + 3) * 100);
                             return a
-                                .fadeIn(
-                                  delay: Duration(milliseconds: delayMs),
-                                  duration: 300.ms,
-                                )
-                                .slideY(
-                                  begin: 0.2,
-                                  end: 0,
-                                  delay: Duration(milliseconds: delayMs),
-                                  duration: 300.ms,
-                                );
+                                .fadeIn(delay: Duration(milliseconds: delayMs), duration: 300.ms)
+                                .slideY(begin: 0.2, end: 0, delay: Duration(milliseconds: delayMs), duration: 300.ms);
                           },
                         ),
                       ),
-
-                    SizedBox(
-                      height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 24.0,
-                        tablet: 28.0,
-                        desktop: 32.0,
-                      ),
-                    ),
-
+                    SizedBox(height: Responsive.getResponsiveValue(
+                      context, mobile: 24.0, tablet: 28.0, desktop: 32.0,
+                    )),
                     // Available Services
                     _withEntranceAnimation(
                       Text(
                         'Available to Connect',
                         style: TextStyle(
                           fontSize: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 16.0,
-                            tablet: 17.0,
-                            desktop: 18.0,
+                            context, mobile: 16.0, tablet: 17.0, desktop: 18.0,
                           ),
                           fontWeight: FontWeight.w600,
                           color: _primaryText(context),
@@ -597,42 +484,45 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                       ),
                       (a) => a.fadeIn(delay: 600.ms, duration: 300.ms),
                     ),
-                  ),
-                if (!googleConnected)
-                  Padding(
-                    padding: EdgeInsets.only(
-                      bottom: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 10.0,
-                        tablet: 12.0,
-                        desktop: 14.0,
-                      ),
-                    ),
-                    child: _buildMockDisconnectedLikeGoogleRow(
-                      context,
-                      leading: _mockIconLeading(
-                        context,
-                        Image.network(_calendarIconUrl, width: 26, height: 26),
-                      ),
-                      title: 'Google Calendar',
-                      subtitle: 'Connect Gmail & Sheets to enable',
-                      onConnect: () async {
-                        await context.push('/google-connect');
-                        if (mounted) _loadGoogleStatus();
-                      },
-                    ),
-                  ),
-                if (!_telegramLinked)
-                  Padding(
-                    padding: EdgeInsets.only(
-                      bottom: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 10.0,
-                        tablet: 12.0,
-                        desktop: 14.0,
-                      ),
-                    ),
+                    SizedBox(height: Responsive.getResponsiveValue(
+                      context, mobile: 10.0, tablet: 12.0, desktop: 14.0,
+                    )),
                     if (!googleConnected)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          bottom: Responsive.getResponsiveValue(
+                            context, mobile: 10.0, tablet: 12.0, desktop: 14.0,
+                          ),
+                        ),
+                        child: _withEntranceAnimation(
+                          _buildGoogleDisconnectedRow(context),
+                          (a) => a
+                              .fadeIn(delay: 600.ms, duration: 300.ms)
+                              .slideY(begin: 0.2, end: 0, delay: 600.ms, duration: 300.ms),
+                        ),
+                      ),
+                    if (!googleConnected)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          bottom: Responsive.getResponsiveValue(
+                            context, mobile: 10.0, tablet: 12.0, desktop: 14.0,
+                          ),
+                        ),
+                        child: _buildMockDisconnectedLikeGoogleRow(
+                          context,
+                          leading: _mockIconLeading(
+                            context,
+                            Image.network(_calendarIconUrl, width: 26, height: 26),
+                          ),
+                          title: 'Google Calendar',
+                          subtitle: 'Connect Gmail & Sheets to enable',
+                          onConnect: () async {
+                            await context.push('/google-connect');
+                            if (mounted) _loadGoogleStatus();
+                          },
+                        ),
+                      ),
+                    if (!_telegramLinked)
                       Padding(
                         padding: EdgeInsets.only(
                           bottom: Responsive.getResponsiveValue(
@@ -642,16 +532,17 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                             desktop: 14.0,
                           ),
                         ),
-                        child: _withEntranceAnimation(
-                          _buildGoogleDisconnectedRow(context),
-                          (a) => a
-                              .fadeIn(delay: 600.ms, duration: 300.ms)
-                              .slideY(
-                                begin: 0.2,
-                                end: 0,
-                                delay: 600.ms,
-                                duration: 300.ms,
-                              ),
+                        child: _buildMockDisconnectedLikeGoogleRow(
+                          context,
+                          leading: _mockIconLeading(
+                            context,
+                            Image.network(_telegramIconUrl, width: 26, height: 26),
+                          ),
+                          title: 'Telegram',
+                          subtitle: _loadingTelegramStatus
+                              ? 'Checking status...'
+                              : 'Chat with Jackie AI · Send receipts',
+                          onConnect: _connectTelegram,
                         ),
                       ),
                     Padding(
