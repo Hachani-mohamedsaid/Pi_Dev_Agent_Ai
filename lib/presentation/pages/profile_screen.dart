@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
-import '../../core/l10n/app_strings.dart';
+import 'package:pi_dev_agentia/generated/l10n.dart';
 import '../state/auth_controller.dart';
 import '../widgets/settings_menu.dart';
 import '../widgets/navigation_bar.dart';
@@ -41,28 +41,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final padding = isMobile ? 24.0 : 32.0;
     final user = widget.controller.currentUser;
     final profile = widget.controller.currentProfile;
+    final titleColor = isDark ? AppColors.textWhite : const Color(0xFF11263A);
+    final panelGradient = isDark
+        ? AppColors.primaryGradient
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF7FBFF), Color(0xFFE7F2FA), Color(0xFFF7FBFF)],
+          );
 
     final stats = [
       {
-        'label': 'Conversations',
+        'label': S.of(context).conversations,
         'value': '${profile?.conversationsCount ?? 0}',
       },
       {
-        'label': 'Days active',
+        'label': S.of(context).daysActive,
         'value': '${profile?.daysActive ?? 0}',
       },
       {
-        'label': 'Hours saved',
+        'label': S.of(context).hoursSaved,
         'value': '${profile?.hoursSaved ?? 0}',
       },
     ];
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        decoration: BoxDecoration(gradient: panelGradient),
         child: SafeArea(
           bottom: false,
           child: Stack(
@@ -88,11 +97,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          AppStrings.tr(context, 'profile'),
+                          S.of(context).profile,
                           style: TextStyle(
                             fontSize: isMobile ? 24 : 28,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textWhite,
+                            color: titleColor,
                           ),
                         ),
                         Row(
@@ -108,21 +117,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   vertical: isMobile ? 10 : 12,
                                 ),
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      AppColors.cyan500.withOpacity(0.3),
-                                      AppColors.blue500.withOpacity(0.3),
-                                    ],
-                                  ),
+                                  gradient: isDark
+                                      ? LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            AppColors.cyan500.withOpacity(0.3),
+                                            AppColors.blue500.withOpacity(0.3),
+                                          ],
+                                        )
+                                      : LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            const Color(0xFFF5FBFF),
+                                            const Color(0xFFD9EDF8),
+                                          ],
+                                        ),
                                   borderRadius: BorderRadius.circular(
                                     isMobile ? 12 : 14,
                                   ),
                                   border: Border.all(
-                                    color: AppColors.cyan500.withOpacity(0.4),
+                                    color: isDark
+                                        ? AppColors.cyan500.withOpacity(0.4)
+                                        : const Color(0xFFB7D4E5),
                                     width: 1,
                                   ),
+                                  color: isDark
+                                      ? null
+                                      : const Color(0xFFF3F9FD),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -130,15 +153,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     Icon(
                                       LucideIcons.layoutDashboard,
                                       size: isMobile ? 18 : 20,
-                                      color: AppColors.cyan400,
+                                      color: isDark
+                                          ? AppColors.cyan400
+                                          : const Color(0xFF0F7B99),
                                     ),
                                     SizedBox(width: isMobile ? 6 : 8),
                                     Text(
-                                      AppStrings.tr(context, 'dashboard'),
+                                      S.of(context).dashboard,
                                       style: TextStyle(
                                         fontSize: isMobile ? 13 : 14,
                                         fontWeight: FontWeight.w600,
-                                        color: AppColors.cyan400,
+                                        color: isDark
+                                            ? AppColors.cyan400
+                                            : const Color(0xFF0F7B99),
                                       ),
                                     ),
                                   ],
@@ -173,16 +200,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           return Expanded(
                             child: Padding(
                               padding: EdgeInsets.only(
-                                right: index < stats.length - 1 ? (isMobile ? 10.0 : 12.0) : 0,
+                                right: index < stats.length - 1
+                                    ? (isMobile ? 10.0 : 12.0)
+                                    : 0,
                               ),
-                              child: _StatCard(
-                                value: stats[index]['value']!,
-                                label: stats[index]['label']!,
-                                isMobile: isMobile,
-                              ).animate().fadeIn(
-                                delay: Duration(milliseconds: 100 + (index * 50)),
-                                duration: 500.ms,
-                              ),
+                              child:
+                                  _StatCard(
+                                    value: stats[index]['value']!,
+                                    label: stats[index]['label']!,
+                                    isMobile: isMobile,
+                                  ).animate().fadeIn(
+                                    delay: Duration(
+                                      milliseconds: 100 + (index * 50),
+                                    ),
+                                    duration: 500.ms,
+                                  ),
                             ),
                           );
                         }),
@@ -192,7 +224,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     // AI Features Section
                     Text(
-                      'AI features',
+                      S.of(context).aiFeatures, // TODO: Ajouter dans ARB
                       style: TextStyle(
                         fontSize: Responsive.getResponsiveValue(
                           context,
@@ -201,7 +233,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           desktop: 22.0,
                         ),
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textWhite,
+                        color: titleColor,
                       ),
                     ).animate().fadeIn(delay: 300.ms, duration: 500.ms),
                     SizedBox(
@@ -243,70 +275,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final features = [
       {
         'icon': LucideIcons.brain,
-        'label': 'Learning & insights',
+        'label': S.of(context).learningInsights, // TODO: Ajouter dans ARB
         'route': '/insights',
         'gradient': [
           const Color(0xFF9333EA).withOpacity(0.2),
           const Color(0xFFEC4899).withOpacity(0.2),
         ],
         'iconColor': const Color(0xFFC084FC),
-        'description': 'Personalized tips and summaries based on your activity.',
+        'description': S
+            .of(context)
+            .learningInsightsDesc, // TODO: Ajouter dans ARB
       },
       {
         'icon': LucideIcons.plug,
-        'label': 'Connected services',
+        'label': S.of(context).connectedServices, // TODO: Ajouter dans ARB
         'route': '/services',
         'gradient': [
           const Color(0xFF10B981).withOpacity(0.2),
           AppColors.cyan500.withOpacity(0.2),
         ],
         'iconColor': const Color(0xFF10B981),
-        'description': 'Manage integrations like Gmail, calendar, and more.',
+        'description': S
+            .of(context)
+            .connectedServicesDesc, // TODO: Ajouter dans ARB
       },
       {
         'icon': LucideIcons.scale,
-        'label': 'Decision support',
+        'label': S.of(context).decisionSupport, // TODO: Ajouter dans ARB
         'route': '/decisions',
         'gradient': [
           const Color(0xFF6366F1).withOpacity(0.2),
           const Color(0xFF9333EA).withOpacity(0.2),
         ],
         'iconColor': const Color(0xFF818CF8),
-        'description': 'Structured help for choices and trade-offs.',
+        'description': S
+            .of(context)
+            .decisionSupportDesc, // TODO: Ajouter dans ARB
       },
       {
         'icon': LucideIcons.trophy,
-        'label': 'Goals & growth',
+        'label': S.of(context).goalsGrowth, // TODO: Ajouter dans ARB
         'route': '/goals',
         'gradient': [
           const Color(0xFFF59E0B).withOpacity(0.2),
           const Color(0xFFEAB308).withOpacity(0.2),
         ],
         'iconColor': const Color(0xFFFCD34D),
-        'description': 'Track objectives and build streaks.',
+        'description': S.of(context).goalsGrowthDesc, // TODO: Ajouter dans ARB
       },
       {
         'icon': LucideIcons.zap,
-        'label': 'Automation Rules',
+        'label': S.of(context).automationRules, // TODO: Ajouter dans ARB
         'route': '/automation',
         'gradient': [
           const Color(0xFFFFB800).withOpacity(0.2),
           const Color(0xFFFF9800).withOpacity(0.2),
         ],
         'iconColor': const Color(0xFFFFD93D),
-        'description': 'Manage your AI automation rules',
+        'description': S
+            .of(context)
+            .automationRulesDesc, // TODO: Ajouter dans ARB
       },
       {
         'icon': LucideIcons.award,
-        'label': 'Challenges',
+        'label': S.of(context).challenges, // TODO: Ajouter dans ARB
         'route': '/challenges',
         'gradient': [
           const Color(0xFF06B6D4).withOpacity(0.2),
           const Color(0xFF0891B2).withOpacity(0.2),
         ],
         'iconColor': const Color(0xFF06B6D4),
-        'description':
-            'Complete challenges, earn points & climb the leaderboard',
+        'description': S.of(context).challengesDesc, // TODO: Ajouter dans ARB
       },
     ];
 
@@ -352,6 +391,7 @@ class _ProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     // Données dynamiques : priorité au profil (GET /auth/me), sinon user (login)
     final userName = profile?.name ?? user?.name ?? '—';
     final userEmail = profile?.email ?? user?.email ?? '—';
@@ -366,13 +406,20 @@ class _ProfileCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.primaryLight.withOpacity(0.6),
-            AppColors.primaryDarker.withOpacity(0.6),
-          ],
+          colors: isDark
+              ? [
+                  AppColors.primaryLight.withOpacity(0.6),
+                  AppColors.primaryDarker.withOpacity(0.6),
+                ]
+              : [const Color(0xFFF7FBFF), const Color(0xFFE8F2FA)],
         ),
         borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.2), width: 1),
+        border: Border.all(
+          color: isDark
+              ? AppColors.cyan500.withOpacity(0.2)
+              : const Color(0xFFC1DAE8),
+          width: 1,
+        ),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
@@ -414,6 +461,17 @@ class _ProfileCard extends StatelessWidget {
                             desktop: 20.0,
                           ),
                         ),
+                        boxShadow: isDark
+                            ? null
+                            : [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF9DBBCC,
+                                  ).withOpacity(0.16),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: (profile?.avatarUrl ?? '').isEmpty
@@ -421,7 +479,9 @@ class _ProfileCard extends StatelessWidget {
                               child: Text(
                                 initials.isNotEmpty ? initials : 'JD',
                                 style: TextStyle(
-                                  color: AppColors.textWhite,
+                                  color: isDark
+                                      ? AppColors.textWhite
+                                      : const Color(0xFF102437),
                                   fontSize: Responsive.getResponsiveValue(
                                     context,
                                     mobile: 28.0,
@@ -464,12 +524,16 @@ class _ProfileCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: isMobile ? 20 : 24,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textWhite,
+                              color: isDark
+                                  ? AppColors.textWhite
+                                  : const Color(0xFF102437),
                             ),
                           ),
                           SizedBox(height: 4),
                           Text(
-                            'AI enthusiast',
+                            S
+                                .of(context)
+                                .aiEnthusiast, // TODO: Ajouter dans ARB
                             style: TextStyle(
                               fontSize: Responsive.getResponsiveValue(
                                 context,
@@ -477,7 +541,9 @@ class _ProfileCard extends StatelessWidget {
                                 tablet: 14.0,
                                 desktop: 15.0,
                               ),
-                              color: AppColors.textCyan200.withOpacity(0.7),
+                              color: isDark
+                                  ? AppColors.textCyan200.withOpacity(0.7)
+                                  : const Color(0xFF4B6780),
                             ),
                           ),
                         ],
@@ -488,18 +554,24 @@ class _ProfileCard extends StatelessWidget {
                       child: Container(
                         padding: EdgeInsets.all(isMobile ? 8 : 10),
                         decoration: BoxDecoration(
-                          color: AppColors.cyan500.withOpacity(0.2),
+                          color: isDark
+                              ? AppColors.cyan500.withOpacity(0.2)
+                              : const Color(0xFFE7F3FA),
                           borderRadius: BorderRadius.circular(
                             isMobile ? 10 : 12,
                           ),
                           border: Border.all(
-                            color: AppColors.cyan500.withOpacity(0.3),
+                            color: isDark
+                                ? AppColors.cyan500.withOpacity(0.3)
+                                : const Color(0xFFC1DAE8),
                             width: 1,
                           ),
                         ),
                         child: Icon(
                           Icons.edit,
-                          color: AppColors.cyan400,
+                          color: isDark
+                              ? AppColors.cyan400
+                              : const Color(0xFF0F7B99),
                           size: isMobile ? 20 : 24,
                         ),
                       ),
@@ -577,10 +649,15 @@ class _ContactInfoItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: isMobile ? 16 : 18, color: AppColors.cyan400),
+        Icon(
+          icon,
+          size: isMobile ? 16 : 18,
+          color: isDark ? AppColors.cyan400 : const Color(0xFF0F7B99),
+        ),
         SizedBox(width: isMobile ? 12 : 16),
         Expanded(
           child: Text(
@@ -589,7 +666,9 @@ class _ContactInfoItem extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: isMobile ? 13 : 14,
-              color: AppColors.textCyan200.withOpacity(0.7),
+              color: isDark
+                  ? AppColors.textCyan200.withOpacity(0.7)
+                  : const Color(0xFF5B778E),
               height: 1.3,
             ),
           ),
@@ -612,18 +691,26 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.primaryLight.withOpacity(0.4),
-            AppColors.primaryDarker.withOpacity(0.4),
-          ],
+          colors: isDark
+              ? [
+                  AppColors.primaryLight.withOpacity(0.4),
+                  AppColors.primaryDarker.withOpacity(0.4),
+                ]
+              : [const Color(0xFFF8FCFF), const Color(0xFFE6F1F8)],
         ),
         borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.1), width: 1),
+        border: Border.all(
+          color: isDark
+              ? AppColors.cyan500.withOpacity(0.1)
+              : const Color(0xFFC2D9E7),
+          width: 1,
+        ),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
@@ -650,7 +737,9 @@ class _StatCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.textCyan200.withOpacity(0.6),
+                    color: isDark
+                        ? AppColors.textCyan200.withOpacity(0.6)
+                        : const Color(0xFF5B778E),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -691,6 +780,7 @@ class _AIFeatureCardState extends State<_AIFeatureCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () => context.push(widget.route),
       child: MouseRegion(
@@ -711,10 +801,12 @@ class _AIFeatureCardState extends State<_AIFeatureCard> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF1e4a66).withOpacity(0.4),
-                const Color(0xFF16384d).withOpacity(0.4),
-              ],
+              colors: isDark
+                  ? [
+                      const Color(0xFF1e4a66).withOpacity(0.4),
+                      const Color(0xFF16384d).withOpacity(0.4),
+                    ]
+                  : [const Color(0xFFF8FCFF), const Color(0xFFEAF4FB)],
             ),
             borderRadius: BorderRadius.circular(
               Responsive.getResponsiveValue(
@@ -726,8 +818,12 @@ class _AIFeatureCardState extends State<_AIFeatureCard> {
             ),
             border: Border.all(
               color: _isHovered
-                  ? AppColors.cyan500.withOpacity(0.3)
-                  : AppColors.cyan500.withOpacity(0.1),
+                  ? (isDark
+                        ? AppColors.cyan500.withOpacity(0.3)
+                        : const Color(0xFF9CC5D9))
+                  : (isDark
+                        ? AppColors.cyan500.withOpacity(0.1)
+                        : const Color(0xFFBFD4E3)),
               width: 1,
             ),
           ),
@@ -799,7 +895,9 @@ class _AIFeatureCardState extends State<_AIFeatureCard> {
                               ),
                             ),
                             border: Border.all(
-                              color: AppColors.cyan500.withOpacity(0.2),
+                              color: isDark
+                                  ? AppColors.cyan500.withOpacity(0.2)
+                                  : const Color(0xFFBFD4E3),
                               width: 1,
                             ),
                           ),
@@ -836,7 +934,9 @@ class _AIFeatureCardState extends State<_AIFeatureCard> {
                                     desktop: 16.0,
                                   ),
                                   fontWeight: FontWeight.w500,
-                                  color: AppColors.textWhite,
+                                  color: isDark
+                                      ? AppColors.textWhite
+                                      : const Color(0xFF1B3550),
                                 ),
                               ),
                               SizedBox(
@@ -856,7 +956,9 @@ class _AIFeatureCardState extends State<_AIFeatureCard> {
                                     tablet: 12.0,
                                     desktop: 13.0,
                                   ),
-                                  color: AppColors.textCyan200.withOpacity(0.6),
+                                  color: isDark
+                                      ? AppColors.textCyan200.withOpacity(0.6)
+                                      : const Color(0xFF627A8E),
                                 ),
                               ),
                             ],
@@ -870,7 +972,9 @@ class _AIFeatureCardState extends State<_AIFeatureCard> {
                             tablet: 20.0,
                             desktop: 22.0,
                           ),
-                          color: AppColors.cyan400,
+                          color: isDark
+                              ? AppColors.cyan400
+                              : const Color(0xFF0B6A88),
                         ),
                       ],
                     ),

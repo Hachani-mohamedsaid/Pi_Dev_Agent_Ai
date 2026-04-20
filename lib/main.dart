@@ -10,6 +10,7 @@ import 'package:pi_dev_agentia/core/config/env_loader_stub.dart'
     if (dart.library.io) 'package:pi_dev_agentia/core/config/env_loader_io.dart'
     as env_loader;
 import 'core/services/locale_service.dart';
+import 'core/services/theme_service.dart';
 import 'package:flutter_web_plugins/url_strategy.dart'
     if (dart.library.io) 'url_strategy_stub.dart'
     show usePathUrlStrategy;
@@ -33,18 +34,15 @@ Future<void> main() async {
     return;
   }
 
-  await SentryFlutter.init(
-    (options) {
-      options.dsn = _sentryDsn;
-      options.environment = _sentryEnvironment;
-      if (_sentryRelease.isNotEmpty) {
-        options.release = _sentryRelease;
-      }
-      options.tracesSampleRate = kReleaseMode ? 0.1 : 1.0;
-      options.attachStacktrace = true;
-    },
-    appRunner: _startApp,
-  );
+  await SentryFlutter.init((options) {
+    options.dsn = _sentryDsn;
+    options.environment = _sentryEnvironment;
+    if (_sentryRelease.isNotEmpty) {
+      options.release = _sentryRelease;
+    }
+    options.tracesSampleRate = kReleaseMode ? 0.1 : 1.0;
+    options.attachStacktrace = true;
+  }, appRunner: _startApp);
 }
 
 Future<void> _startApp() async {
@@ -73,5 +71,7 @@ Future<void> _startApp() async {
     );
   }
   await LocaleService.instance.load();
+  await LocaleService.instance.setLocale('ar');
+  await ThemeService.instance.load();
   runApp(const App());
 }

@@ -18,7 +18,6 @@ class CustomTextField extends StatefulWidget {
     this.onChanged,
     this.focusNode,
   });
-
   final String label;
   final String hint;
   final IconData icon;
@@ -69,6 +68,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,7 +82,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
           child: Text(
             widget.label,
             style: TextStyle(
-              color: AppColors.textCyan200,
+              color: isDark ? AppColors.textCyan200 : const Color(0xFF3F6983),
               fontSize: isMobile ? 14 : 16,
               fontWeight: FontWeight.w500,
             ),
@@ -107,18 +107,22 @@ class _CustomTextFieldState extends State<CustomTextField> {
               widget.onChanged?.call(value);
             },
             style: TextStyle(
-              color: AppColors.textWhite,
+              color: isDark ? AppColors.textWhite : const Color(0xFF12263A),
               fontSize: isMobile ? 15 : 16,
             ),
             decoration: InputDecoration(
               hintText: widget.hint,
               hintStyle: TextStyle(
-                color: AppColors.textCyan200.withOpacity(0.4),
+                color: isDark
+                    ? AppColors.textCyan200.withOpacity(0.4)
+                    : const Color(0xFF6D8BA0),
                 fontSize: isMobile ? 15 : 16,
               ),
               prefixIcon: Icon(
                 widget.icon,
-                color: AppColors.cyan400.withOpacity(0.6),
+                color: isDark
+                    ? AppColors.cyan400.withOpacity(0.6)
+                    : const Color(0xFF0B6A88).withOpacity(0.75),
                 size: isMobile ? 20 : 22,
               ),
               suffixIcon: widget.suffixIcon != null
@@ -131,41 +135,47 @@ class _CustomTextFieldState extends State<CustomTextField> {
                     )
                   : null,
               filled: true,
-              fillColor: AppColors.backgroundDark,
+              fillColor: isDark
+                  ? AppColors.backgroundDark
+                  : const Color(0xFFFFFFFF).withOpacity(0.92),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
                 borderSide: BorderSide(
-                  color: _errorText != null ? Colors.red : AppColors.borderCyan,
+                  color: _errorText != null
+                      ? Colors.red
+                      : (isDark
+                            ? AppColors.borderCyan
+                            : const Color(0xFFC7DDE9)),
                   width: 1,
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
                 borderSide: BorderSide(
-                  color: _errorText != null ? Colors.red : AppColors.borderCyan,
+                  color: _errorText != null
+                      ? Colors.red
+                      : (isDark
+                            ? AppColors.borderCyan
+                            : const Color(0xFFC7DDE9)),
                   width: 1,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
                 borderSide: BorderSide(
-                  color: _errorText != null ? Colors.red : AppColors.cyan400,
+                  color: _errorText != null
+                      ? Colors.red
+                      : (isDark ? AppColors.cyan400 : const Color(0xFF0EA5C6)),
                   width: 2,
                 ),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
-                borderSide: const BorderSide(
-                  color: Colors.red,
-                  width: 1,
-                ),
+                borderSide: const BorderSide(color: Colors.red, width: 1),
               ),
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
-                borderSide: const BorderSide(
-                  color: Colors.red,
-                  width: 2,
-                ),
+                borderSide: const BorderSide(color: Colors.red, width: 2),
               ),
               contentPadding: EdgeInsets.symmetric(
                 horizontal: isMobile ? 16 : 20,
@@ -184,10 +194,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             ),
             child: Text(
               _errorText!,
-              style: TextStyle(
-                color: Colors.red,
-                fontSize: isMobile ? 12 : 13,
-              ),
+              style: TextStyle(color: Colors.red, fontSize: isMobile ? 12 : 13),
             ),
           ),
       ],

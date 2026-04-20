@@ -18,6 +18,8 @@ import '../../data/services/mobility_api_service.dart';
 import 'travel_schedule_page.dart';
 import '../widgets/navigation_bar.dart';
 
+// ignore_for_file: unused_field, unused_element
+
 class TravelPage extends StatefulWidget {
   const TravelPage({super.key});
 
@@ -396,7 +398,10 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
       final response = await http.get(uri, headers: buildJsonHeaders());
 
       if (response.statusCode != 200) {
-        reportHttpResponseError(feature: 'travel.route.osrm', response: response);
+        reportHttpResponseError(
+          feature: 'travel.route.osrm',
+          response: response,
+        );
         throw Exception('Routing failed: ${response.statusCode}');
       }
 
@@ -908,14 +913,17 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
           return StatefulBuilder(
             builder: (context, setModalState) {
               return Scaffold(
-                backgroundColor: const Color(0xFF0f2940),
+                backgroundColor: const Color(0xFFF8FCFF),
                 appBar: AppBar(
                   title: const Text('Full Map Selection (A -> B)'),
-                  backgroundColor: const Color(0xFF16384d),
+                  backgroundColor: const Color(0xFFF7FBFF),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Done'),
+                      child: const Text(
+                        'Done',
+                        style: TextStyle(color: Color(0xFF0B6A88)),
+                      ),
                     ),
                   ],
                 ),
@@ -1770,7 +1778,10 @@ out center 30;
               )
               .timeout(const Duration(seconds: 18));
           if (candidate.statusCode != 200) {
-            reportHttpResponseError(feature: 'travel.nearby_taxis.overpass', response: candidate);
+            reportHttpResponseError(
+              feature: 'travel.nearby_taxis.overpass',
+              response: candidate,
+            );
             candidate = await http
                 .post(
                   Uri.parse(endpoint),
@@ -1788,7 +1799,10 @@ out center 30;
             response = candidate;
             break;
           }
-          reportHttpResponseError(feature: 'travel.nearby_taxis.overpass', response: candidate);
+          reportHttpResponseError(
+            feature: 'travel.nearby_taxis.overpass',
+            response: candidate,
+          );
           lastError = 'OSM query failed: ${candidate.statusCode}';
         } catch (e) {
           reportApiException(feature: 'travel.nearby_taxis.overpass', error: e);

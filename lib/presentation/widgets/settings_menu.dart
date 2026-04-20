@@ -1,26 +1,42 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
-import '../../core/l10n/app_strings.dart';
+import 'package:pi_dev_agentia/generated/l10n.dart';
+import '../../core/services/theme_service.dart';
 import '../state/auth_controller.dart';
 
 class SettingsMenu extends StatefulWidget {
   final AuthController controller;
 
-  const SettingsMenu({
-    super.key,
-    required this.controller,
-  });
+  const SettingsMenu({super.key, required this.controller});
 
   @override
   State<SettingsMenu> createState() => _SettingsMenuState();
 }
 
 class _SettingsMenuState extends State<SettingsMenu> {
-  bool _darkMode = true;
+  bool _darkMode = ThemeService.instance.isDarkMode;
   OverlayEntry? _overlayEntry;
+
+  late final VoidCallback _themeListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _themeListener = () {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _darkMode = ThemeService.instance.isDarkMode;
+      });
+    };
+    ThemeService.instance.themeModeNotifier.addListener(_themeListener);
+  }
 
   void _handleLogout() {
     _hideMenu();
@@ -75,6 +91,7 @@ class _SettingsMenuState extends State<SettingsMenu> {
           setState(() {
             _darkMode = value;
           });
+          unawaited(ThemeService.instance.setDarkMode(value));
         },
         onEditProfile: _handleEditProfile,
         onSubscription: _handleSubscription,
@@ -96,6 +113,7 @@ class _SettingsMenuState extends State<SettingsMenu> {
 
   @override
   void dispose() {
+    ThemeService.instance.themeModeNotifier.removeListener(_themeListener);
     _hideMenu();
     super.dispose();
   }
@@ -103,6 +121,17 @@ class _SettingsMenuState extends State<SettingsMenu> {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = isDark ? AppColors.cyan400 : const Color(0xFF0F5D78);
+    final borderColor = isDark
+        ? AppColors.cyan500.withOpacity(0.2)
+        : const Color(0xFFB9D9E8);
+    final containerColors = isDark
+        ? [
+            AppColors.primaryLight.withOpacity(0.6),
+            AppColors.primaryDarker.withOpacity(0.6),
+          ]
+        : [const Color(0xFFF8FDFF), const Color(0xFFE8F4FB)];
 
     return GestureDetector(
       onTap: () {
@@ -118,16 +147,10 @@ class _SettingsMenuState extends State<SettingsMenu> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              AppColors.primaryLight.withOpacity(0.6),
-              AppColors.primaryDarker.withOpacity(0.6),
-            ],
+            colors: containerColors,
           ),
           borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
-          border: Border.all(
-            color: AppColors.cyan500.withOpacity(0.2),
-            width: 1,
-          ),
+          border: Border.all(color: borderColor, width: 1),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
@@ -135,7 +158,7 @@ class _SettingsMenuState extends State<SettingsMenu> {
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Icon(
               Icons.settings,
-              color: AppColors.cyan400,
+              color: iconColor,
               size: isMobile ? 20 : 24,
             ),
           ),
@@ -239,25 +262,37 @@ class _SettingsMenuContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final panelGradient = isDark
+        ? [
+            AppColors.primaryLight.withOpacity(0.95),
+            AppColors.primaryDarker.withOpacity(0.95),
+          ]
+        : [const Color(0xFFF9FDFF), const Color(0xFFEDF7FC)];
+    final dividerColor = isDark
+        ? AppColors.cyan500.withOpacity(0.2)
+        : const Color(0xFFD4E6F1);
+
     return Container(
       width: isMobile ? 280 : 320,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            AppColors.primaryLight.withOpacity(0.95),
-            AppColors.primaryDarker.withOpacity(0.95),
-          ],
+          colors: panelGradient,
         ),
         borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
         border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.3),
+          color: isDark
+              ? AppColors.cyan500.withOpacity(0.3)
+              : const Color(0xFFC4DEEC),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : const Color(0xFF95B6C8).withOpacity(0.22),
             blurRadius: 20,
             spreadRadius: 5,
           ),
@@ -279,71 +314,57 @@ class _SettingsMenuContent extends StatelessWidget {
                 child: Row(
                   children: [
                     Text(
-                      AppStrings.tr(context, 'settings'),
+                      S.of(context).settings,
                       style: TextStyle(
                         fontSize: isMobile ? 10 : 11,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textCyan200.withOpacity(0.7),
+                        color: isDark
+                            ? AppColors.textCyan200.withOpacity(0.7)
+                            : const Color(0xFF45657A),
                         letterSpacing: 1.2,
                       ),
                     ),
                   ],
                 ),
               ),
-              Divider(
-                color: AppColors.cyan500.withOpacity(0.2),
-                height: 1,
-                thickness: 1,
-              ),
+              Divider(color: dividerColor, height: 1, thickness: 1),
 
               // Dark Mode Toggle
               _SettingsMenuItem(
                 icon: darkMode ? Icons.dark_mode : Icons.light_mode,
-                label: AppStrings.tr(context, 'darkMode'),
+                label: S.of(context).darkMode,
                 isMobile: isMobile,
                 isToggle: true,
                 toggleValue: darkMode,
                 onToggle: onDarkModeChanged,
               ),
 
-              Divider(
-                color: AppColors.cyan500.withOpacity(0.2),
-                height: 1,
-                thickness: 1,
-              ),
+              Divider(color: dividerColor, height: 1, thickness: 1),
 
               // Edit Profile
               _SettingsMenuItem(
                 icon: Icons.person,
-                label: AppStrings.tr(context, 'editProfile'),
+                label: S.of(context).editProfile,
                 isMobile: isMobile,
                 onTap: onEditProfile,
               ),
 
-              Divider(
-                color: AppColors.cyan500.withOpacity(0.2),
-                height: 1,
-                thickness: 1,
-              ),
+              Divider(color: dividerColor, height: 1, thickness: 1),
 
               // Premium / Subscription
               _SettingsMenuItem(
                 icon: Icons.workspace_premium,
-                label: AppStrings.tr(context, 'premiumSubscription'),
+                label: S.of(context).premiumSubscription,
                 isMobile: isMobile,
                 onTap: onSubscription,
               ),
 
-              Divider(
-                color: AppColors.cyan500.withOpacity(0.2),
-                height: 1,
-                thickness: 1,
-              ),
+              Divider(color: dividerColor, height: 1, thickness: 1),
 
               // Change Language
               _SettingsMenuItem(
                 icon: Icons.language,
-                label: AppStrings.tr(context, 'changeLanguage'),
+                label: S.of(context).change_language,
                 isMobile: isMobile,
                 onTap: onLanguageChange,
               ),
@@ -351,7 +372,7 @@ class _SettingsMenuContent extends StatelessWidget {
               // Notifications
               _SettingsMenuItem(
                 icon: Icons.notifications,
-                label: AppStrings.tr(context, 'notifications'),
+                label: S.of(context).notifications,
                 isMobile: isMobile,
                 onTap: onNotifications,
               ),
@@ -359,35 +380,27 @@ class _SettingsMenuContent extends StatelessWidget {
               // Privacy & Security
               _SettingsMenuItem(
                 icon: Icons.security,
-                label: AppStrings.tr(context, 'privacySecurity'),
+                label: S.of(context).privacySecurity,
                 isMobile: isMobile,
                 onTap: onPrivacySecurity,
               ),
 
-              Divider(
-                color: AppColors.cyan500.withOpacity(0.2),
-                height: 1,
-                thickness: 1,
-              ),
+              Divider(color: dividerColor, height: 1, thickness: 1),
 
               // Help & Support
               _SettingsMenuItem(
                 icon: Icons.help_outline,
-                label: AppStrings.tr(context, 'helpSupport'),
+                label: S.of(context).helpSupport,
                 isMobile: isMobile,
                 onTap: onHelpSupport,
               ),
 
-              Divider(
-                color: AppColors.cyan500.withOpacity(0.2),
-                height: 1,
-                thickness: 1,
-              ),
+              Divider(color: dividerColor, height: 1, thickness: 1),
 
               // Logout
               _SettingsMenuItem(
                 icon: Icons.logout,
-                label: AppStrings.tr(context, 'logOut'),
+                label: S.of(context).logOut,
                 isMobile: isMobile,
                 isDestructive: true,
                 onTap: onLogout,
@@ -433,12 +446,13 @@ class _SettingsMenuItemState extends State<_SettingsMenuItem> {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final iconColor = widget.isDestructive
         ? Colors.red.shade400
-        : AppColors.cyan400;
+        : (isDark ? AppColors.cyan400 : const Color(0xFFEB4F2F));
     final textColor = widget.isDestructive
         ? Colors.red.shade400
-        : AppColors.textWhite;
+        : (isDark ? AppColors.textWhite : const Color(0xFF1F3446));
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
@@ -457,16 +471,14 @@ class _SettingsMenuItemState extends State<_SettingsMenuItem> {
         ),
         decoration: BoxDecoration(
           color: _isPressed
-              ? AppColors.cyan500.withOpacity(0.1)
+              ? (isDark
+                    ? AppColors.cyan500.withOpacity(0.1)
+                    : const Color(0xFFF0F7FB))
               : Colors.transparent,
         ),
         child: Row(
           children: [
-            Icon(
-              widget.icon,
-              size: isMobile ? 16 : 18,
-              color: iconColor,
-            ),
+            Icon(widget.icon, size: isMobile ? 16 : 18, color: iconColor),
             SizedBox(width: isMobile ? 12 : 16),
             Expanded(
               child: Text(
@@ -487,7 +499,9 @@ class _SettingsMenuItemState extends State<_SettingsMenuItem> {
               Icon(
                 Icons.chevron_right,
                 size: isMobile ? 16 : 18,
-                color: AppColors.cyan400.withOpacity(0.5),
+                color: isDark
+                    ? AppColors.cyan400.withOpacity(0.5)
+                    : const Color(0xFFB77E6D),
               ),
           ],
         ),

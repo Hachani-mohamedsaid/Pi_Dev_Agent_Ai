@@ -10,8 +10,21 @@ class AppShellGradient extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+      decoration: BoxDecoration(
+        gradient: isDark
+            ? AppColors.primaryGradient
+            : const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFEFF7FC),
+                  Color(0xFFDFF1FA),
+                  Color(0xFFEFF7FC),
+                ],
+              ),
+      ),
       child: child,
     );
   }

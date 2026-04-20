@@ -37,6 +37,7 @@ import 'data/services/goals_api_service.dart';
 import 'data/services/meeting_intelligence_service.dart';
 import 'data/services/stripe_checkout_service.dart';
 import 'data/services/mobility_api_service.dart';
+import 'data/datasources/secure_storage_auth_local_data_source.dart';
 
 /// Very small manual DI container (no external packages).
 class InjectionContainer {
@@ -64,9 +65,9 @@ class InjectionContainer {
     );
   }
 
-  // Auth dependencies – SharedPreferences pour que token et user survivent au refresh / redémarrage
+  // Auth dependencies – flutter_secure_storage pour que token et user survivent au refresh / redémarrage
   late final AuthLocalDataSource _authLocalDataSource =
-      SharedPreferencesAuthLocalDataSource();
+      SecureStorageAuthLocalDataSource();
 
   /// Exposed for features that need to send JWT (e.g. advisor history).
   AuthLocalDataSource get authLocalDataSource => _authLocalDataSource;

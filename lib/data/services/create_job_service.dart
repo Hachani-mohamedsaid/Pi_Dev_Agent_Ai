@@ -14,11 +14,9 @@ class CreateJobService {
   final String webhookUrl;
   final http.Client _client;
 
-  CreateJobService({
-    String? webhookUrl,
-    http.Client? client,
-  })  : webhookUrl = webhookUrl ?? createJobWebhookUrl,
-        _client = client ?? http.Client();
+  CreateJobService({String? webhookUrl, http.Client? client})
+    : webhookUrl = webhookUrl ?? createJobWebhookUrl,
+      _client = client ?? http.Client();
 
   /// POST JSON vers le webhook create-job.
   ///

@@ -8,6 +8,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 
+Color _primaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _secondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF4A728A);
+}
+
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
 
@@ -73,22 +85,28 @@ class _OnboardingPageState extends State<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final padding = Responsive.getResponsiveValue(
       context,
       mobile: 24.0,
       tablet: 28.0,
       desktop: 32.0,
     );
-
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
+    final pageGradient = isDark
+        ? const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
-          ),
-        ),
+          )
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
+          );
+
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(gradient: pageGradient),
         child: SafeArea(
           bottom: false,
           child: Column(
@@ -106,7 +124,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         desktop: 8.0,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.textWhite.withOpacity(0.05),
+                        color: _primaryText(context).withOpacity(0.05),
                         borderRadius: BorderRadius.circular(
                           Responsive.getResponsiveValue(
                             context,
@@ -191,8 +209,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      const Color(0xFF0f2940).withOpacity(0.95),
-                      const Color(0xFF0f2940),
+                      (isDark
+                              ? const Color(0xFF0f2940)
+                              : const Color(0xFFF3F8FC))
+                          .withOpacity(0.95),
+                      isDark
+                          ? const Color(0xFF0f2940)
+                          : const Color(0xFFF3F8FC),
                     ],
                   ),
                 ),
@@ -211,7 +234,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                             ),
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.textWhite.withOpacity(0.05),
+                            color: _primaryText(context).withOpacity(0.05),
                             borderRadius: BorderRadius.circular(
                               Responsive.getResponsiveValue(
                                 context,
@@ -221,7 +244,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               ),
                             ),
                             border: Border.all(
-                              color: AppColors.textWhite.withOpacity(0.1),
+                              color: _primaryText(context).withOpacity(0.1),
                               width: 1,
                             ),
                           ),
@@ -279,7 +302,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                 : null,
                             color: _canProceed()
                                 ? null
-                                : AppColors.textWhite.withOpacity(0.05),
+                                : _primaryText(context).withOpacity(0.05),
                             borderRadius: BorderRadius.circular(
                               Responsive.getResponsiveValue(
                                 context,
@@ -291,7 +314,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                             border: Border.all(
                               color: _canProceed()
                                   ? AppColors.cyan500.withOpacity(0.3)
-                                  : AppColors.textWhite.withOpacity(0.1),
+                                  : _primaryText(context).withOpacity(0.1),
                               width: 1,
                             ),
                             boxShadow: _canProceed()
@@ -323,7 +346,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                   ),
                                   fontWeight: FontWeight.w600,
                                   color: _canProceed()
-                                      ? AppColors.textWhite
+                                      ? _primaryText(context)
                                       : AppColors.cyan400.withOpacity(0.5),
                                 ),
                               ),
@@ -344,7 +367,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                   desktop: 22.0,
                                 ),
                                 color: _canProceed()
-                                    ? AppColors.textWhite
+                                    ? _primaryText(context)
                                     : AppColors.cyan400.withOpacity(0.5),
                               ),
                             ],
@@ -382,6 +405,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   Widget _buildStep1(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final features = [
       {'icon': LucideIcons.messageSquare, 'text': 'Multimodal: Voice & Text'},
       {'icon': LucideIcons.clock, 'text': 'Manage your time & schedule'},
@@ -480,7 +504,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   desktop: 40.0,
                 ),
                 fontWeight: FontWeight.bold,
-                color: AppColors.textWhite,
+                color: _primaryText(context),
               ),
             ),
             SizedBox(
@@ -501,7 +525,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   tablet: 18.0,
                   desktop: 20.0,
                 ),
-                color: AppColors.textCyan200.withOpacity(0.7),
+                color: _secondaryText(context).withOpacity(0.7),
               ),
             ),
           ],
@@ -541,8 +565,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            const Color(0xFF1e4a66).withOpacity(0.4),
-                            const Color(0xFF16384d).withOpacity(0.4),
+                            isDark
+                                ? const Color(0xFF1e4a66).withOpacity(0.4)
+                                : const Color(0xFFF9FCFF),
+                            isDark
+                                ? const Color(0xFF16384d).withOpacity(0.4)
+                                : const Color(0xFFEAF4FB),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(
@@ -554,7 +582,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           ),
                         ),
                         border: Border.all(
-                          color: AppColors.cyan500.withOpacity(0.1),
+                          color: isDark
+                              ? AppColors.cyan500.withOpacity(0.1)
+                              : const Color(0xFFC7DDE9),
                           width: 1,
                         ),
                       ),
@@ -625,7 +655,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                       desktop: 16.0,
                                     ),
                                     fontWeight: FontWeight.w500,
-                                    color: AppColors.textWhite,
+                                    color: _primaryText(context),
                                   ),
                                 ),
                               ),
@@ -694,7 +724,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               desktop: 26.0,
             ),
             fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
         SizedBox(
@@ -714,7 +744,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               tablet: 14.0,
               desktop: 15.0,
             ),
-            color: AppColors.textCyan200.withOpacity(0.7),
+            color: _secondaryText(context).withOpacity(0.7),
           ),
         ),
         SizedBox(
@@ -736,7 +766,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               desktop: 15.0,
             ),
             fontWeight: FontWeight.w500,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
         SizedBox(
@@ -799,7 +829,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               desktop: 15.0,
             ),
             fontWeight: FontWeight.w500,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
         SizedBox(
@@ -851,7 +881,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               desktop: 15.0,
             ),
             fontWeight: FontWeight.w500,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
         SizedBox(
@@ -918,7 +948,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               desktop: 26.0,
             ),
             fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
         SizedBox(
@@ -938,7 +968,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               tablet: 14.0,
               desktop: 15.0,
             ),
-            color: AppColors.textCyan200.withOpacity(0.7),
+            color: _secondaryText(context).withOpacity(0.7),
           ),
         ),
         SizedBox(
@@ -960,7 +990,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               desktop: 15.0,
             ),
             fontWeight: FontWeight.w500,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
         SizedBox(
@@ -1020,7 +1050,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               desktop: 15.0,
             ),
             fontWeight: FontWeight.w500,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
         SizedBox(
@@ -1084,7 +1114,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               desktop: 15.0,
             ),
             fontWeight: FontWeight.w500,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
         SizedBox(
@@ -1185,7 +1215,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               desktop: 26.0,
             ),
             fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
         SizedBox(
@@ -1205,7 +1235,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               tablet: 14.0,
               desktop: 15.0,
             ),
-            color: AppColors.textCyan200.withOpacity(0.7),
+            color: _secondaryText(context).withOpacity(0.7),
           ),
         ),
         SizedBox(
@@ -1251,7 +1281,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       : null,
                   color: isSelected
                       ? null
-                      : AppColors.textWhite.withOpacity(0.05),
+                      : _primaryText(context).withOpacity(0.05),
                   borderRadius: BorderRadius.circular(
                     Responsive.getResponsiveValue(
                       context,
@@ -1263,7 +1293,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   border: Border.all(
                     color: isSelected
                         ? AppColors.cyan500.withOpacity(0.5)
-                        : AppColors.textWhite.withOpacity(0.1),
+                        : _primaryText(context).withOpacity(0.1),
                     width: 1,
                   ),
                 ),
@@ -1304,7 +1334,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               fontWeight: FontWeight.w500,
                               color: isSelected
                                   ? AppColors.textCyan300
-                                  : AppColors.textWhite,
+                                  : _primaryText(context),
                             ),
                           ),
                           SizedBox(
@@ -1360,6 +1390,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   Widget _buildStep5(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1381,7 +1412,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               desktop: 26.0,
             ),
             fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
         SizedBox(
@@ -1401,7 +1432,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               tablet: 14.0,
               desktop: 15.0,
             ),
-            color: AppColors.textCyan200.withOpacity(0.7),
+            color: _secondaryText(context).withOpacity(0.7),
           ),
         ),
         SizedBox(
@@ -1426,8 +1457,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                const Color(0xFF1e4a66).withOpacity(0.4),
-                const Color(0xFF16384d).withOpacity(0.4),
+                isDark
+                    ? const Color(0xFF1e4a66).withOpacity(0.4)
+                    : const Color(0xFFF9FCFF),
+                isDark
+                    ? const Color(0xFF16384d).withOpacity(0.4)
+                    : const Color(0xFFEAF4FB),
               ],
             ),
             borderRadius: BorderRadius.circular(
@@ -1439,7 +1474,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
               ),
             ),
             border: Border.all(
-              color: AppColors.cyan500.withOpacity(0.1),
+              color: isDark
+                  ? AppColors.cyan500.withOpacity(0.1)
+                  : const Color(0xFFC7DDE9),
               width: 1,
             ),
           ),
@@ -1467,7 +1504,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         desktop: 16.0,
                       ),
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textWhite,
+                      color: _primaryText(context),
                     ),
                   ),
                   SizedBox(
@@ -1526,7 +1563,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                   tablet: 13.0,
                                   desktop: 14.0,
                                 ),
-                                color: AppColors.textCyan200.withOpacity(0.8),
+                                color: _secondaryText(context).withOpacity(0.8),
                               ),
                             ),
                           ),
@@ -1641,7 +1678,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         tablet: 13.0,
                         desktop: 14.0,
                       ),
-                      color: AppColors.textCyan200.withOpacity(0.7),
+                      color: _secondaryText(context).withOpacity(0.7),
                     ),
                   ),
                 );
@@ -1680,7 +1717,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   : null,
               color: _learningConsent
                   ? null
-                  : AppColors.textWhite.withOpacity(0.05),
+                  : _primaryText(context).withOpacity(0.05),
               borderRadius: BorderRadius.circular(
                 Responsive.getResponsiveValue(
                   context,
@@ -1692,7 +1729,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               border: Border.all(
                 color: _learningConsent
                     ? AppColors.cyan500.withOpacity(0.5)
-                    : AppColors.textWhite.withOpacity(0.1),
+                    : _primaryText(context).withOpacity(0.1),
                 width: 1,
               ),
             ),
@@ -1739,7 +1776,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                             tablet: 16.0,
                             desktop: 18.0,
                           ),
-                          color: AppColors.textWhite,
+                          color: _primaryText(context),
                         )
                       : null,
                 ),
@@ -1767,7 +1804,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           fontWeight: FontWeight.w500,
                           color: _learningConsent
                               ? AppColors.textCyan300
-                              : AppColors.textWhite,
+                              : _primaryText(context),
                         ),
                       ),
                       SizedBox(
@@ -1816,7 +1853,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               desktop: 15.0,
             ),
             fontWeight: FontWeight.w500,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
         SizedBox(
@@ -1878,7 +1915,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       : null,
                   color: isSelected
                       ? null
-                      : AppColors.textWhite.withOpacity(0.05),
+                      : _primaryText(context).withOpacity(0.05),
                   borderRadius: BorderRadius.circular(
                     Responsive.getResponsiveValue(
                       context,
@@ -1890,7 +1927,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   border: Border.all(
                     color: isSelected
                         ? AppColors.cyan500.withOpacity(0.5)
-                        : AppColors.textWhite.withOpacity(0.1),
+                        : _primaryText(context).withOpacity(0.1),
                     width: 1,
                   ),
                 ),
@@ -1946,7 +1983,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               fontWeight: FontWeight.w500,
                               color: isSelected
                                   ? AppColors.textCyan300
-                                  : AppColors.textWhite,
+                                  : _primaryText(context),
                             ),
                           ),
                           SizedBox(
@@ -1991,6 +2028,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   Widget _buildStep6(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final services = [
       {
         'emoji': '📅',
@@ -2045,7 +2083,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               desktop: 26.0,
             ),
             fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
         SizedBox(
@@ -2065,7 +2103,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               tablet: 14.0,
               desktop: 15.0,
             ),
-            color: AppColors.textCyan200.withOpacity(0.7),
+            color: _secondaryText(context).withOpacity(0.7),
           ),
         ),
         SizedBox(
@@ -2104,8 +2142,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            const Color(0xFF1e4a66).withOpacity(0.4),
-                            const Color(0xFF16384d).withOpacity(0.4),
+                            isDark
+                                ? const Color(0xFF1e4a66).withOpacity(0.4)
+                                : const Color(0xFFF9FCFF),
+                            isDark
+                                ? const Color(0xFF16384d).withOpacity(0.4)
+                                : const Color(0xFFEAF4FB),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(
@@ -2117,7 +2159,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           ),
                         ),
                         border: Border.all(
-                          color: AppColors.cyan500.withOpacity(0.1),
+                          color: isDark
+                              ? AppColors.cyan500.withOpacity(0.1)
+                              : const Color(0xFFC7DDE9),
                           width: 1,
                         ),
                       ),
@@ -2171,7 +2215,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                                 desktop: 16.0,
                                               ),
                                           fontWeight: FontWeight.w500,
-                                          color: AppColors.textWhite,
+                                          color: _primaryText(context),
                                         ),
                                       ),
                                       SizedBox(
@@ -2223,7 +2267,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                   decoration: BoxDecoration(
                                     color: isReady
                                         ? AppColors.cyan500.withOpacity(0.2)
-                                        : AppColors.textWhite.withOpacity(0.05),
+                                        : _primaryText(
+                                            context,
+                                          ).withOpacity(0.05),
                                     borderRadius: BorderRadius.circular(
                                       Responsive.getResponsiveValue(
                                         context,
@@ -2235,9 +2281,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                     border: Border.all(
                                       color: isReady
                                           ? AppColors.cyan500.withOpacity(0.3)
-                                          : AppColors.textWhite.withOpacity(
-                                              0.1,
-                                            ),
+                                          : _primaryText(
+                                              context,
+                                            ).withOpacity(0.1),
                                       width: 1,
                                     ),
                                   ),
@@ -2341,7 +2387,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   ],
                 )
               : null,
-          color: isSelected ? null : AppColors.textWhite.withOpacity(0.05),
+          color: isSelected ? null : _primaryText(context).withOpacity(0.05),
           borderRadius: BorderRadius.circular(
             Responsive.getResponsiveValue(
               context,
@@ -2353,7 +2399,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           border: Border.all(
             color: isSelected
                 ? AppColors.cyan500.withOpacity(0.5)
-                : AppColors.textWhite.withOpacity(0.1),
+                : _primaryText(context).withOpacity(0.1),
             width: 1,
           ),
         ),

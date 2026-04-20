@@ -5,14 +5,52 @@ import '../../data/models/work_proposal_model.dart';
 import '../../data/services/openai_analysis_service.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/l10n/app_strings.dart';
+
+Color _primaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _secondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF5B7B92);
+}
+
+LinearGradient _pageGradient(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return isDark
+      ? AppColors.primaryGradient
+      : const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
+        );
+}
+
+LinearGradient _surfaceGradient(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return isDark
+      ? AppColors.cardGradient
+      : const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF9FCFF), Color(0xFFEAF4FB)],
+        );
+}
+
+Color _surfaceBorder(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.borderCyan
+      : const Color(0xFFC7DDE9);
+}
 
 class ProjectAnalysisPage extends StatefulWidget {
   final WorkProposal proposal;
 
-  const ProjectAnalysisPage({
-    super.key,
-    required this.proposal,
-  });
+  const ProjectAnalysisPage({super.key, required this.proposal});
 
   @override
   State<ProjectAnalysisPage> createState() => _ProjectAnalysisPageState();
@@ -40,15 +78,14 @@ class _ProjectAnalysisPageState extends State<ProjectAnalysisPage>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
+        );
 
     // Controllers pour chaque section
     for (int i = 0; i < 6; i++) {
@@ -129,9 +166,7 @@ class _ProjectAnalysisPageState extends State<ProjectAnalysisPage>
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.primaryGradient,
-        ),
+        decoration: BoxDecoration(gradient: _pageGradient(context)),
         child: SafeArea(
           child: FadeTransition(
             opacity: _fadeAnimation,
@@ -181,7 +216,12 @@ class _ProjectAnalysisPageState extends State<ProjectAnalysisPage>
                           index: 1,
                           controller: _sectionControllers[1],
                           child: _isLoadingAnalysis
-                              ? _LoadingSection(message: 'Analyse des outils en cours...')
+                              ? _LoadingSection(
+                                  message: AppStrings.tr(
+                                    context,
+                                    'toolsAnalysisInProgress',
+                                  ),
+                                )
                               : _ToolsSection(
                                   proposal: widget.proposal,
                                   analysis: _analysis,
@@ -201,7 +241,12 @@ class _ProjectAnalysisPageState extends State<ProjectAnalysisPage>
                           index: 2,
                           controller: _sectionControllers[2],
                           child: _isLoadingAnalysis
-                              ? _LoadingSection(message: 'Analyse technique en cours...')
+                              ? _LoadingSection(
+                                  message: AppStrings.tr(
+                                    context,
+                                    'technicalAnalysisInProgress',
+                                  ),
+                                )
                               : _TechnicalProposalSection(
                                   proposal: widget.proposal,
                                   analysis: _analysis,
@@ -221,7 +266,12 @@ class _ProjectAnalysisPageState extends State<ProjectAnalysisPage>
                           index: 3,
                           controller: _sectionControllers[3],
                           child: _isLoadingAnalysis
-                              ? _LoadingSection(message: 'Analyse méthodologie en cours...')
+                              ? _LoadingSection(
+                                  message: AppStrings.tr(
+                                    context,
+                                    'methodologyAnalysisInProgress',
+                                  ),
+                                )
                               : _HowToWorkSection(
                                   proposal: widget.proposal,
                                   analysis: _analysis,
@@ -241,7 +291,9 @@ class _ProjectAnalysisPageState extends State<ProjectAnalysisPage>
                           index: 4,
                           controller: _sectionControllers[4],
                           child: _isLoadingAnalysis
-                              ? _LoadingSection(message: 'Analyse des étapes en cours...')
+                              ? _LoadingSection(
+                                  message: 'Analyse des étapes en cours...',
+                                )
                               : _DevelopmentStepsSection(
                                   proposal: widget.proposal,
                                   analysis: _analysis,
@@ -261,7 +313,12 @@ class _ProjectAnalysisPageState extends State<ProjectAnalysisPage>
                           index: 5,
                           controller: _sectionControllers[5],
                           child: _isLoadingAnalysis
-                              ? _LoadingSection(message: 'Analyse recommandations en cours...')
+                              ? _LoadingSection(
+                                  message: AppStrings.tr(
+                                    context,
+                                    'recommendationsAnalysisInProgress',
+                                  ),
+                                )
                               : _RecommendationsSection(
                                   proposal: widget.proposal,
                                   analysis: _analysis,
@@ -294,10 +351,7 @@ class _AnalysisHeader extends StatelessWidget {
   final WorkProposal proposal;
   final bool isMobile;
 
-  const _AnalysisHeader({
-    required this.proposal,
-    required this.isMobile,
-  });
+  const _AnalysisHeader({required this.proposal, required this.isMobile});
 
   @override
   Widget build(BuildContext context) {
@@ -325,15 +379,15 @@ class _AnalysisHeader extends StatelessWidget {
                 ),
               ),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withOpacity(0.1)
+                    : const Color(0xFFEAF4FB),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.borderCyan,
-                ),
+                border: Border.all(color: _surfaceBorder(context)),
               ),
               child: Icon(
                 LucideIcons.arrowLeft,
-                color: AppColors.textWhite,
+                color: _primaryText(context),
                 size: Responsive.getResponsiveValue(
                   context,
                   mobile: 20.0,
@@ -356,7 +410,7 @@ class _AnalysisHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Analyse du projet',
+                  AppStrings.tr(context, 'projectAnalysis'),
                   style: TextStyle(
                     fontSize: Responsive.getResponsiveValue(
                       context,
@@ -365,7 +419,7 @@ class _AnalysisHeader extends StatelessWidget {
                       desktop: 24.0,
                     ),
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textWhite,
+                    color: _primaryText(context),
                   ),
                 ),
                 SizedBox(
@@ -385,7 +439,7 @@ class _AnalysisHeader extends StatelessWidget {
                       tablet: 15.0,
                       desktop: 16.0,
                     ),
-                    color: AppColors.textCyan200.withOpacity(0.7),
+                    color: _secondaryText(context),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -414,16 +468,15 @@ class _AnimatedSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FadeTransition(
-      opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: controller, curve: Curves.easeOut),
-      ),
+      opacity: Tween<double>(
+        begin: 0.0,
+        end: 1.0,
+      ).animate(CurvedAnimation(parent: controller, curve: Curves.easeOut)),
       child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.2),
-          end: Offset.zero,
-        ).animate(
-          CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
-        ),
+        position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+            .animate(
+              CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
+            ),
         child: child,
       ),
     );
@@ -562,7 +615,7 @@ class _ProjectDetailsSection extends StatelessWidget {
                           tablet: 14.0,
                           desktop: 15.0,
                         ),
-                        color: AppColors.textCyan200.withOpacity(0.7),
+                        color: _secondaryText(context),
                       ),
                     ),
                     SizedBox(
@@ -589,12 +642,14 @@ class _ProjectDetailsSection extends StatelessWidget {
                         ),
                       ),
                       decoration: BoxDecoration(
-                        color: getComplexityColor(proposal.niveauComplexite)
-                            .withOpacity(0.2),
+                        color: getComplexityColor(
+                          proposal.niveauComplexite,
+                        ).withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: getComplexityColor(proposal.niveauComplexite)
-                              .withOpacity(0.5),
+                          color: getComplexityColor(
+                            proposal.niveauComplexite,
+                          ).withOpacity(0.5),
                         ),
                       ),
                       child: Text(
@@ -643,14 +698,18 @@ class _ToolsSection extends StatelessWidget {
     final typeProjet = proposal.typeProjet.toLowerCase();
 
     // Outils de développement
-    if (platforme.contains('mobile') || platforme.contains('ios') || platforme.contains('android')) {
+    if (platforme.contains('mobile') ||
+        platforme.contains('ios') ||
+        platforme.contains('android')) {
       tools.addAll(['Flutter', 'Dart', 'Android Studio', 'Xcode']);
     } else if (platforme.contains('web')) {
       tools.addAll(['React', 'TypeScript', 'Node.js', 'Next.js']);
     }
 
     // Outils de design
-    if (typeProjet.contains('design') || typeProjet.contains('ui') || typeProjet.contains('ux')) {
+    if (typeProjet.contains('design') ||
+        typeProjet.contains('ui') ||
+        typeProjet.contains('ux')) {
       tools.addAll(['Figma', 'Adobe XD', 'Sketch']);
     }
 
@@ -756,7 +815,7 @@ class _ToolsSection extends StatelessWidget {
                       desktop: 16.0,
                     ),
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textWhite,
+                    color: _primaryText(context),
                   ),
                 ),
               ],
@@ -834,98 +893,118 @@ class _TechnicalProposalSection extends StatelessWidget {
 
     // Architecture
     if (platforme.contains('mobile')) {
-      aspects.add(_TechnicalAspect(
-        icon: LucideIcons.layers,
-        title: 'Architecture',
-        description:
-            'Utilisation de Flutter pour un développement cross-platform permettant de cibler iOS et Android avec un seul codebase. Architecture modulaire avec séparation des couches (présentation, logique métier, données).',
-        color: AppColors.cyan400,
-      ));
+      aspects.add(
+        _TechnicalAspect(
+          icon: LucideIcons.layers,
+          title: 'Architecture',
+          description:
+              'Utilisation de Flutter pour un développement cross-platform permettant de cibler iOS et Android avec un seul codebase. Architecture modulaire avec séparation des couches (présentation, logique métier, données).',
+          color: AppColors.cyan400,
+        ),
+      );
     } else if (platforme.contains('web')) {
-      aspects.add(_TechnicalAspect(
-        icon: LucideIcons.layers,
-        title: 'Architecture',
-        description:
-            'Application web moderne avec React/Next.js pour une expérience utilisateur optimale. Architecture microservices pour une scalabilité et une maintenabilité accrues.',
-        color: AppColors.cyan400,
-      ));
+      aspects.add(
+        _TechnicalAspect(
+          icon: LucideIcons.layers,
+          title: 'Architecture',
+          description:
+              'Application web moderne avec React/Next.js pour une expérience utilisateur optimale. Architecture microservices pour une scalabilité et une maintenabilité accrues.',
+          color: AppColors.cyan400,
+        ),
+      );
     }
 
     // Stack technique
     if (platforme.contains('mobile')) {
-      aspects.add(_TechnicalAspect(
-        icon: LucideIcons.code,
-        title: 'Stack technique',
-        description:
-            'Flutter/Dart, Firebase pour l\'authentification et la base de données, Provider/Riverpod pour la gestion d\'état.',
-        color: const Color(0xFF8B5CF6),
-      ));
+      aspects.add(
+        _TechnicalAspect(
+          icon: LucideIcons.code,
+          title: 'Stack technique',
+          description:
+              'Flutter/Dart, Firebase pour l\'authentification et la base de données, Provider/Riverpod pour la gestion d\'état.',
+          color: const Color(0xFF8B5CF6),
+        ),
+      );
     } else if (platforme.contains('web')) {
-      aspects.add(_TechnicalAspect(
-        icon: LucideIcons.code,
-        title: 'Stack technique',
-        description:
-            'React/TypeScript, Node.js pour le backend, PostgreSQL pour la base de données, Redis pour le cache.',
-        color: const Color(0xFF8B5CF6),
-      ));
+      aspects.add(
+        _TechnicalAspect(
+          icon: LucideIcons.code,
+          title: 'Stack technique',
+          description:
+              'React/TypeScript, Node.js pour le backend, PostgreSQL pour la base de données, Redis pour le cache.',
+          color: const Color(0xFF8B5CF6),
+        ),
+      );
     }
 
     // Sécurité
-    aspects.add(_TechnicalAspect(
-      icon: LucideIcons.shield,
-      title: 'Sécurité',
-      description:
-          'Implémentation de bonnes pratiques de sécurité (HTTPS, authentification JWT, validation des données, protection CSRF).',
-      color: const Color(0xFF10B981),
-    ));
+    aspects.add(
+      _TechnicalAspect(
+        icon: LucideIcons.shield,
+        title: 'Sécurité',
+        description:
+            'Implémentation de bonnes pratiques de sécurité (HTTPS, authentification JWT, validation des données, protection CSRF).',
+        color: const Color(0xFF10B981),
+      ),
+    );
 
     // Performance
     if (complexite == 'complexe') {
-      aspects.add(_TechnicalAspect(
-        icon: LucideIcons.zap,
-        title: 'Performance',
-        description:
-            'Optimisation des performances avec lazy loading, code splitting, mise en cache intelligente, et CDN pour les assets statiques.',
-        color: const Color(0xFFF59E0B),
-      ));
+      aspects.add(
+        _TechnicalAspect(
+          icon: LucideIcons.zap,
+          title: 'Performance',
+          description:
+              'Optimisation des performances avec lazy loading, code splitting, mise en cache intelligente, et CDN pour les assets statiques.',
+          color: const Color(0xFFF59E0B),
+        ),
+      );
     }
 
     // Tests
-    aspects.add(_TechnicalAspect(
-      icon: LucideIcons.checkCircle,
-      title: 'Tests',
-      description:
-          'Mise en place d\'une suite de tests automatisés (unitaires, intégration, e2e) pour garantir la qualité du code.',
-      color: const Color(0xFF06B6D4),
-    ));
+    aspects.add(
+      _TechnicalAspect(
+        icon: LucideIcons.checkCircle,
+        title: 'Tests',
+        description:
+            'Mise en place d\'une suite de tests automatisés (unitaires, intégration, e2e) pour garantir la qualité du code.',
+        color: const Color(0xFF06B6D4),
+      ),
+    );
 
     // Déploiement
     if (platforme.contains('mobile')) {
-      aspects.add(_TechnicalAspect(
-        icon: LucideIcons.rocket,
-        title: 'Déploiement',
-        description:
-            'CI/CD avec GitHub Actions, déploiement automatique sur Firebase App Distribution pour les tests, puis publication sur les stores.',
-        color: const Color(0xFFEF4444),
-      ));
+      aspects.add(
+        _TechnicalAspect(
+          icon: LucideIcons.rocket,
+          title: 'Déploiement',
+          description:
+              'CI/CD avec GitHub Actions, déploiement automatique sur Firebase App Distribution pour les tests, puis publication sur les stores.',
+          color: const Color(0xFFEF4444),
+        ),
+      );
     } else if (platforme.contains('web')) {
-      aspects.add(_TechnicalAspect(
-        icon: LucideIcons.rocket,
-        title: 'Déploiement',
-        description:
-            'CI/CD avec GitHub Actions, déploiement automatique sur Vercel/Netlify avec prévisualisation des pull requests.',
-        color: const Color(0xFFEF4444),
-      ));
+      aspects.add(
+        _TechnicalAspect(
+          icon: LucideIcons.rocket,
+          title: 'Déploiement',
+          description:
+              'CI/CD avec GitHub Actions, déploiement automatique sur Vercel/Netlify avec prévisualisation des pull requests.',
+          color: const Color(0xFFEF4444),
+        ),
+      );
     }
 
     // Monitoring
-    aspects.add(_TechnicalAspect(
-      icon: LucideIcons.barChart,
-      title: 'Monitoring',
-      description:
-          'Intégration d\'outils de monitoring (Sentry pour les erreurs, Analytics pour le suivi des performances).',
-      color: const Color(0xFFEC4899),
-    ));
+    aspects.add(
+      _TechnicalAspect(
+        icon: LucideIcons.barChart,
+        title: 'Monitoring',
+        description:
+            'Intégration d\'outils de monitoring (Sentry pour les erreurs, Analytics pour le suivi des performances).',
+        color: const Color(0xFFEC4899),
+      ),
+    );
 
     return aspects;
   }
@@ -955,10 +1034,7 @@ class _TechnicalProposalSection extends StatelessWidget {
                     )
                   : 0,
             ),
-            child: _TechnicalAspectCard(
-              aspect: aspect,
-              isMobile: isMobile,
-            ),
+            child: _TechnicalAspectCard(aspect: aspect, isMobile: isMobile),
           );
         }).toList(),
       ),
@@ -986,10 +1062,7 @@ class _TechnicalAspectCard extends StatelessWidget {
   final _TechnicalAspect aspect;
   final bool isMobile;
 
-  const _TechnicalAspectCard({
-    required this.aspect,
-    required this.isMobile,
-  });
+  const _TechnicalAspectCard({required this.aspect, required this.isMobile});
 
   @override
   Widget build(BuildContext context) {
@@ -1012,10 +1085,7 @@ class _TechnicalAspectCard extends StatelessWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: aspect.color.withOpacity(0.3),
-          width: 1.5,
-        ),
+        border: Border.all(color: aspect.color.withOpacity(0.3), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: aspect.color.withOpacity(0.1),
@@ -1045,9 +1115,7 @@ class _TechnicalAspectCard extends StatelessWidget {
                 ],
               ),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: aspect.color.withOpacity(0.4),
-              ),
+              border: Border.all(color: aspect.color.withOpacity(0.4)),
             ),
             child: Icon(
               aspect.icon,
@@ -1082,7 +1150,7 @@ class _TechnicalAspectCard extends StatelessWidget {
                       desktop: 19.0,
                     ),
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textWhite,
+                    color: _primaryText(context),
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -1103,7 +1171,7 @@ class _TechnicalAspectCard extends StatelessWidget {
                       tablet: 15.0,
                       desktop: 16.0,
                     ),
-                    color: AppColors.textCyan200.withOpacity(0.9),
+                    color: _secondaryText(context),
                     height: 1.6,
                   ),
                 ),
@@ -1181,7 +1249,7 @@ class _TechnicalPoint extends StatelessWidget {
                     desktop: 17.0,
                   ),
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textWhite,
+                  color: _primaryText(context),
                 ),
               ),
               SizedBox(
@@ -1201,7 +1269,7 @@ class _TechnicalPoint extends StatelessWidget {
                     tablet: 14.0,
                     desktop: 15.0,
                   ),
-                  color: AppColors.textCyan200.withOpacity(0.8),
+                  color: _secondaryText(context),
                   height: 1.4,
                 ),
               ),
@@ -1227,11 +1295,12 @@ class _HowToWorkSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = analysis?.howToWork ?? 
+    final content =
+        analysis?.howToWork ??
         'Étudier en détail les fonctionnalités demandées et comprendre les objectifs du client. '
-        'Créer un plan de développement détaillé avec les étapes, les ressources nécessaires et les délais. '
-        'Travailler par sprints avec des livraisons régulières pour valider avec le client. '
-        'Effectuer des tests complets et obtenir la validation finale du client avant la mise en production.';
+            'Créer un plan de développement détaillé avec les étapes, les ressources nécessaires et les délais. '
+            'Travailler par sprints avec des livraisons régulières pour valider avec le client. '
+            'Effectuer des tests complets et obtenir la validation finale du client avant la mise en production.';
 
     return _SectionCard(
       title: 'Comment travailler ce projet',
@@ -1247,7 +1316,7 @@ class _HowToWorkSection extends StatelessWidget {
             tablet: 15.0,
             desktop: 16.0,
           ),
-          color: AppColors.textCyan200.withOpacity(0.9),
+          color: _secondaryText(context),
           height: 1.6,
         ),
       ),
@@ -1270,9 +1339,11 @@ class _DevelopmentStepsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final steps = analysis?.developmentSteps ?? [];
-    
+
     return _SectionCard(
-      title: steps.isEmpty ? 'Fonctionnalités à développer' : 'Étapes de développement',
+      title: steps.isEmpty
+          ? 'Fonctionnalités à développer'
+          : 'Étapes de développement',
       icon: LucideIcons.listChecks,
       iconColor: const Color(0xFF10B981),
       isMobile: isMobile,
@@ -1336,7 +1407,7 @@ class _DevelopmentStepsSection extends StatelessWidget {
                               tablet: 15.0,
                               desktop: 16.0,
                             ),
-                            color: AppColors.textWhite,
+                            color: _primaryText(context),
                             height: 1.5,
                           ),
                         ),
@@ -1390,10 +1461,11 @@ class _RecommendationsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final recommendations = analysis?.recommendations ?? 
+    final recommendations =
+        analysis?.recommendations ??
         'Maintenir une communication régulière avec le client pour s\'assurer que le projet répond à ses attentes. '
-        'Utiliser un système de contrôle de version (Git) et documenter chaque étape importante du développement. '
-        'Mettre en place des tests automatisés et des revues de code pour garantir la qualité du produit final.';
+            'Utiliser un système de contrôle de version (Git) et documenter chaque étape importante du développement. '
+            'Mettre en place des tests automatisés et des revues de code pour garantir la qualité du produit final.';
 
     return _SectionCard(
       title: 'Recommandations',
@@ -1409,7 +1481,7 @@ class _RecommendationsSection extends StatelessWidget {
             tablet: 15.0,
             desktop: 16.0,
           ),
-          color: AppColors.textCyan200.withOpacity(0.9),
+          color: _secondaryText(context),
           height: 1.6,
         ),
       ),
@@ -1435,9 +1507,9 @@ class _LoadingSection extends StatelessWidget {
         ),
       ),
       decoration: BoxDecoration(
-        gradient: AppColors.cardGradient,
+        gradient: _surfaceGradient(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderCyan),
+        border: Border.all(color: _surfaceBorder(context)),
       ),
       child: Row(
         children: [
@@ -1460,7 +1532,7 @@ class _LoadingSection extends StatelessWidget {
                   tablet: 15.0,
                   desktop: 16.0,
                 ),
-                color: AppColors.textCyan200,
+                color: _secondaryText(context),
               ),
             ),
           ),
@@ -1498,11 +1570,9 @@ class _SectionCard extends StatelessWidget {
         ),
       ),
       decoration: BoxDecoration(
-        gradient: AppColors.cardGradient,
+        gradient: _surfaceGradient(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.borderCyan,
-        ),
+        border: Border.all(color: _surfaceBorder(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1552,7 +1622,7 @@ class _SectionCard extends StatelessWidget {
                       desktop: 22.0,
                     ),
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textWhite,
+                    color: _primaryText(context),
                   ),
                 ),
               ),
@@ -1623,7 +1693,7 @@ class _DetailRow extends StatelessWidget {
                     tablet: 14.0,
                     desktop: 15.0,
                   ),
-                  color: AppColors.textCyan200.withOpacity(0.7),
+                  color: _secondaryText(context),
                 ),
               ),
               SizedBox(
@@ -1644,7 +1714,7 @@ class _DetailRow extends StatelessWidget {
                     desktop: 17.0,
                   ),
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textWhite,
+                  color: _primaryText(context),
                 ),
               ),
             ],
@@ -1690,10 +1760,7 @@ class _WorkStepItem extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                AppColors.cyan400,
-                AppColors.cyan400.withOpacity(0.7),
-              ],
+              colors: [AppColors.cyan400, AppColors.cyan400.withOpacity(0.7)],
             ),
             borderRadius: BorderRadius.circular(12),
           ),
@@ -1756,7 +1823,7 @@ class _WorkStepItem extends StatelessWidget {
                           desktop: 18.0,
                         ),
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textWhite,
+                        color: _primaryText(context),
                       ),
                     ),
                   ),
@@ -1779,7 +1846,7 @@ class _WorkStepItem extends StatelessWidget {
                     tablet: 15.0,
                     desktop: 16.0,
                   ),
-                  color: AppColors.textCyan200.withOpacity(0.8),
+                  color: _secondaryText(context),
                   height: 1.5,
                 ),
               ),
@@ -1835,7 +1902,7 @@ class _RecommendationItem extends StatelessWidget {
                 tablet: 15.0,
                 desktop: 16.0,
               ),
-              color: AppColors.textWhite,
+              color: _primaryText(context),
               height: 1.5,
             ),
           ),

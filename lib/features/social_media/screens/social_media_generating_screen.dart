@@ -37,7 +37,8 @@ class SocialMediaGeneratingScreen extends StatefulWidget {
 }
 
 class _SocialMediaGeneratingScreenState
-    extends State<SocialMediaGeneratingScreen> with TickerProviderStateMixin {
+    extends State<SocialMediaGeneratingScreen>
+    with TickerProviderStateMixin {
   late final List<_AgentCard> _agents;
   final List<Timer> _timers = [];
   Timer? _pollTimer;
@@ -171,20 +172,25 @@ class _SocialMediaGeneratingScreenState
 
   void _startPolling() {
     _pollStartTime = DateTime.now();
-    print('[SocialCampaign] Polling started — interval: ${_pollInterval.inSeconds}s, timeout: ${_pollTimeoutSeconds}s');
+    print(
+      '[SocialCampaign] Polling started — interval: ${_pollInterval.inSeconds}s, timeout: ${_pollTimeoutSeconds}s',
+    );
 
     _pollTimer = Timer.periodic(_pollInterval, (_) async {
       if (_campaignId == null || _navigating) return;
 
       // ── Timeout guard ──────────────────────────────────────────────────────
-      final elapsedSeconds =
-          DateTime.now().difference(_pollStartTime!).inSeconds;
+      final elapsedSeconds = DateTime.now()
+          .difference(_pollStartTime!)
+          .inSeconds;
       if (elapsedSeconds >= _pollTimeoutSeconds) {
         _pollTimer?.cancel();
         print('[SocialCampaign] Polling timed out after ${elapsedSeconds}s');
         if (!mounted) return;
-        setState(() => _errorMessage =
-            'Campaign generation is taking too long (>5 min). Please try again.');
+        setState(
+          () => _errorMessage =
+              'Campaign generation is taking too long (>5 min). Please try again.',
+        );
         return;
       }
 
@@ -193,7 +199,9 @@ class _SocialMediaGeneratingScreenState
         final result = await _service.getCampaignStatus(_campaignId!);
         if (!mounted) return;
 
-        print('[SocialCampaign] Poll — id: $_campaignId | status: ${result.status} | elapsed: ${elapsedSeconds}s');
+        print(
+          '[SocialCampaign] Poll — id: $_campaignId | status: ${result.status} | elapsed: ${elapsedSeconds}s',
+        );
 
         if (result.isCompleted) {
           _pollTimer?.cancel();
@@ -202,8 +210,10 @@ class _SocialMediaGeneratingScreenState
         } else if (result.isFailed) {
           _pollTimer?.cancel();
           print('[SocialCampaign] Status = failed — showing error');
-          setState(() => _errorMessage =
-              'Campaign generation failed. Please try again.');
+          setState(
+            () =>
+                _errorMessage = 'Campaign generation failed. Please try again.',
+          );
         }
         // status == "generating" → keep polling, no error shown
       } catch (e) {
@@ -237,16 +247,17 @@ class _SocialMediaGeneratingScreenState
       _timers.add(t);
     }
     // Navigate after all done animations finish
-    final navDelay =
-        Duration(milliseconds: (_agents.length * 300) + 600);
-    _timers.add(Timer(navDelay, () {
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => SocialMediaCampaignOverviewScreen(result: result),
-        ),
-      );
-    }));
+    final navDelay = Duration(milliseconds: (_agents.length * 300) + 600);
+    _timers.add(
+      Timer(navDelay, () {
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => SocialMediaCampaignOverviewScreen(result: result),
+          ),
+        );
+      }),
+    );
   }
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────────
@@ -275,13 +286,27 @@ class _SocialMediaGeneratingScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFF3F8FC),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+            colors: isDark
+                ? const [
+                    Color(0xFF0f2940),
+                    Color(0xFF1a3a52),
+                    Color(0xFF0f2940),
+                  ]
+                : const [
+                    Color(0xFFF8FCFF),
+                    Color(0xFFEAF4FB),
+                    Color(0xFFF3F8FC),
+                  ],
           ),
         ),
         child: SafeArea(
@@ -290,18 +315,19 @@ class _SocialMediaGeneratingScreenState
             child: Column(
               children: [
                 const SizedBox(height: 32),
-                _buildHeader(),
+                _buildHeader(isDark),
                 const SizedBox(height: 40),
-                if (_errorMessage != null) _buildErrorBanner(),
+                if (_errorMessage != null) _buildErrorBanner(isDark),
                 Expanded(
                   child: ListView.separated(
                     padding: const EdgeInsets.only(bottom: 32),
                     itemCount: _agents.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, i) => _buildAgentCard(_agents[i], i),
+                    itemBuilder: (context, i) =>
+                        _buildAgentCard(_agents[i], i, isDark),
                   ),
                 ),
-                _buildMotivationalMessage(),
+                _buildMotivationalMessage(isDark),
                 const SizedBox(height: 12),
               ],
             ),
@@ -311,7 +337,7 @@ class _SocialMediaGeneratingScreenState
     );
   }
 
-  Widget _buildMotivationalMessage() {
+  Widget _buildMotivationalMessage(bool isDark) {
     final message = _motivationalMessages[_motivationalMessageIndex];
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 250),
@@ -321,8 +347,10 @@ class _SocialMediaGeneratingScreenState
         return FadeTransition(
           opacity: anim,
           child: SlideTransition(
-            position: Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero)
-                .animate(anim),
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.1),
+              end: Offset.zero,
+            ).animate(anim),
             child: child,
           ),
         );
@@ -331,19 +359,31 @@ class _SocialMediaGeneratingScreenState
         key: ValueKey(message),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.04),
+          color: isDark
+              ? Colors.white.withOpacity(0.04)
+              : const Color(0xFFFFFFFF).withOpacity(0.82),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.cyan500.withOpacity(0.12)),
+          border: Border.all(
+            color: isDark
+                ? AppColors.cyan500.withOpacity(0.12)
+                : const Color(0xFFC7DDE9),
+          ),
         ),
         child: Row(
           children: [
-            Icon(LucideIcons.sparkle, color: AppColors.cyan400.withOpacity(0.9), size: 16),
+            Icon(
+              LucideIcons.sparkle,
+              color: AppColors.cyan400.withOpacity(0.9),
+              size: 16,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 message,
                 style: TextStyle(
-                  color: AppColors.textCyan200.withOpacity(0.85),
+                  color: isDark
+                      ? AppColors.textCyan200.withOpacity(0.85)
+                      : const Color(0xFF3F6983),
                   fontSize: 12.5,
                   fontWeight: FontWeight.w500,
                 ),
@@ -355,23 +395,36 @@ class _SocialMediaGeneratingScreenState
     );
   }
 
-  Widget _buildErrorBanner() {
+  Widget _buildErrorBanner(bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.red.shade900.withOpacity(0.4),
+        color: isDark
+            ? Colors.red.shade900.withOpacity(0.4)
+            : const Color(0xFFFDECEC),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.red.withOpacity(0.4)),
+        border: Border.all(
+          color: isDark
+              ? Colors.red.withOpacity(0.4)
+              : const Color(0xFFDC5B5B).withOpacity(0.35),
+        ),
       ),
       child: Row(
         children: [
-          const Icon(LucideIcons.alertCircle, color: Colors.redAccent, size: 18),
+          const Icon(
+            LucideIcons.alertCircle,
+            color: Colors.redAccent,
+            size: 18,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               _errorMessage!,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF7A2D2D),
+                fontSize: 13,
+              ),
             ),
           ),
           GestureDetector(
@@ -390,7 +443,7 @@ class _SocialMediaGeneratingScreenState
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isDark) {
     return Column(
       children: [
         AnimatedBuilder(
@@ -403,23 +456,29 @@ class _SocialMediaGeneratingScreenState
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFFEC4899)
-                        .withOpacity(0.8 + _pulseController.value * 0.2),
-                    const Color(0xFFA855F7)
-                        .withOpacity(0.7 + _pulseController.value * 0.2),
+                    const Color(
+                      0xFFEC4899,
+                    ).withOpacity(0.8 + _pulseController.value * 0.2),
+                    const Color(
+                      0xFFA855F7,
+                    ).withOpacity(0.7 + _pulseController.value * 0.2),
                   ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFEC4899)
-                        .withOpacity(0.3 + _pulseController.value * 0.3),
+                    color: const Color(
+                      0xFFEC4899,
+                    ).withOpacity(0.3 + _pulseController.value * 0.3),
                     blurRadius: 24,
                     spreadRadius: 4,
                   ),
                 ],
               ),
-              child:
-                  const Icon(LucideIcons.sparkles, color: Colors.white, size: 32),
+              child: const Icon(
+                LucideIcons.sparkles,
+                color: Colors.white,
+                size: 32,
+              ),
             );
           },
         ),
@@ -429,10 +488,10 @@ class _SocialMediaGeneratingScreenState
           child: Text(
             'Generating... ${_formatElapsed(_elapsed)}',
             key: ValueKey(_elapsed.inSeconds),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: isDark ? Colors.white : const Color(0xFF12263A),
             ),
           ),
         ).animate().fadeIn(duration: 400.ms),
@@ -441,7 +500,9 @@ class _SocialMediaGeneratingScreenState
           'AI agents are crafting content for ${widget.brief.productName}',
           style: TextStyle(
             fontSize: 13,
-            color: AppColors.textCyan200.withOpacity(0.7),
+            color: isDark
+                ? AppColors.textCyan200.withOpacity(0.7)
+                : const Color(0xFF3F6983),
           ),
           textAlign: TextAlign.center,
         ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
@@ -474,7 +535,9 @@ class _SocialMediaGeneratingScreenState
 
       final nextStatus = totalSeconds < startAt
           ? _AgentStatus.waiting
-          : (totalSeconds < doneAt ? _AgentStatus.processing : _AgentStatus.done);
+          : (totalSeconds < doneAt
+                ? _AgentStatus.processing
+                : _AgentStatus.done);
 
       _agents[i].status = nextStatus;
     }
@@ -487,81 +550,98 @@ class _SocialMediaGeneratingScreenState
     }
   }
 
-  Widget _buildAgentCard(_AgentCard agent, int index) {
+  Widget _buildAgentCard(_AgentCard agent, int index, bool isDark) {
     final isDone = agent.status == _AgentStatus.done;
     final isProcessing = agent.status == _AgentStatus.processing;
     final isWaiting = agent.status == _AgentStatus.waiting;
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(isDone ? 0.07 : 0.04),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDone
-              ? const Color(0xFF10B981).withOpacity(0.5)
-              : isProcessing
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withOpacity(isDone ? 0.07 : 0.04)
+                : const Color(0xFFFFFFFF).withOpacity(isDone ? 0.9 : 0.84),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDone
+                  ? const Color(0xFF10B981).withOpacity(0.5)
+                  : isProcessing
                   ? agent.color.withOpacity(0.4)
-                  : AppColors.cyan500.withOpacity(0.12),
-          width: 1.2,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: agent.color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: agent.color.withOpacity(0.3)),
+                  : (isDark
+                        ? AppColors.cyan500.withOpacity(0.12)
+                        : const Color(0xFFC7DDE9)),
+              width: 1.2,
             ),
-            child: Icon(agent.icon, color: agent.color, size: 22),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  agent.name,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: agent.color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: agent.color.withOpacity(0.3)),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  isDone
-                      ? 'Content ready ✓'
-                      : isProcessing
+                child: Icon(agent.icon, color: agent.color, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      agent.name,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : const Color(0xFF12263A),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isDone
+                          ? 'Content ready ✓'
+                          : isProcessing
                           ? 'Generating content…'
                           : 'Waiting to start…',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDone
-                        ? const Color(0xFF10B981)
-                        : isProcessing
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDone
+                            ? const Color(0xFF10B981)
+                            : isProcessing
                             ? agent.color.withOpacity(0.9)
-                            : Colors.white.withOpacity(0.4),
-                  ),
+                            : (isDark
+                                  ? Colors.white.withOpacity(0.4)
+                                  : const Color(0xFF6D8BA0)),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 12),
+              _buildStatusIndicator(
+                agent,
+                isWaiting,
+                isProcessing,
+                isDone,
+                isDark,
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          _buildStatusIndicator(agent, isWaiting, isProcessing, isDone),
-        ],
-      ),
-    )
+        )
         .animate(delay: Duration(milliseconds: index * 80))
         .fadeIn(duration: 400.ms)
         .slideX(begin: 0.05, end: 0, curve: Curves.easeOut);
   }
 
   Widget _buildStatusIndicator(
-      _AgentCard agent, bool isWaiting, bool isProcessing, bool isDone) {
+    _AgentCard agent,
+    bool isWaiting,
+    bool isProcessing,
+    bool isDone,
+    bool isDark,
+  ) {
     if (isDone) {
       return Container(
         width: 32,
@@ -571,12 +651,16 @@ class _SocialMediaGeneratingScreenState
           color: const Color(0xFF10B981).withOpacity(0.2),
           border: Border.all(color: const Color(0xFF10B981).withOpacity(0.6)),
         ),
-        child: const Icon(LucideIcons.check, color: Color(0xFF10B981), size: 16),
+        child: const Icon(
+          LucideIcons.check,
+          color: Color(0xFF10B981),
+          size: 16,
+        ),
       ).animate().scale(
-            begin: const Offset(0, 0),
-            end: const Offset(1, 1),
-            curve: Curves.elasticOut,
-          );
+        begin: const Offset(0, 0),
+        end: const Offset(1, 1),
+        curve: Curves.elasticOut,
+      );
     }
     if (isProcessing) {
       return SizedBox(
@@ -593,11 +677,20 @@ class _SocialMediaGeneratingScreenState
       height: 32,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(0.05),
-        border: Border.all(color: Colors.white.withOpacity(0.15)),
+        color: isDark
+            ? Colors.white.withOpacity(0.05)
+            : const Color(0xFFEAF4FB),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withOpacity(0.15)
+              : const Color(0xFFC7DDE9),
+        ),
       ),
-      child:
-          Icon(LucideIcons.clock, color: Colors.white.withOpacity(0.3), size: 16),
+      child: Icon(
+        LucideIcons.clock,
+        color: isDark ? Colors.white.withOpacity(0.3) : const Color(0xFF7A97AA),
+        size: 16,
+      ),
     );
   }
 }

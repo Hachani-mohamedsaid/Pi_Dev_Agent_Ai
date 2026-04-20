@@ -14,7 +14,20 @@ import '../../data/services/google_connect_service.dart';
 import '../widgets/google_connect_gate_sheet.dart';
 import '../widgets/navigation_bar.dart';
 
-class AgendaPage extends StatefulWidget {
+Color _primaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _secondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF5B7B92);
+}
+
+/// Agenda screen: review schedule / agenda. Placeholder for now.
+class AgendaPage extends StatelessWidget {
   const AgendaPage({super.key});
 
   @override
@@ -219,18 +232,31 @@ class _AgendaPageState extends State<AgendaPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final padding = Responsive.getResponsiveValue(
-        context, mobile: 24.0, tablet: 32.0, desktop: 48.0);
-
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
+      context,
+      mobile: 24.0,
+      tablet: 32.0,
+      desktop: 48.0,
+    );
+    final pageGradient = isDark
+        ? const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
-          ),
-        ),
+          )
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
+          );
+
+    return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFF3F8FC),
+      body: Container(
+        decoration: BoxDecoration(gradient: pageGradient),
         child: SafeArea(
           bottom: false,
           child: SizedBox(

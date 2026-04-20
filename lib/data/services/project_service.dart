@@ -25,14 +25,13 @@ class ProjectService {
     required String name,
     required String email,
     required String typeProjet,
-  }) =>
-      {
-        'action': action,
-        'row_number': rowNumber,
-        'name': name,
-        'email': email,
-        'type_projet': typeProjet,
-      };
+  }) => {
+    'action': action,
+    'row_number': rowNumber,
+    'name': name,
+    'email': email,
+    'type_projet': typeProjet,
+  };
 
   /// Récupère les décisions stockées en MongoDB (GET).
   /// Retourne une map row_number (string) -> "accept" | "reject" (dernière décision par row_number).
@@ -120,11 +119,13 @@ class ProjectService {
       ).timeout(_timeout);
 
       // 2) n8n webhook (workflow n8n)
-      final n8nFuture = http.post(
-        Uri.parse(projectActionN8nWebhookUrl),
-        headers: buildJsonHeaders(),
-        body: jsonEncode(bodyN8n),
-      ).timeout(_timeout);
+      final n8nFuture = http
+          .post(
+            Uri.parse(projectActionN8nWebhookUrl),
+            headers: buildJsonHeaders(),
+            body: jsonEncode(bodyN8n),
+          )
+          .timeout(_timeout);
 
       final results = await Future.wait([nestFuture, n8nFuture]);
       final nestOk = results[0].statusCode == 200;

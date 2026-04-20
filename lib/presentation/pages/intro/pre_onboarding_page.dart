@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/services/pre_onboarding_storage.dart';
-import '../../../core/l10n/app_strings.dart';
+import 'package:pi_dev_agentia/generated/l10n.dart';
 import 'widgets/animated_gradient_background.dart';
 import 'widgets/animated_page_indicator.dart';
 import 'widgets/animated_simple_icon.dart';
@@ -113,10 +113,7 @@ class _PreOnboardingPageState extends State<PreOnboardingPage> {
 // ---------------------------------------------------------------------------
 
 class _WelcomePage extends StatefulWidget {
-  const _WelcomePage({
-    required this.pageController,
-    required this.onNext,
-  });
+  const _WelcomePage({required this.pageController, required this.onNext});
 
   final PageController pageController;
   final VoidCallback onNext;
@@ -150,11 +147,11 @@ class _WelcomePageState extends State<_WelcomePage>
     );
     _titleOffset = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
         .animate(
-      CurvedAnimation(
-        parent: _animController,
-        curve: const Interval(0, 0.5, curve: Curves.easeOutCubic),
-      ),
-    );
+          CurvedAnimation(
+            parent: _animController,
+            curve: const Interval(0, 0.5, curve: Curves.easeOutCubic),
+          ),
+        );
     _descOpacity = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _animController,
@@ -222,7 +219,7 @@ class _WelcomePageState extends State<_WelcomePage>
                       child: SlideTransition(
                         position: _titleOffset,
                         child: Text(
-                          AppStrings.tr(context, 'ava'),
+                          S.of(context).ava,
                           style: TextStyle(
                             fontSize: 42,
                             fontWeight: FontWeight.w800,
@@ -238,7 +235,7 @@ class _WelcomePageState extends State<_WelcomePage>
                   FadeTransition(
                     opacity: _descOpacity,
                     child: Text(
-                      AppStrings.tr(context, 'yourPersonalAIAssistant'),
+                      S.of(context).yourPersonalAIAssistant,
                       style: TextStyle(
                         fontSize: 18,
                         color: AppColors.textCyan200.withOpacity(0.9),
@@ -252,7 +249,7 @@ class _WelcomePageState extends State<_WelcomePage>
                     onPressed: widget.onNext,
                     backgroundColor: AppColors.cyan500,
                     foregroundColor: AppColors.textWhite,
-                    child: Text(AppStrings.tr(context, 'next')),
+                    child: Text(S.of(context).next),
                   ),
                   const SizedBox(height: 56),
                 ],
@@ -277,10 +274,7 @@ class _FeatureData {
 }
 
 class _FeaturesPage extends StatefulWidget {
-  const _FeaturesPage({
-    required this.pageController,
-    required this.onNext,
-  });
+  const _FeaturesPage({required this.pageController, required this.onNext});
 
   final PageController pageController;
   final VoidCallback onNext;
@@ -294,18 +288,18 @@ class _FeaturesPageState extends State<_FeaturesPage>
   static List<_FeatureData> _features(BuildContext context) => [
     _FeatureData(
       Icons.mic_rounded,
-      AppStrings.tr(context, 'voiceAssistant'),
-      'Talk naturally with AI. Get instant answers and control your tasks by voice.',
+      S.of(context).voiceAssistant,
+      S.of(context).voiceAssistantDesc,
     ),
     _FeatureData(
       Icons.auto_awesome_rounded,
-      AppStrings.tr(context, 'smartInsights'),
-      'AI analyzes your patterns and suggests actions to boost your productivity.',
+      S.of(context).smartInsights,
+      S.of(context).smartInsightsDesc,
     ),
     _FeatureData(
       Icons.security_rounded,
-      AppStrings.tr(context, 'privacyFirst'),
-      'Your data stays on your device. Enterprise-grade security for your peace of mind.',
+      S.of(context).privacyFirst,
+      S.of(context).privacyFirstDesc,
     ),
   ];
 
@@ -324,13 +318,20 @@ class _FeaturesPageState extends State<_FeaturesPage>
       ),
     );
     _opacities = _controllers
-        .map((c) => Tween<double>(begin: 0, end: 1).animate(
-              CurvedAnimation(parent: c, curve: Curves.easeOutCubic),
-            ))
+        .map(
+          (c) => Tween<double>(
+            begin: 0,
+            end: 1,
+          ).animate(CurvedAnimation(parent: c, curve: Curves.easeOutCubic)),
+        )
         .toList();
     _slides = _controllers
-        .map((c) => Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
-            .animate(CurvedAnimation(parent: c, curve: Curves.easeOutCubic)))
+        .map(
+          (c) => Tween<Offset>(
+            begin: const Offset(0, 0.2),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(parent: c, curve: Curves.easeOutCubic)),
+        )
         .toList();
 
     for (var i = 0; i < 3; i++) {
@@ -352,7 +353,8 @@ class _FeaturesPageState extends State<_FeaturesPage>
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          minHeight: MediaQuery.of(context).size.height -
+          minHeight:
+              MediaQuery.of(context).size.height -
               MediaQuery.of(context).padding.top -
               MediaQuery.of(context).padding.bottom,
         ),
@@ -361,7 +363,7 @@ class _FeaturesPageState extends State<_FeaturesPage>
           children: [
             const SizedBox(height: 24),
             Text(
-              AppStrings.tr(context, 'powerfulFeatures'),
+              S.of(context).powerfulFeatures,
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
@@ -370,7 +372,7 @@ class _FeaturesPageState extends State<_FeaturesPage>
             ),
             const SizedBox(height: 8),
             Text(
-              AppStrings.tr(context, 'everythingInOnePlace'),
+              S.of(context).everythingInOnePlace,
               style: TextStyle(
                 fontSize: 16,
                 color: AppColors.textCyan200.withOpacity(0.8),
@@ -399,7 +401,7 @@ class _FeaturesPageState extends State<_FeaturesPage>
               onPressed: widget.onNext,
               backgroundColor: AppColors.cyan500,
               foregroundColor: AppColors.textWhite,
-              child: Text(AppStrings.tr(context, 'next')),
+              child: Text(S.of(context).next),
             ),
             const SizedBox(height: 56),
           ],
@@ -485,10 +487,7 @@ class _FeatureCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _GetStartedPage extends StatefulWidget {
-  const _GetStartedPage({
-    required this.onRegister,
-    required this.onLogin,
-  });
+  const _GetStartedPage({required this.onRegister, required this.onLogin});
 
   final VoidCallback onRegister;
   final VoidCallback onLogin;
@@ -515,9 +514,10 @@ class _GetStartedPageState extends State<_GetStartedPage>
     _lottieScale = Tween<double>(begin: 0.92, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
-    _lottieOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _lottieOpacity = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _textOpacity = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _animController,
@@ -526,11 +526,11 @@ class _GetStartedPageState extends State<_GetStartedPage>
     );
     _textOffset = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
         .animate(
-      CurvedAnimation(
-        parent: _animController,
-        curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
-      ),
-    );
+          CurvedAnimation(
+            parent: _animController,
+            curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
+          ),
+        );
     _animController.forward();
   }
 
@@ -567,7 +567,7 @@ class _GetStartedPageState extends State<_GetStartedPage>
                 child: SlideTransition(
                   position: _textOffset,
                   child: Text(
-                    AppStrings.tr(context, 'readyToTransform'),
+                    S.of(context).readyToTransform,
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w700,
@@ -582,7 +582,7 @@ class _GetStartedPageState extends State<_GetStartedPage>
               FadeTransition(
                 opacity: _textOpacity,
                 child: Text(
-                  AppStrings.tr(context, 'joinThousands'),
+                  S.of(context).joinThousands,
                   style: TextStyle(
                     fontSize: 15,
                     color: AppColors.textCyan200.withOpacity(0.85),
@@ -595,7 +595,7 @@ class _GetStartedPageState extends State<_GetStartedPage>
                 onPressed: widget.onRegister,
                 backgroundColor: AppColors.cyan500,
                 foregroundColor: AppColors.textWhite,
-                child: Text(AppStrings.tr(context, 'createAccount')),
+                child: Text(S.of(context).createAccount),
               ),
               const SizedBox(height: 16),
               ScalePressButton(
@@ -606,7 +606,7 @@ class _GetStartedPageState extends State<_GetStartedPage>
                   color: AppColors.cyan500.withOpacity(0.5),
                   width: 1.5,
                 ),
-                child: Text(AppStrings.tr(context, 'alreadyHaveAccount')),
+                child: Text(S.of(context).alreadyHaveAccount),
               ),
               const SizedBox(height: 56),
             ],

@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../data/services/team_dispatch_api_service.dart';
 import '../widgets/navigation_bar.dart';
+import '../../core/l10n/app_strings.dart';
 
 /// Liste des projets NestJS pour ouvrir l’écran d’envoi groupé par employé.
 class TeamDispatchProjectsPage extends StatefulWidget {
@@ -51,12 +52,12 @@ class _TeamDispatchProjectsPageState extends State<TeamDispatchProjectsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sprints → projets acceptés'),
+        title: Text(AppStrings.tr(context, 'sprintsAcceptedProjects')),
         backgroundColor: AppColors.primaryDark,
         foregroundColor: AppColors.textWhite,
         actions: [
           IconButton(
-            tooltip: 'Actualiser la liste',
+            tooltip: AppStrings.tr(context, 'refreshList'),
             onPressed: _reload,
             icon: const Icon(LucideIcons.refreshCw),
           ),
@@ -111,8 +112,10 @@ class _TeamDispatchProjectsPageState extends State<TeamDispatchProjectsPage> {
                             padding: EdgeInsets.all(pad),
                             child: Text(
                               result?.emptyMessage ??
-                                  'Aucun projet accepté à afficher.',
-                              style: const TextStyle(color: AppColors.textCyan200),
+                                  AppStrings.tr(context, 'noAcceptedProjects'),
+                              style: const TextStyle(
+                                color: AppColors.textCyan200,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                           ),
@@ -126,8 +129,12 @@ class _TeamDispatchProjectsPageState extends State<TeamDispatchProjectsPage> {
                   onRefresh: _reload,
                   child: ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding:
-                        EdgeInsets.fromLTRB(pad, pad, pad, pad + bottomInset),
+                    padding: EdgeInsets.fromLTRB(
+                      pad,
+                      pad,
+                      pad,
+                      pad + bottomInset,
+                    ),
                     itemCount: list.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, i) {
@@ -152,8 +159,9 @@ class _TeamDispatchProjectsPageState extends State<TeamDispatchProjectsPage> {
                           subtitle: Text(
                             id,
                             style: TextStyle(
-                              color: AppColors.textCyan200
-                                  .withValues(alpha: 0.75),
+                              color: AppColors.textCyan200.withValues(
+                                alpha: 0.75,
+                              ),
                               fontSize: 12,
                             ),
                           ),

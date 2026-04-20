@@ -24,31 +24,35 @@ class AssistantContextPayload {
   });
 
   final String userId;
+
   /// Heure actuelle au format HH:mm (ex. "09:15").
   final String time;
+
   /// "home" | "work" | "outside"
   final String location;
+
   /// "sunny" | "cloudy" | "rain"
   final String weather;
   final int focusHours;
+
   /// Optionnel : [{ "title": "string", "time": "HH:mm" }]
   final List<Map<String, String>>? meetings;
 
   Map<String, dynamic> toJson() => {
-        'userId': userId,
-        'time': time,
-        'location': location,
-        'weather': weather,
-        'focusHours': focusHours,
-        if (meetings != null) 'meetings': meetings,
-      };
+    'userId': userId,
+    'time': time,
+    'location': location,
+    'weather': weather,
+    'focusHours': focusHours,
+    if (meetings != null) 'meetings': meetings,
+  };
 }
 
 /// Service for loading assistant suggestions and sending feedback.
 /// If [authLocalDataSource] is provided, sends Authorization: Bearer for protected routes.
 class AssistantService {
   AssistantService({AuthLocalDataSource? authLocalDataSource})
-      : _authLocalDataSource = authLocalDataSource;
+    : _authLocalDataSource = authLocalDataSource;
 
   final AuthLocalDataSource? _authLocalDataSource;
 
@@ -105,7 +109,10 @@ class AssistantService {
 
     if (response.statusCode == 401) throw AssistantUnauthorizedException();
     if (response.statusCode != 200 && response.statusCode != 201) {
-      reportHttpResponseError(feature: 'assistant.notifications', response: response);
+      reportHttpResponseError(
+        feature: 'assistant.notifications',
+        response: response,
+      );
       throw Exception(
         'Failed to load assistant notifications (code ${response.statusCode})',
       );
@@ -138,9 +145,7 @@ class AssistantService {
     if (response.statusCode == 401) throw AssistantUnauthorizedException();
     if (response.statusCode != 200) {
       reportHttpResponseError(feature: 'assistant.context', response: response);
-      throw Exception(
-        'Failed to send context (code ${response.statusCode})',
-      );
+      throw Exception('Failed to send context (code ${response.statusCode})');
     }
 
     final decoded = json.decode(response.body);
@@ -177,7 +182,10 @@ class AssistantService {
 
     if (response.statusCode == 401) throw AssistantUnauthorizedException();
     if (response.statusCode != 200) {
-      reportHttpResponseError(feature: 'assistant.suggestions', response: response);
+      reportHttpResponseError(
+        feature: 'assistant.suggestions',
+        response: response,
+      );
       throw Exception(
         'Failed to load suggestions (code ${response.statusCode})',
       );
@@ -227,11 +235,11 @@ class AssistantService {
 
     if (response.statusCode == 401) throw AssistantUnauthorizedException();
     if (response.statusCode >= 400) {
-      reportHttpResponseError(feature: 'assistant.feedback', response: response);
-      throw Exception(
-        'Failed to send feedback (code ${response.statusCode})',
+      reportHttpResponseError(
+        feature: 'assistant.feedback',
+        response: response,
       );
+      throw Exception('Failed to send feedback (code ${response.statusCode})');
     }
   }
 }
-

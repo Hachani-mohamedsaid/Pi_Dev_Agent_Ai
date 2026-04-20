@@ -35,8 +35,8 @@ class MeetingService {
     String? endpointUrl,
     http.Client? httpClient,
     this.timeout = const Duration(seconds: 20),
-  })  : endpoint = Uri.parse(endpointUrl ?? _defaultEndpoint),
-        httpClient = httpClient ?? http.Client();
+  }) : endpoint = Uri.parse(endpointUrl ?? _defaultEndpoint),
+       httpClient = httpClient ?? http.Client();
 
   /// Récupère la liste des réunions (GET, async/await).
   /// Retourne une liste vide si le corps est vide ou si le JSON est `null`.
@@ -94,9 +94,7 @@ class MeetingService {
             'Élément à l\'index $i invalide : attendu un objet, reçu ${item.runtimeType}',
           );
         }
-        result.add(
-          Meeting.fromJson(Map<String, dynamic>.from(item)),
-        );
+        result.add(Meeting.fromJson(Map<String, dynamic>.from(item)));
       }
       return result;
     } on http.ClientException catch (e) {
@@ -106,13 +104,13 @@ class MeetingService {
     } on TimeoutException catch (e) {
       throw Exception(e.message ?? 'Délai de connexion dépassé.');
     } on FormatException catch (e) {
-      throw Exception(
-        'Données invalides : ${e.message}',
-      );
+      throw Exception('Données invalides : ${e.message}');
     } on Exception {
       rethrow;
     } catch (e, stackTrace) {
-      throw Exception('Erreur lors du chargement des réunions: $e\n$stackTrace');
+      throw Exception(
+        'Erreur lors du chargement des réunions: $e\n$stackTrace',
+      );
     }
   }
 
@@ -131,8 +129,9 @@ class MeetingService {
         'userId': userId,
         'meetingId': meetingId,
         'decision': decision,
-        'suggestedAlternative':
-            decision == MeetingDecisionType.suggest ? suggestedAlternative : null,
+        'suggestedAlternative': decision == MeetingDecisionType.suggest
+            ? suggestedAlternative
+            : null,
       };
 
       final response = await httpClient

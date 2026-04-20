@@ -21,7 +21,9 @@ class AdvisorRemoteDataSource {
         .timeout(_timeout);
 
     if (response.statusCode >= 500) {
-      throw Exception('Server error (${response.statusCode}). Try again later.');
+      throw Exception(
+        'Server error (${response.statusCode}). Try again later.',
+      );
     }
     if (response.statusCode != 200) {
       throw Exception('Request failed: ${response.statusCode}');
@@ -46,7 +48,9 @@ class AdvisorRemoteDataSource {
         .timeout(_timeout);
 
     if (response.statusCode >= 500) {
-      throw Exception('Server error (${response.statusCode}). Try again later.');
+      throw Exception(
+        'Server error (${response.statusCode}). Try again later.',
+      );
     }
     if (response.statusCode != 200) {
       throw Exception('Request failed: ${response.statusCode}');

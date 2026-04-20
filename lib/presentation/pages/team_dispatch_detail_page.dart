@@ -7,6 +7,30 @@ import '../../core/utils/responsive.dart';
 import '../../data/services/team_dispatch_api_service.dart';
 import '../widgets/navigation_bar.dart';
 
+Color _primaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _secondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF5B7B92);
+}
+
+Color _surfaceColor(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.primaryDarker.withValues(alpha: 0.92)
+      : const Color(0xFFF9FCFF);
+}
+
+Color _surfaceBorder(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.cyan400.withValues(alpha: 0.22)
+      : const Color(0xFFC7DDE9);
+}
+
 /// Écran client : répartition des missions, envoi d’e-mails et PDF par collaborateur.
 class TeamDispatchDetailPage extends StatefulWidget {
   const TeamDispatchDetailPage({super.key, required this.projectId});
@@ -84,17 +108,19 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
             continue;
           }
 
-          bundles.putIfAbsent(
-            eid,
-            () {
-              final em = byId[eid];
-              final name = em?['fullName']?.toString() ??
-                  em?['full_name']?.toString() ??
-                  'Employé';
-              final email = em?['email']?.toString() ?? '—';
-              return _EmployeeBundle(employeeId: eid, fullName: name, email: email);
-            },
-          );
+          bundles.putIfAbsent(eid, () {
+            final em = byId[eid];
+            final name =
+                em?['fullName']?.toString() ??
+                em?['full_name']?.toString() ??
+                'Employé';
+            final email = em?['email']?.toString() ?? '—';
+            return _EmployeeBundle(
+              employeeId: eid,
+              fullName: name,
+              email: email,
+            );
+          });
 
           bundles[eid]!.items.add(
             _SprintTaskItem(
@@ -145,7 +171,8 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
     if (rawMsg.contains('Aucun sprint pour ce projet')) {
       return 'Aucun sprint n’est encore défini pour ce projet. Créez des sprints ou activez la génération à partir de la proposition acceptée.';
     }
-    if (rawMsg.contains('Simulation (dryRun)') || rawMsg.startsWith('Simulation')) {
+    if (rawMsg.contains('Simulation (dryRun)') ||
+        rawMsg.startsWith('Simulation')) {
       return 'Aucun e-mail n’a été envoyé (exécution de contrôle uniquement).';
     }
     final emails = _intFromResponse(res['emailsSent']);
@@ -181,7 +208,8 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
       if (failedList is List) {
         for (final item in failedList) {
           if (item is Map) {
-            final r = item['reason'] ??
+            final r =
+                item['reason'] ??
                 item['message'] ??
                 item['error'] ??
                 item['detail'];
@@ -239,7 +267,9 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
       ..writeln('Projet : $projectTitle')
       ..writeln('Destinataire : ${b.fullName} <${b.email}>')
       ..writeln()
-      ..writeln('Voici le détail de vos sprints et des missions qui vous sont confiées :')
+      ..writeln(
+        'Voici le détail de vos sprints et des missions qui vous sont confiées :',
+      )
       ..writeln();
 
     final bySprint = <String, List<_SprintTaskItem>>{};
@@ -326,6 +356,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final pad = Responsive.getResponsiveValue(
       context,
       mobile: 16.0,
@@ -340,8 +371,22 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
       tablet: 104.0,
       desktop: 112.0,
     );
+    final pageGradient = isDark
+        ? const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+          )
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
+          );
 
     return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFF3F8FC),
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -349,23 +394,22 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
             ),
             Text(
               'Coordination de l’équipe et envoi des missions',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w400,
-                color: AppColors.textCyan200.withValues(alpha: 0.85),
+                color: _secondaryText(context).withValues(alpha: 0.85),
               ),
             ),
           ],
         ),
-        backgroundColor: AppColors.primaryDark,
-        foregroundColor: AppColors.textWhite,
+        backgroundColor: isDark
+            ? AppColors.primaryDark
+            : const Color(0xFFF7FBFF),
+        foregroundColor: _primaryText(context),
         actions: [
           IconButton(
             tooltip: 'Actualiser',
@@ -381,46 +425,36 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                   child: CircularProgressIndicator(color: AppColors.cyan400),
                 )
               : _error != null
-                  ? Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(pad),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _error!,
-                              style: const TextStyle(color: AppColors.textCyan200),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            FilledButton(
-                              onPressed: _load,
-                              child: const Text('Réessayer'),
-                            ),
-                          ],
+              ? Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(pad),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _error!,
+                          style: TextStyle(color: _secondaryText(context)),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                    )
-                  : Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Color(0xFF0f2940),
-                            Color(0xFF1a3a52),
-                            Color(0xFF0f2940),
-                          ],
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: _load,
+                          child: const Text('Réessayer'),
                         ),
-                      ),
-                      child: ListView(
-                        padding: EdgeInsets.fromLTRB(
-                          pad,
-                          pad,
-                          pad,
-                          pad + bottomInset,
-                        ),
-                        children: [
+                      ],
+                    ),
+                  ),
+                )
+              : Container(
+                  decoration: BoxDecoration(gradient: pageGradient),
+                  child: ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      pad,
+                      pad,
+                      pad,
+                      pad + bottomInset,
+                    ),
+                    children: [
                       _buildSectionTitle(
                         'Votre projet',
                         LucideIcons.folderKanban,
@@ -430,16 +464,15 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                       SizedBox(height: pad * 0.75),
                       _buildKpiRow(pad),
                       SizedBox(height: pad),
-                      _buildSectionTitle(
-                        'Équipe',
-                        LucideIcons.users,
-                      ),
+                      _buildSectionTitle('Équipe', LucideIcons.users),
                       SizedBox(height: pad * 0.45),
                       Text(
                         'Chaque collaborateur est identifié par son rôle et ses compétences. '
                         'Les réglages ci-dessous permettent d’attribuer les tâches et d’envoyer les synthèses par e-mail.',
                         style: TextStyle(
-                          color: AppColors.textCyan200.withValues(alpha: 0.88),
+                          color: _secondaryText(
+                            context,
+                          ).withValues(alpha: 0.88),
                           fontSize: 12.5,
                           height: 1.4,
                         ),
@@ -463,10 +496,12 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                         const SizedBox(height: 12),
                         Text(
                           _autoAssignByProfile || _ensureSprintsFromProposal
-                              ?           'Les collaborateurs listés recevront un e-mail avec la synthèse de leurs missions et le document joint si activé.'
+                              ? 'Les collaborateurs listés recevront un e-mail avec la synthèse de leurs missions et le document joint si activé.'
                               : 'Activez l’attribution automatique ou la préparation depuis la proposition pour lancer l’envoi.',
                           style: TextStyle(
-                            color: AppColors.textCyan200.withValues(alpha: 0.85),
+                            color: _secondaryText(
+                              context,
+                            ).withValues(alpha: 0.85),
                             fontSize: 12.5,
                           ),
                         ),
@@ -481,7 +516,9 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                         Text(
                           'Voici le texte qui sera adressé à chaque destinataire.',
                           style: TextStyle(
-                            color: AppColors.textCyan200.withValues(alpha: 0.75),
+                            color: _secondaryText(
+                              context,
+                            ).withValues(alpha: 0.75),
                             fontSize: 12,
                           ),
                         ),
@@ -506,7 +543,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                       ),
                     ],
                   ),
-                    ),
+                ),
           Positioned(
             left: 0,
             right: 0,
@@ -525,8 +562,8 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
         const SizedBox(width: 8),
         Text(
           label,
-          style: const TextStyle(
-            color: AppColors.textWhite,
+          style: TextStyle(
+            color: _primaryText(context),
             fontSize: 15,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.2,
@@ -546,11 +583,9 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
       width: double.infinity,
       padding: EdgeInsets.all(pad * 0.85),
       decoration: BoxDecoration(
-        color: AppColors.primaryDarker.withValues(alpha: 0.92),
+        color: _surfaceColor(context),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.cyan400.withValues(alpha: 0.22),
-        ),
+        border: Border.all(color: _surfaceBorder(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,7 +614,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
             Text(
               'Type : $type',
               style: TextStyle(
-                color: AppColors.textCyan200.withValues(alpha: 0.9),
+                color: _secondaryText(context).withValues(alpha: 0.9),
                 fontSize: 13,
               ),
             ),
@@ -590,7 +625,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: AppColors.textCyan200.withValues(alpha: 0.92),
+                color: _secondaryText(context).withValues(alpha: 0.92),
                 fontSize: 13,
                 height: 1.45,
               ),
@@ -602,11 +637,22 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
   }
 
   Widget _buildKpiRow(double pad) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: EdgeInsets.symmetric(vertical: pad * 0.65, horizontal: pad * 0.5),
+      padding: EdgeInsets.symmetric(
+        vertical: pad * 0.65,
+        horizontal: pad * 0.5,
+      ),
       decoration: BoxDecoration(
-        color: const Color(0xFF0a1f33).withValues(alpha: 0.9),
+        color: isDark
+            ? const Color(0xFF0a1f33).withValues(alpha: 0.9)
+            : const Color(0xFFF7FBFF),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark
+              ? AppColors.textCyan200.withValues(alpha: 0.15)
+              : const Color(0xFFC7DDE9),
+        ),
       ),
       child: Row(
         children: [
@@ -620,7 +666,9 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
           Container(
             width: 1,
             height: 36,
-            color: AppColors.textCyan200.withValues(alpha: 0.15),
+            color: isDark
+                ? AppColors.textCyan200.withValues(alpha: 0.15)
+                : const Color(0xFFC7DDE9),
           ),
           Expanded(
             child: _KpiCell(
@@ -633,7 +681,9 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
           Container(
             width: 1,
             height: 36,
-            color: AppColors.textCyan200.withValues(alpha: 0.15),
+            color: isDark
+                ? AppColors.textCyan200.withValues(alpha: 0.15)
+                : const Color(0xFFC7DDE9),
           ),
           Expanded(
             child: _KpiCell(
@@ -648,13 +698,15 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
   }
 
   Widget _buildTeamRoster(double pad) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (_employees.isEmpty) {
       return Container(
         width: double.infinity,
         padding: EdgeInsets.all(pad * 0.75),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.textCyan200.withValues(alpha: 0.2)),
+          border: Border.all(color: _surfaceBorder(context)),
+          color: _surfaceColor(context),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -662,7 +714,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
             Text(
               'Aucun collaborateur enregistré.',
               style: TextStyle(
-                color: AppColors.textCyan200.withValues(alpha: 0.9),
+                color: _secondaryText(context).withValues(alpha: 0.9),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
@@ -671,7 +723,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
             Text(
               "Ajoutez des membres depuis l'onglet Personnel, puis revenez pour leur assigner des missions.",
               style: TextStyle(
-                color: AppColors.textCyan200.withValues(alpha: 0.7),
+                color: _secondaryText(context).withValues(alpha: 0.7),
                 fontSize: 12,
               ),
             ),
@@ -682,8 +734,15 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
               label: const Text("Aller à l'onglet Personnel"),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.cyan400,
-                side: BorderSide(color: AppColors.cyan400.withValues(alpha: 0.5)),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                side: BorderSide(
+                  color: isDark
+                      ? AppColors.cyan400.withValues(alpha: 0.5)
+                      : const Color(0xFF8DBBD0),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 textStyle: const TextStyle(fontSize: 12),
               ),
             ),
@@ -691,7 +750,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
         ),
       );
     }
-        return SizedBox(
+    return SizedBox(
       height: 118,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
@@ -699,7 +758,8 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
         separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, i) {
           final e = _employees[i];
-          final name = e['fullName']?.toString() ??
+          final name =
+              e['fullName']?.toString() ??
               e['full_name']?.toString() ??
               'Employé';
           final email = e['email']?.toString() ?? '';
@@ -709,11 +769,9 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
             width: 200,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.primaryDarker.withValues(alpha: 0.95),
+              color: _surfaceColor(context),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.cyan400.withValues(alpha: 0.18),
-              ),
+              border: Border.all(color: _surfaceBorder(context)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -738,8 +796,8 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                         name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.textWhite,
+                        style: TextStyle(
+                          color: _primaryText(context),
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
@@ -754,7 +812,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: AppColors.textCyan200.withValues(alpha: 0.85),
+                      color: _secondaryText(context).withValues(alpha: 0.85),
                       fontSize: 11,
                     ),
                   ),
@@ -766,7 +824,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: AppColors.textCyan200.withValues(alpha: 0.55),
+                      color: _secondaryText(context).withValues(alpha: 0.55),
                       fontSize: 10,
                     ),
                   ),
@@ -776,7 +834,7 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: AppColors.textCyan200.withValues(alpha: 0.7),
+                      color: _secondaryText(context).withValues(alpha: 0.7),
                       fontSize: 10,
                     ),
                   ),
@@ -831,7 +889,10 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
   Widget _buildSettingsCard(double pad) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: pad * 0.5, vertical: pad * 0.35),
+      padding: EdgeInsets.symmetric(
+        horizontal: pad * 0.5,
+        vertical: pad * 0.35,
+      ),
       decoration: BoxDecoration(
         color: AppColors.primaryDarker.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(14),
@@ -841,98 +902,96 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
       ),
       child: Column(
         children: [
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text(
-                          'Répartir automatiquement les tâches selon l’équipe',
-                          style: TextStyle(color: AppColors.textWhite),
-                        ),
-                        subtitle: Text(
-                          'Attribue les tâches du projet aux personnes dont le profil correspond '
-                          '(ex. développeur Flutter pour les parties mobile), avant l’envoi.',
-                          style: TextStyle(
-                            color: AppColors.textCyan200.withValues(alpha: 0.8),
-                            fontSize: 12,
-                          ),
-                        ),
-                        value: _autoAssignByProfile,
-                        activeThumbColor: AppColors.cyan400,
-                        onChanged: (v) => setState(() => _autoAssignByProfile = v),
-                      ),
-                      if (_autoAssignByProfile)
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text(
-                            'Suggestions pour la répartition des tâches',
-                            style: TextStyle(color: AppColors.textWhite),
-                          ),
-                          subtitle: Text(
-                            'Le serveur compare libellés de tâches et compétences (ex. Flutter, NestJS) '
-                            'via l’IA pour proposer une affectation, puis envoie un mail par personne.',
-                            style: TextStyle(
-                              color: AppColors.textCyan200.withValues(alpha: 0.8),
-                              fontSize: 12,
-                            ),
-                          ),
-                          value: _useAiForAssignment,
-                          activeThumbColor: AppColors.cyan400,
-                          onChanged: (v) =>
-                              setState(() => _useAiForAssignment = v),
-                        ),
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text(
-                          'Préparer sprints et tâches à partir de la proposition',
-                          style: TextStyle(color: AppColors.textWhite),
-                        ),
-                        subtitle: Text(
-                          'Crée une première planification (jalons et tâches) à partir des informations '
-                          'de votre proposition acceptée : type de projet, budget et calendrier.',
-                          style: TextStyle(
-                            color: AppColors.textCyan200.withValues(alpha: 0.8),
-                            fontSize: 12,
-                          ),
-                        ),
-                        value: _ensureSprintsFromProposal,
-                        activeThumbColor: AppColors.cyan400,
-                        onChanged: (v) =>
-                            setState(() => _ensureSprintsFromProposal = v),
-                      ),
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text(
-                          'Personnaliser le texte de chaque e-mail',
-                          style: TextStyle(color: AppColors.textWhite),
-                        ),
-                        subtitle: Text(
-                          'Rédige le corps de l’e-mail avec Gemini (côté serveur) pour chaque destinataire, '
-                          'en ne reprenant que ses missions assignées ; le PDF joint résume ses sprints.',
-                          style: TextStyle(
-                            color: AppColors.textCyan200.withValues(alpha: 0.8),
-                            fontSize: 12,
-                          ),
-                        ),
-                        value: _useLlm,
-                        activeThumbColor: AppColors.cyan400,
-                        onChanged: (v) => setState(() => _useLlm = v),
-                      ),
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text(
-                          'Joindre le document PDF récapitulatif',
-                          style: TextStyle(color: AppColors.textWhite),
-                        ),
-                        subtitle: Text(
-                          'Chaque destinataire reçoit une fiche PDF avec le détail de ses missions.',
-                          style: TextStyle(
-                            color: AppColors.textCyan200.withValues(alpha: 0.8),
-                            fontSize: 12,
-                          ),
-                        ),
-                        value: _attachPdf,
-                        activeThumbColor: AppColors.cyan400,
-                        onChanged: (v) => setState(() => _attachPdf = v),
-                      ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text(
+              'Répartir automatiquement les tâches selon l’équipe',
+              style: TextStyle(color: AppColors.textWhite),
+            ),
+            subtitle: Text(
+              'Attribue les tâches du projet aux personnes dont le profil correspond '
+              '(ex. développeur Flutter pour les parties mobile), avant l’envoi.',
+              style: TextStyle(
+                color: AppColors.textCyan200.withValues(alpha: 0.8),
+                fontSize: 12,
+              ),
+            ),
+            value: _autoAssignByProfile,
+            activeThumbColor: AppColors.cyan400,
+            onChanged: (v) => setState(() => _autoAssignByProfile = v),
+          ),
+          if (_autoAssignByProfile)
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(
+                'Suggestions pour la répartition des tâches',
+                style: TextStyle(color: AppColors.textWhite),
+              ),
+              subtitle: Text(
+                'Le serveur compare libellés de tâches et compétences (ex. Flutter, NestJS) '
+                'via l’IA pour proposer une affectation, puis envoie un mail par personne.',
+                style: TextStyle(
+                  color: AppColors.textCyan200.withValues(alpha: 0.8),
+                  fontSize: 12,
+                ),
+              ),
+              value: _useAiForAssignment,
+              activeThumbColor: AppColors.cyan400,
+              onChanged: (v) => setState(() => _useAiForAssignment = v),
+            ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text(
+              'Préparer sprints et tâches à partir de la proposition',
+              style: TextStyle(color: AppColors.textWhite),
+            ),
+            subtitle: Text(
+              'Crée une première planification (jalons et tâches) à partir des informations '
+              'de votre proposition acceptée : type de projet, budget et calendrier.',
+              style: TextStyle(
+                color: AppColors.textCyan200.withValues(alpha: 0.8),
+                fontSize: 12,
+              ),
+            ),
+            value: _ensureSprintsFromProposal,
+            activeThumbColor: AppColors.cyan400,
+            onChanged: (v) => setState(() => _ensureSprintsFromProposal = v),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text(
+              'Personnaliser le texte de chaque e-mail',
+              style: TextStyle(color: AppColors.textWhite),
+            ),
+            subtitle: Text(
+              'Rédige le corps de l’e-mail avec Gemini (côté serveur) pour chaque destinataire, '
+              'en ne reprenant que ses missions assignées ; le PDF joint résume ses sprints.',
+              style: TextStyle(
+                color: AppColors.textCyan200.withValues(alpha: 0.8),
+                fontSize: 12,
+              ),
+            ),
+            value: _useLlm,
+            activeThumbColor: AppColors.cyan400,
+            onChanged: (v) => setState(() => _useLlm = v),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text(
+              'Joindre le document PDF récapitulatif',
+              style: TextStyle(color: AppColors.textWhite),
+            ),
+            subtitle: Text(
+              'Chaque destinataire reçoit une fiche PDF avec le détail de ses missions.',
+              style: TextStyle(
+                color: AppColors.textCyan200.withValues(alpha: 0.8),
+                fontSize: 12,
+              ),
+            ),
+            value: _attachPdf,
+            activeThumbColor: AppColors.cyan400,
+            onChanged: (v) => setState(() => _attachPdf = v),
+          ),
         ],
       ),
     );
@@ -989,7 +1048,8 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
             backgroundColor: AppColors.cyan400.withValues(alpha: 0.92),
             foregroundColor: const Color(0xFF0a1628),
           ),
-          onPressed: _sending ||
+          onPressed:
+              _sending ||
                   (_byEmployee.isEmpty &&
                       !_autoAssignByProfile &&
                       !_ensureSprintsFromProposal)
@@ -1010,8 +1070,8 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
                     (_autoAssignByProfile || _ensureSprintsFromProposal)
                 ? 'Préparer et envoyer les missions'
                 : _byEmployee.isEmpty
-                    ? 'Choisissez une option d’assignation ci-dessus'
-                    : 'Envoyer aux collaborateurs',
+                ? 'Choisissez une option d’assignation ci-dessus'
+                : 'Envoyer aux collaborateurs',
             textAlign: TextAlign.center,
             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
           ),
@@ -1031,81 +1091,79 @@ class _TeamDispatchDetailPageState extends State<TeamDispatchDetailPage> {
         decoration: BoxDecoration(
           color: AppColors.primaryDarker.withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: AppColors.cyan400.withValues(alpha: 0.15),
-          ),
+          border: Border.all(color: AppColors.cyan400.withValues(alpha: 0.15)),
         ),
         child: ExpansionTile(
-        initiallyExpanded: true,
-        iconColor: AppColors.cyan400,
-        collapsedIconColor: AppColors.cyan400,
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: AppColors.cyan400.withValues(alpha: 0.2),
-              child: Text(
-                b.fullName.isNotEmpty ? b.fullName[0].toUpperCase() : '?',
-                style: const TextStyle(
-                  color: AppColors.cyan400,
-                  fontWeight: FontWeight.w800,
+          initiallyExpanded: true,
+          iconColor: AppColors.cyan400,
+          collapsedIconColor: AppColors.cyan400,
+          title: Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.cyan400.withValues(alpha: 0.2),
+                child: Text(
+                  b.fullName.isNotEmpty ? b.fullName[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: AppColors.cyan400,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      b.fullName,
+                      style: const TextStyle(
+                        color: AppColors.textWhite,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
+                    Text(
+                      b.email,
+                      style: TextStyle(
+                        color: AppColors.textCyan200.withValues(alpha: 0.8),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              '${b.items.length} tâche(s) · ${_countSprints(b)} sprint(s)',
+              style: TextStyle(
+                color: AppColors.textCyan200.withValues(alpha: 0.75),
+                fontSize: 12,
+              ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    b.fullName,
-                    style: const TextStyle(
-                      color: AppColors.textWhite,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                    ),
-                  ),
-                  Text(
-                    b.email,
-                    style: TextStyle(
-                      color: AppColors.textCyan200.withValues(alpha: 0.8),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+          ),
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                pad * 0.75,
+                0,
+                pad * 0.75,
+                pad * 0.75,
+              ),
+              child: SelectableText(
+                _buildPreviewText(projectTitle, b),
+                style: const TextStyle(
+                  color: AppColors.textCyan200,
+                  fontSize: 13,
+                  height: 1.5,
+                ),
               ),
             ),
           ],
         ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Text(
-            '${b.items.length} tâche(s) · ${_countSprints(b)} sprint(s)',
-            style: TextStyle(
-              color: AppColors.textCyan200.withValues(alpha: 0.75),
-              fontSize: 12,
-            ),
-          ),
-        ),
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              pad * 0.75,
-              0,
-              pad * 0.75,
-              pad * 0.75,
-            ),
-            child: SelectableText(
-              _buildPreviewText(projectTitle, b),
-              style: const TextStyle(
-                color: AppColors.textCyan200,
-                fontSize: 13,
-                height: 1.5,
-              ),
-            ),
-          ),
-        ],
-      ),
       ),
     );
   }
@@ -1134,6 +1192,7 @@ class _KpiCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         Icon(
@@ -1149,7 +1208,7 @@ class _KpiCell extends StatelessWidget {
           style: TextStyle(
             color: highlight
                 ? const Color(0xFFFBBF24)
-                : AppColors.textWhite,
+                : (isDark ? AppColors.textWhite : const Color(0xFF12263A)),
             fontSize: 18,
             fontWeight: FontWeight.w800,
           ),
@@ -1159,7 +1218,9 @@ class _KpiCell extends StatelessWidget {
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: AppColors.textCyan200.withValues(alpha: 0.65),
+            color: isDark
+                ? AppColors.textCyan200.withValues(alpha: 0.65)
+                : const Color(0xFF5B7B92),
             fontSize: 10,
             fontWeight: FontWeight.w500,
           ),

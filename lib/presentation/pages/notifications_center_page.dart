@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:pi_dev_agentia/generated/l10n.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -64,6 +65,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
 
   NotificationCategory _filter = NotificationCategory.all;
   final Set<String> _dismissedDedupeKeys = {};
+
   /// Fallback: same mail notif can come back with a different dedupeKey; we hide by title+message.
   final Set<String> _dismissedTitleMessage = {};
   final Set<String> _seenDedupeKeys = {};
@@ -72,18 +74,16 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
   String? _error;
   List<UiNotification> _notifications = [];
 
-  List<UiNotification> get _activeNotifications => _notifications
-      .where((n) {
-        if (n.raw != null &&
-            n.raw!.dedupeKey.isNotEmpty &&
-            _dismissedDedupeKeys.contains(n.raw!.dedupeKey)) {
-          return false;
-        }
-        final key = _titleMessageKey(n.title, n.message);
-        if (_dismissedTitleMessage.contains(key)) return false;
-        return true;
-      })
-      .toList();
+  List<UiNotification> get _activeNotifications => _notifications.where((n) {
+    if (n.raw != null &&
+        n.raw!.dedupeKey.isNotEmpty &&
+        _dismissedDedupeKeys.contains(n.raw!.dedupeKey)) {
+      return false;
+    }
+    final key = _titleMessageKey(n.title, n.message);
+    if (_dismissedTitleMessage.contains(key)) return false;
+    return true;
+  }).toList();
 
   List<UiNotification> get _filteredNotifications {
     if (_filter == NotificationCategory.all) {
@@ -122,9 +122,9 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
       });
     }
     try {
-      final userId =
-          await InjectionContainer.instance.authLocalDataSource.getUserId();
-      final signals = await _collectSignals(userId);
+      final userId = await InjectionContainer.instance.authLocalDataSource
+          .getUserId();
+      final signals = await _collectSignals();
 
       // POST /assistant/notifications : signaux front (réunions, mails, focus, etc.)
       // + le backend ajoute contexte + ML si besoin.
@@ -143,7 +143,8 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
       for (final n in generated) {
         final titleMessageKey = _titleMessageKey(n.title, n.message);
         if (_dismissedTitleMessage.contains(titleMessageKey)) continue;
-        if (n.dedupeKey.isNotEmpty && _dismissedDedupeKeys.contains(n.dedupeKey)) {
+        if (n.dedupeKey.isNotEmpty &&
+            _dismissedDedupeKeys.contains(n.dedupeKey)) {
           continue;
         }
         if (n.dedupeKey.isEmpty) {
@@ -209,12 +210,10 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
     // Meetings -> MEETING_SOON (prochaine réunion dans 2 h).
     final meetingService = MeetingService();
     try {
-      if (userId != null && userId.isNotEmpty) {
-      final meetings = await meetingService.fetchMeetings(userId);
-      final upcoming = meetings
-          .where((m) => m.startTime.isAfter(DateTime.now()))
-          .toList()
-        ..sort((a, b) => a.startTime.compareTo(b.startTime));
+      final meetings = await meetingService.fetchMeetings();
+      final upcoming =
+          meetings.where((m) => m.startTime.isAfter(DateTime.now())).toList()
+            ..sort((a, b) => a.startTime.compareTo(b.startTime));
       if (upcoming.isNotEmpty) {
         final next = upcoming.first;
         final startsInMin = next.startTime.difference(DateTime.now()).inMinutes;
@@ -404,40 +403,59 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
     _saveDismissedToStorage();
   }
 
-  Map<String, dynamic> _getPriorityConfig(NotificationPriority priority) {
+  Map<String, dynamic> _getPriorityConfig(
+    NotificationPriority priority,
+    bool isDark,
+  ) {
     switch (priority) {
       case NotificationPriority.critical:
         return {
-          'bg': [
-            const Color(0xFFFF0000).withOpacity(0.2),
-            const Color(0xFFFFA500).withOpacity(0.2),
-          ],
-          'border': const Color(0xFFFF0000).withOpacity(0.3),
+          'bg': isDark
+              ? [
+                  const Color(0xFFFF0000).withOpacity(0.2),
+                  const Color(0xFFFFA500).withOpacity(0.2),
+                ]
+              : [const Color(0xFFFFF1F1), const Color(0xFFFFF7EA)],
+          'border': isDark
+              ? const Color(0xFFFF0000).withOpacity(0.3)
+              : const Color(0xFFF2C5C5),
           'icon': LucideIcons.alertCircle,
-          'iconColor': const Color(0xFFFF6B6B),
-          'label': 'Critical',
+          'iconColor': isDark
+              ? const Color(0xFFFF6B6B)
+              : const Color(0xFFD14343),
+          'label': S.of(context).critical,
         };
       case NotificationPriority.important:
         return {
-          'bg': [
-            const Color(0xFFFFB800).withOpacity(0.2),
-            const Color(0xFFFFD700).withOpacity(0.2),
-          ],
-          'border': const Color(0xFFFFB800).withOpacity(0.3),
+          'bg': isDark
+              ? [
+                  const Color(0xFFFFB800).withOpacity(0.2),
+                  const Color(0xFFFFD700).withOpacity(0.2),
+                ]
+              : [const Color(0xFFFFF8E6), const Color(0xFFFFF2C7)],
+          'border': isDark
+              ? const Color(0xFFFFB800).withOpacity(0.3)
+              : const Color(0xFFEBD79A),
           'icon': LucideIcons.bell,
-          'iconColor': const Color(0xFFFFD93D),
-          'label': 'Important',
+          'iconColor': isDark
+              ? const Color(0xFFFFD93D)
+              : const Color(0xFF9B7A1E),
+          'label': S.of(context).important,
         };
       case NotificationPriority.canWait:
         return {
-          'bg': [
-            AppColors.cyan500.withOpacity(0.2),
-            AppColors.blue500.withOpacity(0.2),
-          ],
-          'border': AppColors.cyan500.withOpacity(0.3),
+          'bg': isDark
+              ? [
+                  AppColors.cyan500.withOpacity(0.2),
+                  AppColors.blue500.withOpacity(0.2),
+                ]
+              : [const Color(0xFFF7FBFF), const Color(0xFFEAF4FB)],
+          'border': isDark
+              ? AppColors.cyan500.withOpacity(0.3)
+              : const Color(0xFFC7DDE9),
           'icon': LucideIcons.clock,
-          'iconColor': AppColors.cyan400,
-          'label': 'Can wait',
+          'iconColor': isDark ? AppColors.cyan400 : const Color(0xFF0B6A88),
+          'label': S.of(context).canWait,
         };
     }
   }
@@ -445,6 +463,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final padding = Responsive.getResponsiveValue(
       context,
       mobile: 24.0,
@@ -462,16 +481,32 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
     final totalBottomInset = navBarHeight + bottomPadding + 16;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0f2940),
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFEFF7FC),
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
-          ),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF0f2940),
+                    Color(0xFF1a3a52),
+                    Color(0xFF0f2940),
+                  ],
+                )
+              : const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFF7FBFF),
+                    Color(0xFFEAF4FB),
+                    Color(0xFFF7FBFF),
+                  ],
+                ),
         ),
         child: SafeArea(
           bottom: false,
@@ -488,7 +523,8 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                 ),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    minHeight: MediaQuery.sizeOf(context).height -
+                    minHeight:
+                        MediaQuery.sizeOf(context).height -
                         MediaQuery.paddingOf(context).top -
                         totalBottomInset,
                   ),
@@ -552,15 +588,18 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                 bottom: 0,
                 child: Container(
                   padding: EdgeInsets.only(bottom: bottomPadding),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color(0xFF1a3a52),
-                        Color(0xFF0f2940),
-                      ],
-                    ),
+                  decoration: BoxDecoration(
+                    gradient: isDark
+                        ? const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xFF1a3a52), Color(0xFF0f2940)],
+                          )
+                        : const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xFFEAF4FB), Color(0xFFEFF7FC)],
+                          ),
                   ),
                   child: NavigationBarWidget(
                     currentPath: '/notifications-center',
@@ -575,6 +614,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
   }
 
   Widget _buildHeader(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -582,7 +622,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Notifications',
+              S.of(context).notifications,
               style: TextStyle(
                 fontSize: Responsive.getResponsiveValue(
                   context,
@@ -591,7 +631,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                   desktop: 32.0,
                 ),
                 fontWeight: FontWeight.bold,
-                color: AppColors.textWhite,
+                color: isDark ? AppColors.textWhite : const Color(0xFF12263A),
               ),
             ),
             if (_activeNotifications.isNotEmpty)
@@ -609,10 +649,14 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                   desktop: 36.0,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF0000).withOpacity(0.2),
+                  color: isDark
+                      ? const Color(0xFFFF0000).withOpacity(0.2)
+                      : const Color(0xFFFFECEC),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: const Color(0xFFFF0000).withOpacity(0.3),
+                    color: isDark
+                        ? const Color(0xFFFF0000).withOpacity(0.3)
+                        : const Color(0xFFF2C5C5),
                     width: 1,
                   ),
                 ),
@@ -627,7 +671,9 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                         desktop: 14.0,
                       ),
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFFFF6B6B),
+                      color: isDark
+                          ? const Color(0xFFFF6B6B)
+                          : const Color(0xFFD14343),
                     ),
                   ),
                 ),
@@ -643,7 +689,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
           ),
         ),
         Text(
-          'AI-filtered and prioritized',
+          S.of(context).aiFilteredAndPrioritized,
           style: TextStyle(
             fontSize: Responsive.getResponsiveValue(
               context,
@@ -651,7 +697,9 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
               tablet: 14.0,
               desktop: 15.0,
             ),
-            color: AppColors.textCyan200.withOpacity(0.7),
+            color: isDark
+                ? AppColors.textCyan200.withOpacity(0.7)
+                : const Color(0xFF5B7B92),
           ),
         ),
       ],
@@ -659,12 +707,13 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
   }
 
   Widget _buildFilter(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final categories = [
-      {'id': NotificationCategory.all, 'label': 'All'},
-      {'id': NotificationCategory.work, 'label': 'Work'},
-      {'id': NotificationCategory.personal, 'label': 'Personal'},
-      {'id': NotificationCategory.travel, 'label': 'Travel'},
-      {'id': NotificationCategory.general, 'label': 'General'},
+      {'id': NotificationCategory.all, 'label': S.of(context).all},
+      {'id': NotificationCategory.work, 'label': S.of(context).work},
+      {'id': NotificationCategory.personal, 'label': S.of(context).personal},
+      {'id': NotificationCategory.travel, 'label': S.of(context).travel},
+      {'id': NotificationCategory.general, 'label': S.of(context).general},
     ];
 
     return SingleChildScrollView(
@@ -701,16 +750,22 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                 ),
                 decoration: BoxDecoration(
                   gradient: isSelected
-                      ? LinearGradient(
-                          colors: [
-                            AppColors.cyan500.withOpacity(0.3),
-                            AppColors.blue500.withOpacity(0.3),
-                          ],
-                        )
+                      ? (isDark
+                            ? LinearGradient(
+                                colors: [
+                                  AppColors.cyan500.withOpacity(0.3),
+                                  AppColors.blue500.withOpacity(0.3),
+                                ],
+                              )
+                            : const LinearGradient(
+                                colors: [Color(0xFFEAF4FB), Color(0xFFDCECF8)],
+                              ))
                       : null,
                   color: isSelected
                       ? null
-                      : AppColors.textWhite.withOpacity(0.05),
+                      : (isDark
+                            ? AppColors.textWhite.withOpacity(0.05)
+                            : Colors.white.withOpacity(0.75)),
                   borderRadius: BorderRadius.circular(
                     Responsive.getResponsiveValue(
                       context,
@@ -721,8 +776,12 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                   ),
                   border: Border.all(
                     color: isSelected
-                        ? AppColors.cyan500.withOpacity(0.5)
-                        : AppColors.textWhite.withOpacity(0.1),
+                        ? (isDark
+                              ? AppColors.cyan500.withOpacity(0.5)
+                              : const Color(0xFFBFD4E3))
+                        : (isDark
+                              ? AppColors.textWhite.withOpacity(0.1)
+                              : const Color(0xFFCFE0EA)),
                     width: 1,
                   ),
                 ),
@@ -737,8 +796,12 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                     ),
                     fontWeight: FontWeight.w500,
                     color: isSelected
-                        ? AppColors.textCyan300
-                        : AppColors.cyan400.withOpacity(0.7),
+                        ? (isDark
+                              ? AppColors.textCyan300
+                              : const Color(0xFF0B6A88))
+                        : (isDark
+                              ? AppColors.cyan400.withOpacity(0.7)
+                              : const Color(0xFF5B7B92)),
                   ),
                 ),
               ),
@@ -750,6 +813,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
   }
 
   Widget _buildNotificationsSection(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (_loading && _notifications.isEmpty) {
       return Center(
         child: Padding(
@@ -761,7 +825,9 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
               desktop: 60.0,
             ),
           ),
-          child: const CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            color: isDark ? AppColors.cyan400 : const Color(0xFF0B6A88),
+          ),
         ),
       );
     }
@@ -788,7 +854,9 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                   tablet: 44.0,
                   desktop: 48.0,
                 ),
-                color: AppColors.cyan400.withOpacity(0.7),
+                color: isDark
+                    ? AppColors.cyan400.withOpacity(0.7)
+                    : const Color(0xFF0B6A88),
               ),
               SizedBox(
                 height: Responsive.getResponsiveValue(
@@ -807,7 +875,9 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                     tablet: 15.0,
                     desktop: 16.0,
                   ),
-                  color: AppColors.cyan400.withOpacity(0.8),
+                  color: isDark
+                      ? AppColors.cyan400.withOpacity(0.8)
+                      : const Color(0xFF4E6E86),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -821,7 +891,12 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
               ),
               TextButton(
                 onPressed: _loadNotifications,
-                child: const Text('Retry'),
+                child: Text(
+                  S.of(context).retry,
+                  style: TextStyle(
+                    color: isDark ? AppColors.cyan400 : const Color(0xFF0B6A88),
+                  ),
+                ),
               ),
             ],
           ),
@@ -849,7 +924,9 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                 tablet: 64.0,
                 desktop: 72.0,
               ),
-              color: AppColors.cyan400.withOpacity(0.3),
+              color: isDark
+                  ? AppColors.cyan400.withOpacity(0.3)
+                  : const Color(0xFF97B2C3),
             ),
             SizedBox(
               height: Responsive.getResponsiveValue(
@@ -868,7 +945,9 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                   tablet: 16.0,
                   desktop: 17.0,
                 ),
-                color: AppColors.cyan400.withOpacity(0.7),
+                color: isDark
+                    ? AppColors.cyan400.withOpacity(0.7)
+                    : const Color(0xFF4E6E86),
               ),
             ),
             SizedBox(
@@ -888,7 +967,9 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                   tablet: 13.0,
                   desktop: 14.0,
                 ),
-                color: AppColors.cyan400.withOpacity(0.5),
+                color: isDark
+                    ? AppColors.cyan400.withOpacity(0.5)
+                    : const Color(0xFF718EA3),
               ),
             ),
           ],
@@ -900,7 +981,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
       children: _filteredNotifications.asMap().entries.map((entry) {
         final index = entry.key;
         final notif = entry.value;
-        final config = _getPriorityConfig(notif.priority);
+        final config = _getPriorityConfig(notif.priority, isDark);
 
         return Padding(
           padding: EdgeInsets.only(
@@ -930,6 +1011,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
     Map<String, dynamic> config,
     int index,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(colors: config['bg'] as List<Color>),
@@ -1078,7 +1160,9 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                                           desktop: 15.0,
                                         ),
                                         fontWeight: FontWeight.w600,
-                                        color: AppColors.textWhite,
+                                        color: isDark
+                                            ? AppColors.textWhite
+                                            : const Color(0xFF12263A),
                                       ),
                                     ),
                                   ),
@@ -1094,9 +1178,11 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                                         ),
                                       ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.textWhite.withOpacity(
-                                          0.05,
-                                        ),
+                                        color: isDark
+                                            ? AppColors.textWhite.withOpacity(
+                                                0.05,
+                                              )
+                                            : Colors.white.withOpacity(0.75),
                                         borderRadius: BorderRadius.circular(
                                           Responsive.getResponsiveValue(
                                             context,
@@ -1106,8 +1192,11 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                                           ),
                                         ),
                                         border: Border.all(
-                                          color: AppColors.textWhite
-                                              .withOpacity(0.1),
+                                          color: isDark
+                                              ? AppColors.textWhite.withOpacity(
+                                                  0.1,
+                                                )
+                                              : const Color(0xFFCFE0EA),
                                           width: 1,
                                         ),
                                       ),
@@ -1119,9 +1208,9 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                                           tablet: 16.0,
                                           desktop: 18.0,
                                         ),
-                                        color: AppColors.cyan400.withOpacity(
-                                          0.7,
-                                        ),
+                                        color: isDark
+                                            ? AppColors.cyan400.withOpacity(0.7)
+                                            : const Color(0xFF0B6A88),
                                       ),
                                     ),
                                   ),
@@ -1144,7 +1233,9 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                                     tablet: 13.0,
                                     desktop: 14.0,
                                   ),
-                                  color: AppColors.textCyan200.withOpacity(0.6),
+                                  color: isDark
+                                      ? AppColors.textCyan200.withOpacity(0.6)
+                                      : const Color(0xFF5B7B92),
                                 ),
                               ),
                               SizedBox(
@@ -1189,9 +1280,11 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
                                                 tablet: 11.0,
                                                 desktop: 12.0,
                                               ),
-                                          color: AppColors.cyan400.withOpacity(
-                                            0.5,
-                                          ),
+                                          color: isDark
+                                              ? AppColors.cyan400.withOpacity(
+                                                  0.5,
+                                                )
+                                              : const Color(0xFF6E8DA1),
                                         ),
                                       ),
                                     ],
@@ -1223,6 +1316,7 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
   }
 
   Widget _buildInfo(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: EdgeInsets.all(
         Responsive.getResponsiveValue(
@@ -1233,7 +1327,9 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
         ),
       ),
       decoration: BoxDecoration(
-        color: AppColors.cyan500.withOpacity(0.05),
+        color: isDark
+            ? AppColors.cyan500.withOpacity(0.05)
+            : Colors.white.withOpacity(0.8),
         borderRadius: BorderRadius.circular(
           Responsive.getResponsiveValue(
             context,
@@ -1242,7 +1338,12 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
             desktop: 14.0,
           ),
         ),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.1), width: 1),
+        border: Border.all(
+          color: isDark
+              ? AppColors.cyan500.withOpacity(0.1)
+              : const Color(0xFFC7DDE9),
+          width: 1,
+        ),
       ),
       child: Text(
         'AVA automatically filters and prioritizes notifications based on your context and preferences',
@@ -1254,7 +1355,9 @@ class _NotificationsCenterPageState extends State<NotificationsCenterPage> {
             tablet: 11.0,
             desktop: 12.0,
           ),
-          color: AppColors.cyan400.withOpacity(0.7),
+          color: isDark
+              ? AppColors.cyan400.withOpacity(0.7)
+              : const Color(0xFF4E6E86),
         ),
       ),
     );

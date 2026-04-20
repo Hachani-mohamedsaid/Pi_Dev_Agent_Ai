@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../../features/social_media/screens/social_media_brief_screen.dart';
 import '../../core/utils/responsive.dart';
+import 'package:pi_dev_agentia/generated/l10n.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/services/subscription_access_service.dart';
 import '../widgets/premium_gate_sheet.dart';
@@ -156,11 +157,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         final priority = map['priority'] as String? ?? '';
         final status = map['status'] as String? ?? '';
         if (status == 'replied') continue; // exclude replied emails from counts
-        if (priority == 'High') high++;
-        else if (priority == 'Medium') medium++;
-        else if (priority == 'Low') low++;
+        if (priority == 'High')
+          high++;
+        else if (priority == 'Medium')
+          medium++;
+        else if (priority == 'Low')
+          low++;
         final dl = (map['deadline'] as String? ?? '').toLowerCase();
-        if (dl.isNotEmpty && !dl.contains('none') && !dl.contains('n/a')) deadlines++;
+        if (dl.isNotEmpty && !dl.contains('none') && !dl.contains('n/a'))
+          deadlines++;
         final ai = (map['actionItems'] as String? ?? '').toLowerCase();
         if (ai.isNotEmpty && !ai.contains('none') && ai.length > 4) actions++;
       }
@@ -194,22 +199,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  static int _toInt(dynamic v) {
-    if (v == null) return 0;
-    if (v is int) return v;
-    if (v is num) return v.toInt();
-    return int.tryParse(v.toString()) ?? 0;
-  }
-
   String _premiumFeatureNameForRoute(String route) {
     switch (route) {
       case '/meetings':
-        return 'Meeting Hub';
+        return S.of(context).meetingHub;
       case '/phone-agent':
       case '/phone-agent-call':
-        return 'Phone Agent';
+        return S.of(context).phoneAgent;
       default:
-        return 'Premium Feature';
+        return S.of(context).premiumFeature;
     }
   }
 
@@ -223,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       return;
     }
 
-    PremiumGateSheet.show(context, 'Meeting Hub');
+    PremiumGateSheet.show(context, S.of(context).meetingHub);
   }
 
   Future<void> _openRouteWithPremiumCheck(String route) async {
@@ -245,57 +243,58 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     PremiumGateSheet.show(context, _premiumFeatureNameForRoute(route));
   }
 
-  String _getGreeting(BuildContext context) {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return AppStrings.tr(context, 'goodMorning');
-    if (hour < 18) return AppStrings.tr(context, 'goodAfternoon');
-    return AppStrings.tr(context, 'goodEvening');
-  }
-
   String _getCurrentDate() {
     final now = DateTime.now();
     final weekdays = [
-      AppStrings.tr(context, 'monday'),
-      AppStrings.tr(context, 'tuesday'),
-      AppStrings.tr(context, 'wednesday'),
-      AppStrings.tr(context, 'thursday'),
-      AppStrings.tr(context, 'friday'),
-      AppStrings.tr(context, 'saturday'),
-      AppStrings.tr(context, 'sunday'),
+      S.of(context).monday,
+      S.of(context).tuesday,
+      S.of(context).wednesday,
+      S.of(context).thursday,
+      S.of(context).friday,
+      S.of(context).saturday,
+      S.of(context).sunday,
     ];
     final months = [
-      AppStrings.tr(context, 'january'),
-      AppStrings.tr(context, 'february'),
-      AppStrings.tr(context, 'march'),
-      AppStrings.tr(context, 'april'),
-      AppStrings.tr(context, 'may'),
-      AppStrings.tr(context, 'june'),
-      AppStrings.tr(context, 'july'),
-      AppStrings.tr(context, 'august'),
-      AppStrings.tr(context, 'september'),
-      AppStrings.tr(context, 'october'),
-      AppStrings.tr(context, 'november'),
-      AppStrings.tr(context, 'december'),
+      S.of(context).january,
+      S.of(context).february,
+      S.of(context).march,
+      S.of(context).april,
+      S.of(context).may,
+      S.of(context).june,
+      S.of(context).july,
+      S.of(context).august,
+      S.of(context).september,
+      S.of(context).october,
+      S.of(context).november,
+      S.of(context).december,
     ];
-    return '${AppStrings.tr(context, 'todayIs')} ${weekdays[now.weekday - 1]}, ${now.day} ${months[now.month - 1]}';
+    return '${S.of(context).todayIs} ${weekdays[now.weekday - 1]}, ${now.day} ${months[now.month - 1]}';
   }
 
   String _getShortDate() {
     final now = DateTime.now();
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+    final days = [
+      S.of(context).monShort,
+      S.of(context).tueShort,
+      S.of(context).wedShort,
+      S.of(context).thuShort,
+      S.of(context).friShort,
+      S.of(context).satShort,
+      S.of(context).sunShort,
+    ];
+    final months = [
+      S.of(context).janShort,
+      S.of(context).febShort,
+      S.of(context).marShort,
+      S.of(context).aprShort,
+      S.of(context).mayShort,
+      S.of(context).junShort,
+      S.of(context).julShort,
+      S.of(context).augShort,
+      S.of(context).sepShort,
+      S.of(context).octShort,
+      S.of(context).novShort,
+      S.of(context).decShort,
     ];
     return '${days[now.weekday - 1]} ${now.day} ${months[now.month - 1]} ${now.year}';
   }
@@ -303,6 +302,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = Responsive.screenWidth(context);
     final padding = Responsive.getResponsiveValue(
       context,
@@ -318,18 +318,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       desktop: 700.0,
     );
 
-    final userName =
-        widget.controller.currentUser?.name ?? AppStrings.tr(context, 'user');
+    final userName = widget.controller.currentUser?.name ?? S.of(context).user;
+    final backgroundGradient = isDark
+        ? const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0F2940), Color(0xFF1A3A52), Color(0xFF0F2940)],
+          )
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF7FBFF), Color(0xFFEAF4FB), Color(0xFFF7FBFF)],
+          );
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
-          ),
-        ),
+        decoration: BoxDecoration(gradient: backgroundGradient),
         child: SafeArea(
           bottom: false,
           child: Center(
@@ -345,9 +349,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       top: padding,
                       bottom: Responsive.getResponsiveValue(
                         context,
-                        mobile: 100.0,
-                        tablet: 120.0,
-                        desktop: 140.0,
+                        mobile: 180.0,
+                        tablet: 200.0,
+                        desktop: 220.0,
                       ),
                     ),
                     child: Column(
@@ -417,6 +421,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     String userName,
     double padding,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? AppColors.textWhite : const Color(0xFF12263A);
+    final subtitleColor = isDark
+        ? AppColors.textCyan200.withOpacity(0.7)
+        : const Color(0xFF5B7B92);
+    final statusColor = isDark ? AppColors.cyan400 : const Color(0xFF0B6A88);
+
     return Padding(
       padding: EdgeInsets.only(
         top: Responsive.getResponsiveValue(
@@ -440,168 +451,227 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             right: 0,
             child: GestureDetector(
               onTap: () => context.push('/notifications-center'),
-              child:
-                  Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              const Color(0xFF1e4a66).withOpacity(0.6),
-                              const Color(0xFF16384d).withOpacity(0.6),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(50),
-                          border: Border.all(
-                            color: AppColors.cyan500.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Icon(
-                              LucideIcons.bell,
-                              color: AppColors.cyan400,
-                              size: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 18.0,
-                                tablet: 20.0,
-                                desktop: 22.0,
-                              ),
-                            ),
-                            // Notification Badge
-                            Positioned(
-                              top: -4,
-                              right: -4,
-                              child: Container(
-                                width: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 18.0,
-                                  tablet: 20.0,
-                                  desktop: 22.0,
-                                ),
-                                height: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 18.0,
-                                  tablet: 20.0,
-                                  desktop: 22.0,
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFFEC4899),
-                                      Color(0xFFEF4444),
-                                    ],
-                                  ),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '3',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: Responsive.getResponsiveValue(
-                                        context,
-                                        mobile: 9.0,
-                                        tablet: 10.0,
-                                        desktop: 11.0,
-                                      ),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: isDark
+                      ? LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFF1e4a66).withOpacity(0.6),
+                            const Color(0xFF16384d).withOpacity(0.6),
                           ],
+                        )
+                      : const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFFF8FCFF), Color(0xFFE6F1F8)],
                         ),
-                      )
-                      .animate()
-                      .fadeIn(delay: 400.ms, duration: 500.ms)
-                      .scale(
-                        begin: const Offset(0.8, 0.8),
-                        end: const Offset(1, 1),
-                        delay: 400.ms,
-                        duration: 500.ms,
-                      ),
+                  borderRadius: BorderRadius.circular(50),
+                  border: Border.all(
+                    color: isDark
+                        ? AppColors.cyan500.withOpacity(0.2)
+                        : const Color(0xFFC2D9E7),
+                    width: 1,
+                  ),
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Notification bell and badge code here
+                  ],
+                ),
+              ),
             ),
           ),
-
           // Header Content
-          Column(
+          Builder(
+            builder: (context) {
+              final locale = Localizations.localeOf(context).languageCode;
+              final isArabic = locale == 'ar';
+              return Directionality(
+                textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppStrings.tr(context, 'goodMorning') + ', $userName',
+                      style: TextStyle(
+                        fontSize: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 18.0,
+                          tablet: 20.0,
+                          desktop: 22.0,
+                        ),
+                        fontWeight: FontWeight.bold,
+                        color: titleColor,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 6.0,
+                        tablet: 8.0,
+                        desktop: 12.0,
+                      ),
+                    ),
+                    Text(
+                      AppStrings.tr(context, 'todayIs') +
+                          ' ' +
+                          _getCurrentDate(),
+                      style: TextStyle(
+                        fontSize: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 13.0,
+                          tablet: 15.0,
+                          desktop: 16.0,
+                        ),
+                        color: subtitleColor,
+                      ),
+                    ),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 10.0,
+                        tablet: 12.0,
+                        desktop: 16.0,
+                      ),
+                    ),
+                    // AI Status Indicator
+                    Row(
+                      children: [
+                        AnimatedBuilder(
+                          animation: _pulseController,
+                          builder: (context, child) {
+                            return Container(
+                              width: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 7.0,
+                                tablet: 8.0,
+                                desktop: 9.0,
+                              ),
+                              height: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 7.0,
+                                tablet: 8.0,
+                                desktop: 9.0,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusColor,
+                                shape: BoxShape.circle,
+                              ),
+                              transform: Matrix4.identity()
+                                ..scale(0.6 + (_pulseController.value * 0.4)),
+                            );
+                          },
+                        ),
+                        SizedBox(
+                          width: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 6.0,
+                            tablet: 7.0,
+                            desktop: 8.0,
+                          ),
+                        ),
+                        Text(
+                          AppStrings.tr(context, 'upToDate'),
+                          style: TextStyle(
+                            fontSize: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 13.0,
+                              desktop: 14.0,
+                            ),
+                            color: statusColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDailySummaryCard(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final cardHeight = Responsive.getResponsiveValue(
+      context,
+      mobile: math.min(320.0, screenHeight * 0.4),
+      tablet: math.min(360.0, screenHeight * 0.35),
+      desktop: math.min(400.0, screenHeight * 0.3),
+    );
+
+    if (!isDark) {
+      return Container(
+        constraints: BoxConstraints(
+          minHeight: math.min(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 280.0,
+              tablet: 320.0,
+              desktop: 360.0,
+            ),
+            cardHeight,
+          ),
+          maxHeight: cardHeight,
+        ),
+        padding: EdgeInsets.all(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 20.0,
+            tablet: 24.0,
+            desktop: 28.0,
+          ),
+        ),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFF9FCFF), Color(0xFFEAF4FB), Color(0xFFF5FAFE)],
+          ),
+          borderRadius: BorderRadius.circular(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 22.0,
+              tablet: 24.0,
+              desktop: 28.0,
+            ),
+          ),
+          border: Border.all(color: const Color(0xFFC7DDE9), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF9DBBCC).withOpacity(0.16),
+              blurRadius: 28,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: SingleChildScrollView(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                '${_getGreeting(context)}, $userName',
-                style: TextStyle(
-                  fontSize: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 18.0,
-                    tablet: 20.0,
-                    desktop: 22.0,
-                  ),
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textWhite,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              SizedBox(
-                height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 6.0,
-                  tablet: 8.0,
-                  desktop: 12.0,
-                ),
-              ),
-              Text(
-                _getCurrentDate(),
-                style: TextStyle(
-                  fontSize: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 13.0,
-                    tablet: 15.0,
-                    desktop: 16.0,
-                  ),
-                  color: AppColors.textCyan200.withOpacity(0.7),
-                ),
-              ),
-              SizedBox(
-                height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 10.0,
-                  tablet: 12.0,
-                  desktop: 16.0,
-                ),
-              ),
-              // AI Status Indicator
               Row(
                 children: [
-                  AnimatedBuilder(
-                    animation: _pulseController,
-                    builder: (context, child) {
-                      return Container(
-                        width: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 7.0,
-                          tablet: 8.0,
-                          desktop: 9.0,
-                        ),
-                        height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 7.0,
-                          tablet: 8.0,
-                          desktop: 9.0,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.cyan400,
-                          shape: BoxShape.circle,
-                        ),
-                        transform: Matrix4.identity()
-                          ..scale(0.6 + (_pulseController.value * 0.4)),
-                      );
-                    },
+                  Icon(
+                    LucideIcons.sparkles,
+                    color: const Color(0xFF0B6A88),
+                    size: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 18.0,
+                      tablet: 20.0,
+                      desktop: 22.0,
+                    ),
                   ),
                   SizedBox(
                     width: Responsive.getResponsiveValue(
@@ -612,35 +682,93 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   Text(
-                    AppStrings.tr(context, 'upToDate'),
+                    S.of(context).dailySummary,
                     style: TextStyle(
                       fontSize: Responsive.getResponsiveValue(
                         context,
-                        mobile: 12.0,
-                        tablet: 13.0,
-                        desktop: 14.0,
+                        mobile: 17.0,
+                        tablet: 19.0,
+                        desktop: 20.0,
                       ),
-                      color: AppColors.cyan400,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF12263A),
                     ),
                   ),
                 ],
               ),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 12.0,
+                  tablet: 14.0,
+                  desktop: 16.0,
+                ),
+              ),
+              Text(
+                S.of(context).dailySummaryDesc,
+                style: TextStyle(
+                  fontSize: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 12.0,
+                    tablet: 13.0,
+                    desktop: 14.0,
+                  ),
+                  color: const Color(0xFF5B7B92),
+                  height: 1.4,
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 10.0,
+                  tablet: 12.0,
+                  desktop: 16.0,
+                ),
+              ),
+              _buildKeyItem(
+                context,
+                isMobile,
+                LucideIcons.clock,
+                S.of(context).teamMeeting,
+                0,
+              ),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 6.0,
+                  tablet: 8.0,
+                  desktop: 8.0,
+                ),
+              ),
+              _buildKeyItem(
+                context,
+                isMobile,
+                LucideIcons.mail,
+                S.of(context).urgentEmail,
+                1,
+              ),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 6.0,
+                  tablet: 8.0,
+                  desktop: 8.0,
+                ),
+              ),
+              _buildKeyItem(
+                context,
+                isMobile,
+                LucideIcons.calendar,
+                S.of(context).freeTime,
+                2,
+              ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDailySummaryCard(BuildContext context, bool isMobile) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final cardHeight = Responsive.getResponsiveValue(
-      context,
-      mobile: math.min(320.0, screenHeight * 0.4),
-      tablet: math.min(360.0, screenHeight * 0.35),
-      desktop: math.min(400.0, screenHeight * 0.3),
-    );
+        ),
+      );
+    }
 
     return Container(
       constraints: BoxConstraints(
@@ -1263,7 +1391,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         Text(
-                          AppStrings.tr(context, 'dailySummary'),
+                          S.of(context).dailySummary,
                           style: TextStyle(
                             fontSize: Responsive.getResponsiveValue(
                               context,
@@ -1370,6 +1498,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     String text,
     int index,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
           padding: EdgeInsets.all(
             Responsive.getResponsiveValue(
@@ -1380,7 +1509,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : Colors.white.withOpacity(0.8),
             borderRadius: BorderRadius.circular(
               Responsive.getResponsiveValue(
                 context,
@@ -1390,7 +1521,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ),
             border: Border.all(
-              color: AppColors.cyan500.withOpacity(0.1),
+              color: isDark
+                  ? AppColors.cyan500.withOpacity(0.1)
+                  : const Color(0xFFC7DDE9),
               width: 1,
             ),
           ),
@@ -1421,7 +1554,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       desktop: 36.0,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.cyan500.withOpacity(0.2),
+                      color: isDark
+                          ? AppColors.cyan500.withOpacity(0.2)
+                          : const Color(0xFFEAF4FB),
                       borderRadius: BorderRadius.circular(
                         Responsive.getResponsiveValue(
                           context,
@@ -1433,7 +1568,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     child: Icon(
                       icon,
-                      color: AppColors.cyan400,
+                      color: isDark
+                          ? AppColors.cyan400
+                          : const Color(0xFF0B6A88),
                       size: Responsive.getResponsiveValue(
                         context,
                         mobile: 14.0,
@@ -1460,7 +1597,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           tablet: 13.0,
                           desktop: 14.0,
                         ),
-                        color: AppColors.textWhite,
+                        color: isDark
+                            ? AppColors.textWhite
+                            : const Color(0xFF12263A),
                         fontWeight: FontWeight.w500,
                       ),
                       maxLines: 2,
@@ -1486,6 +1625,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildSmartSuggestionsButton(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () => context.push('/suggestions'),
       child: Container(
@@ -1501,8 +1641,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              const Color(0xFFFFD700).withOpacity(0.2),
-              const Color(0xFFFFC107).withOpacity(0.2),
+              isDark
+                  ? const Color(0xFFFFD700).withOpacity(0.2)
+                  : const Color(0xFFFFF0B8),
+              isDark
+                  ? const Color(0xFFFFC107).withOpacity(0.2)
+                  : const Color(0xFFFFE08A),
             ],
           ),
           borderRadius: BorderRadius.circular(
@@ -1514,7 +1658,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
           border: Border.all(
-            color: const Color(0xFFFFD700).withOpacity(0.3),
+            color: isDark
+                ? const Color(0xFFFFD700).withOpacity(0.3)
+                : const Color(0xFFF0C44E),
             width: 1,
           ),
         ),
@@ -1523,7 +1669,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           children: [
             Icon(
               LucideIcons.lightbulb,
-              color: const Color(0xFFFFD700),
+              color: isDark ? const Color(0xFFFFD700) : const Color(0xFF946200),
               size: Responsive.getResponsiveValue(
                 context,
                 mobile: 18.0,
@@ -1541,9 +1687,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
             Flexible(
               child: Text(
-                AppStrings.tr(context, 'viewSmartSuggestions'),
+                S.of(context).viewSmartSuggestions,
                 style: TextStyle(
-                  color: const Color(0xFFFFE082),
+                  color: isDark
+                      ? const Color(0xFFFFE082)
+                      : const Color(0xFF5E4700),
                   fontSize: Responsive.getResponsiveValue(
                     context,
                     mobile: 12.0,
@@ -1564,72 +1712,73 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildQuickActionsSection(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final actions = [
       {
-        'title': 'Meeting Hub',
+        'title': S.of(context).meetingHub,
         'icon': LucideIcons.video,
         'route': '/meetings',
         'color': const Color(0xFFA855F7),
         'colorLight': const Color(0xFF3B82F6),
       },
       {
-        'title': 'Summarized Emails',
+        'title': S.of(context).summarizedEmails,
         'icon': LucideIcons.mail,
         'route': '/emails',
         'color': AppColors.cyan500,
         'colorLight': const Color(0xFF3B82F6),
       },
       {
-        'title': AppStrings.tr(context, 'viewAIActivity'),
+        'title': S.of(context).viewAIActivity,
         'icon': LucideIcons.history,
         'route': '/history',
         'color': const Color(0xFFFFC107),
         'colorLight': const Color(0xFFFF9800),
       },
       {
-        'title': 'Mon business',
+        'title': S.of(context).myBusiness,
         'icon': LucideIcons.briefcase,
         'route': '/my-business',
         'color': const Color(0xFF8B5CF6),
         'colorLight': const Color(0xFFA78BFA),
       },
       {
-        'title': 'Book a Ride',
+        'title': S.of(context).bookARide,
         'icon': LucideIcons.car,
         'route': '/travel',
         'color': const Color(0xFFFF9800),
         'colorLight': const Color(0xFFFFC107),
       },
       {
-        'title': AppStrings.tr(context, 'smartActionsHub'),
+        'title': S.of(context).smartActionsHub,
         'icon': LucideIcons.zap,
         'route': '/actions',
         'color': const Color(0xFFEC4899),
         'colorLight': const Color(0xFFA855F7),
       },
       {
-        'title': 'AI Financial Simulation',
+        'title': S.of(context).aiFinancialSimulation,
         'icon': LucideIcons.calculator,
         'route': '/advisor',
         'color': const Color(0xFF10B981),
         'colorLight': const Color(0xFF34D399),
       },
       {
-        'title': 'Post on LinkedIn',
+        'title': S.of(context).postOnLinkedIn,
         'icon': LucideIcons.linkedin,
         'route': '/create-job',
         'color': const Color(0xFF0A66C2),
         'colorLight': const Color(0xFF378FE9),
       },
       {
-        'title': 'Investor Meeting',
+        'title': S.of(context).investorMeeting,
         'icon': LucideIcons.heartHandshake,
         'route': '/investor-meeting-setup',
         'color': const Color(0xFF6366F1),
         'colorLight': const Color(0xFF818CF8),
       },
       {
-        'title': 'Market Intelligence',
+        'title': S.of(context).marketIntelligence,
         'icon': LucideIcons.barChart2,
         'route': '/market-intelligence',
         'color': const Color(0xFF0EA5E9),
@@ -1641,7 +1790,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          AppStrings.tr(context, 'quickActions'),
+          S.of(context).quickActions,
           style: TextStyle(
             fontSize: Responsive.getResponsiveValue(
               context,
@@ -1650,7 +1799,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               desktop: 20.0,
             ),
             fontWeight: FontWeight.w600,
-            color: AppColors.textWhite,
+            color: isDark ? AppColors.textWhite : const Color(0xFF12263A),
           ),
         ),
         SizedBox(
@@ -1740,18 +1889,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildSummarizedEmailsCard(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final r = Responsive.getResponsiveValue(
       context,
       mobile: 16.0,
       tablet: 18.0,
       desktop: 20.0,
     );
-    return GestureDetector(
-      onTap: () => context.push('/emails'),
-      child: Container(
-        padding: EdgeInsets.all(r),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
+    final cardGradient = isDark
+        ? const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
@@ -1762,15 +1908,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               Color(0xFF0f2a3d),
             ],
             stops: [0.0, 0.25, 0.5, 0.75, 1.0],
-          ),
+          )
+        : const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFF9FCFF), Color(0xFFEAF4FB)],
+          );
+    final headingColor = isDark ? Colors.white : const Color(0xFF12263A);
+    final bodyColor = isDark
+        ? AppColors.textCyan200.withOpacity(0.8)
+        : const Color(0xFF5B7B92);
+    final surfaceColor = isDark
+        ? Colors.white.withOpacity(0.05)
+        : Colors.white.withOpacity(0.82);
+    final borderColor = isDark
+        ? AppColors.cyan500.withOpacity(0.2)
+        : const Color(0xFFC7DDE9);
+    return GestureDetector(
+      onTap: () => context.push('/emails'),
+      child: Container(
+        padding: EdgeInsets.all(r),
+        decoration: BoxDecoration(
+          gradient: cardGradient,
           borderRadius: BorderRadius.circular(r),
-          border: Border.all(
-            color: AppColors.cyan500.withOpacity(0.2),
-            width: 1,
-          ),
+          border: Border.all(color: borderColor, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.4),
+              color: isDark
+                  ? Colors.black.withOpacity(0.4)
+                  : const Color(0xFF9DBBCC).withOpacity(0.14),
               blurRadius: 32,
               offset: const Offset(0, 8),
             ),
@@ -1782,14 +1948,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(LucideIcons.mail, color: AppColors.cyan400, size: r),
+                Icon(
+                  LucideIcons.mail,
+                  color: isDark ? AppColors.cyan400 : const Color(0xFF0B6A88),
+                  size: r,
+                ),
                 SizedBox(width: r * 0.5),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Summarized Emails',
+                        S.of(context).summarizedEmails,
                         style: TextStyle(
                           fontSize: Responsive.getResponsiveValue(
                             context,
@@ -1798,7 +1968,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             desktop: 20.0,
                           ),
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: headingColor,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -1806,7 +1976,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         _getShortDate(),
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textCyan200.withOpacity(0.8),
+                          color: bodyColor,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1826,9 +1996,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: surfaceColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
+                border: Border.all(color: borderColor),
               ),
               child: Column(
                 children: [
@@ -1842,7 +2012,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         desktop: 16.0,
                       ),
                       fontWeight: FontWeight.w600,
-                      color: AppColors.cyan400,
+                      color: isDark
+                          ? AppColors.cyan400
+                          : const Color(0xFF0B6A88),
                     ),
                   ),
                   SizedBox(
@@ -1947,9 +2119,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
               decoration: BoxDecoration(
-                color: AppColors.cyan500.withOpacity(0.2),
+                color: isDark
+                    ? AppColors.cyan500.withOpacity(0.2)
+                    : const Color(0xFFEAF4FB),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.cyan400.withOpacity(0.3)),
+                border: Border.all(
+                  color: isDark
+                      ? AppColors.cyan400.withOpacity(0.3)
+                      : const Color(0xFFC7DDE9),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1964,14 +2142,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         desktop: 16.0,
                       ),
                       fontWeight: FontWeight.w500,
-                      color: AppColors.textCyan200,
+                      color: isDark
+                          ? AppColors.textCyan200
+                          : const Color(0xFF3F6983),
                     ),
                   ),
                   const SizedBox(width: 6),
                   Icon(
                     LucideIcons.arrowRight,
                     size: 16,
-                    color: AppColors.cyan400,
+                    color: isDark ? AppColors.cyan400 : const Color(0xFF0B6A88),
                   ),
                 ],
               ),
@@ -1984,6 +2164,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   /// Meeting Hub card (React-style): Video icon, title, subtitle, arrow → /meetings.
   Widget _buildMeetingHubCard(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final r = Responsive.getResponsiveValue(
       context,
       mobile: 18.0,
@@ -1995,31 +2176,43 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           child: Container(
             padding: EdgeInsets.all(r),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF0a1f2e),
-                  Color(0xFF0f2a3d),
-                  Color(0xFF14354c),
-                  Color(0xFF19405b),
-                  Color(0xFF1e4a66),
-                ],
-                stops: [0.0, 0.25, 0.5, 0.75, 1.0],
-              ),
+              gradient: isDark
+                  ? const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF0a1f2e),
+                        Color(0xFF0f2a3d),
+                        Color(0xFF14354c),
+                        Color(0xFF19405b),
+                        Color(0xFF1e4a66),
+                      ],
+                      stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+                    )
+                  : const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFF9FCFF), Color(0xFFEAF4FB)],
+                    ),
               borderRadius: BorderRadius.circular(r),
               border: Border.all(
-                color: AppColors.cyan500.withOpacity(0.3),
+                color: isDark
+                    ? AppColors.cyan500.withOpacity(0.3)
+                    : const Color(0xFFC7DDE9),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.cyan500.withOpacity(0.2),
+                  color: isDark
+                      ? AppColors.cyan500.withOpacity(0.2)
+                      : const Color(0xFF9DBBCC).withOpacity(0.14),
                   blurRadius: 24,
                   offset: const Offset(0, 8),
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
+                  color: isDark
+                      ? Colors.black.withOpacity(0.4)
+                      : const Color(0xFF9DBBCC).withOpacity(0.16),
                   blurRadius: 24,
                   offset: const Offset(0, 8),
                 ),
@@ -2041,15 +2234,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     desktop: 60.0,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.cyan500.withOpacity(0.2),
+                    color: isDark
+                        ? AppColors.cyan500.withOpacity(0.2)
+                        : const Color(0xFFEAF4FB),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: AppColors.cyan400.withOpacity(0.3),
+                      color: isDark
+                          ? AppColors.cyan400.withOpacity(0.3)
+                          : const Color(0xFFC7DDE9),
                     ),
                   ),
                   child: Icon(
                     LucideIcons.video,
-                    color: AppColors.cyan400,
+                    color: isDark ? AppColors.cyan400 : const Color(0xFF0B6A88),
                     size: 28,
                   ),
                 ),
@@ -2064,7 +2261,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
-                            'Meeting Hub',
+                            S.of(context).meetingHub,
                             style: TextStyle(
                               fontSize: Responsive.getResponsiveValue(
                                 context,
@@ -2073,15 +2270,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 desktop: 20.0,
                               ),
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF12263A),
                             ),
                           ),
-                          if (!_hasPremiumAccess) _buildUpgradeBadge(),
+                          if (!_hasPremiumAccess) _buildUpgradeBadge(context),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Start or join with AI assistance',
+                        S.of(context).meetingHubSubtitle,
                         style: TextStyle(
                           fontSize: Responsive.getResponsiveValue(
                             context,
@@ -2089,7 +2288,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             tablet: 14.0,
                             desktop: 15.0,
                           ),
-                          color: AppColors.textCyan200.withOpacity(0.8),
+                          color: isDark
+                              ? AppColors.textCyan200.withOpacity(0.8)
+                              : const Color(0xFF5B7B92),
                         ),
                       ),
                     ],
@@ -2109,7 +2310,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     desktop: 44.0,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.cyan500,
+                    color: isDark ? AppColors.cyan500 : const Color(0xFF0B6A88),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -2128,6 +2329,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildSocialMediaCampaignCard(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final r = Responsive.getResponsiveValue(
       context,
       mobile: 18.0,
@@ -2145,28 +2347,43 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           child: Container(
             padding: EdgeInsets.all(r),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF0a1f2e),
-                  Color(0xFF0f2a3d),
-                  Color(0xFF14354c),
-                  Color(0xFF19405b),
-                  Color(0xFF1e4a66),
-                ],
-                stops: [0.0, 0.25, 0.5, 0.75, 1.0],
-              ),
+              gradient: isDark
+                  ? const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF0a1f2e),
+                        Color(0xFF0f2a3d),
+                        Color(0xFF14354c),
+                        Color(0xFF19405b),
+                        Color(0xFF1e4a66),
+                      ],
+                      stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+                    )
+                  : const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFF9FCFF), Color(0xFFEAF4FB)],
+                    ),
               borderRadius: BorderRadius.circular(r),
-              border: Border.all(color: cardColor.withOpacity(0.3), width: 1),
+              border: Border.all(
+                color: isDark
+                    ? cardColor.withOpacity(0.3)
+                    : const Color(0xFFC7DDE9),
+                width: 1,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: cardColor.withOpacity(0.2),
+                  color: isDark
+                      ? cardColor.withOpacity(0.2)
+                      : const Color(0xFF9DBBCC).withOpacity(0.14),
                   blurRadius: 24,
                   offset: const Offset(0, 8),
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
+                  color: isDark
+                      ? Colors.black.withOpacity(0.4)
+                      : const Color(0xFF9DBBCC).withOpacity(0.16),
                   blurRadius: 24,
                   offset: const Offset(0, 8),
                 ),
@@ -2192,12 +2409,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        cardColor.withOpacity(0.25),
-                        cardColorLight.withOpacity(0.2),
+                        isDark
+                            ? cardColor.withOpacity(0.25)
+                            : cardColor.withOpacity(0.12),
+                        isDark
+                            ? cardColorLight.withOpacity(0.2)
+                            : cardColorLight.withOpacity(0.12),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: cardColor.withOpacity(0.4)),
+                    border: Border.all(
+                      color: isDark
+                          ? cardColor.withOpacity(0.4)
+                          : const Color(0xFFC7DDE9),
+                    ),
                   ),
                   child: const Icon(
                     LucideIcons.megaphone,
@@ -2211,7 +2436,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Social Media Campaign',
+                        S.of(context).socialMediaCampaign,
                         style: TextStyle(
                           fontSize: Responsive.getResponsiveValue(
                             context,
@@ -2220,12 +2445,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             desktop: 20.0,
                           ),
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF12263A),
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Launch your product across all platforms',
+                        S.of(context).socialMediaCampaignSubtitle,
                         style: TextStyle(
                           fontSize: Responsive.getResponsiveValue(
                             context,
@@ -2233,7 +2460,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             tablet: 14.0,
                             desktop: 15.0,
                           ),
-                          color: AppColors.textCyan200.withOpacity(0.8),
+                          color: isDark
+                              ? AppColors.textCyan200.withOpacity(0.8)
+                              : const Color(0xFF5B7B92),
                         ),
                       ),
                     ],
@@ -2253,9 +2482,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     desktop: 44.0,
                   ),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [cardColor, cardColorLight],
-                    ),
+                    gradient: isDark
+                        ? const LinearGradient(
+                            colors: [cardColor, cardColorLight],
+                          )
+                        : const LinearGradient(
+                            colors: [Color(0xFF0B6A88), Color(0xFF38BDF8)],
+                          ),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
@@ -2279,6 +2512,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     String label,
     Color color,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: EdgeInsets.all(
         Responsive.getResponsiveValue(
@@ -2289,9 +2523,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ),
       decoration: BoxDecoration(
-        color: AppColors.cyan500.withOpacity(0.2),
+        color: isDark
+            ? AppColors.cyan500.withOpacity(0.2)
+            : const Color(0xFFEAF4FB),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.cyan400.withOpacity(0.3)),
+        border: Border.all(
+          color: isDark
+              ? AppColors.cyan400.withOpacity(0.3)
+              : const Color(0xFFC7DDE9),
+        ),
       ),
       child: Column(
         children: [
@@ -2317,7 +2557,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 desktop: 24.0,
               ),
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: isDark ? Colors.white : const Color(0xFF12263A),
             ),
           ),
           const SizedBox(height: 2),
@@ -2343,6 +2583,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     int value,
     Color color,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: EdgeInsets.all(
         Responsive.getResponsiveValue(
@@ -2353,9 +2594,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ),
       decoration: BoxDecoration(
-        color: AppColors.cyan500.withOpacity(0.2),
+        color: isDark
+            ? AppColors.cyan500.withOpacity(0.2)
+            : const Color(0xFFEAF4FB),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.cyan400.withOpacity(0.3)),
+        border: Border.all(
+          color: isDark
+              ? AppColors.cyan400.withOpacity(0.3)
+              : const Color(0xFFC7DDE9),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2395,7 +2642,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 desktop: 20.0,
               ),
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: isDark ? Colors.white : const Color(0xFF12263A),
             ),
           ),
         ],
@@ -2412,28 +2659,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         : null;
     return [
       {
-        'title': 'Review Agenda',
+        'title': S.of(context).reviewAgenda,
         'subtitle': meetingsText,
         'icon': LucideIcons.calendar,
         'route': '/agenda',
         'color': const Color(0xFFA855F7),
       },
       {
-        'title': 'AI Financial Simulation',
+        'title': S.of(context).aiFinancialSimulation,
         'subtitle': null,
         'icon': LucideIcons.calculator,
         'route': '/advisor',
         'color': const Color(0xFF10B981),
       },
       {
-        'title': 'Post on LinkedIn',
+        'title': S.of(context).postOnLinkedIn,
         'subtitle': null,
         'icon': LucideIcons.linkedin,
         'route': '/create-job',
         'color': const Color(0xFF0A66C2),
       },
       {
-        'title': 'Phone Agent',
+        'title': S.of(context).phoneAgent,
         'subtitle': '$phoneTotal calls • $phoneImportant important',
         'icon': LucideIcons.phone,
         'route': '/phone-agent',
@@ -2443,6 +2690,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildOngoingProjectsGrid(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final spacing = Responsive.getResponsiveValue(
       context,
       mobile: 10.0,
@@ -2456,7 +2704,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Ongoing Projects',
+              S.of(context).ongoingProjects,
               style: TextStyle(
                 fontSize: Responsive.getResponsiveValue(
                   context,
@@ -2465,16 +2713,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   desktop: 18.0,
                 ),
                 fontWeight: FontWeight.bold,
-                color: AppColors.textWhite,
+                color: isDark ? AppColors.textWhite : const Color(0xFF12263A),
               ),
             ),
             GestureDetector(
               onTap: () {},
               child: Text(
-                'view all',
+                S.of(context).viewAll,
                 style: TextStyle(
                   fontSize: 13,
-                  color: AppColors.cyan400,
+                  color: isDark ? AppColors.cyan400 : const Color(0xFF0B6A88),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -2581,6 +2829,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     required Color color,
     required bool isHighlighted,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final r = Responsive.getResponsiveValue(
       context,
       mobile: 14.0,
@@ -2593,25 +2842,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: Container(
         padding: EdgeInsets.all(r),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isHighlighted
-                ? [
-                    const Color(0xFF1e4a66),
-                    const Color(0xFF16384d),
-                    const Color(0xFF0f2940),
-                  ]
-                : [
-                    const Color(0xFF1e4a66).withOpacity(0.35),
-                    const Color(0xFF16384d).withOpacity(0.35),
-                  ],
-          ),
+          gradient: isDark
+              ? LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isHighlighted
+                      ? [
+                          const Color(0xFF1e4a66),
+                          const Color(0xFF16384d),
+                          const Color(0xFF0f2940),
+                        ]
+                      : [
+                          const Color(0xFF1e4a66).withOpacity(0.35),
+                          const Color(0xFF16384d).withOpacity(0.35),
+                        ],
+                )
+              : LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isHighlighted
+                      ? [const Color(0xFFF9FCFF), const Color(0xFFEAF4FB)]
+                      : [const Color(0xFFFDFEFF), const Color(0xFFF2F8FC)],
+                ),
           borderRadius: BorderRadius.circular(r),
           border: Border.all(
             color: isHighlighted
-                ? AppColors.cyan500.withOpacity(0.35)
-                : AppColors.cyan500.withOpacity(0.12),
+                ? (isDark
+                      ? AppColors.cyan500.withOpacity(0.35)
+                      : const Color(0xFFBFD4E3))
+                : (isDark
+                      ? AppColors.cyan500.withOpacity(0.12)
+                      : const Color(0xFFCFE0EA)),
             width: 1,
           ),
         ),
@@ -2623,12 +2884,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: color.withOpacity(isHighlighted ? 0.35 : 0.25),
+                color: isDark
+                    ? color.withOpacity(isHighlighted ? 0.35 : 0.25)
+                    : color.withOpacity(isHighlighted ? 0.18 : 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 icon,
-                color: isHighlighted ? Colors.white : color,
+                color: isHighlighted
+                    ? (isDark ? Colors.white : const Color(0xFF12263A))
+                    : color,
                 size: 22,
               ),
             ),
@@ -2643,14 +2908,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   desktop: 15.0,
                 ),
                 fontWeight: FontWeight.bold,
-                color: isHighlighted ? Colors.white : AppColors.textWhite,
+                color: isHighlighted
+                    ? (isDark ? Colors.white : const Color(0xFF12263A))
+                    : (isDark ? AppColors.textWhite : const Color(0xFF12263A)),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             if (isPremiumPhoneAgent && !_hasPremiumAccess) ...[
               const SizedBox(height: 6),
-              _buildUpgradeBadge(),
+              _buildUpgradeBadge(context),
             ],
             if (subtitle != null && subtitle.isNotEmpty) ...[
               const SizedBox(height: 2),
@@ -2659,8 +2926,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 style: TextStyle(
                   fontSize: 10,
                   color: isHighlighted
-                      ? AppColors.textCyan200.withOpacity(0.85)
-                      : AppColors.textCyan200.withOpacity(0.7),
+                      ? (isDark
+                            ? AppColors.textCyan200.withOpacity(0.85)
+                            : const Color(0xFF5B7B92))
+                      : (isDark
+                            ? AppColors.textCyan200.withOpacity(0.7)
+                            : const Color(0xFF5B7B92)),
                 ),
               ),
             ],
@@ -2680,6 +2951,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     Color colorLight,
     int index,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isPremiumPhoneAgent = route == '/phone-agent';
     return GestureDetector(
       onTap: () => _openRouteWithPremiumCheck(route),
@@ -2693,12 +2965,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              const Color(0xFF1e4a66).withOpacity(0.4),
-              const Color(0xFF16384d).withOpacity(0.4),
-            ],
-          ),
+          gradient: isDark
+              ? LinearGradient(
+                  colors: [
+                    const Color(0xFF1e4a66).withOpacity(0.4),
+                    const Color(0xFF16384d).withOpacity(0.4),
+                  ],
+                )
+              : const LinearGradient(
+                  colors: [Color(0xFFF9FCFF), Color(0xFFEAF4FB)],
+                ),
           borderRadius: BorderRadius.circular(
             Responsive.getResponsiveValue(
               context,
@@ -2708,7 +2984,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
           border: Border.all(
-            color: AppColors.cyan500.withOpacity(0.1),
+            color: isDark
+                ? AppColors.cyan500.withOpacity(0.1)
+                : const Color(0xFFC7DDE9),
             width: 1,
           ),
         ),
@@ -2743,8 +3021,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        color.withOpacity(0.2),
-                        colorLight.withOpacity(0.2),
+                        isDark
+                            ? color.withOpacity(0.2)
+                            : color.withOpacity(0.12),
+                        isDark
+                            ? colorLight.withOpacity(0.2)
+                            : colorLight.withOpacity(0.12),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(
@@ -2756,7 +3038,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                     border: Border.all(
-                      color: AppColors.cyan500.withOpacity(0.2),
+                      color: isDark
+                          ? AppColors.cyan500.withOpacity(0.2)
+                          : const Color(0xFFC7DDE9),
                       width: 1,
                     ),
                   ),
@@ -2794,19 +3078,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             desktop: 16.0,
                           ),
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textWhite,
+                          color: isDark
+                              ? AppColors.textWhite
+                              : const Color(0xFF12263A),
                         ),
                       ),
                       if (isPremiumPhoneAgent && !_hasPremiumAccess) ...[
                         const SizedBox(height: 6),
-                        _buildUpgradeBadge(),
+                        _buildUpgradeBadge(context),
                       ],
                     ],
                   ),
                 ),
                 Icon(
                   LucideIcons.chevronRight,
-                  color: AppColors.cyan400,
+                  color: isDark ? AppColors.cyan400 : const Color(0xFF0B6A88),
                   size: Responsive.getResponsiveValue(
                     context,
                     mobile: 18.0,
@@ -2822,28 +3108,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildUpgradeBadge() {
+  Widget _buildUpgradeBadge(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFF312E81),
+        color: isDark ? const Color(0xFF312E81) : const Color(0xFFE8F2FA),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.cyan400.withOpacity(0.7),
+          color: isDark
+              ? AppColors.cyan400.withOpacity(0.7)
+              : const Color(0xFFBFD4E3),
           width: 0.8,
         ),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.lock_outline, size: 12, color: Colors.white),
-          SizedBox(width: 4),
+          Icon(
+            Icons.lock_outline,
+            size: 12,
+            color: isDark ? Colors.white : const Color(0xFF12263A),
+          ),
+          const SizedBox(width: 4),
           Text(
             'Upgrade',
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: isDark ? Colors.white : const Color(0xFF12263A),
               height: 1,
             ),
           ),

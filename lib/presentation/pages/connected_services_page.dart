@@ -13,6 +13,38 @@ import '../../data/services/google_connect_service.dart';
 import '../../data/services/telegram_connect_service.dart';
 import '../widgets/navigation_bar.dart';
 
+Color _primaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _secondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF5B7B92);
+}
+
+Color _surfaceBorder(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.cyan500.withOpacity(0.12)
+      : const Color(0xFFC7DDE9);
+}
+
+LinearGradient _panelGradient(BuildContext context, {double opacity = 0.4}) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: isDark
+        ? [
+            const Color(0xFF1e4a66).withOpacity(opacity),
+            const Color(0xFF16384d).withOpacity(opacity),
+          ]
+        : const [Color(0xFFF9FCFF), Color(0xFFEAF4FB)],
+  );
+}
+
 class ConnectedServicesPage extends StatefulWidget {
   const ConnectedServicesPage({super.key});
 
@@ -275,6 +307,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final padding = Responsive.getResponsiveValue(
       context,
       mobile: 24.0,
@@ -291,17 +324,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
-          ),
-        ),
+        decoration: BoxDecoration(gradient: pageGradient),
         child: SafeArea(
           bottom: false,
           child: Stack(
@@ -322,94 +345,41 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                // Header
-                _withEntranceAnimation(
-                  _buildHeader(context, isMobile),
-                  (a) => a
-                      .fadeIn(duration: 500.ms)
-                      .slideY(begin: -0.2, end: 0, duration: 500.ms),
-                ),
-
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
-
-                // Stats
-                _withEntranceAnimation(
-                  _buildStats(context, isMobile, connectedCountForStats, totalActions),
-                  (a) => a.fadeIn(delay: 100.ms, duration: 300.ms),
-                ),
-
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
-
-                // Connected Services
-                _withEntranceAnimation(
-                  Text(
-                    'Connected',
-                    style: TextStyle(
-                      fontSize: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 16.0,
-                        tablet: 17.0,
-                        desktop: 18.0,
-                      ),
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textWhite,
-                    ),
-                  ),
-                  (a) => a.fadeIn(delay: 200.ms, duration: 300.ms),
-                ),
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 10.0,
-                  tablet: 12.0,
-                  desktop: 14.0,
-                )),
-                ...connectedServices.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final service = entry.value;
-                  final delayMs = 300 + (index * 100);
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      bottom: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 10.0,
-                        tablet: 12.0,
-                        desktop: 14.0,
-                      ),
-                    ),
-                    child: _withEntranceAnimation(
-                      _buildConnectedServiceCard(context, isMobile, service),
+                    // Header
+                    _withEntranceAnimation(
+                      _buildHeader(context, isMobile),
                       (a) => a
-                          .fadeIn(
-                            delay: Duration(milliseconds: delayMs),
-                            duration: 300.ms,
-                          )
-                          .slideY(
-                            begin: 0.2,
-                            end: 0,
-                            delay: Duration(milliseconds: delayMs),
-                            duration: 300.ms,
-                          ),
+                          .fadeIn(duration: 500.ms)
+                          .slideY(begin: -0.2, end: 0, duration: 500.ms),
                     ),
-                  );
-                }),
-                // Mocked "connected" cards (same design as Gmail & Sheets)
-                Padding(
-                  padding: EdgeInsets.only(
-                    bottom: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 10.0,
-                      tablet: 12.0,
-                      desktop: 14.0,
+
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 20.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
+                    ),
+
+                    // Stats
+                    _withEntranceAnimation(
+                      _buildStats(
+                        context,
+                        isMobile,
+                        connectedCountForStats,
+                        totalActions,
+                      ),
+                      (a) => a.fadeIn(delay: 100.ms, duration: 300.ms),
+                    ),
+
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 20.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
                     ),
                   ),
                   child: _withEntranceAnimation(
@@ -445,99 +415,187 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                       tablet: 12.0,
                       desktop: 14.0,
                     ),
-                  ),
-                  child: _withEntranceAnimation(
-                    _buildMockConnectedLinkedInCard(context),
-                    (a) {
-                      final delayMs = 300 + ((connectedServices.length + 2) * 100);
-                      return a
-                          .fadeIn(
-                            delay: Duration(milliseconds: delayMs),
-                            duration: 300.ms,
-                          )
-                          .slideY(
-                            begin: 0.2,
-                            end: 0,
-                            delay: Duration(milliseconds: delayMs),
-                            duration: 300.ms,
-                          );
-                    },
-                  ),
-                ),
-                if (googleConnected)
-                  Padding(
-                    padding: EdgeInsets.only(
-                      bottom: Responsive.getResponsiveValue(
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
                         context,
                         mobile: 10.0,
                         tablet: 12.0,
                         desktop: 14.0,
                       ),
                     ),
-                    child: _withEntranceAnimation(
-                      _buildGoogleConnectedLikeUberCard(context),
-                      (a) {
-                        final delayMs = 300 + ((connectedServices.length + 3) * 100);
-                        return a
-                            .fadeIn(
-                              delay: Duration(milliseconds: delayMs),
-                              duration: 300.ms,
-                            )
-                            .slideY(
-                              begin: 0.2,
-                              end: 0,
-                              delay: Duration(milliseconds: delayMs),
-                              duration: 300.ms,
-                            );
-                      },
-                    ),
-                  ),
-
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 24.0,
-                  tablet: 28.0,
-                  desktop: 32.0,
-                )),
-
-                // Available Services
-                _withEntranceAnimation(
-                  Text(
-                    'Available to Connect',
-                    style: TextStyle(
-                      fontSize: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 16.0,
-                        tablet: 17.0,
-                        desktop: 18.0,
+                    ...connectedServices.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final service = entry.value;
+                      final delayMs = 300 + (index * 100);
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 10.0,
+                            tablet: 12.0,
+                            desktop: 14.0,
+                          ),
+                        ),
+                        child: _withEntranceAnimation(
+                          _buildConnectedServiceCard(
+                            context,
+                            isMobile,
+                            service,
+                          ),
+                          (a) => a
+                              .fadeIn(
+                                delay: Duration(milliseconds: delayMs),
+                                duration: 300.ms,
+                              )
+                              .slideY(
+                                begin: 0.2,
+                                end: 0,
+                                delay: Duration(milliseconds: delayMs),
+                                duration: 300.ms,
+                              ),
+                        ),
+                      );
+                    }),
+                    // Mocked "connected" cards (same design as Gmail & Sheets)
+                    Padding(
+                      padding: EdgeInsets.only(
+                        bottom: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 10.0,
+                          tablet: 12.0,
+                          desktop: 14.0,
+                        ),
                       ),
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textWhite,
-                    ),
-                  ),
-                  (a) => a.fadeIn(delay: 600.ms, duration: 300.ms),
-                ),
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 10.0,
-                  tablet: 12.0,
-                  desktop: 14.0,
-                )),
-                if (!googleConnected)
-                  Padding(
-                    padding: EdgeInsets.only(
-                      bottom: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 10.0,
-                        tablet: 12.0,
-                        desktop: 14.0,
+                      child: _withEntranceAnimation(
+                        _buildMockConnectedCalendarCard(context),
+                        (a) {
+                          final delayMs =
+                              300 + (connectedServices.length * 100);
+                          return a
+                              .fadeIn(
+                                delay: Duration(milliseconds: delayMs),
+                                duration: 300.ms,
+                              )
+                              .slideY(
+                                begin: 0.2,
+                                end: 0,
+                                delay: Duration(milliseconds: delayMs),
+                                duration: 300.ms,
+                              );
+                        },
                       ),
                     ),
-                    child: _withEntranceAnimation(
-                      _buildGoogleDisconnectedRow(context),
-                      (a) => a
-                          .fadeIn(delay: 600.ms, duration: 300.ms)
-                          .slideY(begin: 0.2, end: 0, delay: 600.ms, duration: 300.ms),
+                    Padding(
+                      padding: EdgeInsets.only(
+                        bottom: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 10.0,
+                          tablet: 12.0,
+                          desktop: 14.0,
+                        ),
+                      ),
+                      child: _withEntranceAnimation(
+                        _buildMockConnectedTelegramCard(context),
+                        (a) {
+                          final delayMs =
+                              300 + ((connectedServices.length + 1) * 100);
+                          return a
+                              .fadeIn(
+                                delay: Duration(milliseconds: delayMs),
+                                duration: 300.ms,
+                              )
+                              .slideY(
+                                begin: 0.2,
+                                end: 0,
+                                delay: Duration(milliseconds: delayMs),
+                                duration: 300.ms,
+                              );
+                        },
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(
+                        bottom: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 10.0,
+                          tablet: 12.0,
+                          desktop: 14.0,
+                        ),
+                      ),
+                      child: _withEntranceAnimation(
+                        _buildMockConnectedLinkedInCard(context),
+                        (a) {
+                          final delayMs =
+                              300 + ((connectedServices.length + 2) * 100);
+                          return a
+                              .fadeIn(
+                                delay: Duration(milliseconds: delayMs),
+                                duration: 300.ms,
+                              )
+                              .slideY(
+                                begin: 0.2,
+                                end: 0,
+                                delay: Duration(milliseconds: delayMs),
+                                duration: 300.ms,
+                              );
+                        },
+                      ),
+                    ),
+                    if (googleConnected)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          bottom: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 10.0,
+                            tablet: 12.0,
+                            desktop: 14.0,
+                          ),
+                        ),
+                        child: _withEntranceAnimation(
+                          _buildGoogleConnectedLikeUberCard(context),
+                          (a) {
+                            final delayMs =
+                                300 + ((connectedServices.length + 3) * 100);
+                            return a
+                                .fadeIn(
+                                  delay: Duration(milliseconds: delayMs),
+                                  duration: 300.ms,
+                                )
+                                .slideY(
+                                  begin: 0.2,
+                                  end: 0,
+                                  delay: Duration(milliseconds: delayMs),
+                                  duration: 300.ms,
+                                );
+                          },
+                        ),
+                      ),
+
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 24.0,
+                        tablet: 28.0,
+                        desktop: 32.0,
+                      ),
+                    ),
+
+                    // Available Services
+                    _withEntranceAnimation(
+                      Text(
+                        'Available to Connect',
+                        style: TextStyle(
+                          fontSize: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 16.0,
+                            tablet: 17.0,
+                            desktop: 18.0,
+                          ),
+                          fontWeight: FontWeight.w600,
+                          color: _primaryText(context),
+                        ),
+                      ),
+                      (a) => a.fadeIn(delay: 600.ms, duration: 300.ms),
                     ),
                   ),
                 if (!googleConnected)
@@ -574,80 +632,106 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                         desktop: 14.0,
                       ),
                     ),
-                    child: _buildMockDisconnectedLikeGoogleRow(
-                      context,
-                      leading: _mockIconLeading(
-                        context,
-                        Image.network(_telegramIconUrl, width: 26, height: 26),
+                    if (!googleConnected)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          bottom: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 10.0,
+                            tablet: 12.0,
+                            desktop: 14.0,
+                          ),
+                        ),
+                        child: _withEntranceAnimation(
+                          _buildGoogleDisconnectedRow(context),
+                          (a) => a
+                              .fadeIn(delay: 600.ms, duration: 300.ms)
+                              .slideY(
+                                begin: 0.2,
+                                end: 0,
+                                delay: 600.ms,
+                                duration: 300.ms,
+                              ),
+                        ),
                       ),
-                      title: 'Telegram',
-                      subtitle: _loadingTelegramStatus
-                          ? 'Checking status...'
-                          : 'Chat with Jackie AI · Send receipts',
-                      onConnect: _connectTelegram,
+                    Padding(
+                      padding: EdgeInsets.only(
+                        bottom: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 10.0,
+                          tablet: 12.0,
+                          desktop: 14.0,
+                        ),
+                      ),
+                      child: _withEntranceAnimation(
+                        _buildMockDisconnectedDriveRow(context),
+                        (a) => a
+                            .fadeIn(delay: 600.ms, duration: 300.ms)
+                            .slideY(
+                              begin: 0.2,
+                              end: 0,
+                              delay: 600.ms,
+                              duration: 300.ms,
+                            ),
+                      ),
                     ),
-                  ),
-                Padding(
-                  padding: EdgeInsets.only(
-                    bottom: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 10.0,
-                      tablet: 12.0,
-                      desktop: 14.0,
+                    Padding(
+                      padding: EdgeInsets.only(
+                        bottom: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 10.0,
+                          tablet: 12.0,
+                          desktop: 14.0,
+                        ),
+                      ),
+                      child: _withEntranceAnimation(
+                        _buildMockDisconnectedQuadrantRow(context),
+                        (a) => a
+                            .fadeIn(delay: 700.ms, duration: 300.ms)
+                            .slideY(
+                              begin: 0.2,
+                              end: 0,
+                              delay: 700.ms,
+                              duration: 300.ms,
+                            ),
+                      ),
                     ),
-                  ),
-                  child: _withEntranceAnimation(
-                    _buildMockDisconnectedDriveRow(context),
-                    (a) => a
-                        .fadeIn(delay: 600.ms, duration: 300.ms)
-                        .slideY(begin: 0.2, end: 0, delay: 600.ms, duration: 300.ms),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(
-                    bottom: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 10.0,
-                      tablet: 12.0,
-                      desktop: 14.0,
+                    Padding(
+                      padding: EdgeInsets.only(
+                        bottom: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 10.0,
+                          tablet: 12.0,
+                          desktop: 14.0,
+                        ),
+                      ),
+                      child: _withEntranceAnimation(
+                        _buildMockDisconnectedRagRow(context),
+                        (a) => a
+                            .fadeIn(delay: 800.ms, duration: 300.ms)
+                            .slideY(
+                              begin: 0.2,
+                              end: 0,
+                              delay: 800.ms,
+                              duration: 300.ms,
+                            ),
+                      ),
                     ),
-                  ),
-                  child: _withEntranceAnimation(
-                    _buildMockDisconnectedQuadrantRow(context),
-                    (a) => a
-                        .fadeIn(delay: 700.ms, duration: 300.ms)
-                        .slideY(begin: 0.2, end: 0, delay: 700.ms, duration: 300.ms),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(
-                    bottom: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 10.0,
-                      tablet: 12.0,
-                      desktop: 14.0,
-                    ),
-                  ),
-                  child: _withEntranceAnimation(
-                    _buildMockDisconnectedRagRow(context),
-                    (a) => a
-                        .fadeIn(delay: 800.ms, duration: 300.ms)
-                        .slideY(begin: 0.2, end: 0, delay: 800.ms, duration: 300.ms),
-                  ),
-                ),
 
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 20.0,
+                        tablet: 24.0,
+                        desktop: 28.0,
+                      ),
+                    ),
 
-                // Info Footer
-                _withEntranceAnimation(
-                  _buildInfoFooter(context, isMobile),
-                  (a) => a.fadeIn(delay: 1200.ms, duration: 300.ms),
-                ),
+                    // Info Footer
+                    _withEntranceAnimation(
+                      _buildInfoFooter(context, isMobile),
+                      (a) => a.fadeIn(delay: 1200.ms, duration: 300.ms),
+                    ),
                   ],
                 ),
               ),
@@ -667,6 +751,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
   }
 
   Widget _buildHeader(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -680,15 +765,17 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
               desktop: 32.0,
             ),
             fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 6.0,
-          tablet: 8.0,
-          desktop: 10.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 6.0,
+            tablet: 8.0,
+            desktop: 10.0,
+          ),
+        ),
         Text(
           'Manage your integrations',
           style: TextStyle(
@@ -698,256 +785,286 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
               tablet: 14.0,
               desktop: 15.0,
             ),
-            color: AppColors.textCyan200.withOpacity(0.7),
+            color:
+                (isDark
+                        ? AppColors.textCyan200.withOpacity(0.7)
+                        : const Color(0xFF5B7B92))
+                    .withOpacity(1),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildStats(BuildContext context, bool isMobile, int connectedCount, int totalActions) {
+  Widget _buildStats(
+    BuildContext context,
+    bool isMobile,
+    int connectedCount,
+    int totalActions,
+  ) {
     return Row(
       children: [
         Expanded(
-          child: Container(
-            padding: EdgeInsets.all(Responsive.getResponsiveValue(
-              context,
-              mobile: 14.0,
-              tablet: 16.0,
-              desktop: 20.0,
-            )),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF1e4a66).withOpacity(0.4),
-                  const Color(0xFF16384d).withOpacity(0.4),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                context,
-                mobile: 12.0,
-                tablet: 13.0,
-                desktop: 14.0,
-              )),
-              border: Border.all(
-                color: AppColors.cyan500.withOpacity(0.1),
-                width: 1,
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                context,
-                mobile: 12.0,
-                tablet: 13.0,
-                desktop: 14.0,
-              )),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      LucideIcons.checkCircle,
-                      size: Responsive.getResponsiveValue(
+          child:
+              Container(
+                    padding: EdgeInsets.all(
+                      Responsive.getResponsiveValue(
                         context,
-                        mobile: 18.0,
-                        tablet: 20.0,
-                        desktop: 22.0,
+                        mobile: 14.0,
+                        tablet: 16.0,
+                        desktop: 20.0,
                       ),
-                      color: const Color(0xFF10B981),
                     ),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 6.0,
-                      tablet: 8.0,
-                      desktop: 10.0,
-                    )),
-                    Text(
-                      '$connectedCount',
-                      style: TextStyle(
-                        fontSize: Responsive.getResponsiveValue(
+                    decoration: BoxDecoration(
+                      gradient: _panelGradient(context),
+                      borderRadius: BorderRadius.circular(
+                        Responsive.getResponsiveValue(
                           context,
-                          mobile: 22.0,
-                          tablet: 24.0,
-                          desktop: 26.0,
+                          mobile: 12.0,
+                          tablet: 13.0,
+                          desktop: 14.0,
                         ),
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textWhite,
+                      ),
+                      border: Border.all(
+                        color: _surfaceBorder(context),
+                        width: 1,
                       ),
                     ),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 3.0,
-                      tablet: 4.0,
-                      desktop: 5.0,
-                    )),
-                    Text(
-                      'Connected',
-                      style: TextStyle(
-                        fontSize: Responsive.getResponsiveValue(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(
+                        Responsive.getResponsiveValue(
                           context,
-                          mobile: 11.0,
-                          tablet: 12.0,
-                          desktop: 13.0,
+                          mobile: 12.0,
+                          tablet: 13.0,
+                          desktop: 14.0,
                         ),
-                        color: AppColors.cyan400.withOpacity(0.6),
+                      ),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              LucideIcons.checkCircle,
+                              size: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 18.0,
+                                tablet: 20.0,
+                                desktop: 22.0,
+                              ),
+                              color: const Color(0xFF10B981),
+                            ),
+                            SizedBox(
+                              height: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 6.0,
+                                tablet: 8.0,
+                                desktop: 10.0,
+                              ),
+                            ),
+                            Text(
+                              '$connectedCount',
+                              style: TextStyle(
+                                fontSize: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 22.0,
+                                  tablet: 24.0,
+                                  desktop: 26.0,
+                                ),
+                                fontWeight: FontWeight.bold,
+                                color: _primaryText(context),
+                              ),
+                            ),
+                            SizedBox(
+                              height: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 3.0,
+                                tablet: 4.0,
+                                desktop: 5.0,
+                              ),
+                            ),
+                            Text(
+                              'Connected',
+                              style: TextStyle(
+                                fontSize: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 11.0,
+                                  tablet: 12.0,
+                                  desktop: 13.0,
+                                ),
+                                color: AppColors.cyan400.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-          )
-              .animate()
-              .fadeIn(delay: 100.ms, duration: 300.ms)
-              .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), delay: 100.ms, duration: 300.ms),
+                  )
+                  .animate()
+                  .fadeIn(delay: 100.ms, duration: 300.ms)
+                  .scale(
+                    begin: const Offset(0.9, 0.9),
+                    end: const Offset(1, 1),
+                    delay: 100.ms,
+                    duration: 300.ms,
+                  ),
         ),
-        SizedBox(width: Responsive.getResponsiveValue(
-          context,
-          mobile: 10.0,
-          tablet: 12.0,
-          desktop: 14.0,
-        )),
+        SizedBox(
+          width: Responsive.getResponsiveValue(
+            context,
+            mobile: 10.0,
+            tablet: 12.0,
+            desktop: 14.0,
+          ),
+        ),
         Expanded(
-          child: Container(
-            padding: EdgeInsets.all(Responsive.getResponsiveValue(
-              context,
-              mobile: 14.0,
-              tablet: 16.0,
-              desktop: 20.0,
-            )),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF1e4a66).withOpacity(0.4),
-                  const Color(0xFF16384d).withOpacity(0.4),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                context,
-                mobile: 12.0,
-                tablet: 13.0,
-                desktop: 14.0,
-              )),
-              border: Border.all(
-                color: AppColors.cyan500.withOpacity(0.1),
-                width: 1,
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                context,
-                mobile: 12.0,
-                tablet: 13.0,
-                desktop: 14.0,
-              )),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      LucideIcons.trendingUp,
-                      size: Responsive.getResponsiveValue(
+          child:
+              Container(
+                    padding: EdgeInsets.all(
+                      Responsive.getResponsiveValue(
                         context,
-                        mobile: 18.0,
-                        tablet: 20.0,
-                        desktop: 22.0,
+                        mobile: 14.0,
+                        tablet: 16.0,
+                        desktop: 20.0,
                       ),
-                      color: AppColors.cyan400,
                     ),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 6.0,
-                      tablet: 8.0,
-                      desktop: 10.0,
-                    )),
-                    Text(
-                      '$totalActions',
-                      style: TextStyle(
-                        fontSize: Responsive.getResponsiveValue(
+                    decoration: BoxDecoration(
+                      gradient: _panelGradient(context),
+                      borderRadius: BorderRadius.circular(
+                        Responsive.getResponsiveValue(
                           context,
-                          mobile: 22.0,
-                          tablet: 24.0,
-                          desktop: 26.0,
+                          mobile: 12.0,
+                          tablet: 13.0,
+                          desktop: 14.0,
                         ),
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textWhite,
+                      ),
+                      border: Border.all(
+                        color: _surfaceBorder(context),
+                        width: 1,
                       ),
                     ),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 3.0,
-                      tablet: 4.0,
-                      desktop: 5.0,
-                    )),
-                    Text(
-                      'Total actions',
-                      style: TextStyle(
-                        fontSize: Responsive.getResponsiveValue(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(
+                        Responsive.getResponsiveValue(
                           context,
-                          mobile: 11.0,
-                          tablet: 12.0,
-                          desktop: 13.0,
+                          mobile: 12.0,
+                          tablet: 13.0,
+                          desktop: 14.0,
                         ),
-                        color: AppColors.cyan400.withOpacity(0.6),
+                      ),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              LucideIcons.trendingUp,
+                              size: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 18.0,
+                                tablet: 20.0,
+                                desktop: 22.0,
+                              ),
+                              color: AppColors.cyan400,
+                            ),
+                            SizedBox(
+                              height: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 6.0,
+                                tablet: 8.0,
+                                desktop: 10.0,
+                              ),
+                            ),
+                            Text(
+                              '$totalActions',
+                              style: TextStyle(
+                                fontSize: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 22.0,
+                                  tablet: 24.0,
+                                  desktop: 26.0,
+                                ),
+                                fontWeight: FontWeight.bold,
+                                color: _primaryText(context),
+                              ),
+                            ),
+                            SizedBox(
+                              height: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 3.0,
+                                tablet: 4.0,
+                                desktop: 5.0,
+                              ),
+                            ),
+                            Text(
+                              'Total actions',
+                              style: TextStyle(
+                                fontSize: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 11.0,
+                                  tablet: 12.0,
+                                  desktop: 13.0,
+                                ),
+                                color: AppColors.cyan400.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-          )
-              .animate()
-              .fadeIn(delay: 200.ms, duration: 300.ms)
-              .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), delay: 200.ms, duration: 300.ms),
+                  )
+                  .animate()
+                  .fadeIn(delay: 200.ms, duration: 300.ms)
+                  .scale(
+                    begin: const Offset(0.9, 0.9),
+                    end: const Offset(1, 1),
+                    delay: 200.ms,
+                    duration: 300.ms,
+                  ),
         ),
       ],
     );
   }
 
-  Widget _buildConnectedServiceCard(BuildContext context, bool isMobile, Map<String, dynamic> service) {
+  Widget _buildConnectedServiceCard(
+    BuildContext context,
+    bool isMobile,
+    Map<String, dynamic> service,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final permissions = service['permissions'] as List<String>? ?? [];
     final usage = service['usage'] as int?;
 
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 14.0,
-        tablet: 16.0,
-        desktop: 20.0,
-      )),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF1e4a66).withOpacity(0.4),
-            const Color(0xFF16384d).withOpacity(0.4),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
           context,
-          mobile: 16.0,
-          tablet: 18.0,
+          mobile: 14.0,
+          tablet: 16.0,
           desktop: 20.0,
-        )),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
         ),
       ),
+      decoration: BoxDecoration(
+        gradient: _panelGradient(context),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
+        border: Border.all(color: _surfaceBorder(context), width: 1),
+      ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Column(
@@ -977,12 +1094,14 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                           AppColors.cyan500.withOpacity(0.2),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                        context,
-                        mobile: 10.0,
-                        tablet: 11.0,
-                        desktop: 12.0,
-                      )),
+                      borderRadius: BorderRadius.circular(
+                        Responsive.getResponsiveValue(
+                          context,
+                          mobile: 10.0,
+                          tablet: 11.0,
+                          desktop: 12.0,
+                        ),
+                      ),
                       border: Border.all(
                         color: const Color(0xFF10B981).withOpacity(0.2),
                         width: 1,
@@ -1002,12 +1121,14 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                       ),
                     ),
                   ),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 10.0,
-                    tablet: 12.0,
-                    desktop: 14.0,
-                  )),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 10.0,
+                      tablet: 12.0,
+                      desktop: 14.0,
+                    ),
+                  ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1025,7 +1146,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                                     desktop: 16.0,
                                   ),
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.textWhite,
+                                  color: _primaryText(context),
                                 ),
                               ),
                             ),
@@ -1046,14 +1167,18 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                               ),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF10B981).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 4.0,
-                                  tablet: 5.0,
-                                  desktop: 6.0,
-                                )),
+                                borderRadius: BorderRadius.circular(
+                                  Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 4.0,
+                                    tablet: 5.0,
+                                    desktop: 6.0,
+                                  ),
+                                ),
                                 border: Border.all(
-                                  color: const Color(0xFF10B981).withOpacity(0.2),
+                                  color: const Color(
+                                    0xFF10B981,
+                                  ).withOpacity(0.2),
                                   width: 1,
                                 ),
                               ),
@@ -1078,12 +1203,14 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                                       shape: BoxShape.circle,
                                     ),
                                   ),
-                                  SizedBox(width: Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 3.0,
-                                    tablet: 4.0,
-                                    desktop: 5.0,
-                                  )),
+                                  SizedBox(
+                                    width: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 3.0,
+                                      tablet: 4.0,
+                                      desktop: 5.0,
+                                    ),
+                                  ),
                                   Text(
                                     'Active',
                                     style: TextStyle(
@@ -1101,12 +1228,14 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                             ),
                           ],
                         ),
-                        SizedBox(height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 4.0,
-                          tablet: 5.0,
-                          desktop: 6.0,
-                        )),
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 4.0,
+                            tablet: 5.0,
+                            desktop: 6.0,
+                          ),
+                        ),
                         Text(
                           service['description'] as String,
                           style: TextStyle(
@@ -1116,16 +1245,20 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                               tablet: 13.0,
                               desktop: 14.0,
                             ),
-                            color: AppColors.textCyan200.withOpacity(0.6),
+                            color: isDark
+                                ? AppColors.textCyan200.withOpacity(0.6)
+                                : const Color(0xFF5B7B92),
                           ),
                         ),
                         if (service['lastSync'] != null) ...[
-                          SizedBox(height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 6.0,
-                            tablet: 8.0,
-                            desktop: 10.0,
-                          )),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 6.0,
+                              tablet: 8.0,
+                              desktop: 10.0,
+                            ),
+                          ),
                           Text(
                             'Last sync: ${service['lastSync']}',
                             style: TextStyle(
@@ -1135,38 +1268,46 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                                 tablet: 12.0,
                                 desktop: 13.0,
                               ),
-                              color: AppColors.cyan400.withOpacity(0.5),
+                              color: isDark
+                                  ? AppColors.cyan400.withOpacity(0.5)
+                                  : const Color(0xFF7A96AA),
                             ),
                           ),
                         ],
                       ],
                     ),
                   ),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 6.0,
-                    tablet: 8.0,
-                    desktop: 10.0,
-                  )),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 6.0,
+                      tablet: 8.0,
+                      desktop: 10.0,
+                    ),
+                  ),
                   GestureDetector(
                     onTap: () {
                       // Handle settings
                     },
                     child: Container(
-                      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                        context,
-                        mobile: 7.0,
-                        tablet: 8.0,
-                        desktop: 9.0,
-                      )),
+                      padding: EdgeInsets.all(
+                        Responsive.getResponsiveValue(
+                          context,
+                          mobile: 7.0,
+                          tablet: 8.0,
+                          desktop: 9.0,
+                        ),
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.cyan500.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                          context,
-                          mobile: 8.0,
-                          tablet: 9.0,
-                          desktop: 10.0,
-                        )),
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 8.0,
+                            tablet: 9.0,
+                            desktop: 10.0,
+                          ),
+                        ),
                         border: Border.all(
                           color: AppColors.cyan500.withOpacity(0.2),
                           width: 1,
@@ -1186,12 +1327,14 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                   ),
                 ],
               ),
-              SizedBox(height: Responsive.getResponsiveValue(
-                context,
-                mobile: 10.0,
-                tablet: 12.0,
-                desktop: 14.0,
-              )),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 10.0,
+                  tablet: 12.0,
+                  desktop: 14.0,
+                ),
+              ),
               // Permissions & Usage
               Container(
                 padding: EdgeInsets.only(
@@ -1204,10 +1347,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                 ),
                 decoration: BoxDecoration(
                   border: Border(
-                    top: BorderSide(
-                      color: AppColors.cyan500.withOpacity(0.1),
-                      width: 1,
-                    ),
+                    top: BorderSide(color: _surfaceBorder(context), width: 1),
                   ),
                 ),
                 child: Row(
@@ -1246,12 +1386,14 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.cyan500.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                context,
-                                mobile: 4.0,
-                                tablet: 5.0,
-                                desktop: 6.0,
-                              )),
+                              borderRadius: BorderRadius.circular(
+                                Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 4.0,
+                                  tablet: 5.0,
+                                  desktop: 6.0,
+                                ),
+                              ),
                               border: Border.all(
                                 color: AppColors.cyan500.withOpacity(0.1),
                                 width: 1,
@@ -1289,12 +1431,14 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.cyan500.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                context,
-                                mobile: 4.0,
-                                tablet: 5.0,
-                                desktop: 6.0,
-                              )),
+                              borderRadius: BorderRadius.circular(
+                                Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 4.0,
+                                  tablet: 5.0,
+                                  desktop: 6.0,
+                                ),
+                              ),
                               border: Border.all(
                                 color: AppColors.cyan500.withOpacity(0.1),
                                 width: 1,
@@ -1325,7 +1469,9 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                             tablet: 12.0,
                             desktop: 13.0,
                           ),
-                          color: AppColors.cyan400.withOpacity(0.6),
+                          color: isDark
+                              ? AppColors.cyan400.withOpacity(0.6)
+                              : const Color(0xFF5B7B92),
                         ),
                       ),
                   ],
@@ -1338,41 +1484,43 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
     );
   }
 
-  Widget _buildAvailableServiceCard(BuildContext context, bool isMobile, Map<String, dynamic> service) {
+  // ignore: unused_element
+  Widget _buildAvailableServiceCard(
+    BuildContext context,
+    bool isMobile,
+    Map<String, dynamic> service,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 14.0,
-        tablet: 16.0,
-        desktop: 20.0,
-      )),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF1e4a66).withOpacity(0.2),
-            const Color(0xFF16384d).withOpacity(0.2),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
           context,
-          mobile: 12.0,
-          tablet: 13.0,
-          desktop: 14.0,
-        )),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.05),
-          width: 1,
+          mobile: 14.0,
+          tablet: 16.0,
+          desktop: 20.0,
         ),
       ),
+      decoration: BoxDecoration(
+        gradient: _panelGradient(context, opacity: 0.2),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 13.0,
+            desktop: 14.0,
+          ),
+        ),
+        border: Border.all(color: _surfaceBorder(context), width: 1),
+      ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 12.0,
-          tablet: 13.0,
-          desktop: 14.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 13.0,
+            desktop: 14.0,
+          ),
+        ),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Row(
@@ -1395,12 +1543,14 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.cyan500.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                        context,
-                        mobile: 8.0,
-                        tablet: 9.0,
-                        desktop: 10.0,
-                      )),
+                      borderRadius: BorderRadius.circular(
+                        Responsive.getResponsiveValue(
+                          context,
+                          mobile: 8.0,
+                          tablet: 9.0,
+                          desktop: 10.0,
+                        ),
+                      ),
                       border: Border.all(
                         color: AppColors.cyan500.withOpacity(0.1),
                         width: 1,
@@ -1420,12 +1570,14 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                       ),
                     ),
                   ),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 10.0,
-                    tablet: 12.0,
-                    desktop: 14.0,
-                  )),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 10.0,
+                      tablet: 12.0,
+                      desktop: 14.0,
+                    ),
+                  ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1439,15 +1591,17 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                             desktop: 15.0,
                           ),
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textWhite,
+                          color: _primaryText(context),
                         ),
                       ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 3.0,
-                        tablet: 4.0,
-                        desktop: 5.0,
-                      )),
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 3.0,
+                          tablet: 4.0,
+                          desktop: 5.0,
+                        ),
+                      ),
                       Text(
                         service['description'] as String,
                         style: TextStyle(
@@ -1457,7 +1611,9 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                             tablet: 12.0,
                             desktop: 13.0,
                           ),
-                          color: AppColors.cyan400.withOpacity(0.5),
+                          color: isDark
+                              ? AppColors.cyan400.withOpacity(0.5)
+                              : const Color(0xFF7A96AA),
                         ),
                       ),
                     ],
@@ -1485,12 +1641,14 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.cyan500.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                      context,
-                      mobile: 8.0,
-                      tablet: 9.0,
-                      desktop: 10.0,
-                    )),
+                    borderRadius: BorderRadius.circular(
+                      Responsive.getResponsiveValue(
+                        context,
+                        mobile: 8.0,
+                        tablet: 9.0,
+                        desktop: 10.0,
+                      ),
+                    ),
                     border: Border.all(
                       color: AppColors.cyan500.withOpacity(0.3),
                       width: 1,
@@ -1588,6 +1746,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
     required String subtitle,
     required VoidCallback onConnect,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final radius = Responsive.getResponsiveValue(
       context,
       mobile: 12.0,
@@ -1605,19 +1764,9 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
         ),
       ),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF1e4a66).withOpacity(0.2),
-            const Color(0xFF16384d).withOpacity(0.2),
-          ],
-        ),
+        gradient: _panelGradient(context, opacity: 0.2),
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.05),
-          width: 1,
-        ),
+        border: Border.all(color: _surfaceBorder(context), width: 1),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radius),
@@ -1650,7 +1799,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                             desktop: 15.0,
                           ),
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textWhite,
+                          color: _primaryText(context),
                         ),
                       ),
                       SizedBox(
@@ -1670,7 +1819,9 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                             tablet: 12.0,
                             desktop: 13.0,
                           ),
-                          color: AppColors.cyan400.withOpacity(0.5),
+                          color: isDark
+                              ? AppColors.cyan400.withOpacity(0.5)
+                              : const Color(0xFF7A96AA),
                         ),
                       ),
                     ],
@@ -1765,10 +1916,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
       decoration: BoxDecoration(
         color: AppColors.cyan500.withOpacity(0.1),
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.1), width: 1),
       ),
       child: Center(
         child: Row(
@@ -1783,7 +1931,11 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                 color: const Color(0xFF0F9D58),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: const Icon(Icons.table_chart, color: Colors.white, size: 16),
+              child: const Icon(
+                Icons.table_chart,
+                color: Colors.white,
+                size: 16,
+              ),
             ),
           ],
         ),
@@ -1791,16 +1943,20 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
     );
   }
 
-  void _showGoogleReconnectBottomSheet(BuildContext context, String? googleEmail) {
+  void _showGoogleReconnectBottomSheet(
+    BuildContext context,
+    String? googleEmail,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.primaryDarker,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.primaryDarker : const Color(0xFFF7FBFF),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: SafeArea(
             top: false,
@@ -1821,12 +1977,12 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
+                  Text(
                     'Gmail & Sheets Settings',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textWhite,
+                      color: _primaryText(context),
                     ),
                   ),
                   if (googleEmail != null && googleEmail.isNotEmpty) ...[
@@ -1853,17 +2009,24 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 4,
+                      ),
                       child: Row(
                         children: [
-                          Icon(LucideIcons.refreshCw, color: AppColors.cyan400, size: 22),
+                          Icon(
+                            LucideIcons.refreshCw,
+                            color: AppColors.cyan400,
+                            size: 22,
+                          ),
                           const SizedBox(width: 14),
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Reconnect account',
                               style: TextStyle(
                                 fontSize: 16,
-                                color: AppColors.textWhite,
+                                color: _primaryText(context),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -1878,24 +2041,35 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                       showDialog<void>(
                         context: context,
                         builder: (dialogContext) => AlertDialog(
-                          backgroundColor: AppColors.primaryMedium,
+                          backgroundColor: isDark
+                              ? AppColors.primaryMedium
+                              : const Color(0xFFF7FBFF),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          title: const Text(
+                          title: Text(
                             'Disconnect Google Account?',
-                            style: TextStyle(color: AppColors.textWhite, fontSize: 18),
+                            style: TextStyle(
+                              color: _primaryText(context),
+                              fontSize: 18,
+                            ),
                           ),
-                          content: const Text(
+                          content: Text(
                             'This will remove access to Gmail and Google Sheets features.',
-                            style: TextStyle(color: AppColors.textCyan200, fontSize: 14),
+                            style: TextStyle(
+                              color: _secondaryText(context),
+                              fontSize: 14,
+                            ),
                           ),
                           actions: [
                             TextButton(
-                              onPressed: () => Navigator.of(dialogContext).pop(),
+                              onPressed: () =>
+                                  Navigator.of(dialogContext).pop(),
                               child: Text(
                                 'Cancel',
-                                style: TextStyle(color: AppColors.cyan400.withOpacity(0.9)),
+                                style: TextStyle(
+                                  color: AppColors.cyan400.withOpacity(0.9),
+                                ),
                               ),
                             ),
                             TextButton(
@@ -1978,10 +2152,17 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 4,
+                      ),
                       child: Row(
                         children: [
-                          const Icon(LucideIcons.unplug, color: Color(0xFFEF4444), size: 22),
+                          const Icon(
+                            LucideIcons.unplug,
+                            color: Color(0xFFEF4444),
+                            size: 22,
+                          ),
                           const SizedBox(width: 14),
                           const Expanded(
                             child: Text(
@@ -2001,16 +2182,25 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                     onTap: () => Navigator.of(sheetContext).pop(),
                     borderRadius: BorderRadius.circular(12),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 4,
+                      ),
                       child: Row(
                         children: [
-                          Icon(Icons.close, color: AppColors.textCyan200.withOpacity(0.8), size: 22),
+                          Icon(
+                            Icons.close,
+                            color: AppColors.textCyan200.withOpacity(0.8),
+                            size: 22,
+                          ),
                           const SizedBox(width: 14),
                           Text(
                             'Cancel',
                             style: TextStyle(
                               fontSize: 16,
-                              color: AppColors.textCyan200.withOpacity(0.85),
+                              color: isDark
+                                  ? AppColors.textCyan200.withOpacity(0.85)
+                                  : const Color(0xFF5B7B92),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -2030,6 +2220,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
 
   /// Mirrors [_buildConnectedServiceCard] (Uber) layout for the Google integration.
   Widget _buildGoogleConnectedLikeUberCard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final email = _googleStatus.googleEmail;
     final radius = Responsive.getResponsiveValue(
       context,
@@ -2040,142 +2231,165 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
 
     return Container(
       clipBehavior: Clip.antiAlias,
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 14.0,
-        tablet: 16.0,
-        desktop: 20.0,
-      )),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 14.0,
+          tablet: 16.0,
+          desktop: 20.0,
+        ),
+      ),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF1e4a66).withOpacity(0.4),
-            const Color(0xFF16384d).withOpacity(0.4),
-          ],
-        ),
+        gradient: _panelGradient(context),
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: _surfaceBorder(context), width: 1),
       ),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Column(
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _googleDualLogoLeading(context, compact: false),
-                  SizedBox(width: Responsive.getResponsiveValue(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _googleDualLogoLeading(context, compact: false),
+                SizedBox(
+                  width: Responsive.getResponsiveValue(
                     context,
                     mobile: 10.0,
                     tablet: 12.0,
                     desktop: 14.0,
-                  )),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'Gmail & Sheets',
-                                style: TextStyle(
-                                  fontSize: Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 14.0,
-                                    tablet: 15.0,
-                                    desktop: 16.0,
-                                  ),
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textWhite,
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Gmail & Sheets',
+                              style: TextStyle(
+                                fontSize: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 14.0,
+                                  tablet: 15.0,
+                                  desktop: 16.0,
                                 ),
+                                fontWeight: FontWeight.w600,
+                                color: _primaryText(context),
                               ),
                             ),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 6.0,
-                                  tablet: 8.0,
-                                  desktop: 10.0,
-                                ),
-                                vertical: Responsive.getResponsiveValue(
-                                  context,
-                                  mobile: 2.0,
-                                  tablet: 3.0,
-                                  desktop: 4.0,
-                                ),
+                          ),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 6.0,
+                                tablet: 8.0,
+                                desktop: 10.0,
                               ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                              vertical: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 2.0,
+                                tablet: 3.0,
+                                desktop: 4.0,
+                              ),
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(
+                                Responsive.getResponsiveValue(
                                   context,
                                   mobile: 4.0,
                                   tablet: 5.0,
                                   desktop: 6.0,
-                                )),
-                                border: Border.all(
-                                  color: const Color(0xFF10B981).withOpacity(0.2),
-                                  width: 1,
                                 ),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: Responsive.getResponsiveValue(
-                                      context,
-                                      mobile: 5.0,
-                                      tablet: 6.0,
-                                      desktop: 7.0,
-                                    ),
-                                    height: Responsive.getResponsiveValue(
-                                      context,
-                                      mobile: 5.0,
-                                      tablet: 6.0,
-                                      desktop: 7.0,
-                                    ),
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF10B981),
-                                      shape: BoxShape.circle,
-                                    ),
+                              border: Border.all(
+                                color: const Color(0xFF10B981).withOpacity(0.2),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 5.0,
+                                    tablet: 6.0,
+                                    desktop: 7.0,
                                   ),
-                                  SizedBox(width: Responsive.getResponsiveValue(
+                                  height: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 5.0,
+                                    tablet: 6.0,
+                                    desktop: 7.0,
+                                  ),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF10B981),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: Responsive.getResponsiveValue(
                                     context,
                                     mobile: 3.0,
                                     tablet: 4.0,
                                     desktop: 5.0,
-                                  )),
-                                  Text(
-                                    'Connected',
-                                    style: TextStyle(
-                                      fontSize: Responsive.getResponsiveValue(
-                                        context,
-                                        mobile: 10.0,
-                                        tablet: 11.0,
-                                        desktop: 12.0,
-                                      ),
-                                      color: const Color(0xFF10B981),
-                                    ),
                                   ),
-                                ],
-                              ),
+                                ),
+                                Text(
+                                  'Connected',
+                                  style: TextStyle(
+                                    fontSize: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 10.0,
+                                      tablet: 11.0,
+                                      desktop: 12.0,
+                                    ),
+                                    color: const Color(0xFF10B981),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        SizedBox(height: Responsive.getResponsiveValue(
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
                           context,
                           mobile: 4.0,
                           tablet: 5.0,
                           desktop: 6.0,
-                        )),
+                        ),
+                      ),
+                      Text(
+                        'Email summaries · Finance tracker',
+                        style: TextStyle(
+                          fontSize: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 12.0,
+                            tablet: 13.0,
+                            desktop: 14.0,
+                          ),
+                          color: isDark
+                              ? AppColors.textCyan200.withOpacity(0.6)
+                              : const Color(0xFF5B7B92),
+                        ),
+                      ),
+                      if (email != null && email.isNotEmpty) ...[
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 6.0,
+                            tablet: 8.0,
+                            desktop: 10.0,
+                          ),
+                        ),
                         Text(
-                          'Email summaries · Finance tracker',
+                          email,
                           style: TextStyle(
                             fontSize: Responsive.getResponsiveValue(
                               context,
@@ -2183,203 +2397,210 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                               tablet: 13.0,
                               desktop: 14.0,
                             ),
-                            color: AppColors.textCyan200.withOpacity(0.6),
+                            color: const Color(0xFF10B981).withOpacity(0.85),
                           ),
                         ),
-                        if (email != null && email.isNotEmpty) ...[
-                          SizedBox(height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 6.0,
-                            tablet: 8.0,
-                            desktop: 10.0,
-                          )),
-                          Text(
-                            email,
-                            style: TextStyle(
-                              fontSize: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 12.0,
-                                tablet: 13.0,
-                                desktop: 14.0,
-                              ),
-                              color: const Color(0xFF10B981).withOpacity(0.85),
-                            ),
-                          ),
-                        ],
                       ],
-                    ),
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 6.0,
+                          tablet: 8.0,
+                          desktop: 10.0,
+                        ),
+                      ),
+                      Text(
+                        'Last connected: just now',
+                        style: TextStyle(
+                          fontSize: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 11.0,
+                            tablet: 12.0,
+                            desktop: 13.0,
+                          ),
+                          color: isDark
+                              ? AppColors.cyan400.withOpacity(0.5)
+                              : const Color(0xFF7A96AA),
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(width: Responsive.getResponsiveValue(
+                ),
+                SizedBox(
+                  width: Responsive.getResponsiveValue(
                     context,
                     mobile: 6.0,
                     tablet: 8.0,
                     desktop: 10.0,
-                  )),
-                  GestureDetector(
-                    onTap: () => _showGoogleReconnectBottomSheet(context, email),
-                    child: Container(
-                      padding: EdgeInsets.all(Responsive.getResponsiveValue(
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => _showGoogleReconnectBottomSheet(context, email),
+                  child: Container(
+                    padding: EdgeInsets.all(
+                      Responsive.getResponsiveValue(
                         context,
                         mobile: 7.0,
                         tablet: 8.0,
                         desktop: 9.0,
-                      )),
-                      decoration: BoxDecoration(
-                        color: AppColors.cyan500.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                      ),
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.cyan500.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(
+                        Responsive.getResponsiveValue(
                           context,
                           mobile: 8.0,
                           tablet: 9.0,
                           desktop: 10.0,
-                        )),
-                        border: Border.all(
-                          color: AppColors.cyan500.withOpacity(0.2),
-                          width: 1,
                         ),
                       ),
-                      child: Icon(
-                        LucideIcons.settings,
-                        size: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 14.0,
-                          tablet: 16.0,
-                          desktop: 18.0,
-                        ),
-                        color: AppColors.cyan400,
+                      border: Border.all(
+                        color: AppColors.cyan500.withOpacity(0.2),
+                        width: 1,
                       ),
                     ),
+                    child: Icon(
+                      LucideIcons.settings,
+                      size: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 14.0,
+                        tablet: 16.0,
+                        desktop: 18.0,
+                      ),
+                      color: AppColors.cyan400,
+                    ),
                   ),
-                ],
-              ),
-              SizedBox(height: Responsive.getResponsiveValue(
+                ),
+              ],
+            ),
+            SizedBox(
+              height: Responsive.getResponsiveValue(
                 context,
                 mobile: 10.0,
                 tablet: 12.0,
                 desktop: 14.0,
-              )),
-              Container(
-                padding: EdgeInsets.only(
-                  top: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 10.0,
-                    tablet: 12.0,
-                    desktop: 14.0,
-                  ),
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.only(
+                top: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 10.0,
+                  tablet: 12.0,
+                  desktop: 14.0,
                 ),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color: AppColors.cyan500.withOpacity(0.1),
-                      width: 1,
+              ),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: _surfaceBorder(context), width: 1),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Wrap(
+                    spacing: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 4.0,
+                      tablet: 5.0,
+                      desktop: 6.0,
                     ),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Wrap(
-                      spacing: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 4.0,
-                        tablet: 5.0,
-                        desktop: 6.0,
-                      ),
-                      runSpacing: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 4.0,
-                        tablet: 5.0,
-                        desktop: 6.0,
-                      ),
-                      children: ['Send emails', 'Manage sheets'].map((perm) {
-                        return Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 6.0,
-                              tablet: 8.0,
-                              desktop: 10.0,
-                            ),
-                            vertical: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 2.0,
-                              tablet: 3.0,
-                              desktop: 4.0,
-                            ),
+                    runSpacing: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 4.0,
+                      tablet: 5.0,
+                      desktop: 6.0,
+                    ),
+                    children: ['Send emails', 'Manage sheets'].map((perm) {
+                      return Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 6.0,
+                            tablet: 8.0,
+                            desktop: 10.0,
                           ),
-                          decoration: BoxDecoration(
-                            color: AppColors.cyan500.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                          vertical: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 2.0,
+                            tablet: 3.0,
+                            desktop: 4.0,
+                          ),
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.cyan500.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(
+                            Responsive.getResponsiveValue(
                               context,
                               mobile: 4.0,
                               tablet: 5.0,
                               desktop: 6.0,
-                            )),
-                            border: Border.all(
-                              color: AppColors.cyan500.withOpacity(0.1),
-                              width: 1,
                             ),
                           ),
-                          child: Text(
-                            perm,
-                            style: TextStyle(
-                              fontSize: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 10.0,
-                                tablet: 11.0,
-                                desktop: 12.0,
-                              ),
-                              color: AppColors.cyan400.withOpacity(0.7),
-                            ),
+                          border: Border.all(
+                            color: AppColors.cyan500.withOpacity(0.1),
+                            width: 1,
                           ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
+                        ),
+                        child: Text(
+                          perm,
+                          style: TextStyle(
+                            fontSize: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 10.0,
+                              tablet: 11.0,
+                              desktop: 12.0,
+                            ),
+                            color: AppColors.cyan400.withOpacity(0.7),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
+      ),
     );
   }
 
   /// Same structure as [_buildAvailableServiceCard] for the not-connected state.
   Widget _buildGoogleDisconnectedRow(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 14.0,
-        tablet: 16.0,
-        desktop: 20.0,
-      )),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF1e4a66).withOpacity(0.2),
-            const Color(0xFF16384d).withOpacity(0.2),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
           context,
-          mobile: 12.0,
-          tablet: 13.0,
-          desktop: 14.0,
-        )),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.05),
-          width: 1,
+          mobile: 14.0,
+          tablet: 16.0,
+          desktop: 20.0,
         ),
       ),
+      decoration: BoxDecoration(
+        gradient: _panelGradient(context, opacity: 0.2),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 13.0,
+            desktop: 14.0,
+          ),
+        ),
+        border: Border.all(color: _surfaceBorder(context), width: 1),
+      ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 12.0,
-          tablet: 13.0,
-          desktop: 14.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 13.0,
+            desktop: 14.0,
+          ),
+        ),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Row(
@@ -2388,12 +2609,14 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
               Row(
                 children: [
                   _googleDualLogoLeading(context, compact: true),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 10.0,
-                    tablet: 12.0,
-                    desktop: 14.0,
-                  )),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 10.0,
+                      tablet: 12.0,
+                      desktop: 14.0,
+                    ),
+                  ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2407,15 +2630,17 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                             desktop: 15.0,
                           ),
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textWhite,
+                          color: _primaryText(context),
                         ),
                       ),
-                      SizedBox(height: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 3.0,
-                        tablet: 4.0,
-                        desktop: 5.0,
-                      )),
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 3.0,
+                          tablet: 4.0,
+                          desktop: 5.0,
+                        ),
+                      ),
                       Text(
                         'Email summaries · Finance tracker',
                         style: TextStyle(
@@ -2425,7 +2650,9 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                             tablet: 12.0,
                             desktop: 13.0,
                           ),
-                          color: AppColors.cyan400.withOpacity(0.5),
+                          color: isDark
+                              ? AppColors.cyan400.withOpacity(0.5)
+                              : const Color(0xFF7A96AA),
                         ),
                       ),
                     ],
@@ -2438,7 +2665,9 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.cyan400),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.cyan400,
+                        ),
                       ),
                     )
                   : GestureDetector(
@@ -2465,12 +2694,14 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.cyan500.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                            context,
-                            mobile: 8.0,
-                            tablet: 9.0,
-                            desktop: 10.0,
-                          )),
+                          borderRadius: BorderRadius.circular(
+                            Responsive.getResponsiveValue(
+                              context,
+                              mobile: 8.0,
+                              tablet: 9.0,
+                              desktop: 10.0,
+                            ),
+                          ),
                           border: Border.all(
                             color: AppColors.cyan500.withOpacity(0.3),
                             width: 1,
@@ -2500,24 +2731,25 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
 
   Widget _buildInfoFooter(BuildContext context, bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 14.0,
-        tablet: 16.0,
-        desktop: 20.0,
-      )),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 14.0,
+          tablet: 16.0,
+          desktop: 20.0,
+        ),
+      ),
       decoration: BoxDecoration(
         color: AppColors.cyan500.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 12.0,
-          tablet: 13.0,
-          desktop: 14.0,
-        )),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 13.0,
+            desktop: 14.0,
+          ),
         ),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.1), width: 1),
       ),
       child: Text(
         'All connections are encrypted and can be removed at any time. You control what data AVA can access.',
@@ -2607,10 +2839,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
       decoration: BoxDecoration(
         color: AppColors.cyan500.withOpacity(0.1),
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.1), width: 1),
       ),
       child: Center(child: child),
     );
@@ -2652,10 +2881,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
           ],
         ),
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.1), width: 1),
       ),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -2824,13 +3050,8 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                 ),
                 Container(
                   child: GestureDetector(
-                    onTap: () {
-                      if (title == 'Telegram') {
-                        _showTelegramSettingsBottomSheet(context);
-                      } else {
-                        _showMockServiceSettingsBottomSheet(context, title);
-                      }
-                    },
+                    onTap: () =>
+                        _showMockServiceSettingsBottomSheet(context, title),
                     child: Container(
                       padding: EdgeInsets.all(
                         Responsive.getResponsiveValue(
@@ -2979,227 +3200,10 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
     );
   }
 
-  Future<void> _showTelegramSettingsBottomSheet(BuildContext context) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.primaryDarker,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Telegram Settings',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textWhite,
-                    ),
-                  ),
-                  if (_telegramChatId != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      'Chat ID: $_telegramChatId',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.cyan400,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  Divider(
-                    color: AppColors.cyan500.withValues(alpha: 0.2),
-                    height: 1,
-                  ),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () async {
-                      Navigator.of(sheetContext).pop();
-                      await _connectTelegram();
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 14,
-                        horizontal: 4,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            LucideIcons.refreshCw,
-                            color: AppColors.cyan400,
-                            size: 22,
-                          ),
-                          const SizedBox(width: 14),
-                          const Expanded(
-                            child: Text(
-                              'Reconnect account',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: AppColors.textWhite,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () async {
-                      Navigator.of(sheetContext).pop();
-                      // Show confirmation dialog
-                      final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (dialogContext) => AlertDialog(
-                          backgroundColor: AppColors.primaryMedium,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          title: const Text(
-                            'Disconnect Telegram?',
-                            style: TextStyle(
-                              color: AppColors.textWhite,
-                              fontSize: 18,
-                            ),
-                          ),
-                          content: const Text(
-                            'You will no longer be able to use Jackie AI or send receipts via Telegram.',
-                            style: TextStyle(
-                              color: AppColors.textCyan200,
-                              fontSize: 14,
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.of(dialogContext).pop(false),
-                              child: Text(
-                                'Cancel',
-                                style: TextStyle(
-                                  color:
-                                      AppColors.cyan400.withValues(alpha: 0.9),
-                                ),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.of(dialogContext).pop(true),
-                              child: const Text(
-                                'Disconnect',
-                                style: TextStyle(
-                                  color: Color(0xFFEF4444),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (confirmed == true && mounted) {
-                        final prefs = await SharedPreferences.getInstance();
-                        final token = prefs.getString(_tokenKey) ?? '';
-                        if (token.isNotEmpty) {
-                          await _telegramService.disconnect(token);
-                          await _loadTelegramStatus();
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Telegram disconnected'),
-                              ),
-                            );
-                          }
-                        }
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 14, horizontal: 4),
-                      child: Row(
-                        children: [
-                          Icon(
-                            LucideIcons.unplug,
-                            color: Color(0xFFEF4444),
-                            size: 22,
-                          ),
-                          SizedBox(width: 14),
-                          Expanded(
-                            child: Text(
-                              'Disconnect',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Color(0xFFEF4444),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () => Navigator.of(sheetContext).pop(),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 14,
-                        horizontal: 4,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.close,
-                            color: AppColors.textCyan200.withValues(alpha: 0.8),
-                            size: 22,
-                          ),
-                          const SizedBox(width: 14),
-                          Text(
-                            'Cancel',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: AppColors.textCyan200.withValues(
-                                alpha: 0.85,
-                              ),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showMockServiceSettingsBottomSheet(BuildContext context, String serviceName) {
+  void _showMockServiceSettingsBottomSheet(
+    BuildContext context,
+    String serviceName,
+  ) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -3252,10 +3256,17 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 4,
+                      ),
                       child: Row(
                         children: [
-                          Icon(LucideIcons.refreshCw, color: AppColors.cyan400, size: 22),
+                          Icon(
+                            LucideIcons.refreshCw,
+                            color: AppColors.cyan400,
+                            size: 22,
+                          ),
                           const SizedBox(width: 14),
                           const Expanded(
                             child: Text(
@@ -3283,10 +3294,17 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+                      padding: EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 4,
+                      ),
                       child: Row(
                         children: [
-                          Icon(LucideIcons.unplug, color: Color(0xFFEF4444), size: 22),
+                          Icon(
+                            LucideIcons.unplug,
+                            color: Color(0xFFEF4444),
+                            size: 22,
+                          ),
                           SizedBox(width: 14),
                           Expanded(
                             child: Text(
@@ -3306,10 +3324,17 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                     onTap: () => Navigator.of(sheetContext).pop(),
                     borderRadius: BorderRadius.circular(12),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 4,
+                      ),
                       child: Row(
                         children: [
-                          Icon(Icons.close, color: AppColors.textCyan200.withOpacity(0.8), size: 22),
+                          Icon(
+                            Icons.close,
+                            color: AppColors.textCyan200.withOpacity(0.8),
+                            size: 22,
+                          ),
                           const SizedBox(width: 14),
                           Text(
                             'Cancel',
