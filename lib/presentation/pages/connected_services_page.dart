@@ -318,20 +318,9 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
     final connectedServices = <Map<String, dynamic>>[];
     const totalActions = 257; // mocked for now
     final googleConnected = _googleStatus.connected && !_loadingGoogleStatus;
-    final connectedCountForStats =
-        (googleConnected ? 1 : 0) +
-        3; // Calendar + Telegram + LinkedIn (+ Gmail&Sheets if connected)
-    final pageGradient = isDark
-        ? const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
-          )
-        : const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
-          );
+    final connectedCountForStats = (googleConnected ? 2 : 0) +
+        (_telegramLinked ? 1 : 0) +
+        1; // +2 when Google connected = Gmail&Sheets + Calendar, +1 for LinkedIn (always mocked)
 
     return Scaffold(
       body: Container(
@@ -392,23 +381,39 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                         desktop: 28.0,
                       ),
                     ),
-
-                    // Connected Services
-                    _withEntranceAnimation(
-                      Text(
-                        'Connected',
-                        style: TextStyle(
-                          fontSize: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 16.0,
-                            tablet: 17.0,
-                            desktop: 18.0,
-                          ),
-                          fontWeight: FontWeight.w600,
-                          color: _primaryText(context),
-                        ),
-                      ),
-                      (a) => a.fadeIn(delay: 200.ms, duration: 300.ms),
+                  ),
+                  child: _withEntranceAnimation(
+                    googleConnected
+                        ? _buildConnectedCalendarCard(context)
+                        : const SizedBox.shrink(),
+                    (a) {
+                      final delayMs = 300 + (connectedServices.length * 100);
+                      return a
+                          .fadeIn(
+                            delay: Duration(milliseconds: delayMs),
+                            duration: 300.ms,
+                          )
+                          .slideY(
+                            begin: 0.2,
+                            end: 0,
+                            delay: Duration(milliseconds: delayMs),
+                            duration: 300.ms,
+                          );
+                    },
+                  ),
+                ),
+                if (_telegramLinked)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _buildMockConnectedTelegramCard(context),
+                  ),
+                Padding(
+                  padding: EdgeInsets.only(
+                    bottom: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 10.0,
+                      tablet: 12.0,
+                      desktop: 14.0,
                     ),
                     SizedBox(
                       height: Responsive.getResponsiveValue(
@@ -592,8 +597,35 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                       ),
                       (a) => a.fadeIn(delay: 600.ms, duration: 300.ms),
                     ),
-                    SizedBox(
-                      height: Responsive.getResponsiveValue(
+                  ),
+                if (!googleConnected)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      bottom: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 10.0,
+                        tablet: 12.0,
+                        desktop: 14.0,
+                      ),
+                    ),
+                    child: _buildMockDisconnectedLikeGoogleRow(
+                      context,
+                      leading: _mockIconLeading(
+                        context,
+                        Image.network(_calendarIconUrl, width: 26, height: 26),
+                      ),
+                      title: 'Google Calendar',
+                      subtitle: 'Connect Gmail & Sheets to enable',
+                      onConnect: () async {
+                        await context.push('/google-connect');
+                        if (mounted) _loadGoogleStatus();
+                      },
+                    ),
+                  ),
+                if (!_telegramLinked)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      bottom: Responsive.getResponsiveValue(
                         context,
                         mobile: 10.0,
                         tablet: 12.0,
@@ -2735,7 +2767,8 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
     );
   }
 
-  Widget _buildMockConnectedCalendarCard(BuildContext context) {
+  Widget _buildConnectedCalendarCard(BuildContext context) {
+    final email = _googleStatus.googleEmail;
     return _buildMockConnectedLikeGoogleCard(
       context: context,
       leading: _mockIconLeading(
@@ -2743,9 +2776,14 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
         Image.network(_calendarIconUrl, width: 26, height: 26),
       ),
       title: 'Google Calendar',
-      subtitle: 'Schedule management and optimization',
+      subtitle: 'Meeting detection & scheduling',
       chips: const ['Read events', 'Create events'],
-      secondary: 'Last sync: 5 min ago',
+      secondary: (email != null && email.isNotEmpty)
+          ? email
+          : 'Powered by Gmail & Sheets connection',
+      secondaryColor: (email != null && email.isNotEmpty)
+          ? const Color(0xFF10B981)
+          : null,
     );
   }
 
