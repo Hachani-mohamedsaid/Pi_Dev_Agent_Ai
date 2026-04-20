@@ -285,9 +285,9 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
     final connectedServices = <Map<String, dynamic>>[];
     const totalActions = 257; // mocked for now
     final googleConnected = _googleStatus.connected && !_loadingGoogleStatus;
-    final connectedCountForStats = (googleConnected ? 1 : 0) +
-        2 +
-        (_telegramLinked ? 1 : 0); // Calendar + LinkedIn + Telegram if linked (+ Gmail if connected)
+    final connectedCountForStats = (googleConnected ? 2 : 0) +
+        (_telegramLinked ? 1 : 0) +
+        1; // +2 when Google connected = Gmail&Sheets + Calendar, +1 for LinkedIn (always mocked)
 
     return Scaffold(
       body: Container(
@@ -413,7 +413,9 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                     ),
                   ),
                   child: _withEntranceAnimation(
-                    _buildMockConnectedCalendarCard(context),
+                    googleConnected
+                        ? _buildConnectedCalendarCard(context)
+                        : const SizedBox.shrink(),
                     (a) {
                       final delayMs = 300 + (connectedServices.length * 100);
                       return a
@@ -536,6 +538,30 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                       (a) => a
                           .fadeIn(delay: 600.ms, duration: 300.ms)
                           .slideY(begin: 0.2, end: 0, delay: 600.ms, duration: 300.ms),
+                    ),
+                  ),
+                if (!googleConnected)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      bottom: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 10.0,
+                        tablet: 12.0,
+                        desktop: 14.0,
+                      ),
+                    ),
+                    child: _buildMockDisconnectedLikeGoogleRow(
+                      context,
+                      leading: _mockIconLeading(
+                        context,
+                        Image.network(_calendarIconUrl, width: 26, height: 26),
+                      ),
+                      title: 'Google Calendar',
+                      subtitle: 'Connect Gmail & Sheets to enable',
+                      onConnect: () async {
+                        await context.push('/google-connect');
+                        if (mounted) _loadGoogleStatus();
+                      },
                     ),
                   ),
                 if (!_telegramLinked)
@@ -2509,7 +2535,8 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
     );
   }
 
-  Widget _buildMockConnectedCalendarCard(BuildContext context) {
+  Widget _buildConnectedCalendarCard(BuildContext context) {
+    final email = _googleStatus.googleEmail;
     return _buildMockConnectedLikeGoogleCard(
       context: context,
       leading: _mockIconLeading(
@@ -2517,9 +2544,14 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
         Image.network(_calendarIconUrl, width: 26, height: 26),
       ),
       title: 'Google Calendar',
-      subtitle: 'Schedule management and optimization',
+      subtitle: 'Meeting detection & scheduling',
       chips: const ['Read events', 'Create events'],
-      secondary: 'Last sync: 5 min ago',
+      secondary: (email != null && email.isNotEmpty)
+          ? email
+          : 'Powered by Gmail & Sheets connection',
+      secondaryColor: (email != null && email.isNotEmpty)
+          ? const Color(0xFF10B981)
+          : null,
     );
   }
 

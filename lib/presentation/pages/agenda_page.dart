@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -56,7 +58,6 @@ class _AgendaPageState extends State<AgendaPage> {
       return;
     }
 
-    // Check Google connection (covers Gmail + Calendar + Sheets — same token)
     final googleStatus = await _googleService.getStatus(token);
     if (!mounted) return;
 
@@ -66,11 +67,10 @@ class _AgendaPageState extends State<AgendaPage> {
         'Connect Google to use the Agenda — AVA monitors your Gmail for meeting requests and manages your Calendar automatically.',
       );
       if (!mounted) return;
-      // Re-check after returning from connect flow
       final refreshed = await _googleService.getStatus(token);
       if (!mounted) return;
       if (!refreshed.connected) {
-        setState(() => _isLoading = false);
+        if (mounted) setState(() => _isLoading = false);
         return;
       }
     }
@@ -85,7 +85,23 @@ class _AgendaPageState extends State<AgendaPage> {
     });
     try {
       final prefs = await SharedPreferences.getInstance();
+
+      // Try direct 'user_id' key first
       _userId ??= prefs.getString(_userIdKey);
+
+      // Fallback: extract id from cached user JSON (auth_cached_user)
+      if (_userId == null || _userId!.isEmpty) {
+        final cachedUserJson = prefs.getString('auth_cached_user');
+        if (cachedUserJson != null && cachedUserJson.isNotEmpty) {
+          try {
+            final decoded = jsonDecode(cachedUserJson) as Map<String, dynamic>;
+            _userId = decoded['id'] as String? ??
+                decoded['_id'] as String? ??
+                decoded['userId'] as String?;
+          } catch (_) {}
+        }
+      }
+
       if (_userId == null || _userId!.isEmpty) {
         throw Exception('User ID not found. Please log out and back in.');
       }
@@ -217,170 +233,187 @@ class _AgendaPageState extends State<AgendaPage> {
         ),
         child: SafeArea(
           bottom: false,
-          child: Stack(
-            children: [
-              if (_isLoading)
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const CircularProgressIndicator(color: Color(0xFF10B981)),
-                      const SizedBox(height: 16),
-                      Text('Loading meetings...',
-                          style: TextStyle(
-                              color: AppColors.textCyan200.withOpacity(0.7),
-                              fontSize: 14)),
-                    ],
-                  ),
-                )
-              else if (_errorMessage != null)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height -
+                MediaQuery.of(context).padding.top,
+            child: Stack(
+              children: [
+                if (_isLoading)
+                  Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(LucideIcons.alertCircle,
-                            size: 64, color: Color(0xFFEF4444)),
-                        const SizedBox(height: 24),
-                        const Text('Failed to load meetings',
+                        const CircularProgressIndicator(
+                            color: Color(0xFF10B981)),
+                        const SizedBox(height: 16),
+                        Text('Loading meetings...',
                             style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white)),
-                        const SizedBox(height: 12),
-                        Text(_errorMessage!,
-                            style: TextStyle(
-                                fontSize: 14,
-                                color: AppColors.textCyan200.withOpacity(0.6)),
-                            textAlign: TextAlign.center),
-                        const SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          onPressed: _loadMeetings,
-                          icon: const Icon(LucideIcons.refreshCw),
-                          label: const Text('Retry'),
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF10B981),
-                              foregroundColor: Colors.white),
-                        ),
+                                color: AppColors.textCyan200.withOpacity(0.7),
+                                fontSize: 14)),
                       ],
                     ),
-                  ),
-                )
-              else
-                RefreshIndicator(
-                  onRefresh: _loadMeetings,
-                  color: const Color(0xFF10B981),
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.only(
-                      left: padding,
-                      right: padding,
-                      top: padding,
-                      bottom: Responsive.getResponsiveValue(context,
-                          mobile: 100.0, tablet: 120.0, desktop: 140.0),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        GestureDetector(
-                          onTap: () => context.go('/home'),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(LucideIcons.chevronLeft,
-                                  color: AppColors.cyan400, size: 22),
-                              const SizedBox(width: 8),
-                              Text('Back to Home',
-                                  style: TextStyle(
-                                      color: AppColors.cyan400,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500)),
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-                            height: Responsive.getResponsiveValue(context,
-                                mobile: 20.0, tablet: 24.0, desktop: 28.0)),
-                        Row(
-                          children: [
-                            Icon(LucideIcons.calendarClock,
-                                color: AppColors.cyan400, size: 28),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Agenda',
+                  )
+                else if (_errorMessage != null)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(LucideIcons.alertCircle,
+                              size: 64, color: Color(0xFFEF4444)),
+                          const SizedBox(height: 24),
+                          const Text('Failed to load meetings',
                               style: TextStyle(
-                                fontSize: Responsive.getResponsiveValue(context,
-                                    mobile: 26.0, tablet: 30.0, desktop: 34.0),
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        )
-                            .animate()
-                            .fadeIn(duration: 500.ms)
-                            .slideY(begin: -0.2, end: 0, duration: 500.ms),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Pending meeting requests from your Gmail',
-                          style: TextStyle(
-                              color: AppColors.textCyan200.withOpacity(0.7),
-                              fontSize: 14),
-                        ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
-                        SizedBox(
-                            height: Responsive.getResponsiveValue(context,
-                                mobile: 28.0, tablet: 32.0, desktop: 36.0)),
-                        if (_meetings.isEmpty)
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(36),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryLight.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: AppColors.cyan500.withOpacity(0.2)),
-                            ),
-                            child: Column(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white)),
+                          const SizedBox(height: 12),
+                          Text(_errorMessage!,
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  color:
+                                      AppColors.textCyan200.withOpacity(0.6)),
+                              textAlign: TextAlign.center),
+                          const SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: _loadMeetings,
+                            icon: const Icon(LucideIcons.refreshCw),
+                            label: const Text('Retry'),
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF10B981),
+                                foregroundColor: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  RefreshIndicator(
+                    onRefresh: _loadMeetings,
+                    color: const Color(0xFF10B981),
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.only(
+                        left: padding,
+                        right: padding,
+                        top: padding,
+                        bottom: Responsive.getResponsiveValue(context,
+                            mobile: 100.0, tablet: 120.0, desktop: 140.0),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GestureDetector(
+                            onTap: () => context.go('/home'),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(LucideIcons.calendarCheck,
-                                    color: AppColors.cyan400.withOpacity(0.5),
-                                    size: 52),
-                                const SizedBox(height: 16),
-                                Text('No pending meetings',
+                                Icon(LucideIcons.chevronLeft,
+                                    color: AppColors.cyan400, size: 22),
+                                const SizedBox(width: 8),
+                                Text('Back to Home',
                                     style: TextStyle(
-                                        color:
-                                            AppColors.textCyan200.withOpacity(0.9),
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600)),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'AVA scans your Gmail every 5 minutes for meeting requests. They will appear here.',
-                                  style: TextStyle(
-                                      color:
-                                          AppColors.textCyan200.withOpacity(0.5),
-                                      fontSize: 13),
-                                  textAlign: TextAlign.center,
-                                ),
+                                        color: AppColors.cyan400,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500)),
                               ],
                             ),
-                          ).animate().fadeIn(delay: 200.ms, duration: 400.ms)
-                        else
-                          ...List.generate(_meetings.length, (i) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 14),
-                              child: _buildMeetingCard(context, _meetings[i], i),
-                            );
-                          }),
-                      ],
+                          ),
+                          SizedBox(
+                              height: Responsive.getResponsiveValue(context,
+                                  mobile: 20.0,
+                                  tablet: 24.0,
+                                  desktop: 28.0)),
+                          Row(
+                            children: [
+                              Icon(LucideIcons.calendarClock,
+                                  color: AppColors.cyan400, size: 28),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Agenda',
+                                style: TextStyle(
+                                  fontSize: Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 26.0,
+                                      tablet: 30.0,
+                                      desktop: 34.0),
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          )
+                              .animate()
+                              .fadeIn(duration: 500.ms)
+                              .slideY(begin: -0.2, end: 0, duration: 500.ms),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Pending meeting requests from your Gmail',
+                            style: TextStyle(
+                                color: AppColors.textCyan200.withOpacity(0.7),
+                                fontSize: 14),
+                          ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
+                          SizedBox(
+                              height: Responsive.getResponsiveValue(context,
+                                  mobile: 28.0,
+                                  tablet: 32.0,
+                                  desktop: 36.0)),
+                          if (_meetings.isEmpty)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(36),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                    color: AppColors.cyan500.withOpacity(0.2)),
+                              ),
+                              child: Column(
+                                children: [
+                                  Icon(LucideIcons.calendarCheck,
+                                      color:
+                                          AppColors.cyan400.withOpacity(0.5),
+                                      size: 52),
+                                  const SizedBox(height: 16),
+                                  Text('No pending meetings',
+                                      style: TextStyle(
+                                          color: AppColors.textCyan200
+                                              .withOpacity(0.9),
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600)),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'AVA scans your Gmail every 5 minutes for meeting requests. They will appear here.',
+                                    style: TextStyle(
+                                        color: AppColors.textCyan200
+                                            .withOpacity(0.5),
+                                        fontSize: 13),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ).animate().fadeIn(delay: 200.ms, duration: 400.ms)
+                          else
+                            ...List.generate(_meetings.length, (i) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 14),
+                                child:
+                                    _buildMeetingCard(context, _meetings[i], i),
+                              );
+                            }),
+                        ],
+                      ),
                     ),
                   ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: NavigationBarWidget(currentPath: '/agenda'),
                 ),
-              Positioned(
-                left: 0, right: 0, bottom: 0,
-                child: NavigationBarWidget(currentPath: '/agenda'),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
