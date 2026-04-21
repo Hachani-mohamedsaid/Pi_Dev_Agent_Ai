@@ -71,7 +71,6 @@ Future<void> _startApp() async {
     );
   }
   await LocaleService.instance.load();
-  await LocaleService.instance.setLocale('ar');
   await ThemeService.instance.load();
   runApp(const App());
 }
