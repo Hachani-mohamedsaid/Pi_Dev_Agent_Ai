@@ -9,6 +9,8 @@ class Meeting {
   final DateTime endTime;
   final String timezone;
   final String importance;
+  final String email;
+  final String meetLink;
 
   const Meeting({
     required this.meetingId,
@@ -17,6 +19,8 @@ class Meeting {
     required this.endTime,
     required this.timezone,
     required this.importance,
+    this.email = '',
+    this.meetLink = '',
   });
 
   /// Crée un [Meeting] à partir du JSON renvoyé par le webhook n8n.
@@ -29,8 +33,8 @@ class Meeting {
   /// - timezone
   /// - importance
   factory Meeting.fromJson(Map<String, dynamic> json) {
-    final rawStart = json['startTime'];
-    final rawEnd = json['endTime'];
+    final rawStart = json['startTime'] ?? json['start_time'];
+    final rawEnd = json['endTime'] ?? json['end_time'];
 
     if (rawStart is! String || rawEnd is! String) {
       throw FormatException('Invalid date format in meeting payload');
@@ -51,6 +55,18 @@ class Meeting {
           : parsedStart.add(const Duration(minutes: 30)),
       timezone: json['timezone']?.toString() ?? '',
       importance: (json['importance']?.toString() ?? 'normal').toLowerCase(),
+      email: (json['email'] ??
+              json['senderEmail'] ??
+              json['sender_email'] ??
+              json['from'] ??
+              '')
+          .toString(),
+      meetLink: (json['meetLink'] ??
+              json['meet_link'] ??
+              json['meetingLink'] ??
+              json['meeting_link'] ??
+              '')
+          .toString(),
     );
   }
 
@@ -62,6 +78,8 @@ class Meeting {
       'endTime': endTime.toUtc().toIso8601String(),
       'timezone': timezone,
       'importance': importance,
+      'email': email,
+      'meetLink': meetLink,
     };
   }
 }

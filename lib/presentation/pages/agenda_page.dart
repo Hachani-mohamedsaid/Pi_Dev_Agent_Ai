@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -27,7 +28,7 @@ Color _secondaryText(BuildContext context) {
 }
 
 /// Agenda screen: review schedule / agenda. Placeholder for now.
-class AgendaPage extends StatelessWidget {
+class AgendaPage extends StatefulWidget {
   const AgendaPage({super.key});
 
   @override
@@ -47,6 +48,9 @@ class _AgendaPageState extends State<AgendaPage> {
   String? _userId;
   List<Meeting> _meetings = [];
   final Set<String> _processingIds = {};
+
+  String _activeFilter = 'week'; // 'pending' | 'day' | 'week' | 'month'
+  List<Meeting> _acceptedMeetings = [];
 
   @override
   void initState() {
@@ -124,6 +128,7 @@ class _AgendaPageState extends State<AgendaPage> {
         _meetings = meetings;
         _isLoading = false;
       });
+      await _loadAcceptedMeetings();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -131,6 +136,47 @@ class _AgendaPageState extends State<AgendaPage> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _loadAcceptedMeetings() async {
+    try {
+      if (_userId == null || _userId!.isEmpty) return;
+      final uri = Uri.parse(
+        'https://n8n-production-1e13.up.railway.app/webhook/get-meetings?userId=$_userId&status=accepted',
+      );
+      final res = await http.get(uri).timeout(const Duration(seconds: 20));
+      if (res.statusCode != 200) return;
+      final body = jsonDecode(res.body);
+      final List<dynamic> list =
+          body is List ? body : (body['meetings'] as List? ?? []);
+      final accepted = list
+          .map((e) => Meeting.fromJson(e as Map<String, dynamic>))
+          .toList();
+      if (!mounted) return;
+      setState(() => _acceptedMeetings = accepted);
+    } catch (_) {}
+  }
+
+  List<Meeting> get _filteredAccepted {
+    final now = DateTime.now();
+    return _acceptedMeetings.where((m) {
+      final dt = m.startTime;
+      switch (_activeFilter) {
+        case 'day':
+          return dt.year == now.year &&
+              dt.month == now.month &&
+              dt.day == now.day;
+        case 'month':
+          return dt.year == now.year && dt.month == now.month;
+        case 'week':
+        default:
+          final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+          final endOfWeek = startOfWeek.add(const Duration(days: 6));
+          return dt.isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
+              dt.isBefore(endOfWeek.add(const Duration(days: 1)));
+      }
+    }).toList()
+      ..sort((a, b) => a.startTime.compareTo(b.startTime));
   }
 
   Future<void> _submitDecision(Meeting meeting, String decision) async {
@@ -374,60 +420,237 @@ class _AgendaPageState extends State<AgendaPage> {
                               .fadeIn(duration: 500.ms)
                               .slideY(begin: -0.2, end: 0, duration: 500.ms),
                           const SizedBox(height: 6),
-                          Text(
-                            'Pending meeting requests from your Gmail',
-                            style: TextStyle(
-                                color: AppColors.textCyan200.withOpacity(0.7),
-                                fontSize: 14),
-                          ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
+                          Text('Manage your meeting requests',
+                                  style: TextStyle(
+                                      color: AppColors.textCyan200
+                                          .withOpacity(0.7),
+                                      fontSize: 14))
+                              .animate()
+                              .fadeIn(delay: 100.ms, duration: 400.ms),
                           SizedBox(
                               height: Responsive.getResponsiveValue(context,
-                                  mobile: 28.0,
-                                  tablet: 32.0,
-                                  desktop: 36.0)),
-                          if (_meetings.isEmpty)
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(36),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryLight.withOpacity(0.3),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                    color: AppColors.cyan500.withOpacity(0.2)),
-                              ),
-                              child: Column(
-                                children: [
-                                  Icon(LucideIcons.calendarCheck,
-                                      color:
-                                          AppColors.cyan400.withOpacity(0.5),
-                                      size: 52),
-                                  const SizedBox(height: 16),
-                                  Text('No pending meetings',
+                                  mobile: 20.0,
+                                  tablet: 24.0,
+                                  desktop: 28.0)),
+
+                          // Tab switcher: Pending | Accepted
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryLight.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: AppColors.cyan500.withOpacity(0.2)),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => setState(
+                                        () => _activeFilter = 'pending'),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: _activeFilter == 'pending'
+                                            ? AppColors.cyan500
+                                                .withOpacity(0.3)
+                                            : Colors.transparent,
+                                        borderRadius:
+                                            BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                          'Pending (${_meetings.length})',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: _activeFilter == 'pending'
+                                                ? AppColors.cyan400
+                                                : AppColors.textCyan200
+                                                    .withOpacity(0.5),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          )),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => setState(
+                                        () => _activeFilter = 'week'),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: _activeFilter != 'pending'
+                                            ? AppColors.cyan500
+                                                .withOpacity(0.3)
+                                            : Colors.transparent,
+                                        borderRadius:
+                                            BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                          'Accepted (${_acceptedMeetings.length})',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: _activeFilter != 'pending'
+                                                ? AppColors.cyan400
+                                                : AppColors.textCyan200
+                                                    .withOpacity(0.5),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          )),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Filter buttons (only show when Accepted tab active)
+                          if (_activeFilter != 'pending')
+                            Row(
+                              children: ['day', 'week', 'month'].map((filter) {
+                                final isActive = _activeFilter == filter;
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: GestureDetector(
+                                    onTap: () => setState(
+                                        () => _activeFilter = filter),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 7),
+                                      decoration: BoxDecoration(
+                                        color: isActive
+                                            ? AppColors.cyan500
+                                                .withOpacity(0.3)
+                                            : AppColors.primaryLight
+                                                .withOpacity(0.2),
+                                        borderRadius:
+                                            BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: isActive
+                                              ? AppColors.cyan400
+                                              : AppColors.cyan500
+                                                  .withOpacity(0.2),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        filter[0].toUpperCase() +
+                                            filter.substring(1),
+                                        style: TextStyle(
+                                          color: isActive
+                                              ? AppColors.cyan400
+                                              : AppColors.textCyan200
+                                                  .withOpacity(0.5),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+
+                          if (_activeFilter != 'pending')
+                            const SizedBox(height: 12),
+
+                          // Content based on active tab
+                          if (_activeFilter == 'pending') ...[
+                            if (_meetings.isEmpty)
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(36),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryLight
+                                      .withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                      color: AppColors.cyan500
+                                          .withOpacity(0.2)),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(LucideIcons.calendarCheck,
+                                        color: AppColors.cyan400
+                                            .withOpacity(0.5),
+                                        size: 52),
+                                    const SizedBox(height: 16),
+                                    Text('No pending meetings',
+                                        style: TextStyle(
+                                            color: AppColors.textCyan200
+                                                .withOpacity(0.9),
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600)),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'AVA scans your Gmail every 5 minutes for meeting requests. They will appear here.',
                                       style: TextStyle(
                                           color: AppColors.textCyan200
-                                              .withOpacity(0.9),
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600)),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'AVA scans your Gmail every 5 minutes for meeting requests. They will appear here.',
-                                    style: TextStyle(
-                                        color: AppColors.textCyan200
+                                              .withOpacity(0.5),
+                                          fontSize: 13),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              )
+                                  .animate()
+                                  .fadeIn(delay: 200.ms, duration: 400.ms)
+                            else
+                              ...List.generate(_meetings.length, (i) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 14),
+                                  child: _buildMeetingCard(
+                                      context, _meetings[i], i),
+                                );
+                              }),
+                          ] else ...[
+                            if (_filteredAccepted.isEmpty)
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(36),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryLight
+                                      .withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                      color: AppColors.cyan500
+                                          .withOpacity(0.2)),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(LucideIcons.calendarCheck,
+                                        color: AppColors.cyan400
                                             .withOpacity(0.5),
-                                        fontSize: 13),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ).animate().fadeIn(delay: 200.ms, duration: 400.ms)
-                          else
-                            ...List.generate(_meetings.length, (i) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 14),
-                                child:
-                                    _buildMeetingCard(context, _meetings[i], i),
-                              );
-                            }),
+                                        size: 52),
+                                    const SizedBox(height: 16),
+                                    Text('No accepted meetings',
+                                        style: TextStyle(
+                                            color: AppColors.textCyan200
+                                                .withOpacity(0.9),
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600)),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                        'No meetings accepted for this period.',
+                                        style: TextStyle(
+                                            color: AppColors.textCyan200
+                                                .withOpacity(0.5),
+                                            fontSize: 13),
+                                        textAlign: TextAlign.center),
+                                  ],
+                                ),
+                              )
+                            else
+                              ...List.generate(_filteredAccepted.length, (i) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 14),
+                                  child: _buildAcceptedCard(
+                                      context, _filteredAccepted[i], i),
+                                );
+                              }),
+                          ],
                         ],
                       ),
                     ),
@@ -497,6 +720,26 @@ class _AgendaPageState extends State<AgendaPage> {
             ],
           ),
           const SizedBox(height: 10),
+          if (meeting.email.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  Icon(LucideIcons.mail,
+                      size: 13, color: AppColors.cyan400.withOpacity(0.6)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      meeting.email,
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textCyan200.withOpacity(0.65)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Row(
             children: [
               Icon(LucideIcons.clock,
@@ -559,6 +802,128 @@ class _AgendaPageState extends State<AgendaPage> {
               ),
             ],
           ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(
+            delay: Duration(milliseconds: 150 + index * 80),
+            duration: 400.ms)
+        .slideY(
+            begin: 0.15,
+            end: 0,
+            delay: Duration(milliseconds: 150 + index * 80),
+            duration: 400.ms);
+  }
+
+  Widget _buildAcceptedCard(BuildContext context, Meeting meeting, int index) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF10B981).withOpacity(0.1),
+            const Color(0xFF1e4a66).withOpacity(0.4),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+            color: const Color(0xFF10B981).withOpacity(0.3), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(meeting.subject,
+                    style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white)),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: const Color(0xFF10B981).withOpacity(0.4)),
+                ),
+                child: const Text('ACCEPTED',
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF10B981))),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (meeting.email.isNotEmpty)
+            Row(
+              children: [
+                Icon(LucideIcons.mail,
+                    size: 13, color: AppColors.cyan400.withOpacity(0.6)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(meeting.email,
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textCyan200.withOpacity(0.65)),
+                      overflow: TextOverflow.ellipsis),
+                ),
+              ],
+            ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Icon(LucideIcons.clock,
+                  size: 13, color: AppColors.cyan400.withOpacity(0.6)),
+              const SizedBox(width: 6),
+              Text(_formatDateTime(meeting.startTime),
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textCyan200.withOpacity(0.65))),
+            ],
+          ),
+          if (meeting.meetLink.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () async {
+                final uri = Uri.parse(meeting.meetLink);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                      color: const Color(0xFF10B981).withOpacity(0.4)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(LucideIcons.video,
+                        size: 14, color: Color(0xFF10B981)),
+                    const SizedBox(width: 6),
+                    Text(meeting.meetLink,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF10B981),
+                            fontWeight: FontWeight.w500),
+                        overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     )

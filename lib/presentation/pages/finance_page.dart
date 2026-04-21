@@ -30,6 +30,9 @@ class _FinancePageState extends State<FinancePage> {
   bool _isLoading = true;
   String? _errorMessage;
   final _financeService = N8nFinanceService();
+  final _googleService = GoogleConnectService();
+  final _telegramService = TelegramConnectService();
+  bool _connectionsChecked = false;
 
   // NEW: Data from n8n webhooks
   Map<String, dynamic>? _monthStats;
