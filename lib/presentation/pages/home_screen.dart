@@ -2651,9 +2651,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   List<Map<String, dynamic>> _getOngoingProjectsData() {
-    final phoneCalls = mockPhoneCalls;
-    final phoneTotal = phoneCalls.length;
-    final phoneImportant = phoneCalls.where((c) => c.priority == 'high').length;
+    final phoneTotal = 0;
+    final phoneImportant = 0;
     final meetingsText = _meetingsTodayCount != null
         ? '$_meetingsTodayCount meeting${_meetingsTodayCount == 1 ? '' : 's'} today'
         : null;

@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'dart:ui';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../data/services/google_connect_service.dart';
+import '../../data/services/rag_upload_service.dart';
 import '../../data/services/telegram_connect_service.dart';
 import '../widgets/navigation_bar.dart';
 
@@ -318,9 +321,10 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
     final connectedServices = <Map<String, dynamic>>[];
     const totalActions = 257; // mocked for now
     final googleConnected = _googleStatus.connected && !_loadingGoogleStatus;
-    final connectedCountForStats = (googleConnected ? 2 : 0) +
+    final connectedCountForStats = (googleConnected ? 3 : 0) +
         (_telegramLinked ? 1 : 0) +
-        1; // +2 when Google connected = Gmail&Sheets + Calendar, +1 for LinkedIn (always mocked)
+        1;
+    // +3 when Google connected = Gmail&Sheets + Calendar + Drive, +1 for LinkedIn
 
     return Scaffold(
       body: Container(
@@ -428,6 +432,30 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                         },
                       ),
                     ),
+                    if (googleConnected)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          bottom: Responsive.getResponsiveValue(
+                            context, mobile: 10.0, tablet: 12.0, desktop: 14.0,
+                          ),
+                        ),
+                        child: _withEntranceAnimation(
+                          _buildConnectedDriveCard(context),
+                          (a) {
+                            final delayMs =
+                                300 + ((connectedServices.length + 1) * 100);
+                            return a
+                                .fadeIn(
+                                    delay: Duration(milliseconds: delayMs),
+                                    duration: 300.ms)
+                                .slideY(
+                                    begin: 0.2,
+                                    end: 0,
+                                    delay: Duration(milliseconds: delayMs),
+                                    duration: 300.ms);
+                          },
+                        ),
+                      ),
                     if (_telegramLinked)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 10),
@@ -545,27 +573,28 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                           onConnect: _connectTelegram,
                         ),
                       ),
-                    Padding(
-                      padding: EdgeInsets.only(
-                        bottom: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 10.0,
-                          tablet: 12.0,
-                          desktop: 14.0,
+                    if (!googleConnected)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          bottom: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 10.0,
+                            tablet: 12.0,
+                            desktop: 14.0,
+                          ),
+                        ),
+                        child: _withEntranceAnimation(
+                          _buildMockDisconnectedDriveRow(context),
+                          (a) => a
+                              .fadeIn(delay: 600.ms, duration: 300.ms)
+                              .slideY(
+                                begin: 0.2,
+                                end: 0,
+                                delay: 600.ms,
+                                duration: 300.ms,
+                              ),
                         ),
                       ),
-                      child: _withEntranceAnimation(
-                        _buildMockDisconnectedDriveRow(context),
-                        (a) => a
-                            .fadeIn(delay: 600.ms, duration: 300.ms)
-                            .slideY(
-                              begin: 0.2,
-                              end: 0,
-                              delay: 600.ms,
-                              duration: 300.ms,
-                            ),
-                      ),
-                    ),
                     Padding(
                       padding: EdgeInsets.only(
                         bottom: Responsive.getResponsiveValue(
@@ -1576,7 +1605,10 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
       ),
       title: 'Google Drive',
       subtitle: 'Files and folders access',
-      onConnect: () => _showComingSoonSnack(context, 'Google Drive'),
+      onConnect: () async {
+        await context.push('/google-connect');
+        if (mounted) _loadGoogleStatus();
+      },
     );
   }
 
@@ -1606,27 +1638,29 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
   }
 
   Widget _buildMockDisconnectedRagRow(BuildContext context) {
+    final googleConnected = _googleStatus.connected && !_loadingGoogleStatus;
     return _buildMockDisconnectedLikeGoogleRow(
       context,
       leading: _mockIconLeading(
         context,
-        Container(
+        Image.asset(
+          'assets/images/rag_logo.png',
           width: 26,
           height: 26,
-          decoration: BoxDecoration(
-            color: const Color(0xFF7C3AED),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          alignment: Alignment.center,
-          child: const Text(
-            'R',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
-          ),
+          fit: BoxFit.contain,
         ),
       ),
-      title: 'RAG',
-      subtitle: 'Knowledge retrieval and answers',
-      onConnect: () => _showComingSoonSnack(context, 'RAG'),
+      title: 'RAG Knowledge Base',
+      subtitle: googleConnected
+          ? 'Upload PDF to train your AI assistant'
+          : 'Connect Google Drive to enable',
+      onConnect: googleConnected
+          ? () => _showRagUploadBottomSheet(context)
+          : () async {
+              await context.push('/google-connect');
+              if (mounted) _loadGoogleStatus();
+            },
+      connectLabel: googleConnected ? 'Upload' : 'Connect',
     );
   }
 
@@ -1636,6 +1670,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
     required String title,
     required String subtitle,
     required VoidCallback onConnect,
+    String connectLabel = 'Connect',
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final radius = Responsive.getResponsiveValue(
@@ -1752,7 +1787,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
                     ),
                   ),
                   child: Text(
-                    'Connect',
+                    connectLabel,
                     style: TextStyle(
                       fontSize: Responsive.getResponsiveValue(
                         context,
@@ -1779,6 +1814,15 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
         content: Text('$serviceName connection coming soon'),
         behavior: SnackBarBehavior.floating,
       ),
+    );
+  }
+
+  void _showRagUploadBottomSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _RagUploadSheet(),
     );
   }
 
@@ -2678,6 +2722,26 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
     );
   }
 
+  Widget _buildConnectedDriveCard(BuildContext context) {
+    final email = _googleStatus.googleEmail;
+    return _buildMockConnectedLikeGoogleCard(
+      context: context,
+      leading: _mockIconLeading(
+        context,
+        Image.network(_driveIconUrl, width: 26, height: 26),
+      ),
+      title: 'Google Drive',
+      subtitle: 'Knowledge base & file storage',
+      chips: const ['Read files', 'Upload files'],
+      secondary: (email != null && email.isNotEmpty)
+          ? email
+          : 'Powered by Google connection',
+      secondaryColor: (email != null && email.isNotEmpty)
+          ? const Color(0xFF10B981)
+          : null,
+    );
+  }
+
   Widget _buildMockConnectedTelegramCard(BuildContext context) {
     return _buildMockConnectedLikeGoogleCard(
       context: context,
@@ -3246,6 +3310,243 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
           ),
         );
       },
+    );
+  }
+}
+
+class _RagUploadSheet extends StatefulWidget {
+  @override
+  State<_RagUploadSheet> createState() => _RagUploadSheetState();
+}
+
+class _RagUploadSheetState extends State<_RagUploadSheet> {
+  bool _isUploading = false;
+  String? _errorMessage;
+  String? _successFileName;
+  final _service = RagUploadService();
+
+  Future<void> _pickAndUpload() async {
+    setState(() {
+      _isUploading = false;
+      _errorMessage = null;
+      _successFileName = null;
+    });
+
+    // Pick PDF file
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+      allowMultiple: false,
+    );
+
+    if (result == null || result.files.isEmpty) return;
+    final picked = result.files.first;
+    if (picked.path == null) {
+      setState(() => _errorMessage = 'Could not access file path');
+      return;
+    }
+
+    final file = File(picked.path!);
+    final fileName = picked.name;
+
+    setState(() => _isUploading = true);
+
+    try {
+      await _service.uploadPdf(file, fileName);
+      if (!mounted) return;
+      setState(() {
+        _isUploading = false;
+        _successFileName = fileName;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isUploading = false;
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.primaryDarker,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.25),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF7C3AED).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF7C3AED).withOpacity(0.3),
+                  ),
+                ),
+                child: Icon(
+                  _successFileName != null
+                      ? LucideIcons.checkCircle
+                      : LucideIcons.fileText,
+                  size: 32,
+                  color: _successFileName != null
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFF7C3AED),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _successFileName != null
+                    ? 'Upload Complete!'
+                    : 'Upload Knowledge Base',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textWhite,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _successFileName != null
+                    ? '$_successFileName has been uploaded to your Google Drive and your AI assistant is being updated.'
+                    : 'Upload a PDF to train your Vapi AI phone assistant. The file will be stored in your Google Drive (AVA Knowledge Base folder) and indexed automatically.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.6,
+                  color: AppColors.textCyan200.withOpacity(0.65),
+                ),
+              ),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: const Color(0xFFEF4444).withOpacity(0.3),
+                    ),
+                  ),
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFFEF4444),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 28),
+              if (_successFileName == null)
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton.icon(
+                    onPressed: _isUploading ? null : _pickAndUpload,
+                    icon: _isUploading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(LucideIcons.upload, size: 18),
+                    label: Text(
+                      _isUploading ? 'Uploading...' : 'Choose PDF File',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF7C3AED),
+                      foregroundColor: AppColors.textWhite,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              if (_successFileName != null)
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton.icon(
+                    onPressed: _pickAndUpload,
+                    icon: const Icon(LucideIcons.refreshCw, size: 18),
+                    label: const Text(
+                      'Replace with New PDF',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF7C3AED),
+                      foregroundColor: AppColors.textWhite,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton(
+                  onPressed: _isUploading
+                      ? null
+                      : () => Navigator.of(context).pop(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.cyan400,
+                    side: const BorderSide(
+                      color: AppColors.cyan500,
+                      width: 1.5,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(
+                    _successFileName != null ? 'Done' : 'Cancel',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -29,16 +29,16 @@ class _LanguagePageState extends State<LanguagePage> {
     {'code': 'ar', 'name': 'Arabic', 'nativeName': 'العربية', 'flag': '🇸🇦'},
   ];
 
-  void _handleLanguageSelect(String code) {
+  Future<void> _handleLanguageSelect(String code) async {
     setState(() {
       _selectedLanguage = code;
     });
-    LocaleService.instance.setLocale(code);
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) {
-        context.pop();
-      }
-    });
+    await LocaleService.instance.setLocale(code);
+    if (!mounted) return;
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (mounted) {
+      context.pop();
+    }
   }
 
   @override
