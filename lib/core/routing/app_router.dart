@@ -78,9 +78,9 @@ import '../../features/my_business/models/business_session.dart';
 import '../../features/my_business/screens/business_url_screen.dart';
 import '../../features/my_business/screens/dashboard_style_screen.dart';
 import '../../features/my_business/screens/business_dashboard_screen.dart';
-import '../../features/phone_agent/models/phone_call_model.dart';
 import '../../features/phone_agent/screens/phone_agent_screen.dart';
 import '../../features/phone_agent/screens/phone_agent_call_detail_screen.dart';
+import '../../features/phone_agent/services/phone_agent_service.dart';
 import '../../features/social_media/screens/social_media_brief_screen.dart';
 import '../../presentation/pages/google_connect_page.dart';
 
@@ -1008,7 +1008,7 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/phone-agent-call',
       pageBuilder: (context, state) {
-        final call = state.extra as PhoneCallModel?;
+        final call = state.extra as PhoneCallData?;
         if (call == null) {
           return _fadeScaleTransition(
             context: context,
