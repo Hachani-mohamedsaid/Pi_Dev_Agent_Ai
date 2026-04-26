@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -107,6 +108,10 @@ class _MessagingChatScreenState extends State<MessagingChatScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isGroup = widget.conversation.type == 'group';
+    final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
+    final bottomSafe = MediaQuery.of(context).padding.bottom;
+    final keyboardOpen = keyboardInset > 0;
+    final listBottomPad = keyboardOpen ? (bottomSafe + 110.0) : (bottomSafe + 160.0);
 
     return Scaffold(
       extendBodyBehindAppBar: false,
@@ -114,17 +119,27 @@ class _MessagingChatScreenState extends State<MessagingChatScreen> {
           ? AppColors.primaryDark
           : const Color(0xFFF3F8FC),
       appBar: _buildAppBar(context, isDark, isGroup),
-      // Both the input bar and the nav bar live in bottomNavigationBar so they
-      // both move up together when the software keyboard appears.
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _InputBar(
-            controller: _text,
-            onSend: _sendMessage,
+      // bottomNavigationBar does NOT automatically move above the keyboard on
+      // iOS. We explicitly animate it using viewInsets.bottom so the typing
+      // area never gets covered.
+      bottomNavigationBar: AnimatedPadding(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.only(bottom: keyboardInset),
+        child: _BottomDock(
+          isDark: isDark,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _InputBar(
+                controller: _text,
+                onSend: _sendMessage,
+                embedded: true,
+              ),
+              if (!keyboardOpen) const NavigationBarWidget(currentPath: '/messaging'),
+            ],
           ),
-          const NavigationBarWidget(currentPath: '/messaging'),
-        ],
+        ),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -160,7 +175,7 @@ class _MessagingChatScreenState extends State<MessagingChatScreen> {
             }
             return ListView.builder(
               controller: _scroll,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, listBottomPad),
               itemCount: list.length,
               itemBuilder: (context, i) {
                 final m = list[i];
@@ -349,6 +364,38 @@ class _MessagingChatScreenState extends State<MessagingChatScreen> {
       a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
+class _BottomDock extends StatelessWidget {
+  const _BottomDock({required this.isDark, required this.child});
+
+  final bool isDark;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomSafe = MediaQuery.of(context).padding.bottom;
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: EdgeInsets.only(bottom: bottomSafe > 0 ? 0 : 8),
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.primaryDarker.withValues(alpha: 0.82)
+                : Colors.white.withValues(alpha: 0.86),
+            border: Border(
+              top: BorderSide(
+                color: AppColors.cyan500.withValues(alpha: 0.12),
+              ),
+            ),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 // ── Avatar ────────────────────────────────────────────────────────────────
 
 class _Avatar extends StatelessWidget {
@@ -467,9 +514,14 @@ class _DateChip extends StatelessWidget {
 // ── Input bar ────────────────────────────────────────────────────────────────
 
 class _InputBar extends StatefulWidget {
-  const _InputBar({required this.controller, required this.onSend});
+  const _InputBar({
+    required this.controller,
+    required this.onSend,
+    this.embedded = false,
+  });
   final TextEditingController controller;
   final VoidCallback onSend;
+  final bool embedded;
 
   @override
   State<_InputBar> createState() => _InputBarState();
@@ -505,13 +557,15 @@ class _InputBarState extends State<_InputBar> {
       bottom: false,
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.primaryDarker : Colors.white,
-          border: Border(
-            top: BorderSide(
-                color: AppColors.cyan500.withValues(alpha: 0.10)),
-          ),
-        ),
+        decoration: widget.embedded
+            ? null
+            : BoxDecoration(
+                color: isDark ? AppColors.primaryDarker : Colors.white,
+                border: Border(
+                  top: BorderSide(
+                      color: AppColors.cyan500.withValues(alpha: 0.10)),
+                ),
+              ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
