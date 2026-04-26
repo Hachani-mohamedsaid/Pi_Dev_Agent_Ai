@@ -24,7 +24,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
       headers: buildJsonHeaders(),
       body: jsonEncode({'email': email, 'password': password}),
     );
-    if (res.statusCode == 200) {
+    if (res.statusCode == 200 || res.statusCode == 201) {
       return AuthResponse.fromJson(
         jsonDecode(res.body) as Map<String, dynamic>,
       );
@@ -122,7 +122,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
       headers: buildJsonHeaders(),
       body: jsonEncode({'idToken': idToken}),
     );
-    if (res.statusCode == 200) {
+    if (res.statusCode == 200 || res.statusCode == 201) {
       return AuthResponse.fromJson(
         jsonDecode(res.body) as Map<String, dynamic>,
       );
@@ -142,7 +142,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
       headers: buildJsonHeaders(),
       body: jsonEncode(body),
     );
-    if (res.statusCode == 200) {
+    if (res.statusCode == 200 || res.statusCode == 201) {
       return AuthResponse.fromJson(
         jsonDecode(res.body) as Map<String, dynamic>,
       );
@@ -211,36 +211,66 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
 
   Exception _parseError(http.Response res) {
     reportHttpResponseError(feature: 'auth', response: res);
+    final code = res.statusCode;
+    final url = res.request?.url.toString() ?? _baseUrl;
+    final rawBody = res.body;
+    final snippet = rawBody.length > 160
+        ? '${rawBody.substring(0, 160)}…'
+        : rawBody;
     try {
-      final data = jsonDecode(res.body) as Map<String, dynamic>?;
-      final msg = data?['message'];
-      if (msg is List) return Exception(msg.join(', '));
-      return Exception(msg?.toString() ?? 'Request failed');
+      final decoded = jsonDecode(rawBody);
+      if (decoded is Map<String, dynamic>) {
+        final msg = decoded['message'];
+        if (msg is List && msg.isNotEmpty) {
+          return Exception('${msg.join(', ')} ($code)');
+        }
+        if (msg is String && msg.trim().isNotEmpty) {
+          return Exception('${msg.trim()} ($code)');
+        }
+      }
+      return Exception('Request failed ($code) at $url — body: $snippet');
     } catch (_) {
-      return Exception('Request failed (${res.statusCode})');
+      return Exception('Request failed ($code) at $url — non-JSON body: $snippet');
     }
   }
 
   static const Duration _timeout = Duration(seconds: 30);
+
+  Exception _wrapNetworkError(Uri uri, Object error) {
+    if (error is TimeoutException) {
+      return Exception('Request timed out after ${_timeout.inSeconds}s — $uri');
+    }
+    return Exception('Network error: ${error.runtimeType} — $uri — $error');
+  }
 
   Future<http.Response> _post(
     Uri uri, {
     Map<String, String>? headers,
     Object? body,
   }) async {
-    if (kIsWeb) {
-      return http
+    try {
+      if (kIsWeb) {
+        return await http
+            .post(uri, headers: headers, body: body)
+            .timeout(_timeout);
+      }
+      return await http
           .post(uri, headers: headers, body: body)
           .timeout(_timeout);
+    } catch (e) {
+      throw _wrapNetworkError(uri, e);
     }
-    return http.post(uri, headers: headers, body: body).timeout(_timeout);
   }
 
   Future<http.Response> _get(
     Uri uri, {
     Map<String, String>? headers,
   }) async {
-    return http.get(uri, headers: headers).timeout(_timeout);
+    try {
+      return await http.get(uri, headers: headers).timeout(_timeout);
+    } catch (e) {
+      throw _wrapNetworkError(uri, e);
+    }
   }
 
   Future<http.Response> _patch(
@@ -248,6 +278,12 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
     Map<String, String>? headers,
     Object? body,
   }) async {
-    return http.patch(uri, headers: headers, body: body).timeout(_timeout);
+    try {
+      return await http
+          .patch(uri, headers: headers, body: body)
+          .timeout(_timeout);
+    } catch (e) {
+      throw _wrapNetworkError(uri, e);
+    }
   }
 }
