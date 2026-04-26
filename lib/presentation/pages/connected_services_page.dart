@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/config/api_config.dart' show apiRootUrl;
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../data/services/google_connect_service.dart';
@@ -2020,7 +2021,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
 
                                   final res = await http.post(
                                     Uri.parse(
-                                      'https://backendagentai-production.up.railway.app/google-connect/disconnect',
+                                      '$apiRootUrl/google-connect/disconnect',
                                     ),
                                     headers: {
                                       'Authorization': 'Bearer $token',

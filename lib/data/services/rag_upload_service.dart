@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/config/api_config.dart' show apiRootUrl;
+
 class RagUploadService {
-  static const _base = 'https://backendagentai-production.up.railway.app';
   static const _apiKey = 'ava-n8n-secret-2026';
   static const _n8nBase = 'https://n8n-production-1e13.up.railway.app/webhook';
 
@@ -25,7 +26,7 @@ class RagUploadService {
 
   Future<Map<String, dynamic>> _getUserTokens(String userId) async {
     final res = await http.get(
-      Uri.parse('$_base/users/$userId/google-tokens'),
+      Uri.parse('$apiRootUrl/users/$userId/google-tokens'),
       headers: {'x-api-key': _apiKey},
     ).timeout(const Duration(seconds: 15));
     if (res.statusCode != 200) throw Exception('Failed to get tokens');
@@ -145,7 +146,7 @@ class RagUploadService {
     String ragFolderId,
   ) async {
     await http.post(
-      Uri.parse('$_base/users/$userId/rag-folder-id'),
+      Uri.parse('$apiRootUrl/users/$userId/rag-folder-id'),
       headers: {
         'x-api-key': _apiKey,
         'Content-Type': 'application/json',

@@ -15,6 +15,7 @@ import 'package:openai_tts/openai_tts.dart';
 
 import '../../core/config/api_config.dart'
     show openaiApiKey, realtimeVoiceWsUrl;
+import '../widgets/navigation_bar.dart';
 import 'package:pi_dev_agentia/generated/l10n.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/l10n/app_strings.dart';
@@ -2153,6 +2154,14 @@ class _ChatOverlay extends StatelessWidget {
                   ),
                 ),
               ),
+
+          // ── Navigation bar pinned to bottom ───────────────────────────
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: NavigationBarWidget(currentPath: '/voice-assistant'),
+          ),
           ],
         ),
       ),
