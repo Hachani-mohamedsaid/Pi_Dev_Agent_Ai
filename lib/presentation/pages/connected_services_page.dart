@@ -1638,7 +1638,6 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
   }
 
   Widget _buildMockDisconnectedRagRow(BuildContext context) {
-    final googleConnected = _googleStatus.connected && !_loadingGoogleStatus;
     return _buildMockDisconnectedLikeGoogleRow(
       context,
       leading: _mockIconLeading(
@@ -1651,16 +1650,9 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
         ),
       ),
       title: 'RAG Knowledge Base',
-      subtitle: googleConnected
-          ? 'Upload PDF to train your AI assistant'
-          : 'Connect Google Drive to enable',
-      onConnect: googleConnected
-          ? () => _showRagUploadBottomSheet(context)
-          : () async {
-              await context.push('/google-connect');
-              if (mounted) _loadGoogleStatus();
-            },
-      connectLabel: googleConnected ? 'Upload' : 'Connect',
+      subtitle: 'Upload PDF to train your AI assistant',
+      onConnect: () => _showRagUploadBottomSheet(context),
+      connectLabel: 'Upload PDF',
     );
   }
 

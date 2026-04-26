@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -170,7 +171,7 @@ class _EmailsPageState extends State<EmailsPage> {
       final token = prefs.getString('auth_access_token') ?? '';
       if (token.isEmpty) return false;
       final status = await _googleService.getStatus(token);
-      if (!mounted) return;
+      if (!mounted) return false;
       if (!status.connected) {
         await GoogleConnectGateSheet.show(
           context,

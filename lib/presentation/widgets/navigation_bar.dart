@@ -126,7 +126,7 @@ class NavigationBarWidget extends StatelessWidget {
                       icon: LucideIcons.briefcase,
                       label: 'Projects',
                       isActive: isProjectsActive,
-                      onTap: () => context.go('/work-proposals-dashboard'),
+                      onTap: () => context.go('/work-proposals'),
                       isMobile: isMobile,
                       activeGradient: LinearGradient(
                         begin: Alignment.topLeft,
