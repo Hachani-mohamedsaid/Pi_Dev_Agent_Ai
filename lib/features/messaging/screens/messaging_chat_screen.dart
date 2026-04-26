@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../presentation/widgets/navigation_bar.dart';
 import '../../../injection_container.dart';
 import '../models/conversation_model.dart';
 import '../providers/messaging_provider.dart';
@@ -85,6 +86,7 @@ class _MessagingChatScreenState extends State<MessagingChatScreen> {
         foregroundColor: isDark ? Colors.white : const Color(0xFF12263A),
         elevation: 0,
       ),
+      bottomNavigationBar: const NavigationBarWidget(currentPath: '/messaging'),
       body: SafeArea(
         child: Column(
           children: [

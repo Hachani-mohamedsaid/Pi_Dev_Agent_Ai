@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../presentation/widgets/navigation_bar.dart';
 import '../../../injection_container.dart';
 import '../models/conversation_model.dart';
 import '../providers/messaging_provider.dart';
@@ -50,6 +51,7 @@ class _MessagingListScreenState extends State<MessagingListScreen> {
           ),
         ],
       ),
+      bottomNavigationBar: const NavigationBarWidget(currentPath: '/messaging'),
       body: FutureBuilder<String?>(
         future: meIdFuture,
         builder: (context, snap) {

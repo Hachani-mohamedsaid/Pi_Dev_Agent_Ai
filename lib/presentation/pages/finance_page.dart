@@ -33,6 +33,8 @@ class _FinancePageState extends State<FinancePage> {
   final _googleService = GoogleConnectService();
   final _telegramService = TelegramConnectService();
   bool _connectionsChecked = false;
+  bool _googleConnected = false;
+  bool _telegramLinkedAndReady = false;
 
   // NEW: Data from n8n webhooks
   Map<String, dynamic>? _monthStats;
@@ -59,36 +61,57 @@ class _FinancePageState extends State<FinancePage> {
   @override
   void initState() {
     super.initState();
-    _checkConnections();
-    _loadFinanceData();
+    scheduleMicrotask(() async {
+      final ok = await _ensureConnections();
+      if (!mounted) return;
+      if (ok) {
+        await _loadFinanceData();
+      } else {
+        setState(() => _isLoading = false);
+      }
+    });
   }
 
-  Future<void> _checkConnections() async {
-    if (_connectionsChecked) return;
+  Future<bool> _ensureConnections() async {
+    if (_connectionsChecked) return _googleConnected && _telegramLinkedAndReady;
     _connectionsChecked = true;
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_access_token') ?? '';
-      if (token.isEmpty) return;
+      if (token.isEmpty) return false;
 
       // Check Google first
       final googleStatus = await _googleService.getStatus(token);
-      if (!mounted) return;
+      if (!mounted) return false;
       if (!googleStatus.connected) {
         await GoogleConnectGateSheet.show(
           context,
           'Connect to use the Finance Tracker',
         );
-        return; // Don't check Telegram until Google is connected
+        if (!mounted) return false;
+        final refreshed = await _googleService.getStatus(token);
+        if (!mounted) return false;
+        if (!refreshed.connected) {
+          _googleConnected = false;
+          return false;
+        }
+        _googleConnected = true;
+      } else {
+        _googleConnected = true;
       }
 
       // Then check Telegram
       final telegramStatus = await _telegramService.getStatus(token);
-      if (!mounted) return;
+      if (!mounted) return false;
       if (!telegramStatus.linked) {
         await TelegramConnectGateSheet.show(context);
+        _telegramLinkedAndReady = false;
+        return false;
       }
+      _telegramLinkedAndReady = true;
+      return true;
     } catch (_) {}
+    return false;
   }
 
   // NEW: Load all finance data from n8n webhooks
