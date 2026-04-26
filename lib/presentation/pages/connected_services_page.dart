@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/config/api_config.dart' show apiRootUrl;
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../data/services/google_connect_service.dart';
@@ -1638,7 +1639,6 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
   }
 
   Widget _buildMockDisconnectedRagRow(BuildContext context) {
-    final googleConnected = _googleStatus.connected && !_loadingGoogleStatus;
     return _buildMockDisconnectedLikeGoogleRow(
       context,
       leading: _mockIconLeading(
@@ -1651,16 +1651,9 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
         ),
       ),
       title: 'RAG Knowledge Base',
-      subtitle: googleConnected
-          ? 'Upload PDF to train your AI assistant'
-          : 'Connect Google Drive to enable',
-      onConnect: googleConnected
-          ? () => _showRagUploadBottomSheet(context)
-          : () async {
-              await context.push('/google-connect');
-              if (mounted) _loadGoogleStatus();
-            },
-      connectLabel: googleConnected ? 'Upload' : 'Connect',
+      subtitle: 'Upload PDF to train your AI assistant',
+      onConnect: () => _showRagUploadBottomSheet(context),
+      connectLabel: 'Upload',
     );
   }
 
@@ -2028,7 +2021,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
 
                                   final res = await http.post(
                                     Uri.parse(
-                                      'https://backendagentai-production.up.railway.app/google-connect/disconnect',
+                                      '$apiRootUrl/google-connect/disconnect',
                                     ),
                                     headers: {
                                       'Authorization': 'Bearer $token',

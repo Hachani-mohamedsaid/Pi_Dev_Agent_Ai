@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../presentation/widgets/navigation_bar.dart';
 import '../../../injection_container.dart';
 import '../models/conversation_model.dart';
 import '../providers/messaging_provider.dart';
@@ -34,9 +35,12 @@ class _MessagingListScreenState extends State<MessagingListScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.primaryDark : const Color(0xFFF3F8FC);
     final meIdFuture = InjectionContainer.instance.authLocalDataSource.getUserId();
+    // Height of the floating nav bar pill + its padding (keeps list from scrolling behind it)
+    final navBarBottomPad = MediaQuery.of(context).padding.bottom + 100.0;
 
     return Scaffold(
       backgroundColor: bg,
+      extendBody: true,
       appBar: AppBar(
         title: const Text('Messages'),
         backgroundColor: bg,
@@ -50,58 +54,104 @@ class _MessagingListScreenState extends State<MessagingListScreen> {
           ),
         ],
       ),
-      body: FutureBuilder<String?>(
-        future: meIdFuture,
-        builder: (context, snap) {
-          final meId = snap.data ?? '';
-          return Consumer<MessagingProvider>(
-            builder: (context, p, _) {
-              final list = p.conversations.where((c) {
-                if (_filter == 'direct') return c.type == 'direct';
-                if (_filter == 'group') return c.type == 'group';
-                return true;
-              }).toList();
+      body: Stack(
+        children: [
+          // ── Content ──────────────────────────────────────────────────────
+          FutureBuilder<String?>(
+            future: meIdFuture,
+            builder: (context, snap) {
+              final meId = snap.data ?? '';
+              return Consumer<MessagingProvider>(
+                builder: (context, p, _) {
+                  final list = p.conversations.where((c) {
+                    if (_filter == 'direct') return c.type == 'direct';
+                    if (_filter == 'group') return c.type == 'group';
+                    return true;
+                  }).toList();
 
-              if (p.isLoading && list.isEmpty) {
-                return const Center(
-                  child: CircularProgressIndicator(color: AppColors.cyan500),
-                );
-              }
+                  if (p.isLoading && list.isEmpty) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: AppColors.cyan500),
+                    );
+                  }
 
-              return Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                    child: _FilterRow(
-                      value: _filter,
-                      onChanged: (v) => setState(() => _filter = v),
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                      itemCount: list.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (context, i) {
-                        final conv = list[i];
-                        return ConversationTile(
-                          conversation: conv,
-                          meId: meId,
-                          onTap: () {
-                            context.push(
-                              '/messaging/${conv.id}',
-                              extra: conv,
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                        child: _FilterRow(
+                          value: _filter,
+                          onChanged: (v) => setState(() => _filter = v),
+                        ),
+                      ),
+                      Expanded(
+                        child: list.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.chat_bubble_outline,
+                                      size: 52,
+                                      color: AppColors.cyan500.withValues(alpha: 0.35),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No conversations yet',
+                                      style: TextStyle(
+                                        color: AppColors.textCyan200.withValues(alpha: 0.55),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Tap the pencil icon to start a new message',
+                                      style: TextStyle(
+                                        color: AppColors.textCyan200.withValues(alpha: 0.35),
+                                        fontSize: 13,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : ListView.separated(
+                                padding: EdgeInsets.fromLTRB(
+                                    16, 0, 16, navBarBottomPad),
+                                itemCount: list.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 10),
+                                itemBuilder: (context, i) {
+                                  final conv = list[i];
+                                  return ConversationTile(
+                                    conversation: conv,
+                                    meId: meId,
+                                    onTap: () {
+                                      context.push(
+                                        '/messaging/${conv.id}',
+                                        extra: conv,
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  );
+                },
               );
             },
-          );
-        },
+          ),
+
+          // ── Navigation bar pinned to bottom ───────────────────────────
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: NavigationBarWidget(currentPath: '/messaging'),
+          ),
+        ],
       ),
     );
   }
@@ -140,16 +190,21 @@ class _FilterRow extends StatelessWidget {
                       colors: [AppColors.cyan500, AppColors.blue500],
                     )
                   : null,
-              color: active ? null : AppColors.primaryDark.withValues(alpha: 0.25),
+              color: active
+                  ? null
+                  : AppColors.primaryDark.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(999),
               border: Border.all(
-                color: AppColors.cyan500.withValues(alpha: active ? 0.0 : 0.18),
+                color:
+                    AppColors.cyan500.withValues(alpha: active ? 0.0 : 0.18),
               ),
             ),
             child: Text(
               label,
               style: TextStyle(
-                color: active ? Colors.white : AppColors.textCyan200.withValues(alpha: 0.8),
+                color: active
+                    ? Colors.white
+                    : AppColors.textCyan200.withValues(alpha: 0.8),
                 fontWeight: FontWeight.w700,
                 fontSize: 12.5,
               ),
@@ -170,6 +225,8 @@ class _FilterRow extends StatelessWidget {
     );
   }
 }
+
+// ── New DM bottom sheet ──────────────────────────────────────────────────────
 
 class _NewDmSheet extends StatefulWidget {
   const _NewDmSheet();
@@ -211,7 +268,8 @@ class _NewDmSheetState extends State<_NewDmSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Pad the sheet up when keyboard is open so the search field stays visible
+    final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.primaryDarker,
@@ -220,7 +278,7 @@ class _NewDmSheetState extends State<_NewDmSheet> {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+          padding: EdgeInsets.fromLTRB(16, 10, 16, 18 + keyboardInset),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -236,11 +294,11 @@ class _NewDmSheetState extends State<_NewDmSheet> {
                 ),
               ),
               const SizedBox(height: 14),
-              Text(
+              const Text(
                 'New message',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: isDark ? Colors.white : Colors.white,
+                  color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                 ),
@@ -249,19 +307,23 @@ class _NewDmSheetState extends State<_NewDmSheet> {
               TextField(
                 controller: _controller,
                 onChanged: _onChanged,
+                autofocus: true,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: 'Search users…',
-                  hintStyle: TextStyle(color: AppColors.textCyan200.withValues(alpha: 0.55)),
+                  hintStyle: TextStyle(
+                      color: AppColors.textCyan200.withValues(alpha: 0.55)),
                   filled: true,
                   fillColor: AppColors.primaryDark.withValues(alpha: 0.6),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: AppColors.cyan500.withValues(alpha: 0.2)),
+                    borderSide: BorderSide(
+                        color: AppColors.cyan500.withValues(alpha: 0.2)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: AppColors.cyan500.withValues(alpha: 0.2)),
+                    borderSide: BorderSide(
+                        color: AppColors.cyan500.withValues(alpha: 0.2)),
                   ),
                 ),
               ),
@@ -269,13 +331,17 @@ class _NewDmSheetState extends State<_NewDmSheet> {
               if (_loading)
                 const Padding(
                   padding: EdgeInsets.all(16),
-                  child: Center(child: CircularProgressIndicator(color: AppColors.cyan500)),
+                  child: Center(
+                      child:
+                          CircularProgressIndicator(color: AppColors.cyan500)),
                 ),
               if (!_loading)
                 ..._results.map((u) {
                   return ListTile(
                     onTap: () async {
-                      final conv = await context.read<MessagingProvider>().createDirect(u.id);
+                      final conv = await context
+                          .read<MessagingProvider>()
+                          .createDirect(u.id);
                       if (!context.mounted) return;
                       Navigator.of(context).pop();
                       if (conv != null) {
@@ -283,21 +349,30 @@ class _NewDmSheetState extends State<_NewDmSheet> {
                       }
                     },
                     leading: CircleAvatar(
-                      backgroundColor: AppColors.cyan500.withValues(alpha: 0.18),
-                      backgroundImage: (u.avatarUrl != null && u.avatarUrl!.isNotEmpty)
-                          ? NetworkImage(u.avatarUrl!)
-                          : null,
+                      backgroundColor:
+                          AppColors.cyan500.withValues(alpha: 0.18),
+                      backgroundImage:
+                          (u.avatarUrl != null && u.avatarUrl!.isNotEmpty)
+                              ? NetworkImage(u.avatarUrl!)
+                              : null,
                       child: (u.avatarUrl == null || u.avatarUrl!.isEmpty)
                           ? Text(
-                              u.name.isNotEmpty ? u.name.substring(0, 1).toUpperCase() : '?',
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+                              u.name.isNotEmpty
+                                  ? u.name.substring(0, 1).toUpperCase()
+                                  : '?',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800),
                             )
                           : null,
                     ),
-                    title: Text(u.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                    title: Text(u.name,
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.w700)),
                     subtitle: Text(
                       u.role ?? '',
-                      style: TextStyle(color: AppColors.textCyan200.withValues(alpha: 0.6)),
+                      style: TextStyle(
+                          color: AppColors.textCyan200.withValues(alpha: 0.6)),
                     ),
                   );
                 }),
@@ -308,10 +383,13 @@ class _NewDmSheetState extends State<_NewDmSheet> {
                   onPressed: () => Navigator.of(context).pop(),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.cyan400,
-                    side: const BorderSide(color: AppColors.cyan500, width: 1.5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    side: const BorderSide(
+                        color: AppColors.cyan500, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700)),
+                  child: const Text('Cancel',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
                 ),
               ),
             ],
@@ -321,4 +399,3 @@ class _NewDmSheetState extends State<_NewDmSheet> {
     );
   }
 }
-

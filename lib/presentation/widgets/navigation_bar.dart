@@ -25,6 +25,7 @@ class NavigationBarWidget extends StatelessWidget {
     final isProfileActive = currentPath == '/profile';
     final isFinanceActive = currentPath == '/finance';
     final isVoiceActive = currentPath == '/voice-assistant';
+    final isProjectsActive = currentPath.startsWith('/work-proposals');
     final isMessagingActive = currentPath.startsWith('/messaging');
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = isMobile ? 10.0 : 24.0;
@@ -83,7 +84,7 @@ class NavigationBarWidget extends StatelessWidget {
                       isMobile: isMobile,
                     ),
                   ),
-                  SizedBox(width: isMobile ? 8 : 12),
+                  SizedBox(width: isMobile ? 6 : 10),
                   Flexible(
                     child: _NavButton(
                       icon: LucideIcons.dollarSign,
@@ -101,7 +102,7 @@ class NavigationBarWidget extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: isMobile ? 8 : 12),
+                  SizedBox(width: isMobile ? 6 : 10),
                   Flexible(
                     child: _NavButton(
                       icon: Icons.mic,
@@ -119,7 +120,25 @@ class NavigationBarWidget extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: isMobile ? 8 : 12),
+                  SizedBox(width: isMobile ? 6 : 10),
+                  Flexible(
+                    child: _NavButton(
+                      icon: LucideIcons.briefcase,
+                      label: 'Projects',
+                      isActive: isProjectsActive,
+                      onTap: () => context.go('/work-proposals'),
+                      isMobile: isMobile,
+                      activeGradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFF6366F1).withOpacity(0.30),
+                          const Color(0xFF06B6D4).withOpacity(0.30),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: isMobile ? 6 : 10),
                   Flexible(
                     child: Consumer<MessagingProvider>(
                       builder: (context, p, _) => _NavButton(
@@ -140,7 +159,7 @@ class NavigationBarWidget extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: isMobile ? 8 : 12),
+                  SizedBox(width: isMobile ? 6 : 10),
                   Flexible(
                     child: _NavButton(
                       icon: Icons.person,

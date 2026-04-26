@@ -131,10 +131,17 @@ class _GoogleConnectPageState extends State<GoogleConnectPage>
     String authUrl;
     try {
       authUrl = await _service.getAuthUrl(token);
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() => _state = _GoogleConnectState.idle);
-      _showSnackBar('Could not reach AVA server. Try again.');
+      final msg = e.toString();
+      if (msg.contains('401')) {
+        _showSnackBar('Session expired. Please sign in again.');
+      } else if (msg.contains('5')) {
+        _showSnackBar('AVA server is busy. Try again in a moment.');
+      } else {
+        _showSnackBar('Could not start Google connection. Try again.');
+      }
       return;
     }
 

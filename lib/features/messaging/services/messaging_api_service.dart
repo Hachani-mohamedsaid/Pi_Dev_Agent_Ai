@@ -102,8 +102,13 @@ class MessagingApiService {
         reportHttpResponseError(feature: 'messaging.messages', response: res);
         return [];
       }
-      final list = (jsonDecode(res.body) as List?) ?? const [];
-      return list
+      final decoded = jsonDecode(res.body);
+      // Backend returns { messages: [...], nextCursor: string|null }.
+      // Tolerate a bare list response in case the contract ever changes.
+      final List rawList = decoded is Map<String, dynamic>
+          ? (decoded['messages'] as List? ?? const [])
+          : (decoded is List ? decoded : const []);
+      return rawList
           .map((e) => ChatMessageModel.fromJson((e as Map).cast<String, dynamic>()))
           .toList();
     } catch (e, st) {

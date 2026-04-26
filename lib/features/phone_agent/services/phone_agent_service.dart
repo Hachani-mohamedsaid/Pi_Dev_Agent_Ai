@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/config/api_config.dart' show apiRootUrl;
+
 class PhoneCallData {
   final String callId;
   final String callerNumber;
@@ -92,7 +94,6 @@ class PhoneCallData {
 }
 
 class PhoneAgentService {
-  static const _base = 'https://backendagentai-production.up.railway.app';
   static const _apiKey = 'ava-n8n-secret-2026';
 
   Future<String?> _getUserId() async {
@@ -114,7 +115,7 @@ class PhoneAgentService {
     final userId = await _getUserId();
     if (userId == null || userId.isEmpty) return [];
 
-    final uri = Uri.parse('$_base/users/$userId/calls');
+    final uri = Uri.parse('$apiRootUrl/users/$userId/calls');
     final res = await http.get(
       uri,
       headers: {'x-api-key': _apiKey},

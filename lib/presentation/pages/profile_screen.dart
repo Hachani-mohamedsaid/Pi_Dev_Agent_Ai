@@ -92,7 +92,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header with Dashboard and Settings
+                    // Header with Settings
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -104,78 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: titleColor,
                           ),
                         ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Dashboard button
-                            GestureDetector(
-                              onTap: () =>
-                                  context.go('/work-proposals-dashboard'),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: isMobile ? 12 : 16,
-                                  vertical: isMobile ? 10 : 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: isDark
-                                      ? LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [
-                                            AppColors.cyan500.withOpacity(0.3),
-                                            AppColors.blue500.withOpacity(0.3),
-                                          ],
-                                        )
-                                      : LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [
-                                            const Color(0xFFF5FBFF),
-                                            const Color(0xFFD9EDF8),
-                                          ],
-                                        ),
-                                  borderRadius: BorderRadius.circular(
-                                    isMobile ? 12 : 14,
-                                  ),
-                                  border: Border.all(
-                                    color: isDark
-                                        ? AppColors.cyan500.withOpacity(0.4)
-                                        : const Color(0xFFB7D4E5),
-                                    width: 1,
-                                  ),
-                                  color: isDark
-                                      ? null
-                                      : const Color(0xFFF3F9FD),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      LucideIcons.layoutDashboard,
-                                      size: isMobile ? 18 : 20,
-                                      color: isDark
-                                          ? AppColors.cyan400
-                                          : const Color(0xFF0F7B99),
-                                    ),
-                                    SizedBox(width: isMobile ? 6 : 8),
-                                    Text(
-                                      S.of(context).dashboard,
-                                      style: TextStyle(
-                                        fontSize: isMobile ? 13 : 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: isDark
-                                            ? AppColors.cyan400
-                                            : const Color(0xFF0F7B99),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: isMobile ? 10 : 12),
-                            SettingsMenu(controller: widget.controller),
-                          ],
-                        ),
+                        SettingsMenu(controller: widget.controller),
                       ],
                     ),
                     SizedBox(height: isMobile ? 24 : 32),

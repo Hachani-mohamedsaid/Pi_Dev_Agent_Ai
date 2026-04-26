@@ -1743,11 +1743,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'colorLight': const Color(0xFFA78BFA),
       },
       {
-        'title': S.of(context).bookARide,
-        'icon': LucideIcons.car,
-        'route': '/travel',
-        'color': const Color(0xFFFF9800),
-        'colorLight': const Color(0xFFFFC107),
+        'title': S.of(context).aiFinancialSimulation,
+        'icon': LucideIcons.calculator,
+        'route': '/advisor',
+        'color': const Color(0xFF10B981),
+        'colorLight': const Color(0xFF34D399),
       },
       {
         'title': S.of(context).smartActionsHub,
@@ -1757,11 +1757,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'colorLight': const Color(0xFFA855F7),
       },
       {
-        'title': S.of(context).aiFinancialSimulation,
-        'icon': LucideIcons.calculator,
-        'route': '/advisor',
-        'color': const Color(0xFF10B981),
-        'colorLight': const Color(0xFF34D399),
+        'title': S.of(context).bookARide,
+        'icon': LucideIcons.car,
+        'route': '/travel',
+        'color': const Color(0xFFFF9800),
+        'colorLight': const Color(0xFFFFC107),
       },
       {
         'title': S.of(context).postOnLinkedIn,
