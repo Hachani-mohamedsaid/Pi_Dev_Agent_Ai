@@ -11,6 +11,9 @@ import '../core/services/locale_service.dart';
 import '../core/services/theme_service.dart';
 import '../features/ai_analysis/providers/analysis_provider.dart';
 import '../features/financial_advisor/providers/advisor_provider.dart';
+import '../features/messaging/providers/messaging_provider.dart';
+import '../features/messaging/services/messaging_api_service.dart';
+import '../features/messaging/services/messaging_ws_service.dart';
 import '../injection_container.dart';
 import '../presentation/state/chat_provider.dart';
 import '../services/focus_session_manager.dart';
@@ -129,6 +132,17 @@ class _AppState extends State<App> with WidgetsBindingObserver {
               ),
               ChangeNotifierProvider<AdvisorProvider>(
                 create: (_) => AdvisorProvider(),
+              ),
+              ChangeNotifierProvider<MessagingProvider>(
+                create: (_) => MessagingProvider(
+                  authLocalDataSource: InjectionContainer.instance.authLocalDataSource,
+                  messagingApiService: MessagingApiService(
+                    authLocalDataSource: InjectionContainer.instance.authLocalDataSource,
+                  ),
+                  messagingWsService: MessagingWsService(
+                    authLocalDataSource: InjectionContainer.instance.authLocalDataSource,
+                  ),
+                ),
               ),
             ],
             child: MaterialApp.router(
