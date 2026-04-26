@@ -53,7 +53,6 @@ import '../../presentation/pages/connected_services_page.dart';
 import '../../presentation/pages/decision_support_page.dart';
 import '../../presentation/pages/goals_page.dart';
 import '../../presentation/pages/work_proposals_page.dart';
-import '../../presentation/pages/work_proposals_dashboard_page.dart';
 import '../../presentation/pages/project_personnel_management_page.dart';
 import '../../presentation/pages/team_dispatch_detail_page.dart';
 import '../../presentation/pages/project_analysis_page.dart';
@@ -766,14 +765,6 @@ final appRouter = GoRouter(
         context: context,
         state: state,
         child: const WorkProposalsPage(),
-      ),
-    ),
-    GoRoute(
-      path: '/work-proposals-dashboard',
-      pageBuilder: (context, state) => _fadeScaleTransition(
-        context: context,
-        state: state,
-        child: const WorkProposalsDashboardPage(),
       ),
     ),
     GoRoute(

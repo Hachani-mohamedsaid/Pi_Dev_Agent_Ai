@@ -1653,7 +1653,7 @@ class _ConnectedServicesPageState extends State<ConnectedServicesPage> {
       title: 'RAG Knowledge Base',
       subtitle: 'Upload PDF to train your AI assistant',
       onConnect: () => _showRagUploadBottomSheet(context),
-      connectLabel: 'Upload PDF',
+      connectLabel: 'Upload',
     );
   }
 

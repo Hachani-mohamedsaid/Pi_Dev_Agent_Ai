@@ -372,94 +372,16 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
               FutureBuilder<List<Proposal>>(
                 future: _apiService.fetchProposals(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.cyan400,
-                        ),
-                      ),
-                    );
-                  }
+                  // Always render the header + stats (with 0 fallbacks) so
+                  // the page never feels empty: the user sees the layout
+                  // even while loading, on error, or when there are no
+                  // proposals yet.
+                  final isLoading =
+                      snapshot.connectionState == ConnectionState.waiting;
+                  final hasError = snapshot.hasError;
+                  final proposalsRaw = snapshot.data ?? const <Proposal>[];
 
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            LucideIcons.alertCircle,
-                            size: 48,
-                            color: isDark
-                                ? AppColors.textCyan200
-                                : const Color(0xFF0B6A88),
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            AppStrings.tr(context, 'loadingError'),
-                            style: TextStyle(
-                              color: isDark
-                                  ? AppColors.textWhite
-                                  : const Color(0xFF12263A),
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            snapshot.error.toString(),
-                            style: TextStyle(
-                              color: isDark
-                                  ? AppColors.textCyan200
-                                  : const Color(0xFF5B7B92),
-                              fontSize: 14,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            LucideIcons.inbox,
-                            size: 64,
-                            color: isDark
-                                ? AppColors.textCyan200.withOpacity(0.5)
-                                : const Color(0xFF9AB3C3),
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            AppStrings.tr(context, 'noProposals'),
-                            style: TextStyle(
-                              color: isDark
-                                  ? AppColors.textWhite
-                                  : const Color(0xFF12263A),
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            AppStrings.tr(context, 'noWorkProposalsAvailable'),
-                            style: TextStyle(
-                              color: isDark
-                                  ? AppColors.textCyan200
-                                  : const Color(0xFF5B7B92),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  final proposals = snapshot.data!;
+                  final proposals = proposalsRaw;
                   final workProposals = proposals
                       .map((p) => _convertProposalToWorkProposal(p))
                       .map((p) {
@@ -552,6 +474,43 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                             desktop: 28.0,
                           ),
                         ),
+
+                        // Loading / Error / Empty placeholder. The header and
+                        // stats above are always visible (with 0 fallbacks)
+                        // so the page never feels blank.
+                        if (isLoading)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 32),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.cyan400,
+                                ),
+                              ),
+                            ),
+                          )
+                        else if (hasError)
+                          _buildInlineEmptyState(
+                            context,
+                            isDark: isDark,
+                            icon: LucideIcons.alertCircle,
+                            title: AppStrings.tr(context, 'loadingError'),
+                            subtitle: AppStrings.tr(
+                              context,
+                              'noWorkProposalsAvailable',
+                            ),
+                          )
+                        else if (workProposals.isEmpty)
+                          _buildInlineEmptyState(
+                            context,
+                            isDark: isDark,
+                            icon: LucideIcons.inbox,
+                            title: AppStrings.tr(context, 'noProposals'),
+                            subtitle: AppStrings.tr(
+                              context,
+                              'noWorkProposalsAvailable',
+                            ),
+                          ),
 
                         // Proposals List
                         if (pendingProposals.isNotEmpty) ...[
@@ -741,6 +700,65 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildInlineEmptyState(
+    BuildContext context, {
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.cyan500.withOpacity(0.06)
+            : const Color(0xFFF3F8FC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? AppColors.cyan500.withOpacity(0.18)
+              : const Color(0xFFD8E6F0),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 48,
+            color: isDark
+                ? AppColors.textCyan200.withOpacity(0.6)
+                : const Color(0xFF9AB3C3),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isDark
+                  ? AppColors.textWhite
+                  : const Color(0xFF12263A),
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isDark
+                  ? AppColors.textCyan200
+                  : const Color(0xFF5B7B92),
+              fontSize: 13,
+            ),
+          ),
+        ],
       ),
     );
   }

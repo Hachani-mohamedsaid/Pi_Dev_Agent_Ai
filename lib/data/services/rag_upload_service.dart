@@ -68,6 +68,14 @@ class RagUploadService {
     ).timeout(const Duration(seconds: 15));
 
     if (createRes.statusCode != 200 && createRes.statusCode != 201) {
+      // 403 typically means the Google access token was issued before the
+      // app added the drive.file scope. The user must disconnect and
+      // reconnect their Google account so the new scope is granted.
+      if (createRes.statusCode == 403) {
+        throw Exception(
+          'Drive permission required. Please disconnect Google in Connected Services and reconnect to grant Drive access.',
+        );
+      }
       throw Exception('Failed to create Drive folder: ${createRes.statusCode}');
     }
     final created = jsonDecode(createRes.body) as Map<String, dynamic>;
