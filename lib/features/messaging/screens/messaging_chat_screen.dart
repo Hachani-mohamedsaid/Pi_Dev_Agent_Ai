@@ -35,10 +35,12 @@ class _MessagingChatScreenState extends State<MessagingChatScreen> {
   Future<void> _init() async {
     final uid =
         await InjectionContainer.instance.authLocalDataSource.getUserId();
-    _meId = uid ?? '';
-    _me = ParticipantModel(
-        id: _meId, name: 'You', avatarUrl: null, role: null);
     if (!mounted) return;
+    setState(() {
+      _meId = uid ?? '';
+      _me = ParticipantModel(
+          id: _meId, name: 'You', avatarUrl: null, role: null);
+    });
     await context.read<MessagingProvider>().loadMessages(widget.conversation);
     if (!mounted) return;
     _scrollToBottom();
@@ -66,13 +68,16 @@ class _MessagingChatScreenState extends State<MessagingChatScreen> {
     if (widget.conversation.type == 'group') {
       return widget.conversation.name ?? 'Group';
     }
-    final other = widget.conversation.participants.firstWhere(
-      (p) => p.id != _meId,
-      orElse: () => widget.conversation.participants.isNotEmpty
-          ? widget.conversation.participants.first
-          : _me,
-    );
-    return other.name;
+    // Avoid showing my own name as the title before _meId is loaded by
+    // returning a placeholder until we know who 'me' is.
+    if (_meId.isEmpty) return '...';
+    final others = widget.conversation.participants.where((p) => p.id != _meId);
+    if (others.isEmpty) {
+      return widget.conversation.participants.isNotEmpty
+          ? widget.conversation.participants.first.name
+          : 'Direct Message';
+    }
+    return others.first.name;
   }
 
   void _sendMessage() {
