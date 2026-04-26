@@ -114,15 +114,7 @@ class _LoginPageState extends State<LoginPage> {
   /// Navigate after successful auth: onboarding (first open) or home.
   Future<void> _navigateAfterAuth() async {
     if (!mounted) return;
-    final prefs = await SharedPreferences.getInstance();
-    final onboardingComplete =
-        prefs.getBool('ava_onboarding_complete') ?? false;
-    if (!mounted) return;
-    if (onboardingComplete) {
-      context.go('/home');
-    } else {
-      context.go('/onboarding');
-    }
+    context.go('/home');
   }
 
   Future<void> _handleLogin() async {

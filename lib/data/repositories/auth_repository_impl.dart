@@ -3,6 +3,7 @@ import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_local_data_source.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../models/profile_model.dart';
+import '../models/user_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl({
@@ -66,8 +67,24 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<User?> getCurrentUser() async {
-    final userModel = await _localDataSource.getCachedUser();
-    return userModel;
+    final token = await _localDataSource.getAccessToken();
+    if (token == null || token.isEmpty) {
+      // If there's no valid token, treat the user as logged out even if a user
+      // object is still cached from a previous session.
+      await _localDataSource.clearCache();
+      return null;
+    }
+
+    try {
+      // Validate token with backend. If it fails, clear cache and force logout.
+      final profile = await _remoteDataSource.getProfile(token);
+      final user = UserModel(id: profile.id, name: profile.name, email: profile.email);
+      await _localDataSource.cacheUser(user);
+      return user;
+    } catch (_) {
+      await _localDataSource.clearCache();
+      return null;
+    }
   }
 
   @override

@@ -48,8 +48,6 @@ import '../../presentation/pages/travel_page.dart';
 import '../../presentation/pages/actions_hub_page.dart';
 import '../../presentation/pages/automation_rules_page.dart';
 import '../../presentation/pages/finance_page.dart';
-import '../../presentation/pages/onboarding_page.dart';
-import '../../presentation/pages/intro/pre_onboarding_page.dart';
 import '../../presentation/pages/insights_page.dart';
 import '../../presentation/pages/connected_services_page.dart';
 import '../../presentation/pages/decision_support_page.dart';
@@ -81,6 +79,9 @@ import '../../features/my_business/screens/business_dashboard_screen.dart';
 import '../../features/phone_agent/screens/phone_agent_screen.dart';
 import '../../features/phone_agent/screens/phone_agent_call_detail_screen.dart';
 import '../../features/phone_agent/services/phone_agent_service.dart';
+import '../../features/messaging/models/conversation_model.dart';
+import '../../features/messaging/screens/messaging_list_screen.dart';
+import '../../features/messaging/screens/messaging_chat_screen.dart';
 import '../../features/social_media/screens/social_media_brief_screen.dart';
 import '../../presentation/pages/google_connect_page.dart';
 
@@ -138,20 +139,23 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/onboarding',
+      path: '/messaging',
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: const OnboardingPage(),
+        child: const MessagingListScreen(),
       ),
     ),
     GoRoute(
-      path: '/intro',
-      pageBuilder: (context, state) => _fadeScaleTransition(
-        context: context,
-        state: state,
-        child: const PreOnboardingPage(),
-      ),
+      path: '/messaging/:conversationId',
+      pageBuilder: (context, state) {
+        final conv = state.extra as ConversationModel;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: MessagingChatScreen(conversation: conv),
+        );
+      },
     ),
     GoRoute(
       path: '/login',

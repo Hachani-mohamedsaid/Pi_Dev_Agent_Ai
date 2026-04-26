@@ -3,7 +3,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
-import '../../core/services/pre_onboarding_storage.dart';
 import '../../injection_container.dart';
 
 class SplashPage extends StatefulWidget {
@@ -28,14 +27,11 @@ class _SplashPageState extends State<SplashPage> {
     await authCtrl.loadCurrentUser();
     if (!mounted) return;
 
-    final seen = await PreOnboardingStorage.hasSeenPreOnboarding;
     final isAuth = authCtrl.isAuthenticated;
 
     if (!mounted) return;
     if (isAuth) {
       context.go('/home');
-    } else if (!seen) {
-      context.go('/intro');
     } else {
       context.go('/login');
     }

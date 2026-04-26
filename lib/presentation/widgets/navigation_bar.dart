@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:pi_dev_agentia/core/l10n/app_strings.dart';
+import 'package:provider/provider.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
-import '../../core/l10n/app_strings.dart';
+import '../../features/messaging/providers/messaging_provider.dart';
 
 class NavigationBarWidget extends StatelessWidget {
   final String currentPath;
@@ -24,9 +25,7 @@ class NavigationBarWidget extends StatelessWidget {
     final isProfileActive = currentPath == '/profile';
     final isFinanceActive = currentPath == '/finance';
     final isVoiceActive = currentPath == '/voice-assistant';
-    final isWorkProposalsActive =
-        currentPath == '/work-proposals' ||
-        currentPath == '/work-proposals-dashboard';
+    final isMessagingActive = currentPath.startsWith('/messaging');
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = isMobile ? 10.0 : 24.0;
 
@@ -122,19 +121,22 @@ class NavigationBarWidget extends StatelessWidget {
                   ),
                   SizedBox(width: isMobile ? 8 : 12),
                   Flexible(
-                    child: _NavButton(
-                      icon: LucideIcons.briefcase,
-                      label: 'Project',
-                      isActive: isWorkProposalsActive,
-                      onTap: () => context.go('/work-proposals'),
-                      isMobile: isMobile,
-                      activeGradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          const Color(0xFF10B981).withOpacity(0.3),
-                          const Color(0xFF059669).withOpacity(0.3),
-                        ],
+                    child: Consumer<MessagingProvider>(
+                      builder: (context, p, _) => _NavButton(
+                        icon: LucideIcons.messageCircle,
+                        label: 'Chat',
+                        isActive: isMessagingActive,
+                        onTap: () => context.go('/messaging'),
+                        isMobile: isMobile,
+                        badgeCount: p.totalUnread,
+                        activeGradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppColors.cyan500.withOpacity(0.32),
+                            AppColors.blue500.withOpacity(0.32),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -165,6 +167,7 @@ class _NavButton extends StatefulWidget {
   final VoidCallback onTap;
   final bool isMobile;
   final LinearGradient? activeGradient;
+  final int badgeCount;
 
   const _NavButton({
     required this.icon,
@@ -173,6 +176,7 @@ class _NavButton extends StatefulWidget {
     required this.onTap,
     required this.isMobile,
     this.activeGradient,
+    this.badgeCount = 0,
   });
 
   @override
@@ -227,14 +231,48 @@ class _NavButtonState extends State<_NavButton> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          widget.icon,
-                          size: widget.isMobile ? 20 : 22,
-                          color: widget.isActive
-                              ? AppColors.cyan400
-                              : (Theme.of(context).brightness == Brightness.dark
-                                    ? AppColors.textCyan200.withOpacity(0.5)
-                                    : const Color(0xFF6D879B)),
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Icon(
+                              widget.icon,
+                              size: widget.isMobile ? 20 : 22,
+                              color: widget.isActive
+                                  ? AppColors.cyan400
+                                  : (Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? AppColors.textCyan200.withOpacity(0.5)
+                                      : const Color(0xFF6D879B)),
+                            ),
+                            if (widget.badgeCount > 0)
+                              Positioned(
+                                right: -8,
+                                top: -6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.cyan500,
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(
+                                      color:
+                                          AppColors.primaryDark.withOpacity(0.6),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '${widget.badgeCount > 99 ? '99+' : widget.badgeCount}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                         if (widget.isActive) ...[
                           SizedBox(height: widget.isMobile ? 4 : 6),
