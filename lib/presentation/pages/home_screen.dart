@@ -1624,6 +1624,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'color': const Color(0xFF14B8A6),
         'colorLight': const Color(0xFF2DD4BF),
       },
+      {
+        'title': 'Trip Planner',
+        'icon': LucideIcons.plane,
+        'route': '/trip-planner',
+        'color': const Color(0xFF20b2aa),
+        'colorLight': const Color(0xFF48D1CC),
+      },
     ];
 
     return Column(

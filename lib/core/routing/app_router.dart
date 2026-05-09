@@ -44,6 +44,7 @@ import '../../features/meeting_hub/models/meeting_model.dart';
 import '../../presentation/pages/emails_page.dart';
 import '../../presentation/pages/history_page.dart';
 import '../../presentation/pages/travel_page.dart';
+import '../../presentation/pages/trip_planner_page.dart';
 import '../../presentation/pages/actions_hub_page.dart';
 import '../../presentation/pages/automation_rules_page.dart';
 import '../../presentation/pages/finance_page.dart';
@@ -692,6 +693,14 @@ final appRouter = GoRouter(
         context: context,
         state: state,
         child: const TravelPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/trip-planner',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const TripPlannerPage(),
       ),
     ),
     GoRoute(
