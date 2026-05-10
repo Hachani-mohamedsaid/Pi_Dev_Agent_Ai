@@ -45,6 +45,7 @@ import '../../features/meeting_hub/models/meeting_model.dart';
 import '../../presentation/pages/emails_page.dart';
 import '../../presentation/pages/history_page.dart';
 import '../../presentation/pages/travel_page.dart';
+import '../../presentation/pages/trip_planner_page.dart';
 import '../../presentation/pages/actions_hub_page.dart';
 import '../../presentation/pages/automation_rules_page.dart';
 import '../../presentation/pages/finance_page.dart';
@@ -83,6 +84,10 @@ import '../../features/messaging/screens/messaging_list_screen.dart';
 import '../../features/messaging/screens/messaging_chat_screen.dart';
 import '../../features/social_media/screens/social_media_brief_screen.dart';
 import '../../presentation/pages/google_connect_page.dart';
+import '../../features/wellbeing/models/wellbeing_models.dart';
+import '../../features/wellbeing/screens/wellbeing_landing_screen.dart';
+import '../../features/wellbeing/screens/wellbeing_questionnaire_screen.dart';
+import '../../features/wellbeing/screens/wellbeing_results_screen.dart';
 
 // Custom page transition - fade and scale from center
 Page<T> _fadeScaleTransition<T extends Object?>({
@@ -453,6 +458,40 @@ final appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: '/wellbeing',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const WellbeingLandingScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/wellbeing/check-in',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const WellbeingQuestionnaireScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/wellbeing/results',
+      pageBuilder: (context, state) {
+        final extra = state.extra;
+        if (extra is! WellbeingSessionOutcome) {
+          return _fadeScaleTransition(
+            context: context,
+            state: state,
+            child: const WellbeingLandingScreen(),
+          );
+        }
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: WellbeingResultsScreen(outcome: extra),
+        );
+      },
+    ),
+    GoRoute(
       path: '/briefing-loading',
       pageBuilder: (context, state) {
         final q = state.uri.queryParameters;
@@ -693,6 +732,14 @@ final appRouter = GoRouter(
         context: context,
         state: state,
         child: const TravelPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/trip-planner',
+      pageBuilder: (context, state) => _fadeScaleTransition(
+        context: context,
+        state: state,
+        child: const TripPlannerPage(),
       ),
     ),
     GoRoute(
