@@ -7,7 +7,8 @@ import '../../core/utils/responsive.dart';
 import '../state/auth_controller.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
-import '../../core/l10n/app_strings.dart';
+
+import 'package:pi_dev_agentia/generated/l10n.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key, required this.controller});
@@ -65,9 +66,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   }
 
   String _getStrengthText(BuildContext context) {
-    if (_passwordStrength < 50) return AppStrings.tr(context, 'weak');
-    if (_passwordStrength < 75) return AppStrings.tr(context, 'medium');
-    return AppStrings.tr(context, 'strong');
+    final s = S.of(context);
+    if (_passwordStrength < 50) return s.weak;
+    if (_passwordStrength < 75) return s.medium;
+    return s.strong;
   }
 
   bool _meetsRequirement(String requirement) {
@@ -89,11 +91,12 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
+    final s = S.of(context);
     if (_newPasswordController.text != _confirmPasswordController.text) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppStrings.tr(context, 'passwordsDoNotMatch')),
+            content: Text(s.passwordsDoNotMatch),
             backgroundColor: Colors.red,
           ),
         );
@@ -104,7 +107,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppStrings.tr(context, 'passwordTooWeak')),
+            content: Text(s.passwordTooWeak),
             backgroundColor: Colors.red,
           ),
         );
@@ -119,7 +122,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppStrings.tr(context, 'passwordUpdated')),
+          content: Text(s.passwordUpdated),
           backgroundColor: Colors.green,
         ),
       );
@@ -127,7 +130,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(widget.controller.error ?? AppStrings.tr(context, 'failedToChangePassword')),
+          content: Text(widget.controller.error ?? s.failedToChangePassword),
           backgroundColor: Colors.red,
         ),
       );
@@ -139,6 +142,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     final isMobile = Responsive.isMobile(context);
     final padding = isMobile ? 24.0 : 32.0;
 
+    final s = S.of(context);
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
@@ -206,7 +210,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                             ),
                           ),
                           Text(
-                            AppStrings.tr(context, 'changePassword'),
+                            s.changePassword,
                             style: TextStyle(
                               fontSize: isMobile ? 20 : 24,
                               fontWeight: FontWeight.bold,
@@ -255,7 +259,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                 SizedBox(width: isMobile ? 12 : 16),
                                 Expanded(
                                   child: Text(
-                                    AppStrings.tr(context, 'createStrongPassword'),
+                                    s.createStrongPassword,
                                     style: TextStyle(
                                       fontSize: isMobile ? 13 : 14,
                                       color: AppColors.textCyan200.withOpacity(
@@ -281,8 +285,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                       children: [
                         // Current Password
                         CustomTextField(
-                              label: AppStrings.tr(context, 'currentPassword'),
-                              hint: AppStrings.tr(context, 'enterCurrentPassword'),
+                              label: s.currentPassword,
+                              hint: s.enterCurrentPassword,
                               icon: Icons.lock_outline,
                               controller: _currentPasswordController,
                               obscureText: !_showCurrentPassword,
@@ -309,8 +313,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 CustomTextField(
-                                  label: AppStrings.tr(context, 'newPassword'),
-                                  hint: AppStrings.tr(context, 'enterNewPassword'),
+                                  label: s.newPassword,
+                                  hint: s.enterNewPassword,
                                   icon: Icons.lock_outline,
                                   controller: _newPasswordController,
                                   obscureText: !_showNewPassword,
@@ -359,7 +363,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                       ),
                                       SizedBox(height: 8),
                                       Text(
-                                        '${AppStrings.tr(context, "passwordStrength")}${_getStrengthText(context)}',
+                                        '${s.passwordStrength}${_getStrengthText(context)}',
                                         style: TextStyle(
                                           fontSize: isMobile ? 12 : 13,
                                           color: _getStrengthColor(),
@@ -380,8 +384,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 CustomTextField(
-                                  label: AppStrings.tr(context, 'confirmNewPassword'),
-                                  hint: AppStrings.tr(context, 'confirmNewPasswordHint'),
+                                  label: s.confirmNewPassword,
+                                  hint: s.confirmNewPasswordHint,
                                   icon: Icons.lock_outline,
                                   controller: _confirmPasswordController,
                                   obscureText: !_showConfirmPassword,
@@ -400,7 +404,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                   },
                                   validator: (value) {
                                     if (value != _newPasswordController.text) {
-                                      return AppStrings.tr(context, 'passwordsDoNotMatch');
+                                      return s.passwordsDoNotMatch;
                                     }
                                     return null;
                                   },
@@ -424,7 +428,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                         ),
                                         SizedBox(width: 8),
                                         Text(
-                                          AppStrings.tr(context, 'passwordsMatch'),
+                                          s.passwordsMatch,
                                           style: TextStyle(
                                             fontSize: isMobile ? 13 : 14,
                                             color: Colors.green.shade400,
@@ -474,7 +478,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        AppStrings.tr(context, 'passwordRequirements'),
+                                        s.passwordRequirements,
                                         style: TextStyle(
                                           fontSize: isMobile ? 14 : 16,
                                           fontWeight: FontWeight.w500,
@@ -483,25 +487,25 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                       ),
                                       SizedBox(height: isMobile ? 12 : 16),
                                       _RequirementItem(
-                                        text: AppStrings.tr(context, 'atLeast8Chars'),
+                                        text: s.atLeast8Chars,
                                         met: _meetsRequirement('length'),
                                         isMobile: isMobile,
                                       ),
                                       SizedBox(height: isMobile ? 8 : 12),
                                       _RequirementItem(
-                                        text: AppStrings.tr(context, 'upperLowerCase'),
+                                        text: s.upperLowerCase,
                                         met: _meetsRequirement('case'),
                                         isMobile: isMobile,
                                       ),
                                       SizedBox(height: isMobile ? 8 : 12),
                                       _RequirementItem(
-                                        text: AppStrings.tr(context, 'atLeastOneNumber'),
+                                        text: s.atLeastOneNumber,
                                         met: _meetsRequirement('number'),
                                         isMobile: isMobile,
                                       ),
                                       SizedBox(height: isMobile ? 8 : 12),
                                       _RequirementItem(
-                                        text: AppStrings.tr(context, 'atLeastOneSpecial'),
+                                        text: s.atLeastOneSpecial,
                                         met: _meetsRequirement('special'),
                                         isMobile: isMobile,
                                       ),
@@ -517,7 +521,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
                         // Save Button (POST /auth/change-password)
                         CustomButton(
-                              text: AppStrings.tr(context, 'updatePassword'),
+                              text: s.updatePassword,
                               onPressed: _handleSave,
                               isLoading: widget.controller.isLoading,
                             )

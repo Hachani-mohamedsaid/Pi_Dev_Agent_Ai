@@ -59,12 +59,25 @@ class Evaluation {
     }
 
     return Evaluation(
-      evaluationId: _str(json['evaluation_id']),
-      timestamp: _str(json['timestamp'] ?? json['Timestamp']),
-      jobId: _str(json['job_id']),
-      jobTitle: _str(json['job_title']),
-      candidateName: _str(json['candidate_name'] ?? json['full_name']),
-      candidateEmail: _str(json['candidate_email'] ?? json['email']),
+      evaluationId: _str(
+        json['evaluation_id'] ?? json['evaluationId'] ?? json['id'],
+      ),
+      timestamp: _str(json['timestamp'] ?? json['Timestamp'] ?? json['date']),
+      jobId: _str(json['job_id'] ?? json['jobId']),
+      jobTitle: _str(json['job_title'] ?? json['jobTitle'] ?? json['Job Title']),
+      candidateName: _str(
+        json['candidate_name'] ??
+            json['full_name'] ??
+            json['candidateName'] ??
+            json['Name'] ??
+            json['name'],
+      ),
+      candidateEmail: _str(
+        json['candidate_email'] ??
+            json['email'] ??
+            json['candidateEmail'] ??
+            json['Email'],
+      ),
       phone: _str(json['phone']),
       linkedin: _str(json['linkedin'] ?? json['linkedin_url']),
       cvUrl: _str(json['cv_url']),

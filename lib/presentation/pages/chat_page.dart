@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:pi_dev_agentia/generated/l10n.dart';
 
 import '../../features/meeting_intelligence/models/ava_session.dart';
 import '../../presentation/state/chat_provider.dart';
@@ -79,21 +80,22 @@ class _ChatPageState extends State<ChatPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear Conversation?'),
-        content: const Text(
-          'Are you sure you want to clear all messages? This action cannot be undone.',
-        ),
+        title: Text(S.of(context).clearConversationTitle),
+        content: Text(S.of(context).clearConversationContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(S.of(context).cancel),
           ),
           TextButton(
             onPressed: () {
               context.read<ChatProvider>().clearMessages();
               Navigator.pop(context);
             },
-            child: const Text('Clear', style: TextStyle(color: Colors.red)),
+            child: Text(
+              S.of(context).clear,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -104,14 +106,14 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat Assistant'),
+        title: Text(S.of(context).chatAssistant),
         centerTitle: true,
         elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(LucideIcons.trash2),
             onPressed: _clearConversation,
-            tooltip: 'Clear conversation',
+            tooltip: S.of(context).clearConversationTooltip,
           ),
         ],
       ),

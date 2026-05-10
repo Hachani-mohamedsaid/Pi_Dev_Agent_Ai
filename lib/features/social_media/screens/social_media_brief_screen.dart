@@ -21,7 +21,13 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
   String _tone = 'Professional';
   final _tones = ['Professional', 'Friendly', 'Bold', 'Luxurious'];
 
-  final _allPlatforms = ['Instagram', 'Twitter/X', 'Facebook', 'TikTok', 'YouTube'];
+  final _allPlatforms = [
+    'Instagram',
+    'Twitter/X',
+    'Facebook',
+    'TikTok',
+    'YouTube',
+  ];
   final Set<String> _selectedPlatforms = {'Instagram', 'Twitter/X'};
 
   @override
@@ -60,19 +66,33 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF0F2940)
+          : const Color(0xFFF3F8FC),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+            colors: isDark
+                ? const [
+                    Color(0xFF0f2940),
+                    Color(0xFF1a3a52),
+                    Color(0xFF0f2940),
+                  ]
+                : const [
+                    Color(0xFFF8FCFF),
+                    Color(0xFFEAF4FB),
+                    Color(0xFFF3F8FC),
+                  ],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              _buildAppBar(context),
+              _buildAppBar(context, isDark),
               Expanded(
                 child: Form(
                   key: _formKey,
@@ -84,6 +104,7 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
                         _sectionLabel('Product / App Name'),
                         const SizedBox(height: 8),
                         _buildTextField(
+                          isDark: isDark,
                           controller: _productNameCtrl,
                           hint: 'e.g. Ava AI Assistant',
                           validator: (v) =>
@@ -93,6 +114,7 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
                         _sectionLabel('Short Description'),
                         const SizedBox(height: 8),
                         _buildTextField(
+                          isDark: isDark,
                           controller: _descriptionCtrl,
                           hint: 'Describe your product in a few sentences…',
                           maxLines: 4,
@@ -104,6 +126,7 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
                         _sectionLabel('Target Audience'),
                         const SizedBox(height: 8),
                         _buildTextField(
+                          isDark: isDark,
                           controller: _audienceCtrl,
                           hint: 'e.g. Business professionals aged 25–45',
                           validator: (v) =>
@@ -112,13 +135,13 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
                         const SizedBox(height: 20),
                         _sectionLabel('Tone of Voice'),
                         const SizedBox(height: 8),
-                        _buildDropdown(),
+                        _buildDropdown(isDark),
                         const SizedBox(height: 20),
                         _sectionLabel('Platforms to Target'),
                         const SizedBox(height: 12),
-                        _buildPlatformChips(),
+                        _buildPlatformChips(isDark),
                         const SizedBox(height: 32),
-                        _buildGenerateButton(),
+                        _buildGenerateButton(isDark),
                       ],
                     ),
                   ),
@@ -131,7 +154,7 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
+  Widget _buildAppBar(BuildContext context, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -142,11 +165,21 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.07),
+                color: isDark
+                    ? Colors.white.withOpacity(0.07)
+                    : const Color(0xFF0EA5C6).withOpacity(0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
+                border: Border.all(
+                  color: isDark
+                      ? AppColors.cyan500.withOpacity(0.2)
+                      : const Color(0xFF0EA5C6).withOpacity(0.25),
+                ),
               ),
-              child: const Icon(LucideIcons.arrowLeft, color: Colors.white, size: 20),
+              child: Icon(
+                LucideIcons.arrowLeft,
+                color: isDark ? Colors.white : const Color(0xFF12344C),
+                size: 20,
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -154,19 +187,21 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Social Media Campaign',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : const Color(0xFF12344C),
                   ),
                 ),
                 Text(
                   'Fill in the brief to generate your campaign',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textCyan200.withOpacity(0.7),
+                    color: isDark
+                        ? AppColors.textCyan200.withOpacity(0.7)
+                        : const Color(0xFF3B6D8C),
                   ),
                 ),
               ],
@@ -175,11 +210,21 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFEC4899).withOpacity(0.15),
+              color: isDark
+                  ? const Color(0xFFEC4899).withOpacity(0.15)
+                  : const Color(0xFFEC4899).withOpacity(0.09),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFEC4899).withOpacity(0.3)),
+              border: Border.all(
+                color: isDark
+                    ? const Color(0xFFEC4899).withOpacity(0.3)
+                    : const Color(0xFFEC4899).withOpacity(0.35),
+              ),
             ),
-            child: const Icon(LucideIcons.megaphone, color: Color(0xFFEC4899), size: 20),
+            child: const Icon(
+              LucideIcons.megaphone,
+              color: Color(0xFFEC4899),
+              size: 20,
+            ),
           ),
         ],
       ),
@@ -199,6 +244,7 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
   }
 
   Widget _buildTextField({
+    required bool isDark,
     required TextEditingController controller,
     required String hint,
     int maxLines = 1,
@@ -212,22 +258,47 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
       inputFormatters: maxLength != null
           ? [LengthLimitingTextInputFormatter(maxLength)]
           : null,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      style: TextStyle(
+        color: isDark ? Colors.white : const Color(0xFF12344C),
+        fontSize: 14,
+      ),
       validator: validator,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 14),
-        counterStyle: TextStyle(color: AppColors.textCyan200.withOpacity(0.5), fontSize: 11),
+        hintStyle: TextStyle(
+          color: isDark
+              ? Colors.white.withOpacity(0.3)
+              : const Color(0xFF577F97),
+          fontSize: 14,
+        ),
+        counterStyle: TextStyle(
+          color: isDark
+              ? AppColors.textCyan200.withOpacity(0.5)
+              : const Color(0xFF4E7891),
+          fontSize: 11,
+        ),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        fillColor: isDark
+            ? Colors.white.withOpacity(0.05)
+            : const Color(0xFFDDEDF8).withOpacity(0.9),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.cyan500.withOpacity(0.2)),
+          borderSide: BorderSide(
+            color: isDark
+                ? AppColors.cyan500.withOpacity(0.2)
+                : const Color(0xFF0EA5C6).withOpacity(0.28),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.cyan400.withOpacity(0.6), width: 1.5),
+          borderSide: BorderSide(
+            color: AppColors.cyan400.withOpacity(0.6),
+            width: 1.5,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -242,25 +313,43 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
     );
   }
 
-  Widget _buildDropdown() {
+  Widget _buildDropdown(bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: isDark
+            ? Colors.white.withOpacity(0.05)
+            : const Color(0xFFDDEDF8).withOpacity(0.9),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
+        border: Border.all(
+          color: isDark
+              ? AppColors.cyan500.withOpacity(0.2)
+              : const Color(0xFF0EA5C6).withOpacity(0.28),
+        ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _tone,
           isExpanded: true,
-          dropdownColor: const Color(0xFF1a3a52),
-          style: const TextStyle(color: Colors.white, fontSize: 14),
-          iconEnabledColor: AppColors.cyan400,
+          dropdownColor: isDark
+              ? const Color(0xFF1a3a52)
+              : const Color(0xFFEAF4FB),
+          style: TextStyle(
+            color: isDark ? Colors.white : const Color(0xFF12344C),
+            fontSize: 14,
+          ),
+          iconEnabledColor: isDark
+              ? AppColors.cyan400
+              : const Color(0xFF0E86AA),
           items: _tones.map((t) {
             return DropdownMenuItem(
               value: t,
-              child: Text(t, style: const TextStyle(color: Colors.white)),
+              child: Text(
+                t,
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF12344C),
+                ),
+              ),
             );
           }).toList(),
           onChanged: (v) => setState(() => _tone = v ?? _tone),
@@ -269,7 +358,7 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
     );
   }
 
-  Widget _buildPlatformChips() {
+  Widget _buildPlatformChips(bool isDark) {
     return Wrap(
       spacing: 10,
       runSpacing: 10,
@@ -318,7 +407,11 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                    color: selected ? AppColors.cyan400 : Colors.white.withOpacity(0.6),
+                    color: selected
+                        ? (isDark ? AppColors.cyan400 : const Color(0xFF0E86AA))
+                        : (isDark
+                              ? Colors.white.withOpacity(0.6)
+                              : const Color(0xFF4E7891)),
                   ),
                 ),
               ],
@@ -329,7 +422,7 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
     );
   }
 
-  Widget _buildGenerateButton() {
+  Widget _buildGenerateButton(bool isDark) {
     return GestureDetector(
       onTap: _generate,
       child: Container(
@@ -342,7 +435,7 @@ class _SocialMediaBriefScreenState extends State<SocialMediaBriefScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFEC4899).withOpacity(0.4),
+              color: const Color(0xFFEC4899).withOpacity(isDark ? 0.4 : 0.28),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),

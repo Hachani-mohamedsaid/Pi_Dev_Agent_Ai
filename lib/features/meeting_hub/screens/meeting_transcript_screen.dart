@@ -26,10 +26,15 @@ class MeetingTranscriptScreen extends StatefulWidget {
   /// When coming from active meeting end-call, pass the live transcript lines.
   final List<TranscriptLineModel>? fullTranscript;
 
-  const MeetingTranscriptScreen({super.key, required this.meetingId, this.fullTranscript});
+  const MeetingTranscriptScreen({
+    super.key,
+    required this.meetingId,
+    this.fullTranscript,
+  });
 
   @override
-  State<MeetingTranscriptScreen> createState() => _MeetingTranscriptScreenState();
+  State<MeetingTranscriptScreen> createState() =>
+      _MeetingTranscriptScreenState();
 }
 
 class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
@@ -66,7 +71,9 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
       return 'Just now';
     }
     final createdAt = _backendMeeting?.createdAt;
-    final dateStr = createdAt == null ? '—' : DateFormat.yMMMd().format(createdAt);
+    final dateStr = createdAt == null
+        ? '—'
+        : DateFormat.yMMMd().format(createdAt);
     final dur = _backendMeeting?.durationMinutes ?? 0;
     final durStr = dur <= 0 ? '—' : '$dur min';
     return '$dateStr • $durStr';
@@ -93,7 +100,9 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
       _summaryError = null;
     });
     try {
-      final meeting = await MeetingApiService.instance.getMeeting(widget.meetingId);
+      final meeting = await MeetingApiService.instance.getMeeting(
+        widget.meetingId,
+      );
       if (!mounted) return;
       setState(() {
         _backendMeeting = meeting;
@@ -103,7 +112,8 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
       });
 
       // If summary already exists on backend, show it and skip Claude call.
-      final hasSummary = meeting.keyPoints.isNotEmpty ||
+      final hasSummary =
+          meeting.keyPoints.isNotEmpty ||
           meeting.actionItems.isNotEmpty ||
           meeting.decisions.isNotEmpty;
       if (hasSummary) {
@@ -154,7 +164,9 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
     }
 
     try {
-      final transcriptText = lines.map((l) => '${l.speaker}: ${l.text}').join('\n');
+      final transcriptText = lines
+          .map((l) => '${l.speaker}: ${l.text}')
+          .join('\n');
       await _callClaude(transcriptText);
     } catch (e) {
       if (mounted) {
@@ -182,29 +194,30 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
         '}\n\n'
         'Transcript:\n';
 
-    final response = await http.post(
-      Uri.parse('https://api.anthropic.com/v1/messages'),
-      headers: buildJsonHeaders(
-        extra: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-      ),
-      body: jsonEncode({
-        'model': 'claude-sonnet-4-5-20250929',
-        'max_tokens': 1024,
-        'messages': [
-          {
-            'role': 'user',
-            'content': prompt + transcriptText,
-          }
-        ],
-      }),
-    ).timeout(const Duration(seconds: 30));
+    final response = await http
+        .post(
+          Uri.parse('https://api.anthropic.com/v1/messages'),
+          headers: buildJsonHeaders(
+            extra: {'x-api-key': apiKey, 'anthropic-version': '2023-06-01'},
+          ),
+          body: jsonEncode({
+            'model': 'claude-sonnet-4-5-20250929',
+            'max_tokens': 1024,
+            'messages': [
+              {'role': 'user', 'content': prompt + transcriptText},
+            ],
+          }),
+        )
+        .timeout(const Duration(seconds: 30));
 
     if (response.statusCode != 200) {
-      reportHttpResponseError(feature: 'meeting.transcript.claude', response: response);
-      throw Exception('Claude API error ${response.statusCode}: ${response.body}');
+      reportHttpResponseError(
+        feature: 'meeting.transcript.claude',
+        response: response,
+      );
+      throw Exception(
+        'Claude API error ${response.statusCode}: ${response.body}',
+      );
     }
 
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
@@ -247,7 +260,9 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
 
   // ── UI helpers ───────────────────────────────────────────────────────────
   void _copyTranscript() {
-    final text = _lines.map((l) => '[${l.timestamp}] ${l.speaker}: ${l.text}').join('\n');
+    final text = _lines
+        .map((l) => '[${l.timestamp}] ${l.speaker}: ${l.text}')
+        .join('\n');
     Clipboard.setData(ClipboardData(text: text));
     setState(() => _copied = true);
     Future.delayed(const Duration(seconds: 2), () {
@@ -275,8 +290,12 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
       final textColor = PdfColors.white;
       final subtle = PdfColor.fromHex('#9ca3af');
 
-      pw.Widget buildSection(String title, List<String> items,
-          {PdfColor? bulletColor, bool checkStyle = false}) {
+      pw.Widget buildSection(
+        String title,
+        List<String> items, {
+        PdfColor? bulletColor,
+        bool checkStyle = false,
+      }) {
         if (items.isEmpty) {
           return pw.SizedBox();
         }
@@ -315,10 +334,7 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
                     pw.Expanded(
                       child: pw.Text(
                         item,
-                        style: pw.TextStyle(
-                          fontSize: 11,
-                          color: textColor,
-                        ),
+                        style: pw.TextStyle(fontSize: 11, color: textColor),
                       ),
                     ),
                   ],
@@ -364,10 +380,7 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
                 children: [
                   pw.Text(
                     'Ava – Meeting Summary',
-                    style: pw.TextStyle(
-                      fontSize: 14,
-                      color: subtle,
-                    ),
+                    style: pw.TextStyle(fontSize: 14, color: subtle),
                   ),
                   pw.SizedBox(height: 4),
                   pw.Text(
@@ -381,10 +394,7 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
                   pw.SizedBox(height: 4),
                   pw.Text(
                     meta,
-                    style: pw.TextStyle(
-                      fontSize: 11,
-                      color: subtle,
-                    ),
+                    style: pw.TextStyle(fontSize: 11, color: subtle),
                   ),
                 ],
               ),
@@ -424,10 +434,7 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
                           pw.SizedBox(height: 4),
                           pw.Text(
                             participants.join(', '),
-                            style: pw.TextStyle(
-                              fontSize: 11,
-                              color: textColor,
-                            ),
+                            style: pw.TextStyle(fontSize: 11, color: textColor),
                           ),
                         ],
                       ),
@@ -437,10 +444,17 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
               ),
             if (participants.isNotEmpty) pw.SizedBox(height: 16),
             buildSection('Key Points', keyPoints),
-            buildSection('Action Items', actionItems,
-                bulletColor: accent, checkStyle: true),
-            buildSection('Decisions Made', decisions,
-                bulletColor: PdfColor.fromHex('#22c55e')),
+            buildSection(
+              'Action Items',
+              actionItems,
+              bulletColor: accent,
+              checkStyle: true,
+            ),
+            buildSection(
+              'Decisions Made',
+              decisions,
+              bulletColor: PdfColor.fromHex('#22c55e'),
+            ),
           ],
         ),
       );
@@ -452,22 +466,26 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
       );
       await file.writeAsBytes(bytes, flush: true);
 
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        text: 'Ava meeting summary – $title',
-      );
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], text: 'Ava meeting summary – $title');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not generate PDF: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not generate PDF: $e')));
     }
   }
 
   // ── Build ────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final padding = Responsive.getResponsiveValue(context, mobile: 24.0, tablet: 32.0, desktop: 48.0);
+    final padding = Responsive.getResponsiveValue(
+      context,
+      mobile: 24.0,
+      tablet: 32.0,
+      desktop: 48.0,
+    );
 
     return Scaffold(
       body: Container(
@@ -488,9 +506,23 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildBackButton(context),
-                      SizedBox(height: Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 20.0, desktop: 24.0)),
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 16.0,
+                          tablet: 20.0,
+                          desktop: 24.0,
+                        ),
+                      ),
                       _buildHeader(context),
-                      SizedBox(height: Responsive.getResponsiveValue(context, mobile: 20.0, tablet: 24.0, desktop: 28.0)),
+                      SizedBox(
+                        height: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 20.0,
+                          tablet: 24.0,
+                          desktop: 28.0,
+                        ),
+                      ),
                       _buildSummaryCard(context),
                       const SizedBox(height: 20),
                       _buildParticipantsCard(context),
@@ -510,71 +542,107 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
 
   Widget _buildBackButton(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.go('/meetings'),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(LucideIcons.chevronLeft, color: AppColors.cyan400, size: 22),
-          const SizedBox(width: 8),
-          Text('Back to Meetings',
-              style: TextStyle(color: AppColors.cyan400, fontSize: 15, fontWeight: FontWeight.w500)),
-        ],
-      ),
-    ).animate().fadeIn(duration: 300.ms).slideX(begin: -0.1, end: 0, curve: Curves.easeOut);
+          onTap: () => context.go('/meetings'),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(LucideIcons.chevronLeft, color: AppColors.cyan400, size: 22),
+              const SizedBox(width: 8),
+              Text(
+                'Back to Meetings',
+                style: TextStyle(
+                  color: AppColors.cyan400,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        )
+        .animate()
+        .fadeIn(duration: 300.ms)
+        .slideX(begin: -0.1, end: 0, curve: Curves.easeOut);
   }
 
   Widget _buildHeader(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _title,
-                style: TextStyle(
-                  fontSize: Responsive.getResponsiveValue(context, mobile: 24.0, tablet: 28.0, desktop: 32.0),
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(LucideIcons.clock, size: 16, color: AppColors.textCyan200.withOpacity(0.8)),
-                  const SizedBox(width: 6),
                   Text(
-                    _dateAndDuration,
-                    style: TextStyle(color: AppColors.textCyan200.withOpacity(0.8), fontSize: 13),
+                    _title,
+                    style: TextStyle(
+                      fontSize: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 24.0,
+                        tablet: 28.0,
+                        desktop: 32.0,
+                      ),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                  const SizedBox(width: 16),
-                  Icon(LucideIcons.users, size: 16, color: AppColors.textCyan200.withOpacity(0.8)),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${_participants.length} participant${_participants.length == 1 ? '' : 's'}',
-                    style: TextStyle(color: AppColors.textCyan200.withOpacity(0.8), fontSize: 13),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        LucideIcons.clock,
+                        size: 16,
+                        color: AppColors.textCyan200.withOpacity(0.8),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _dateAndDuration,
+                        style: TextStyle(
+                          color: AppColors.textCyan200.withOpacity(0.8),
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Icon(
+                        LucideIcons.users,
+                        size: 16,
+                        color: AppColors.textCyan200.withOpacity(0.8),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${_participants.length} participant${_participants.length == 1 ? '' : 's'}',
+                        style: TextStyle(
+                          color: AppColors.textCyan200.withOpacity(0.8),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-        Row(
-          children: [
-            _buildIconButton(
-                icon: _copied ? null : LucideIcons.copy,
-                label: _copied ? 'Copied!' : null,
-                onTap: _copyTranscript),
-            const SizedBox(width: 10),
-            _buildIconButton(icon: LucideIcons.download, onTap: _exportPdf),
+            ),
+            Row(
+              children: [
+                _buildIconButton(
+                  icon: _copied ? null : LucideIcons.copy,
+                  label: _copied ? 'Copied!' : null,
+                  onTap: _copyTranscript,
+                ),
+                const SizedBox(width: 10),
+                _buildIconButton(icon: LucideIcons.download, onTap: _exportPdf),
+              ],
+            ),
           ],
-        ),
-      ],
-    ).animate().fadeIn(delay: 100.ms).slideY(begin: -0.05, end: 0, curve: Curves.easeOut);
+        )
+        .animate()
+        .fadeIn(delay: 100.ms)
+        .slideY(begin: -0.05, end: 0, curve: Curves.easeOut);
   }
 
-  Widget _buildIconButton({IconData? icon, String? label, required VoidCallback onTap}) {
+  Widget _buildIconButton({
+    IconData? icon,
+    String? label,
+    required VoidCallback onTap,
+  }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -586,15 +654,21 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
             gradient: LinearGradient(
               colors: [
                 AppColors.primaryLight.withOpacity(0.6),
-                AppColors.primaryDarker.withOpacity(0.6)
+                AppColors.primaryDarker.withOpacity(0.6),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.cyan500.withOpacity(0.35)),
           ),
           child: label != null
-              ? Text(label,
-                  style: TextStyle(color: Colors.green.shade400, fontSize: 13, fontWeight: FontWeight.w600))
+              ? Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.green.shade400,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                )
               : Icon(icon, color: AppColors.cyan400, size: 20),
         ),
       ),
@@ -603,55 +677,85 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
 
   // ── Summary card ─────────────────────────────────────────────────────────
   Widget _buildSummaryCard(BuildContext context) {
-    final r = Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 24.0);
+    final r = Responsive.getResponsiveValue(
+      context,
+      mobile: 18.0,
+      tablet: 20.0,
+      desktop: 24.0,
+    );
     return Container(
-      padding: EdgeInsets.all(r),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.cyan500.withOpacity(0.15), AppColors.blue500.withOpacity(0.15)],
-        ),
-        borderRadius: BorderRadius.circular(r),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.35)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 24, offset: const Offset(0, 8))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Card header
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [AppColors.cyan500, AppColors.blue500]),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(LucideIcons.sparkles, color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'AI Meeting Summary',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: Responsive.getResponsiveValue(context, mobile: 17.0, tablet: 18.0, desktop: 20.0),
-                ),
+          padding: EdgeInsets.all(r),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.cyan500.withOpacity(0.15),
+                AppColors.blue500.withOpacity(0.15),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(r),
+            border: Border.all(color: AppColors.cyan500.withOpacity(0.35)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.25),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-          SizedBox(height: r),
-          _buildSummaryBody(context, r),
-        ],
-      ),
-    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.03, end: 0, curve: Curves.easeOut);
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Card header
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColors.cyan500, AppColors.blue500],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      LucideIcons.sparkles,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'AI Meeting Summary',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 17.0,
+                        tablet: 18.0,
+                        desktop: 20.0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: r),
+              _buildSummaryBody(context, r),
+            ],
+          ),
+        )
+        .animate()
+        .fadeIn(delay: 200.ms)
+        .slideY(begin: 0.03, end: 0, curve: Curves.easeOut);
   }
 
   Widget _buildSummaryBody(BuildContext context, double r) {
     // No transcript at all
     if (_summaryError == 'empty') {
-      return _buildSummaryPlaceholder('No transcript available for this meeting.');
+      return _buildSummaryPlaceholder(
+        'No transcript available for this meeting.',
+      );
     }
 
     // Loading
@@ -668,7 +772,10 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
               const SizedBox(height: 14),
               Text(
                 'Generating AI summary…',
-                style: TextStyle(color: AppColors.textCyan200.withOpacity(0.7), fontSize: 13),
+                style: TextStyle(
+                  color: AppColors.textCyan200.withOpacity(0.7),
+                  fontSize: 13,
+                ),
               ),
             ],
           ),
@@ -683,7 +790,11 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.alertCircle, color: Colors.red.shade400, size: 18),
+              Icon(
+                LucideIcons.alertCircle,
+                color: Colors.red.shade400,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -699,12 +810,18 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [AppColors.cyan500, AppColors.blue500]),
+                gradient: const LinearGradient(
+                  colors: [AppColors.cyan500, AppColors.blue500],
+                ),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Text(
                 'Retry',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
             ),
           ),
@@ -742,7 +859,10 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Text(
         message,
-        style: TextStyle(color: AppColors.textCyan200.withOpacity(0.6), fontSize: 13),
+        style: TextStyle(
+          color: AppColors.textCyan200.withOpacity(0.6),
+          fontSize: 13,
+        ),
       ),
     );
   }
@@ -762,34 +882,56 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
           children: [
             Icon(icon, size: 16, color: AppColors.cyan400),
             const SizedBox(width: 8),
-            Text(title,
-                style: TextStyle(color: AppColors.cyan400, fontWeight: FontWeight.w600, fontSize: 14)),
+            Text(
+              title,
+              style: TextStyle(
+                color: AppColors.cyan400,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 10),
         if (items.isEmpty)
           _buildSummaryPlaceholder('None identified.')
         else
-          ...items.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (isBullet)
-                      Container(
-                          margin: const EdgeInsets.only(top: 7),
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(color: AppColors.cyan400, shape: BoxShape.circle))
-                    else if (isDecision)
-                      Icon(LucideIcons.checkCircle2, size: 18, color: Colors.green.shade400),
-                    const SizedBox(width: 10),
-                    Expanded(
-                        child: Text(item,
-                            style: TextStyle(color: AppColors.textCyan200.withOpacity(0.9), fontSize: 13))),
-                  ],
-                ),
-              )),
+          ...items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (isBullet)
+                    Container(
+                      margin: const EdgeInsets.only(top: 7),
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: AppColors.cyan400,
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                  else if (isDecision)
+                    Icon(
+                      LucideIcons.checkCircle2,
+                      size: 18,
+                      color: Colors.green.shade400,
+                    ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: TextStyle(
+                        color: AppColors.textCyan200.withOpacity(0.9),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -802,8 +944,14 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
           children: [
             Icon(LucideIcons.checkCircle2, size: 16, color: AppColors.cyan400),
             const SizedBox(width: 8),
-            Text('Action Items',
-                style: TextStyle(color: AppColors.cyan400, fontWeight: FontWeight.w600, fontSize: 14)),
+            Text(
+              'Action Items',
+              style: TextStyle(
+                color: AppColors.cyan400,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 10),
@@ -812,11 +960,14 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
         else
           ..._actionItems.asMap().entries.map((e) {
             final idx = e.key;
-            final checked = _actionChecked.length > idx ? _actionChecked[idx] : false;
+            final checked = _actionChecked.length > idx
+                ? _actionChecked[idx]
+                : false;
             return GestureDetector(
               onTap: () {
                 setState(() {
-                  if (_actionChecked.length > idx) _actionChecked[idx] = !_actionChecked[idx];
+                  if (_actionChecked.length > idx)
+                    _actionChecked[idx] = !_actionChecked[idx];
                 });
               },
               child: Padding(
@@ -830,15 +981,23 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
                       width: 18,
                       height: 18,
                       decoration: BoxDecoration(
-                        color: checked ? AppColors.cyan500.withOpacity(0.4) : Colors.transparent,
+                        color: checked
+                            ? AppColors.cyan500.withOpacity(0.4)
+                            : Colors.transparent,
                         border: Border.all(
-                          color: checked ? AppColors.cyan400 : AppColors.cyan400.withOpacity(0.5),
+                          color: checked
+                              ? AppColors.cyan400
+                              : AppColors.cyan400.withOpacity(0.5),
                           width: 2,
                         ),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: checked
-                          ? const Icon(Icons.check, size: 12, color: Colors.white)
+                          ? const Icon(
+                              Icons.check,
+                              size: 12,
+                              color: Colors.white,
+                            )
                           : null,
                     ),
                     const SizedBox(width: 10),
@@ -850,7 +1009,9 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
                               ? AppColors.textCyan200.withOpacity(0.45)
                               : AppColors.textCyan200.withOpacity(0.9),
                           fontSize: 13,
-                          decoration: checked ? TextDecoration.lineThrough : TextDecoration.none,
+                          decoration: checked
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
                         ),
                       ),
                     ),
@@ -870,61 +1031,112 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
         : const <String>[];
 
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 24.0)),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primaryLight.withOpacity(0.45),
-            AppColors.primaryDarker.withOpacity(0.45)
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          padding: EdgeInsets.all(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 18.0,
+              tablet: 20.0,
+              desktop: 24.0,
+            ),
+          ),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.primaryLight.withOpacity(0.45),
+                AppColors.primaryDarker.withOpacity(0.45),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(LucideIcons.users, color: AppColors.cyan400, size: 20),
-              const SizedBox(width: 8),
-              Text('Participants',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16)),
+              Row(
+                children: [
+                  Icon(LucideIcons.users, color: AppColors.cyan400, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Participants',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (displayParticipants.isEmpty)
+                Text(
+                  'No participants identified.',
+                  style: TextStyle(
+                    color: AppColors.textCyan200.withOpacity(0.6),
+                    fontSize: 13,
+                  ),
+                )
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: displayParticipants
+                      .map(
+                        (p) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.cyan500.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: AppColors.cyan500.withOpacity(0.35),
+                            ),
+                          ),
+                          child: Text(
+                            p,
+                            style: TextStyle(
+                              color: AppColors.textCyan200,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
             ],
           ),
-          const SizedBox(height: 12),
-          if (displayParticipants.isEmpty)
-            Text('No participants identified.',
-                style: TextStyle(color: AppColors.textCyan200.withOpacity(0.6), fontSize: 13))
-          else
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: displayParticipants
-                  .map((p) => Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.cyan500.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: AppColors.cyan500.withOpacity(0.35)),
-                        ),
-                        child: Text(p, style: TextStyle(color: AppColors.textCyan200, fontSize: 13)),
-                      ))
-                  .toList(),
-            ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 280.ms).slideY(begin: 0.03, end: 0, curve: Curves.easeOut);
+        )
+        .animate()
+        .fadeIn(delay: 280.ms)
+        .slideY(begin: 0.03, end: 0, curve: Curves.easeOut);
   }
 
   // ── Full transcript ───────────────────────────────────────────────────────
   Widget _buildFullTranscriptSection(BuildContext context) {
-    final r = Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 24.0);
+    final r = Responsive.getResponsiveValue(
+      context,
+      mobile: 18.0,
+      tablet: 20.0,
+      desktop: 24.0,
+    );
     final colors = [
-      (bg: AppColors.cyan500.withOpacity(0.2), border: AppColors.cyan500.withOpacity(0.35)),
-      (bg: const Color(0xFFA855F7).withOpacity(0.2), border: const Color(0xFFA855F7).withOpacity(0.35)),
-      (bg: const Color(0xFFF97316).withOpacity(0.2), border: const Color(0xFFF97316).withOpacity(0.35)),
-      (bg: const Color(0xFF14b8a6).withOpacity(0.2), border: const Color(0xFF14b8a6).withOpacity(0.35)),
+      (
+        bg: AppColors.cyan500.withOpacity(0.2),
+        border: AppColors.cyan500.withOpacity(0.35),
+      ),
+      (
+        bg: const Color(0xFFA855F7).withOpacity(0.2),
+        border: const Color(0xFFA855F7).withOpacity(0.35),
+      ),
+      (
+        bg: const Color(0xFFF97316).withOpacity(0.2),
+        border: const Color(0xFFF97316).withOpacity(0.35),
+      ),
+      (
+        bg: const Color(0xFF14b8a6).withOpacity(0.2),
+        border: const Color(0xFF14b8a6).withOpacity(0.35),
+      ),
     ];
 
     final lines = _lines;
@@ -935,12 +1147,18 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
         gradient: LinearGradient(
           colors: [
             AppColors.primaryLight.withOpacity(0.45),
-            AppColors.primaryDarker.withOpacity(0.45)
+            AppColors.primaryDarker.withOpacity(0.45),
           ],
         ),
         borderRadius: BorderRadius.circular(r),
         border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 24, offset: const Offset(0, 8))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -950,7 +1168,12 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 22.0),
+              fontSize: Responsive.getResponsiveValue(
+                context,
+                mobile: 18.0,
+                tablet: 20.0,
+                desktop: 22.0,
+              ),
             ),
           ),
           SizedBox(height: r),
@@ -959,7 +1182,10 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(
                 'No transcript available for this meeting.',
-                style: TextStyle(color: AppColors.textCyan200.withOpacity(0.6), fontSize: 13),
+                style: TextStyle(
+                  color: AppColors.textCyan200.withOpacity(0.6),
+                  fontSize: 13,
+                ),
               ),
             )
           else
@@ -969,55 +1195,82 @@ class _MeetingTranscriptScreenState extends State<MeetingTranscriptScreen> {
               final isYou = line.speaker == 'You';
               final c = isYou ? colors[0] : colors[i % colors.length];
               return Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: Align(
-                  alignment: isYou ? Alignment.centerRight : Alignment.centerLeft,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
-                    child: Column(
-                      crossAxisAlignment: isYou ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment:
-                              isYou ? MainAxisAlignment.end : MainAxisAlignment.start,
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: Align(
+                      alignment: isYou
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width * 0.8,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: isYou
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
                           children: [
-                            if (!isYou)
-                              Text(line.speaker,
-                                  style: TextStyle(
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: isYou
+                                  ? MainAxisAlignment.end
+                                  : MainAxisAlignment.start,
+                              children: [
+                                if (!isYou)
+                                  Text(
+                                    line.speaker,
+                                    style: TextStyle(
                                       color: AppColors.cyan400,
                                       fontWeight: FontWeight.w600,
-                                      fontSize: 13)),
-                            if (!isYou) const SizedBox(width: 8),
-                            Text(line.timestamp,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                if (!isYou) const SizedBox(width: 8),
+                                Text(
+                                  line.timestamp,
+                                  style: TextStyle(
+                                    color: AppColors.cyan400.withOpacity(0.5),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                                if (isYou) const SizedBox(width: 8),
+                                if (isYou)
+                                  Text(
+                                    line.speaker,
+                                    style: TextStyle(
+                                      color: AppColors.cyan400,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: c.bg,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: c.border),
+                              ),
+                              child: Text(
+                                line.text,
                                 style: TextStyle(
-                                    color: AppColors.cyan400.withOpacity(0.5), fontSize: 11)),
-                            if (isYou) const SizedBox(width: 8),
-                            if (isYou)
-                              Text(line.speaker,
-                                  style: TextStyle(
-                                      color: AppColors.cyan400,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13)),
+                                  color: AppColors.textCyan200.withOpacity(0.9),
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: c.bg,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: c.border),
-                          ),
-                          child: Text(line.text,
-                              style: TextStyle(
-                                  color: AppColors.textCyan200.withOpacity(0.9), fontSize: 13)),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              ).animate().fadeIn(delay: 350.ms + (i * 20).ms).slideY(begin: 0.02, end: 0, curve: Curves.easeOut);
+                  )
+                  .animate()
+                  .fadeIn(delay: 350.ms + (i * 20).ms)
+                  .slideY(begin: 0.02, end: 0, curve: Curves.easeOut);
             }),
         ],
       ),

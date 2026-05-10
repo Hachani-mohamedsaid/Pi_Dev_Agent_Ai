@@ -14,10 +14,7 @@ class ProposalsApiService {
   Future<List<Proposal>> fetchProposals() async {
     try {
       final response = await http
-          .get(
-            Uri.parse(baseUrl),
-            headers: buildJsonHeaders(),
-          )
+          .get(Uri.parse(baseUrl), headers: buildJsonHeaders())
           .timeout(
             timeout,
             onTimeout: () {
@@ -33,12 +30,17 @@ class ProposalsApiService {
           return const <Proposal>[];
         }
 
-        final preview = body.substring(0, body.length > 200 ? 200 : body.length);
+        final preview = body.substring(
+          0,
+          body.length > 200 ? 200 : body.length,
+        );
         // Decode + validate JSON in a safe way.
         try {
           // Helpful debug when backend returns HTML/error text instead of JSON.
           if (!body.startsWith('[') && !body.startsWith('{')) {
-            debugPrint('⚠️ proposals webhook returned non-JSON payload: $preview');
+            debugPrint(
+              '⚠️ proposals webhook returned non-JSON payload: $preview',
+            );
             return const <Proposal>[];
           }
 
@@ -57,11 +59,15 @@ class ProposalsApiService {
             if (listCandidate is List<dynamic>) {
               jsonData = listCandidate;
             } else {
-              debugPrint('⚠️ proposals webhook missing "proposals" or "data" list: $preview');
+              debugPrint(
+                '⚠️ proposals webhook missing "proposals" or "data" list: $preview',
+              );
               return const <Proposal>[];
             }
           } else {
-            debugPrint('⚠️ proposals webhook unexpected JSON type: ${decoded.runtimeType}. Preview: $preview');
+            debugPrint(
+              '⚠️ proposals webhook unexpected JSON type: ${decoded.runtimeType}. Preview: $preview',
+            );
             return const <Proposal>[];
           }
 
@@ -77,11 +83,15 @@ class ProposalsApiService {
               return Proposal.fromJson(jsonItem);
             }
             // Fallback when backend returns Map<String, Object?> / Map<dynamic, dynamic>
-            return Proposal.fromJson(Map<String, dynamic>.from(jsonItem as Map));
+            return Proposal.fromJson(
+              Map<String, dynamic>.from(jsonItem as Map),
+            );
           }).toList();
         } on FormatException catch (e) {
           // This covers cases like "Unexpected end of JSON input".
-          debugPrint('❌ proposals webhook JSON parse error: $e. Preview: $preview');
+          debugPrint(
+            '❌ proposals webhook JSON parse error: $e. Preview: $preview',
+          );
           return const <Proposal>[];
         }
       } else {

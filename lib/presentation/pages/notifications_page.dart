@@ -37,6 +37,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = Responsive.isMobile(context);
     final padding = Responsive.getResponsiveValue(
       context,
@@ -85,16 +86,25 @@ class _NotificationsPageState extends State<NotificationsPage> {
     ];
 
     return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFF3F8FC),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
+            colors: isDark
+                ? const [
+                    Color(0xFF0f2940),
+                    Color(0xFF1a3a52),
+                    Color(0xFF0f2940),
+                  ]
+                : const [
+                    Color(0xFFF8FCFF),
+                    Color(0xFFEAF4FB),
+                    Color(0xFFF3F8FC),
+                  ],
           ),
         ),
         child: SafeArea(
@@ -104,12 +114,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
               left: padding,
               right: padding,
               top: padding,
-              bottom: padding + MediaQuery.of(context).padding.bottom + Responsive.getResponsiveValue(
-                context,
-                mobile: 20.0,
-                tablet: 24.0,
-                desktop: 32.0,
-              ),
+              bottom:
+                  padding +
+                  MediaQuery.of(context).padding.bottom +
+                  Responsive.getResponsiveValue(
+                    context,
+                    mobile: 20.0,
+                    tablet: 24.0,
+                    desktop: 32.0,
+                  ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,25 +133,34 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     .fadeIn(duration: 300.ms)
                     .slideY(begin: -0.2, end: 0, duration: 300.ms),
 
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 12.0,
-                  tablet: 14.0,
-                  desktop: 16.0,
-                )),
+                SizedBox(
+                  height: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 12.0,
+                    tablet: 14.0,
+                    desktop: 16.0,
+                  ),
+                ),
 
                 // Header Info
                 _buildHeaderInfo(context, isMobile)
                     .animate()
                     .fadeIn(delay: 100.ms, duration: 300.ms)
-                    .slideY(begin: 0.2, end: 0, delay: 100.ms, duration: 300.ms),
+                    .slideY(
+                      begin: 0.2,
+                      end: 0,
+                      delay: 100.ms,
+                      duration: 300.ms,
+                    ),
 
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 32.0,
-                )),
+                SizedBox(
+                  height: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 20.0,
+                    tablet: 24.0,
+                    desktop: 32.0,
+                  ),
+                ),
 
                 // Notification Settings
                 ...notificationSettings.asMap().entries.map((entry) {
@@ -166,18 +188,25 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   );
                 }),
 
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 32.0,
-                )),
+                SizedBox(
+                  height: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 20.0,
+                    tablet: 24.0,
+                    desktop: 32.0,
+                  ),
+                ),
 
                 // Do Not Disturb Section
                 _buildDoNotDisturbSection(context, isMobile)
                     .animate()
                     .fadeIn(delay: 500.ms, duration: 300.ms)
-                    .slideY(begin: 0.2, end: 0, delay: 500.ms, duration: 300.ms),
+                    .slideY(
+                      begin: 0.2,
+                      end: 0,
+                      delay: 500.ms,
+                      duration: 300.ms,
+                    ),
               ],
             ),
           ),
@@ -187,50 +216,61 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Widget _buildHeader(BuildContext context, bool isMobile, double padding) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         GestureDetector(
           onTap: () => context.pop(),
           child: Container(
-            padding: EdgeInsets.all(Responsive.getResponsiveValue(
-              context,
-              mobile: 8.0,
-              tablet: 9.0,
-              desktop: 10.0,
-            )),
+            padding: EdgeInsets.all(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 8.0,
+                tablet: 9.0,
+                desktop: 10.0,
+              ),
+            ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFF1e4a66).withOpacity(0.6),
-                  const Color(0xFF16384d).withOpacity(0.6),
+                  isDark
+                      ? const Color(0xFF1e4a66).withOpacity(0.6)
+                      : const Color(0xFF0EA5C6).withOpacity(0.12),
+                  isDark
+                      ? const Color(0xFF16384d).withOpacity(0.6)
+                      : const Color(0xFF60A5FA).withOpacity(0.12),
                 ],
               ),
-              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                context,
-                mobile: 12.0,
-                tablet: 13.0,
-                desktop: 14.0,
-              )),
+              borderRadius: BorderRadius.circular(
+                Responsive.getResponsiveValue(
+                  context,
+                  mobile: 12.0,
+                  tablet: 13.0,
+                  desktop: 14.0,
+                ),
+              ),
               border: Border.all(
                 color: AppColors.cyan500.withOpacity(0.2),
                 width: 1,
               ),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                context,
-                mobile: 12.0,
-                tablet: 13.0,
-                desktop: 14.0,
-              )),
+              borderRadius: BorderRadius.circular(
+                Responsive.getResponsiveValue(
+                  context,
+                  mobile: 12.0,
+                  tablet: 13.0,
+                  desktop: 14.0,
+                ),
+              ),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Icon(
                   LucideIcons.arrowLeft,
-                  color: AppColors.cyan400,
+                  color: isDark ? AppColors.cyan400 : const Color(0xFF0B6A88),
                   size: Responsive.getResponsiveValue(
                     context,
                     mobile: 18.0,
@@ -252,52 +292,62 @@ class _NotificationsPageState extends State<NotificationsPage> {
               desktop: 22.0,
             ),
             fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
+            color: isDark ? AppColors.textWhite : const Color(0xFF12263A),
           ),
         ),
-        SizedBox(width: Responsive.getResponsiveValue(
-          context,
-          mobile: 36.0,
-          tablet: 40.0,
-          desktop: 44.0,
-        )),
+        SizedBox(
+          width: Responsive.getResponsiveValue(
+            context,
+            mobile: 36.0,
+            tablet: 40.0,
+            desktop: 44.0,
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildHeaderInfo(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 14.0,
-        tablet: 16.0,
-        desktop: 20.0,
-      )),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 14.0,
+          tablet: 16.0,
+          desktop: 20.0,
+        ),
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.cyan500.withOpacity(0.1),
-            AppColors.blue500.withOpacity(0.1),
+            isDark
+                ? AppColors.cyan500.withOpacity(0.1)
+                : const Color(0xFF0EA5C6).withOpacity(0.09),
+            isDark
+                ? AppColors.blue500.withOpacity(0.1)
+                : const Color(0xFF60A5FA).withOpacity(0.09),
           ],
         ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.2),
-          width: 1,
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
         ),
+        border: Border.all(color: AppColors.cyan500.withOpacity(0.2), width: 1),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Row(
@@ -312,12 +362,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   desktop: 22.0,
                 ),
               ),
-              SizedBox(width: Responsive.getResponsiveValue(
-                context,
-                mobile: 10.0,
-                tablet: 12.0,
-                desktop: 14.0,
-              )),
+              SizedBox(
+                width: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 10.0,
+                  tablet: 12.0,
+                  desktop: 14.0,
+                ),
+              ),
               Expanded(
                 child: Text(
                   'Manage how you receive notifications',
@@ -328,7 +380,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       tablet: 13.0,
                       desktop: 14.0,
                     ),
-                    color: AppColors.textCyan200.withOpacity(0.7),
+                    color: isDark
+                        ? AppColors.textCyan200.withOpacity(0.7)
+                        : const Color(0xFF3F6983),
                   ),
                 ),
               ),
@@ -349,142 +403,178 @@ class _NotificationsPageState extends State<NotificationsPage> {
     VoidCallback onToggle,
     int index,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 14.0,
-        tablet: 16.0,
-        desktop: 20.0,
-      )),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF1e4a66).withOpacity(0.4),
-            const Color(0xFF16384d).withOpacity(0.4),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 10.0,
-                  tablet: 12.0,
-                  desktop: 14.0,
-                )),
-                decoration: BoxDecoration(
-                  gradient: enabled
-                      ? LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.cyan500.withOpacity(0.2),
-                            AppColors.blue500.withOpacity(0.2),
-                          ],
-                        )
-                      : null,
-                  color: enabled ? null : AppColors.cyan500.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                    context,
-                    mobile: 10.0,
-                    tablet: 11.0,
-                    desktop: 12.0,
-                  )),
-                ),
-                child: Icon(
-                  icon,
-                  color: enabled ? AppColors.cyan400 : AppColors.cyan400.withOpacity(0.5),
-                  size: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 18.0,
-                    tablet: 20.0,
-                    desktop: 22.0,
-                  ),
-                ),
-              ),
-              SizedBox(width: Responsive.getResponsiveValue(
-                context,
-                mobile: 12.0,
-                tablet: 14.0,
-                desktop: 16.0,
-              )),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 14.0,
-                          tablet: 15.0,
-                          desktop: 16.0,
-                        ),
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textWhite,
-                      ),
-                    ),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 3.0,
-                      tablet: 4.0,
-                      desktop: 4.0,
-                    )),
-                    Text(
-                      description,
-                      style: TextStyle(
-                        fontSize: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 12.0,
-                          tablet: 13.0,
-                          desktop: 14.0,
-                        ),
-                        color: AppColors.textCyan200.withOpacity(0.5),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Switch(
-                value: enabled,
-                onChanged: (_) => onToggle(),
-                activeColor: AppColors.cyan500,
-                activeTrackColor: AppColors.blue500,
-              ),
-            ],
+          padding: EdgeInsets.all(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 20.0,
+            ),
           ),
-        ),
-      ),
-    )
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                isDark
+                    ? const Color(0xFF1e4a66).withOpacity(0.4)
+                    : const Color(0xFFF9FCFF),
+                isDark
+                    ? const Color(0xFF16384d).withOpacity(0.4)
+                    : const Color(0xFFEAF4FB),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 16.0,
+                tablet: 18.0,
+                desktop: 20.0,
+              ),
+            ),
+            border: Border.all(
+              color: AppColors.cyan500.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 16.0,
+                tablet: 18.0,
+                desktop: 20.0,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(
+                      Responsive.getResponsiveValue(
+                        context,
+                        mobile: 10.0,
+                        tablet: 12.0,
+                        desktop: 14.0,
+                      ),
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: enabled
+                          ? LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                AppColors.cyan500.withOpacity(0.2),
+                                AppColors.blue500.withOpacity(0.2),
+                              ],
+                            )
+                          : null,
+                      color: enabled
+                          ? null
+                          : AppColors.cyan500.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(
+                        Responsive.getResponsiveValue(
+                          context,
+                          mobile: 10.0,
+                          tablet: 11.0,
+                          desktop: 12.0,
+                        ),
+                      ),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: enabled
+                          ? AppColors.cyan400
+                          : AppColors.cyan400.withOpacity(0.5),
+                      size: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 18.0,
+                        tablet: 20.0,
+                        desktop: 22.0,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 12.0,
+                      tablet: 14.0,
+                      desktop: 16.0,
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 14.0,
+                              tablet: 15.0,
+                              desktop: 16.0,
+                            ),
+                            fontWeight: FontWeight.w500,
+                            color: isDark
+                                ? AppColors.textWhite
+                                : const Color(0xFF12263A),
+                          ),
+                        ),
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 3.0,
+                            tablet: 4.0,
+                            desktop: 4.0,
+                          ),
+                        ),
+                        Text(
+                          description,
+                          style: TextStyle(
+                            fontSize: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 13.0,
+                              desktop: 14.0,
+                            ),
+                            color: isDark
+                                ? AppColors.textCyan200.withOpacity(0.5)
+                                : const Color(0xFF5B7B92),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: enabled,
+                    onChanged: (_) => onToggle(),
+                    activeColor: AppColors.cyan500,
+                    activeTrackColor: AppColors.blue500,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        )
         .animate()
-        .fadeIn(delay: Duration(milliseconds: 100 + (index * 50)), duration: 300.ms)
-        .slideX(begin: -0.2, end: 0, delay: Duration(milliseconds: 100 + (index * 50)), duration: 300.ms);
+        .fadeIn(
+          delay: Duration(milliseconds: 100 + (index * 50)),
+          duration: 300.ms,
+        )
+        .slideX(
+          begin: -0.2,
+          end: 0,
+          delay: Duration(milliseconds: 100 + (index * 50)),
+          duration: 300.ms,
+        );
   }
 
   Widget _buildDoNotDisturbSection(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -513,44 +603,54 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 desktop: 20.0,
               ),
               fontWeight: FontWeight.w600,
-              color: AppColors.textWhite,
+              color: isDark ? AppColors.textWhite : const Color(0xFF12263A),
             ),
           ),
         ),
         Container(
-          padding: EdgeInsets.all(Responsive.getResponsiveValue(
-            context,
-            mobile: 14.0,
-            tablet: 16.0,
-            desktop: 20.0,
-          )),
+          padding: EdgeInsets.all(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 20.0,
+            ),
+          ),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                const Color(0xFF1e4a66).withOpacity(0.4),
-                const Color(0xFF16384d).withOpacity(0.4),
+                isDark
+                    ? const Color(0xFF1e4a66).withOpacity(0.4)
+                    : const Color(0xFFF9FCFF),
+                isDark
+                    ? const Color(0xFF16384d).withOpacity(0.4)
+                    : const Color(0xFFEAF4FB),
               ],
             ),
-            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-              context,
-              mobile: 16.0,
-              tablet: 18.0,
-              desktop: 20.0,
-            )),
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 16.0,
+                tablet: 18.0,
+                desktop: 20.0,
+              ),
+            ),
             border: Border.all(
               color: AppColors.cyan500.withOpacity(0.1),
               width: 1,
             ),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-              context,
-              mobile: 16.0,
-              tablet: 18.0,
-              desktop: 20.0,
-            )),
+            borderRadius: BorderRadius.circular(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 16.0,
+                tablet: 18.0,
+                desktop: 20.0,
+              ),
+            ),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Column(
@@ -568,24 +668,29 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             desktop: 16.0,
                           ),
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textWhite,
+                          color: isDark
+                              ? AppColors.textWhite
+                              : const Color(0xFF12263A),
                         ),
                       ),
                       Switch(
                         value: _doNotDisturbScheduled,
-                        onChanged: (value) => setState(() => _doNotDisturbScheduled = value),
+                        onChanged: (value) =>
+                            setState(() => _doNotDisturbScheduled = value),
                         activeColor: AppColors.cyan500,
                         activeTrackColor: AppColors.blue500,
                       ),
                     ],
                   ),
                   if (_doNotDisturbScheduled) ...[
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 10.0,
-                      tablet: 12.0,
-                      desktop: 16.0,
-                    )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 10.0,
+                        tablet: 12.0,
+                        desktop: 16.0,
+                      ),
+                    ),
                     Row(
                       children: [
                         Expanded(
@@ -601,15 +706,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                     tablet: 11.0,
                                     desktop: 12.0,
                                   ),
-                                  color: AppColors.textCyan200.withOpacity(0.5),
+                                  color: isDark
+                                      ? AppColors.textCyan200.withOpacity(0.5)
+                                      : const Color(0xFF5B7B92),
                                 ),
                               ),
-                              SizedBox(height: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 4.0,
-                                tablet: 5.0,
-                                desktop: 6.0,
-                              )),
+                              SizedBox(
+                                height: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 4.0,
+                                  tablet: 5.0,
+                                  desktop: 6.0,
+                                ),
+                              ),
                               Container(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: Responsive.getResponsiveValue(
@@ -626,13 +735,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                   ),
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF0f2940).withOpacity(0.6),
-                                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 8.0,
-                                    tablet: 9.0,
-                                    desktop: 10.0,
-                                  )),
+                                  color: isDark
+                                      ? const Color(0xFF0f2940).withOpacity(0.6)
+                                      : const Color(
+                                          0xFFFFFFFF,
+                                        ).withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(
+                                    Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 8.0,
+                                      tablet: 9.0,
+                                      desktop: 10.0,
+                                    ),
+                                  ),
                                   border: Border.all(
                                     color: AppColors.cyan500.withOpacity(0.2),
                                     width: 1,
@@ -647,19 +762,23 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                       tablet: 13.0,
                                       desktop: 14.0,
                                     ),
-                                    color: AppColors.textWhite,
+                                    color: isDark
+                                        ? AppColors.textWhite
+                                        : const Color(0xFF12263A),
                                   ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        SizedBox(width: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 10.0,
-                          tablet: 12.0,
-                          desktop: 16.0,
-                        )),
+                        SizedBox(
+                          width: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 10.0,
+                            tablet: 12.0,
+                            desktop: 16.0,
+                          ),
+                        ),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -673,15 +792,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                     tablet: 11.0,
                                     desktop: 12.0,
                                   ),
-                                  color: AppColors.textCyan200.withOpacity(0.5),
+                                  color: isDark
+                                      ? AppColors.textCyan200.withOpacity(0.5)
+                                      : const Color(0xFF5B7B92),
                                 ),
                               ),
-                              SizedBox(height: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 4.0,
-                                tablet: 5.0,
-                                desktop: 6.0,
-                              )),
+                              SizedBox(
+                                height: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 4.0,
+                                  tablet: 5.0,
+                                  desktop: 6.0,
+                                ),
+                              ),
                               Container(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: Responsive.getResponsiveValue(
@@ -698,13 +821,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                   ),
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF0f2940).withOpacity(0.6),
-                                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                    context,
-                                    mobile: 8.0,
-                                    tablet: 9.0,
-                                    desktop: 10.0,
-                                  )),
+                                  color: isDark
+                                      ? const Color(0xFF0f2940).withOpacity(0.6)
+                                      : const Color(
+                                          0xFFFFFFFF,
+                                        ).withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(
+                                    Responsive.getResponsiveValue(
+                                      context,
+                                      mobile: 8.0,
+                                      tablet: 9.0,
+                                      desktop: 10.0,
+                                    ),
+                                  ),
                                   border: Border.all(
                                     color: AppColors.cyan500.withOpacity(0.2),
                                     width: 1,
@@ -719,7 +848,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                       tablet: 13.0,
                                       desktop: 14.0,
                                     ),
-                                    color: AppColors.textWhite,
+                                    color: isDark
+                                        ? AppColors.textWhite
+                                        : const Color(0xFF12263A),
                                   ),
                                 ),
                               ),

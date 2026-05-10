@@ -11,10 +11,7 @@ import '../../core/theme/app_colors.dart';
 class WorkProposalDetailsPage extends StatelessWidget {
   final WorkProposal proposal;
 
-  const WorkProposalDetailsPage({
-    super.key,
-    required this.proposal,
-  });
+  const WorkProposalDetailsPage({super.key, required this.proposal});
 
   Map<String, dynamic> _getProjectTypeColors(String typeProjet) {
     final lowerType = typeProjet.toLowerCase();
@@ -62,6 +59,7 @@ class WorkProposalDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = Responsive.isMobile(context);
     final padding = Responsive.getResponsiveValue(
       context,
@@ -72,16 +70,25 @@ class WorkProposalDetailsPage extends StatelessWidget {
     final projectColors = _getProjectTypeColors(proposal.typeProjet);
 
     return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFF3F8FC),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
+            colors: isDark
+                ? const [
+                    Color(0xFF0f2940),
+                    Color(0xFF1a3a52),
+                    Color(0xFF0f2940),
+                  ]
+                : const [
+                    Color(0xFFF8FCFF),
+                    Color(0xFFEAF4FB),
+                    Color(0xFFF3F8FC),
+                  ],
           ),
         ),
         child: SafeArea(
@@ -106,196 +113,230 @@ class WorkProposalDetailsPage extends StatelessWidget {
                   children: [
                     // Header
                     _Header(
-                      proposal: proposal,
-                      isMobile: isMobile,
-                      projectColors: projectColors,
-                      onBack: () => context.pop(),
-                    )
+                          proposal: proposal,
+                          isMobile: isMobile,
+                          isDark: isDark,
+                          projectColors: projectColors,
+                          onBack: () => context.pop(),
+                        )
                         .animate()
                         .fadeIn(duration: 500.ms)
                         .slideY(begin: -0.2, end: 0, duration: 500.ms),
 
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 24.0,
-                      tablet: 28.0,
-                      desktop: 32.0,
-                    )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 24.0,
+                        tablet: 28.0,
+                        desktop: 32.0,
+                      ),
+                    ),
 
                     // Detail Cards
                     _DetailCard(
-                      title: 'Client',
-                      icon: LucideIcons.user,
-                      iconColor: AppColors.cyan400,
-                      gradient: [
-                        AppColors.cyan500.withOpacity(0.2),
-                        AppColors.blue500.withOpacity(0.2),
-                      ],
-                      children: [
-                        _DetailItem(
-                          label: 'Nom',
-                          value: proposal.clientName,
+                          title: 'Client',
                           icon: LucideIcons.user,
+                          iconColor: AppColors.cyan400,
+                          gradient: [
+                            AppColors.cyan500.withOpacity(0.2),
+                            AppColors.blue500.withOpacity(0.2),
+                          ],
+                          children: [
+                            _DetailItem(
+                              label: 'Nom',
+                              value: proposal.clientName,
+                              icon: LucideIcons.user,
+                              isMobile: isMobile,
+                            ),
+                            _DetailItem(
+                              label: 'Email',
+                              value: proposal.clientEmail,
+                              icon: LucideIcons.mail,
+                              isMobile: isMobile,
+                            ),
+                          ],
                           isMobile: isMobile,
-                        ),
-                        _DetailItem(
-                          label: 'Email',
-                          value: proposal.clientEmail,
-                          icon: LucideIcons.mail,
-                          isMobile: isMobile,
-                        ),
-                      ],
-                      isMobile: isMobile,
-                    )
+                        )
                         .animate()
                         .fadeIn(delay: 100.ms, duration: 300.ms)
-                        .slideY(begin: 0.2, end: 0, delay: 100.ms, duration: 300.ms),
+                        .slideY(
+                          begin: 0.2,
+                          end: 0,
+                          delay: 100.ms,
+                          duration: 300.ms,
+                        ),
 
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 16.0,
-                      tablet: 18.0,
-                      desktop: 20.0,
-                    )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 16.0,
+                        tablet: 18.0,
+                        desktop: 20.0,
+                      ),
+                    ),
 
                     _DetailCard(
-                      title: 'Projet',
-                      icon: projectColors['icon'] as IconData,
-                      iconColor: projectColors['text'] as Color,
-                      gradient: projectColors['bg'] as List<Color>,
-                      children: [
-                        _DetailItem(
-                          label: 'Type',
-                          value: proposal.typeProjet,
-                          icon: LucideIcons.briefcase,
+                          title: 'Projet',
+                          icon: projectColors['icon'] as IconData,
+                          iconColor: projectColors['text'] as Color,
+                          gradient: projectColors['bg'] as List<Color>,
+                          children: [
+                            _DetailItem(
+                              label: 'Type',
+                              value: proposal.typeProjet,
+                              icon: LucideIcons.briefcase,
+                              isMobile: isMobile,
+                            ),
+                            _DetailItem(
+                              label: 'Secteur',
+                              value: proposal.secteur,
+                              icon: LucideIcons.building,
+                              isMobile: isMobile,
+                            ),
+                            _DetailItem(
+                              label: 'Plateforme',
+                              value: proposal.platforme,
+                              icon: LucideIcons.monitor,
+                              isMobile: isMobile,
+                            ),
+                            _DetailItem(
+                              label: 'Complexité',
+                              value: proposal.niveauComplexite,
+                              icon: LucideIcons.activity,
+                              isMobile: isMobile,
+                            ),
+                          ],
                           isMobile: isMobile,
-                        ),
-                        _DetailItem(
-                          label: 'Secteur',
-                          value: proposal.secteur,
-                          icon: LucideIcons.building,
-                          isMobile: isMobile,
-                        ),
-                        _DetailItem(
-                          label: 'Plateforme',
-                          value: proposal.platforme,
-                          icon: LucideIcons.monitor,
-                          isMobile: isMobile,
-                        ),
-                        _DetailItem(
-                          label: 'Complexité',
-                          value: proposal.niveauComplexite,
-                          icon: LucideIcons.activity,
-                          isMobile: isMobile,
-                        ),
-                      ],
-                      isMobile: isMobile,
-                    )
+                        )
                         .animate()
                         .fadeIn(delay: 200.ms, duration: 300.ms)
-                        .slideY(begin: 0.2, end: 0, delay: 200.ms, duration: 300.ms),
+                        .slideY(
+                          begin: 0.2,
+                          end: 0,
+                          delay: 200.ms,
+                          duration: 300.ms,
+                        ),
 
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 16.0,
-                      tablet: 18.0,
-                      desktop: 20.0,
-                    )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 16.0,
+                        tablet: 18.0,
+                        desktop: 20.0,
+                      ),
+                    ),
 
                     _DetailCard(
-                      title: 'Budget et délai',
-                      icon: LucideIcons.euro,
-                      iconColor: AppColors.statusAccepted,
-                      gradient: [
-                        AppColors.statusAccepted.withOpacity(0.2),
-                        AppColors.statusPending.withOpacity(0.2),
-                      ],
-                      children: [
-                        _DetailItem(
-                          label: 'Budget estimé',
-                          value: '${proposal.budgetEstime.toStringAsFixed(0)} €',
-                          icon: LucideIcons.dollarSign,
+                          title: 'Budget et délai',
+                          icon: LucideIcons.euro,
+                          iconColor: AppColors.statusAccepted,
+                          gradient: [
+                            AppColors.statusAccepted.withOpacity(0.2),
+                            AppColors.statusPending.withOpacity(0.2),
+                          ],
+                          children: [
+                            _DetailItem(
+                              label: 'Budget estimé',
+                              value:
+                                  '${proposal.budgetEstime.toStringAsFixed(0)} €',
+                              icon: LucideIcons.dollarSign,
+                              isMobile: isMobile,
+                            ),
+                            _DetailItem(
+                              label: 'Délai estimé',
+                              value: proposal.deadlineEstime,
+                              icon: LucideIcons.calendar,
+                              isMobile: isMobile,
+                            ),
+                          ],
                           isMobile: isMobile,
-                        ),
-                        _DetailItem(
-                          label: 'Délai estimé',
-                          value: proposal.deadlineEstime,
-                          icon: LucideIcons.calendar,
-                          isMobile: isMobile,
-                        ),
-                      ],
-                      isMobile: isMobile,
-                    )
+                        )
                         .animate()
                         .fadeIn(delay: 300.ms, duration: 300.ms)
-                        .slideY(begin: 0.2, end: 0, delay: 300.ms, duration: 300.ms),
+                        .slideY(
+                          begin: 0.2,
+                          end: 0,
+                          delay: 300.ms,
+                          duration: 300.ms,
+                        ),
 
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 16.0,
-                      tablet: 18.0,
-                      desktop: 20.0,
-                    )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 16.0,
+                        tablet: 18.0,
+                        desktop: 20.0,
+                      ),
+                    ),
 
                     _DetailCard(
-                      title: 'Fonctionnalités',
-                      icon: LucideIcons.listChecks,
-                      iconColor: AppColors.cyan400,
-                      gradient: [
-                        AppColors.cyan500.withOpacity(0.2),
-                        AppColors.blue500.withOpacity(0.2),
-                      ],
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                            context,
-                            mobile: 18.0,
-                            tablet: 20.0,
-                            desktop: 24.0,
-                          )),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                AppColors.primaryMedium.withOpacity(0.4),
-                                AppColors.primaryDarker.withOpacity(0.4),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                              context,
-                              mobile: 14.0,
-                              tablet: 16.0,
-                              desktop: 18.0,
-                            )),
-                            border: Border.all(
-                              color: AppColors.cyan500.withOpacity(0.2),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Text(
-                            proposal.fonctionalite.isNotEmpty
-                                ? proposal.fonctionalite
-                                : 'Aucune fonctionnalité spécifiée',
-                            style: TextStyle(
-                              fontSize: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 15.0,
-                                tablet: 16.0,
-                                desktop: 17.0,
+                          title: 'Fonctionnalités',
+                          icon: LucideIcons.listChecks,
+                          iconColor: AppColors.cyan400,
+                          gradient: [
+                            AppColors.cyan500.withOpacity(0.2),
+                            AppColors.blue500.withOpacity(0.2),
+                          ],
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(
+                                Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 18.0,
+                                  tablet: 20.0,
+                                  desktop: 24.0,
+                                ),
                               ),
-                              color: AppColors.textCyan200,
-                              height: 1.7,
-                              fontWeight: FontWeight.w500,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    AppColors.primaryMedium.withOpacity(0.4),
+                                    AppColors.primaryDarker.withOpacity(0.4),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(
+                                  Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 14.0,
+                                    tablet: 16.0,
+                                    desktop: 18.0,
+                                  ),
+                                ),
+                                border: Border.all(
+                                  color: AppColors.cyan500.withOpacity(0.2),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Text(
+                                proposal.fonctionalite.isNotEmpty
+                                    ? proposal.fonctionalite
+                                    : 'Aucune fonctionnalité spécifiée',
+                                style: TextStyle(
+                                  fontSize: Responsive.getResponsiveValue(
+                                    context,
+                                    mobile: 15.0,
+                                    tablet: 16.0,
+                                    desktop: 17.0,
+                                  ),
+                                  color: AppColors.textCyan200,
+                                  height: 1.7,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
-                      isMobile: isMobile,
-                    )
+                          ],
+                          isMobile: isMobile,
+                        )
                         .animate()
                         .fadeIn(delay: 400.ms, duration: 300.ms)
-                        .slideY(begin: 0.2, end: 0, delay: 400.ms, duration: 300.ms),
+                        .slideY(
+                          begin: 0.2,
+                          end: 0,
+                          delay: 400.ms,
+                          duration: 300.ms,
+                        ),
                   ],
                 ),
               ),
@@ -310,12 +351,14 @@ class WorkProposalDetailsPage extends StatelessWidget {
 class _Header extends StatelessWidget {
   final WorkProposal proposal;
   final bool isMobile;
+  final bool isDark;
   final Map<String, dynamic> projectColors;
   final VoidCallback onBack;
 
   const _Header({
     required this.proposal,
     required this.isMobile,
+    required this.isDark,
     required this.projectColors,
     required this.onBack,
   });
@@ -330,27 +373,35 @@ class _Header extends StatelessWidget {
             GestureDetector(
               onTap: onBack,
               child: Container(
-                padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 10.0,
-                  tablet: 12.0,
-                  desktop: 14.0,
-                )),
+                padding: EdgeInsets.all(
+                  Responsive.getResponsiveValue(
+                    context,
+                    mobile: 10.0,
+                    tablet: 12.0,
+                    desktop: 14.0,
+                  ),
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      AppColors.cyan500.withOpacity(0.3),
-                      AppColors.blue500.withOpacity(0.3),
+                      isDark
+                          ? AppColors.cyan500.withOpacity(0.3)
+                          : const Color(0xFF0EA5C6).withOpacity(0.12),
+                      isDark
+                          ? AppColors.blue500.withOpacity(0.3)
+                          : const Color(0xFF60A5FA).withOpacity(0.12),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                    context,
-                    mobile: 12.0,
-                    tablet: 14.0,
-                    desktop: 16.0,
-                  )),
+                  borderRadius: BorderRadius.circular(
+                    Responsive.getResponsiveValue(
+                      context,
+                      mobile: 12.0,
+                      tablet: 14.0,
+                      desktop: 16.0,
+                    ),
+                  ),
                   border: Border.all(
                     color: AppColors.cyan500.withOpacity(0.4),
                     width: 1.5,
@@ -358,7 +409,7 @@ class _Header extends StatelessWidget {
                 ),
                 child: Icon(
                   LucideIcons.arrowLeft,
-                  color: AppColors.cyan400,
+                  color: isDark ? AppColors.cyan400 : const Color(0xFF0B6A88),
                   size: Responsive.getResponsiveValue(
                     context,
                     mobile: 20.0,
@@ -368,12 +419,14 @@ class _Header extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(width: Responsive.getResponsiveValue(
-              context,
-              mobile: 16.0,
-              tablet: 18.0,
-              desktop: 20.0,
-            )),
+            SizedBox(
+              width: Responsive.getResponsiveValue(
+                context,
+                mobile: 16.0,
+                tablet: 18.0,
+                desktop: 20.0,
+              ),
+            ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -388,36 +441,44 @@ class _Header extends StatelessWidget {
                         desktop: 32.0,
                       ),
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textWhite,
+                      color: isDark
+                          ? AppColors.textWhite
+                          : const Color(0xFF12263A),
                     ),
                   ),
-                  SizedBox(height: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 8.0,
-                    tablet: 10.0,
-                    desktop: 12.0,
-                  )),
+                  SizedBox(
+                    height: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 8.0,
+                      tablet: 10.0,
+                      desktop: 12.0,
+                    ),
+                  ),
                   Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                          context,
-                          mobile: 10.0,
-                          tablet: 12.0,
-                          desktop: 14.0,
-                        )),
+                        padding: EdgeInsets.all(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 10.0,
+                            tablet: 12.0,
+                            desktop: 14.0,
+                          ),
+                        ),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: projectColors['bg'] as List<Color>,
                           ),
-                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                            context,
-                            mobile: 12.0,
-                            tablet: 14.0,
-                            desktop: 16.0,
-                          )),
+                          borderRadius: BorderRadius.circular(
+                            Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 14.0,
+                              desktop: 16.0,
+                            ),
+                          ),
                           border: Border.all(
                             color: projectColors['border'] as Color,
                             width: 1.5,
@@ -434,12 +495,14 @@ class _Header extends StatelessWidget {
                           ),
                         ),
                       ),
-                      SizedBox(width: Responsive.getResponsiveValue(
-                        context,
-                        mobile: 12.0,
-                        tablet: 14.0,
-                        desktop: 16.0,
-                      )),
+                      SizedBox(
+                        width: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 12.0,
+                          tablet: 14.0,
+                          desktop: 16.0,
+                        ),
+                      ),
                       Expanded(
                         child: Text(
                           proposal.projectName,
@@ -450,7 +513,9 @@ class _Header extends StatelessWidget {
                               tablet: 16.0,
                               desktop: 17.0,
                             ),
-                            color: AppColors.textCyan200.withOpacity(0.8),
+                            color: isDark
+                                ? AppColors.textCyan200.withOpacity(0.8)
+                                : const Color(0xFF3F6983),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -486,26 +551,30 @@ class _DetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.primaryLight.withOpacity(0.5),
-            AppColors.primaryDarker.withOpacity(0.5),
+            isDark
+                ? AppColors.primaryLight.withOpacity(0.5)
+                : const Color(0xFFF9FCFF),
+            isDark
+                ? AppColors.primaryDarker.withOpacity(0.5)
+                : const Color(0xFFEAF4FB),
           ],
         ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 22.0,
-          desktop: 24.0,
-        )),
-        border: Border.all(
-          color: iconColor.withOpacity(0.3),
-          width: 1.5,
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 20.0,
+            tablet: 22.0,
+            desktop: 24.0,
+          ),
         ),
+        border: Border.all(color: iconColor.withOpacity(0.3), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: iconColor.withOpacity(0.1),
@@ -516,21 +585,25 @@ class _DetailCard extends StatelessWidget {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 20.0,
-          tablet: 22.0,
-          desktop: 24.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 20.0,
+            tablet: 22.0,
+            desktop: 24.0,
+          ),
+        ),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Padding(
-            padding: EdgeInsets.all(Responsive.getResponsiveValue(
-              context,
-              mobile: 20.0,
-              tablet: 24.0,
-              desktop: 28.0,
-            )),
+            padding: EdgeInsets.all(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 20.0,
+                tablet: 24.0,
+                desktop: 28.0,
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -555,12 +628,14 @@ class _DetailCard extends StatelessWidget {
                           end: Alignment.bottomRight,
                           colors: gradient,
                         ),
-                        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                          context,
-                          mobile: 14.0,
-                          tablet: 16.0,
-                          desktop: 18.0,
-                        )),
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 14.0,
+                            tablet: 16.0,
+                            desktop: 18.0,
+                          ),
+                        ),
                         border: Border.all(
                           color: iconColor.withOpacity(0.4),
                           width: 2,
@@ -585,12 +660,14 @@ class _DetailCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(width: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 16.0,
-                      tablet: 18.0,
-                      desktop: 20.0,
-                    )),
+                    SizedBox(
+                      width: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 16.0,
+                        tablet: 18.0,
+                        desktop: 20.0,
+                      ),
+                    ),
                     Expanded(
                       child: Text(
                         title,
@@ -602,19 +679,23 @@ class _DetailCard extends StatelessWidget {
                             desktop: 26.0,
                           ),
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textWhite,
+                          color: isDark
+                              ? AppColors.textWhite
+                              : const Color(0xFF12263A),
                           letterSpacing: 0.5,
                         ),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 24.0,
-                  tablet: 26.0,
-                  desktop: 28.0,
-                )),
+                SizedBox(
+                  height: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 24.0,
+                    tablet: 26.0,
+                    desktop: 28.0,
+                  ),
+                ),
                 ...children,
               ],
             ),
@@ -640,6 +721,7 @@ class _DetailItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: EdgeInsets.only(
         bottom: Responsive.getResponsiveValue(
@@ -650,27 +732,35 @@ class _DetailItem extends StatelessWidget {
         ),
       ),
       child: Container(
-        padding: EdgeInsets.all(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
+        padding: EdgeInsets.all(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.primaryMedium.withOpacity(0.4),
-              AppColors.primaryDarker.withOpacity(0.4),
+              isDark
+                  ? AppColors.primaryMedium.withOpacity(0.4)
+                  : const Color(0xFFF9FCFF),
+              isDark
+                  ? AppColors.primaryDarker.withOpacity(0.4)
+                  : const Color(0xFFEAF4FB),
             ],
           ),
-          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-            context,
-            mobile: 14.0,
-            tablet: 16.0,
-            desktop: 18.0,
-          )),
+          borderRadius: BorderRadius.circular(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 18.0,
+            ),
+          ),
           border: Border.all(
             color: AppColors.cyan500.withOpacity(0.2),
             width: 1.5,
@@ -709,12 +799,14 @@ class _DetailItem extends StatelessWidget {
                     AppColors.blue500.withOpacity(0.2),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                  context,
-                  mobile: 12.0,
-                  tablet: 14.0,
-                  desktop: 16.0,
-                )),
+                borderRadius: BorderRadius.circular(
+                  Responsive.getResponsiveValue(
+                    context,
+                    mobile: 12.0,
+                    tablet: 14.0,
+                    desktop: 16.0,
+                  ),
+                ),
                 border: Border.all(
                   color: AppColors.cyan500.withOpacity(0.3),
                   width: 1.5,
@@ -731,12 +823,14 @@ class _DetailItem extends StatelessWidget {
                 color: AppColors.cyan400,
               ),
             ),
-            SizedBox(width: Responsive.getResponsiveValue(
-              context,
-              mobile: 16.0,
-              tablet: 18.0,
-              desktop: 20.0,
-            )),
+            SizedBox(
+              width: Responsive.getResponsiveValue(
+                context,
+                mobile: 16.0,
+                tablet: 18.0,
+                desktop: 20.0,
+              ),
+            ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -750,17 +844,21 @@ class _DetailItem extends StatelessWidget {
                         tablet: 12.0,
                         desktop: 13.0,
                       ),
-                      color: AppColors.textCyan200.withOpacity(0.6),
+                      color: isDark
+                          ? AppColors.textCyan200.withOpacity(0.6)
+                          : const Color(0xFF5B7B92),
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.5,
                     ),
                   ),
-                  SizedBox(height: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 6.0,
-                    tablet: 8.0,
-                    desktop: 10.0,
-                  )),
+                  SizedBox(
+                    height: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 6.0,
+                      tablet: 8.0,
+                      desktop: 10.0,
+                    ),
+                  ),
                   Text(
                     value,
                     style: TextStyle(
@@ -770,7 +868,9 @@ class _DetailItem extends StatelessWidget {
                         tablet: 17.0,
                         desktop: 18.0,
                       ),
-                      color: AppColors.textWhite,
+                      color: isDark
+                          ? AppColors.textWhite
+                          : const Color(0xFF12263A),
                       fontWeight: FontWeight.w600,
                       height: 1.4,
                     ),

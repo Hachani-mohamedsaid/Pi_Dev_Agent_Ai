@@ -33,27 +33,29 @@ class OpenAISuggestionContext {
   final String? userName;
   final String? userEmail;
   final String? userRole;
+
   /// User bio from profile – use to match tone and interests.
   final String? userBio;
   final String meetingsLabel;
+
   /// Summary of what this user tends to accept vs refuse (from past feedback).
   final String? learnedPreferences;
 
   Map<String, dynamic> toJson() => {
-        'time': time,
-        'focusMinutes': focusMinutes,
-        'timeInAppMinutes': timeInAppMinutes,
-        'location': location,
-        'weather': weather,
-        if (temperatureCelsius != null) 'temperatureCelsius': temperatureCelsius,
-        if (userName != null) 'userName': userName,
-        if (userEmail != null) 'userEmail': userEmail,
-        if (userRole != null) 'userRole': userRole,
-        if (userBio != null && userBio!.trim().isNotEmpty) 'userBio': userBio,
-        'meetingsLabel': meetingsLabel,
-        if (learnedPreferences != null && learnedPreferences!.trim().isNotEmpty)
-          'learnedPreferences': learnedPreferences,
-      };
+    'time': time,
+    'focusMinutes': focusMinutes,
+    'timeInAppMinutes': timeInAppMinutes,
+    'location': location,
+    'weather': weather,
+    if (temperatureCelsius != null) 'temperatureCelsius': temperatureCelsius,
+    if (userName != null) 'userName': userName,
+    if (userEmail != null) 'userEmail': userEmail,
+    if (userRole != null) 'userRole': userRole,
+    if (userBio != null && userBio!.trim().isNotEmpty) 'userBio': userBio,
+    'meetingsLabel': meetingsLabel,
+    if (learnedPreferences != null && learnedPreferences!.trim().isNotEmpty)
+      'learnedPreferences': learnedPreferences,
+  };
 }
 
 /// Generates suggestions using OpenAI from user/app context (time, duration, weather, temp, user data, counter).
@@ -70,15 +72,19 @@ class OpenAISuggestionService {
     final key = openaiApiKey;
     if (key.isEmpty) return [];
 
-    final avoidText = recentlyShownMessages != null && recentlyShownMessages.isNotEmpty
+    final avoidText =
+        recentlyShownMessages != null && recentlyShownMessages.isNotEmpty
         ? ' Do NOT suggest the same ideas as these: ${recentlyShownMessages.take(12).join(' | ')}.'
         : '';
 
-    final learnText = ctx.learnedPreferences != null && ctx.learnedPreferences!.trim().isNotEmpty
+    final learnText =
+        ctx.learnedPreferences != null &&
+            ctx.learnedPreferences!.trim().isNotEmpty
         ? ' LEARNED PREFERENCES (use to personalize): ${ctx.learnedPreferences}. Prefer suggestions similar to what they accept; avoid themes they tend to refuse.'
         : '';
 
-    final systemPrompt = '''
+    final systemPrompt =
+        '''
 You are AVA, a professional personal assistant. Your suggestions must be polished, concise, and tailored to the user—not generic advice.
 
 PERSONALIZATION:
@@ -99,7 +105,8 @@ Output only a JSON array of exactly 3 objects, no other text. Each "message" mus
 ]
 Allowed types: break, coffee, umbrella, leave_home, lightbulb. Confidence 0.0 to 1.0.''';
 
-    final userContent = 'Context and user profile: ${jsonEncode(ctx.toJson())}. Generate exactly 3 personalized suggestions as questions (JSON array). Each message must be a question ending with "?".';
+    final userContent =
+        'Context and user profile: ${jsonEncode(ctx.toJson())}. Generate exactly 3 personalized suggestions as questions (JSON array). Each message must be a question ending with "?".';
 
     try {
       final response = await http.post(
@@ -117,7 +124,10 @@ Allowed types: break, coffee, umbrella, leave_home, lightbulb. Confidence 0.0 to
       );
 
       if (response.statusCode != 200) {
-        reportHttpResponseError(feature: 'openai.suggestions', response: response);
+        reportHttpResponseError(
+          feature: 'openai.suggestions',
+          response: response,
+        );
         return [];
       }
 
@@ -151,14 +161,16 @@ Allowed types: break, coffee, umbrella, leave_home, lightbulb. Confidence 0.0 to
         if (message.isEmpty || seenMessages.contains(message)) continue;
         if (!message.endsWith('?')) message = '$message?';
         seenMessages.add(message);
-        suggestions.add(Suggestion(
-          id: '${baseId}_$i',
-          type: type,
-          message: message,
-          confidence: (map['confidence'] is num)
-              ? (map['confidence'] as num).toDouble()
-              : (double.tryParse(map['confidence']?.toString() ?? '') ?? 0.7),
-        ));
+        suggestions.add(
+          Suggestion(
+            id: '${baseId}_$i',
+            type: type,
+            message: message,
+            confidence: (map['confidence'] is num)
+                ? (map['confidence'] as num).toDouble()
+                : (double.tryParse(map['confidence']?.toString() ?? '') ?? 0.7),
+          ),
+        );
       }
       return suggestions;
     } catch (error, stackTrace) {

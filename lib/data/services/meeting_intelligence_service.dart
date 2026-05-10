@@ -36,13 +36,15 @@ class MeetingIntelligenceDraftResult {
 
   factory MeetingIntelligenceDraftResult.fromJson(Map<String, dynamic> json) {
     return MeetingIntelligenceDraftResult(
-      id: json['id']?.toString() ??
+      id:
+          json['id']?.toString() ??
           json['_id']?.toString() ??
           json['draftId']?.toString() ??
           json['draft_id']?.toString() ??
           '',
       status: json['status']?.toString() ?? '',
-      confirmationText: json['confirmationText']?.toString() ??
+      confirmationText:
+          json['confirmationText']?.toString() ??
           json['confirmation_text']?.toString() ??
           '',
     );
@@ -59,7 +61,7 @@ class StartBriefingResult {
 
 class MeetingIntelligenceService {
   MeetingIntelligenceService({required AuthLocalDataSource authLocalDataSource})
-      : _auth = authLocalDataSource;
+    : _auth = authLocalDataSource;
 
   final AuthLocalDataSource _auth;
 
@@ -106,11 +108,7 @@ class MeetingIntelligenceService {
   }) async {
     final uri = Uri.parse('$apiRootUrl/meetings/intelligence/draft/$draftId');
     final res = await http
-        .patch(
-          uri,
-          headers: await _headers(),
-          body: jsonEncode(dealTerms),
-        )
+        .patch(uri, headers: await _headers(), body: jsonEncode(dealTerms))
         .timeout(_timeout);
     if (res.statusCode != 200 && res.statusCode != 204) {
       throw _parseError(res);
@@ -143,11 +141,7 @@ class MeetingIntelligenceService {
   Future<PsychResult> postPsychBriefing(String meetingId) async {
     final uri = Uri.parse('$apiRootUrl/meetings/$meetingId/briefing/psych');
     final res = await http
-        .post(
-          uri,
-          headers: await _headers(),
-          body: jsonEncode({}),
-        )
+        .post(uri, headers: await _headers(), body: jsonEncode({}))
         .timeout(_timeout);
     if (res.statusCode != 200 && res.statusCode != 201) {
       throw _parseError(res);
@@ -160,11 +154,7 @@ class MeetingIntelligenceService {
   Future<void> postReportGenerate(String meetingId) async {
     final uri = Uri.parse('$apiRootUrl/meetings/$meetingId/report/generate');
     final res = await http
-        .post(
-          uri,
-          headers: await _headers(),
-          body: jsonEncode({}),
-        )
+        .post(uri, headers: await _headers(), body: jsonEncode({}))
         .timeout(_timeout);
     if (res.statusCode != 200 &&
         res.statusCode != 201 &&
@@ -195,11 +185,7 @@ class MeetingIntelligenceService {
   Future<Uint8List> postMeetingExportPdf(String meetingId) async {
     final uri = Uri.parse('$apiRootUrl/meetings/$meetingId/export');
     final res = await http
-        .post(
-          uri,
-          headers: await _headers(),
-          body: jsonEncode({}),
-        )
+        .post(uri, headers: await _headers(), body: jsonEncode({}))
         .timeout(_timeout);
     if (res.statusCode != 200 && res.statusCode != 201) {
       throw _parseError(res);
@@ -214,11 +200,7 @@ class MeetingIntelligenceService {
   Future<LocationResult> postLocationBriefing(String meetingId) async {
     final uri = Uri.parse('$apiRootUrl/meetings/$meetingId/briefing/location');
     final res = await http
-        .post(
-          uri,
-          headers: await _headers(),
-          body: jsonEncode({}),
-        )
+        .post(uri, headers: await _headers(), body: jsonEncode({}))
         .timeout(_timeout);
     if (res.statusCode != 200 && res.statusCode != 201) {
       throw _parseError(res);
@@ -231,11 +213,7 @@ class MeetingIntelligenceService {
   Future<ImageResult> postImageBriefing(String meetingId) async {
     final uri = Uri.parse('$apiRootUrl/meetings/$meetingId/briefing/image');
     final res = await http
-        .post(
-          uri,
-          headers: await _headers(),
-          body: jsonEncode({}),
-        )
+        .post(uri, headers: await _headers(), body: jsonEncode({}))
         .timeout(_timeout);
     if (res.statusCode != 200 && res.statusCode != 201) {
       throw _parseError(res);
@@ -248,11 +226,7 @@ class MeetingIntelligenceService {
   Future<OfferResult> postOfferBriefing(String meetingId) async {
     final uri = Uri.parse('$apiRootUrl/meetings/$meetingId/briefing/offer');
     final res = await http
-        .post(
-          uri,
-          headers: await _headers(),
-          body: jsonEncode({}),
-        )
+        .post(uri, headers: await _headers(), body: jsonEncode({}))
         .timeout(_timeout);
     if (res.statusCode != 200 && res.statusCode != 201) {
       throw _parseError(res);
@@ -263,15 +237,9 @@ class MeetingIntelligenceService {
 
   /// Cultural briefing (Page 4): POST /meetings/:id/briefing/culture — empty body.
   Future<CulturalResult> postCultureBriefing(String meetingId) async {
-    final uri = Uri.parse(
-      '$apiRootUrl/meetings/$meetingId/briefing/culture',
-    );
+    final uri = Uri.parse('$apiRootUrl/meetings/$meetingId/briefing/culture');
     final res = await http
-        .post(
-          uri,
-          headers: await _headers(),
-          body: jsonEncode({}),
-        )
+        .post(uri, headers: await _headers(), body: jsonEncode({}))
         .timeout(_timeout);
     if (res.statusCode != 200 && res.statusCode != 201) {
       throw _parseError(res);
@@ -284,11 +252,7 @@ class MeetingIntelligenceService {
   Future<SimulationStartResult> startSimulation(String meetingId) async {
     final uri = Uri.parse('$apiRootUrl/meetings/$meetingId/simulation/start');
     final res = await http
-        .post(
-          uri,
-          headers: await _headers(),
-          body: jsonEncode({}),
-        )
+        .post(uri, headers: await _headers(), body: jsonEncode({}))
         .timeout(_timeout);
     if (res.statusCode != 200 && res.statusCode != 201) {
       throw _parseError(res);
@@ -321,11 +285,7 @@ class MeetingIntelligenceService {
   Future<SimulationEndResult> endSimulation(String meetingId) async {
     final uri = Uri.parse('$apiRootUrl/meetings/$meetingId/simulation/end');
     final res = await http
-        .post(
-          uri,
-          headers: await _headers(),
-          body: jsonEncode({}),
-        )
+        .post(uri, headers: await _headers(), body: jsonEncode({}))
         .timeout(_timeout);
     if (res.statusCode != 200 && res.statusCode != 201) {
       throw _parseError(res);
@@ -335,20 +295,16 @@ class MeetingIntelligenceService {
   }
 
   /// Step 3: POST /meetings/intelligence/draft/:id/start-briefing
-  Future<StartBriefingResult> startBriefing({
-    required String draftId,
-  }) async {
+  Future<StartBriefingResult> startBriefing({required String draftId}) async {
     final uri = Uri.parse(
       '$apiRootUrl/meetings/intelligence/draft/$draftId/start-briefing',
     );
     final res = await http
-        .post(
-          uri,
-          headers: await _headers(),
-          body: jsonEncode({}),
-        )
+        .post(uri, headers: await _headers(), body: jsonEncode({}))
         .timeout(_timeout);
-    if (res.statusCode != 200 && res.statusCode != 201 && res.statusCode != 202) {
+    if (res.statusCode != 200 &&
+        res.statusCode != 201 &&
+        res.statusCode != 202) {
       throw _parseError(res);
     }
     if (res.body.isEmpty) return const StartBriefingResult();
@@ -385,9 +341,8 @@ class MeetingIntelligenceService {
     required String sectorLine,
     String? investorName,
   }) async {
-    final equityNum = num.tryParse(
-          equity.replaceAll(RegExp(r'[^0-9.]'), ''),
-        )?.toDouble() ??
+    final equityNum =
+        num.tryParse(equity.replaceAll(RegExp(r'[^0-9.]'), ''))?.toDouble() ??
         15;
     final uri = Uri.parse('$apiRootUrl/market-intelligence');
     final body = <String, dynamic>{
@@ -401,11 +356,7 @@ class MeetingIntelligenceService {
       body['investorName'] = investorName.trim();
     }
     final res = await http
-        .post(
-          uri,
-          headers: await _headers(),
-          body: jsonEncode(body),
-        )
+        .post(uri, headers: await _headers(), body: jsonEncode(body))
         .timeout(_timeout);
     if (res.statusCode != 200 && res.statusCode != 201) {
       throw _parseError(res);

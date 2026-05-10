@@ -88,12 +88,20 @@ dependencies:
   uni_links: ^0.5.1
   pdf: ^3.11.1
   printing: ^5.13.4
-  file_picker: ^10.3.2
+  file_picker: ^8.0.0
   sentry_flutter: ^9.0.0
+
+  # Entretien invité — caméra + détection de visage (Android/iOS), batch d’événements proctoring
+  camera: ^0.11.0+2
+  google_mlkit_face_detection: ^0.13.1
+  uuid: ^4.5.1
+  flutter_secure_storage: ^10.0.0
+  mockito: ^5.6.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  intl_utils: ^2.8.5
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -102,9 +110,19 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.0
+# Ajout de intl et flutter_intl pour la gestion des traductions
+  intl: any
+
 
 # Generate app launcher icons from assets/app_icon.png (run: dart run flutter_launcher_icons)
 flutter_launcher_icons:
+  flutter_intl: any
+
+flutter_intl:
+  enabled: true
+  arb_dir: lib/l10n
+  output_dir: lib/generated
+  locales: [en, fr, ar]
   android: true
   ios: true
   image_path: "assets/app_icon.png"
@@ -125,6 +143,8 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - .env
+    - assets/app_icon.png
+    - assets/ava_logo.png
     - assets/images/
     - assets/lottie/
 

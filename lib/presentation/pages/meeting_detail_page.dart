@@ -3,12 +3,25 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../widgets/navigation_bar.dart';
 import '../../data/models/meeting_model.dart';
 import '../../data/services/meeting_service.dart';
+
+Color _primaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _secondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF5B7B92);
+}
 
 class MeetingDetailPage extends StatefulWidget {
   final String meetingId;
@@ -30,6 +43,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
   String? _error;
   bool _isSubmitting = false;
   bool _isLoading = true;
+  String? _userId;
 
   @override
   void initState() {
@@ -46,7 +60,17 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
 
   Future<void> _fetchMeeting() async {
     try {
-      final meetings = await _service.fetchMeetings();
+      final prefs = await SharedPreferences.getInstance();
+      _userId = prefs.getString('user_id');
+      if (_userId == null || _userId!.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _error = 'User ID not found. Please log in again.';
+          _isLoading = false;
+        });
+        return;
+      }
+      final meetings = await _service.fetchMeetings(_userId!);
       if (!mounted) return;
       Meeting? found;
       for (final m in meetings) {
@@ -71,21 +95,26 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
 
   Future<void> _sendDecision(String decision) async {
     final meeting = _meeting;
-    if (meeting == null || _isSubmitting) return;
+    final uid = _userId;
+    if (meeting == null || _isSubmitting || uid == null || uid.isEmpty) return;
 
     setState(() => _isSubmitting = true);
 
-    debugPrint('POST meeting-decision: meetingId=${meeting.meetingId}, decision=$decision');
+    debugPrint(
+      'POST meeting-decision: meetingId=${meeting.meetingId}, decision=$decision',
+    );
 
     try {
-      await _service.sendDecision(meeting.meetingId, decision);
+      await _service.sendDecision(uid, meeting.meetingId, decision);
       if (!mounted) return;
       context.go('/home');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erreur : ${e.toString().replaceAll('Exception: ', '')}'),
+          content: Text(
+            'Erreur : ${e.toString().replaceAll('Exception: ', '')}',
+          ),
           backgroundColor: Colors.red.shade700,
         ),
       );
@@ -98,20 +127,26 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final pageGradient = isDark
+        ? const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+          )
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
+          );
+
     if (_isLoading) {
       return Scaffold(
+        backgroundColor: isDark
+            ? const Color(0xFF0f2940)
+            : const Color(0xFFF3F8FC),
         body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF0f2940),
-                Color(0xFF1a3a52),
-                Color(0xFF0f2940),
-              ],
-            ),
-          ),
+          decoration: BoxDecoration(gradient: pageGradient),
           child: const Center(
             child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(AppColors.cyan400),
@@ -124,18 +159,11 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
     final meeting = _meeting;
     if (meeting == null || _error != null) {
       return Scaffold(
+        backgroundColor: isDark
+            ? const Color(0xFF0f2940)
+            : const Color(0xFFF3F8FC),
         body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF0f2940),
-                Color(0xFF1a3a52),
-                Color(0xFF0f2940),
-              ],
-            ),
-          ),
+          decoration: BoxDecoration(gradient: pageGradient),
           child: SafeArea(
             child: Center(
               child: Column(
@@ -143,7 +171,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
                 children: [
                   Text(
                     _error ?? 'Réunion introuvable',
-                    style: const TextStyle(color: AppColors.textWhite),
+                    style: TextStyle(color: _primaryText(context)),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
@@ -169,18 +197,11 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
     );
 
     return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFF3F8FC),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
-          ),
-        ),
+        decoration: BoxDecoration(gradient: pageGradient),
         child: SafeArea(
           bottom: false,
           child: Stack(
@@ -262,7 +283,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
               desktop: 28.0,
             ),
             fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
       ],
@@ -276,10 +297,10 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
     DateFormat dateFormat,
     int durationMinutes,
   ) {
-    final durationStr =
-        durationMinutes >= 60
-            ? '${durationMinutes ~/ 60}h ${durationMinutes % 60}min'
-            : '$durationMinutes min';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final durationStr = durationMinutes >= 60
+        ? '${durationMinutes ~/ 60}h ${durationMinutes % 60}min'
+        : '$durationMinutes min';
 
     return Container(
       padding: EdgeInsets.all(
@@ -293,12 +314,20 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF1e4a66).withOpacity(0.5),
-            const Color(0xFF16384d).withOpacity(0.5),
+            isDark
+                ? const Color(0xFF1e4a66).withOpacity(0.5)
+                : const Color(0xFFF9FCFF),
+            isDark
+                ? const Color(0xFF16384d).withOpacity(0.5)
+                : const Color(0xFFEAF4FB),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
+        border: Border.all(
+          color: isDark
+              ? AppColors.cyan500.withOpacity(0.2)
+              : const Color(0xFFC7DDE9),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -313,7 +342,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
                 desktop: 20.0,
               ),
               fontWeight: FontWeight.w600,
-              color: AppColors.textWhite,
+              color: _primaryText(context),
             ),
           ),
           const SizedBox(height: 16),
@@ -331,11 +360,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
             '${timeFormat.format(meeting.startTime)} - ${timeFormat.format(meeting.endTime)}',
           ),
           const SizedBox(height: 12),
-          _buildDetailRow(
-            context,
-            LucideIcons.timer,
-            durationStr,
-          ),
+          _buildDetailRow(context, LucideIcons.timer, durationStr),
           if (meeting.timezone.isNotEmpty) ...[
             const SizedBox(height: 12),
             _buildDetailRow(context, LucideIcons.globe, meeting.timezone),
@@ -345,11 +370,8 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
     );
   }
 
-  Widget _buildDetailRow(
-    BuildContext context,
-    IconData icon,
-    String text,
-  ) {
+  Widget _buildDetailRow(BuildContext context, IconData icon, String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         Container(
@@ -367,7 +389,9 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
             text,
             style: TextStyle(
               fontSize: 15,
-              color: AppColors.textWhite.withOpacity(0.9),
+              color: isDark
+                  ? _primaryText(context).withOpacity(0.9)
+                  : _secondaryText(context),
             ),
           ),
         ),
@@ -376,6 +400,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
   }
 
   Widget _buildImportanceCard(BuildContext context, Meeting meeting) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final importanceColor = _importanceColor(meeting.importance);
     final importanceLabel = meeting.importance.isEmpty
         ? 'Normal'
@@ -393,12 +418,20 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF1e4a66).withOpacity(0.5),
-            const Color(0xFF16384d).withOpacity(0.5),
+            isDark
+                ? const Color(0xFF1e4a66).withOpacity(0.5)
+                : const Color(0xFFF9FCFF),
+            isDark
+                ? const Color(0xFF16384d).withOpacity(0.5)
+                : const Color(0xFFEAF4FB),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: importanceColor.withOpacity(0.3)),
+        border: Border.all(
+          color: isDark
+              ? importanceColor.withOpacity(0.3)
+              : const Color(0xFFC7DDE9),
+        ),
       ),
       child: Row(
         children: [
@@ -447,7 +480,9 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: _isSubmitting ? null : () => _sendDecision(MeetingDecisionType.accept),
+            onPressed: _isSubmitting
+                ? null
+                : () => _sendDecision(MeetingDecisionType.accept),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF22c55e),
               foregroundColor: Colors.white,
@@ -486,7 +521,9 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton(
-            onPressed: _isSubmitting ? null : () => _sendDecision(MeetingDecisionType.suggest),
+            onPressed: _isSubmitting
+                ? null
+                : () => _sendDecision(MeetingDecisionType.suggest),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.cyan400,
               side: BorderSide(color: AppColors.cyan500.withOpacity(0.5)),
@@ -498,7 +535,11 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(LucideIcons.calendarClock, size: 20, color: AppColors.cyan400),
+                Icon(
+                  LucideIcons.calendarClock,
+                  size: 20,
+                  color: AppColors.cyan400,
+                ),
                 const SizedBox(width: 8),
                 const Text(
                   'Proposer un autre créneau',
@@ -512,7 +553,9 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
         SizedBox(
           width: double.infinity,
           child: TextButton(
-            onPressed: _isSubmitting ? null : () => _sendDecision(MeetingDecisionType.reject),
+            onPressed: _isSubmitting
+                ? null
+                : () => _sendDecision(MeetingDecisionType.reject),
             style: TextButton.styleFrom(
               foregroundColor: Colors.redAccent,
               padding: const EdgeInsets.symmetric(vertical: 16),

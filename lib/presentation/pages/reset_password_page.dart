@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/config/api_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/utils/validators.dart';
@@ -56,16 +55,38 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final padding = isMobile ? 24.0 : 32.0;
     final screenWidth = Responsive.screenWidth(context);
+    final pageGradient = isDark
+        ? AppColors.primaryGradient
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
+          );
+    final cardGradient = isDark
+        ? AppColors.cardGradient
+        : const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFFFFFFF), Color(0xFFF2F8FC)],
+          );
+    final borderColor = isDark ? AppColors.borderCyan : const Color(0xFFC7DDE9);
+    final titleColor = isDark ? AppColors.textWhite : const Color(0xFF12263A);
+    final subtitleColor = isDark
+        ? AppColors.textCyan200.withOpacity(0.7)
+        : const Color(0xFF4A728A);
 
     if (_isSubmitted) {
       return Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: isDark
+            ? const Color(0xFF0f2940)
+            : const Color(0xFFF3F8FC),
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+          decoration: BoxDecoration(gradient: pageGradient),
           child: Stack(
             children: [
               // Background decorative elements
@@ -130,14 +151,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       ),
                       child: Container(
                         decoration: BoxDecoration(
-                          gradient: AppColors.cardGradient,
+                          gradient: cardGradient,
                           borderRadius: BorderRadius.circular(
                             isMobile ? 24 : 28,
                           ),
-                          border: Border.all(
-                            color: AppColors.borderCyan,
-                            width: 1,
-                          ),
+                          border: Border.all(color: borderColor, width: 1),
                         ),
                         child: Container(
                           decoration: BoxDecoration(
@@ -146,7 +164,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
+                                color:
+                                    (isDark
+                                            ? Colors.black
+                                            : const Color(0xFF9BC0D3))
+                                        .withOpacity(isDark ? 0.3 : 0.22),
                                 blurRadius: 20,
                                 spreadRadius: 5,
                               ),
@@ -201,7 +223,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                           style: TextStyle(
                                             fontSize: isMobile ? 28 : 32,
                                             fontWeight: FontWeight.bold,
-                                            color: AppColors.textWhite,
+                                            color: titleColor,
                                           ),
                                         )
                                         .animate()
@@ -218,8 +240,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: isMobile ? 14 : 16,
-                                        color: AppColors.textCyan200
-                                            .withOpacity(0.7),
+                                        color: subtitleColor,
                                       ),
                                     ).animate().fadeIn(
                                       delay: 500.ms,
@@ -244,8 +265,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: isMobile ? 13 : 14,
-                                        color: AppColors.textCyan200
-                                            .withOpacity(0.6),
+                                        color: subtitleColor,
                                       ),
                                     ).animate().fadeIn(
                                       delay: 700.ms,
@@ -302,11 +322,13 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFF3F8FC),
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        decoration: BoxDecoration(gradient: pageGradient),
         child: Stack(
           children: [
             // Background decorative elements
@@ -371,12 +393,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     ),
                     child: Container(
                       decoration: BoxDecoration(
-                        gradient: AppColors.cardGradient,
+                        gradient: cardGradient,
                         borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
-                        border: Border.all(
-                          color: AppColors.borderCyan,
-                          width: 1,
-                        ),
+                        border: Border.all(color: borderColor, width: 1),
                       ),
                       child: Container(
                         decoration: BoxDecoration(
@@ -385,7 +404,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color:
+                                  (isDark
+                                          ? Colors.black
+                                          : const Color(0xFF9BC0D3))
+                                      .withOpacity(isDark ? 0.3 : 0.22),
                               blurRadius: 20,
                               spreadRadius: 5,
                             ),
@@ -469,7 +492,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                           style: TextStyle(
                                             fontSize: isMobile ? 28 : 32,
                                             fontWeight: FontWeight.bold,
-                                            color: AppColors.textWhite,
+                                            color: titleColor,
                                           ),
                                         )
                                         .animate()
@@ -487,8 +510,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: isMobile ? 14 : 16,
-                                        color: AppColors.textCyan200
-                                            .withOpacity(0.7),
+                                        color: subtitleColor,
                                       ),
                                     ).animate().fadeIn(
                                       delay: 400.ms,
@@ -536,12 +558,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                         isMobile ? 16 : 20,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.backgroundDark,
+                                        color: isDark
+                                            ? AppColors.backgroundDark
+                                            : const Color(0xFFEFF6FB),
                                         borderRadius: BorderRadius.circular(
                                           isMobile ? 12 : 14,
                                         ),
                                         border: Border.all(
-                                          color: AppColors.borderCyan,
+                                          color: borderColor,
                                           width: 1,
                                         ),
                                       ),
@@ -552,8 +576,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                           Text(
                                             'Remember your password? ',
                                             style: TextStyle(
-                                              color: AppColors.textCyan200
-                                                  .withOpacity(0.6),
+                                              color: subtitleColor,
                                               fontSize: isMobile ? 13 : 14,
                                             ),
                                           ),

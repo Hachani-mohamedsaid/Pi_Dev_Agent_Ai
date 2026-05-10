@@ -42,15 +42,15 @@ class StripeCheckoutService {
         .post(
           uri,
           headers: buildJsonHeaders(bearerToken: token),
-          body: jsonEncode({
-            'couponCode': couponCode,
-            'plan': plan,
-          }),
+          body: jsonEncode({'couponCode': couponCode, 'plan': plan}),
         )
         .timeout(_timeout);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      reportHttpResponseError(feature: 'stripe.coupon.validate', response: response);
+      reportHttpResponseError(
+        feature: 'stripe.coupon.validate',
+        response: response,
+      );
       throw StripeCheckoutException(
         'http_${response.statusCode}',
         body: response.body.isNotEmpty ? response.body : null,
@@ -97,7 +97,10 @@ class StripeCheckoutService {
         .timeout(_timeout);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      reportHttpResponseError(feature: 'stripe.checkout.create', response: response);
+      reportHttpResponseError(
+        feature: 'stripe.checkout.create',
+        response: response,
+      );
       throw StripeCheckoutException(
         'http_${response.statusCode}',
         body: response.body.isNotEmpty ? response.body : null,

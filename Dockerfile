@@ -26,7 +26,13 @@ RUN if [ -d integration_test ] && find integration_test -name '*_test.dart' | gr
 		fi
 
 FROM base AS build
-RUN flutter build web --release --tree-shake-icons --no-wasm-dry-run
+# API_BASE_URL et API_PATH_PREFIX sont injectés au moment du build Dart (String.fromEnvironment).
+# Valeurs par défaut : Railway backend sans préfixe /api.
+ARG API_BASE_URL=https://backendagentai-production.up.railway.app
+ARG API_PATH_PREFIX=
+RUN flutter build web --release --tree-shake-icons --no-wasm-dry-run \
+    --dart-define=API_BASE_URL=${API_BASE_URL} \
+    --dart-define=API_PATH_PREFIX=${API_PATH_PREFIX}
 
 FROM nginx:1.27-alpine AS runtime
 

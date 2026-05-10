@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/guest_interview_link.dart';
 import '../../data/models/evaluation.dart';
+import '../../data/services/interview_invite_email_api_service.dart';
 
 /// Détail d'une évaluation candidat — score, décision, forces/faiblesses, infos.
 class EvaluationDetailPage extends StatelessWidget {
@@ -49,6 +52,55 @@ class EvaluationDetailPage extends StatelessWidget {
                           content: evaluation.weaknesses!,
                         ),
                       _infoCard(),
+                      const SizedBox(height: 20),
+                      _SendGuestInterviewEmailButton(evaluation: evaluation),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final link = guestInterviewLinkString(evaluation);
+                            await Clipboard.setData(ClipboardData(text: link));
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                  'Lien candidat copié dans le presse-papiers.',
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor:
+                                    AppColors.primaryDarker.withValues(alpha: 0.95),
+                              ),
+                            );
+                          },
+                          icon: const Icon(LucideIcons.link, size: 20),
+                          label: const Text('Copier le lien d’entretien (candidat)'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.cyan400,
+                            side: BorderSide(
+                              color: AppColors.cyan400.withValues(alpha: 0.5),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () => context.push(
+                            '/candidate-interview',
+                            extra: evaluation,
+                          ),
+                          icon: const Icon(LucideIcons.messageCircle, size: 20),
+                          label: const Text('Entretien assisté (aperçu recruteur)'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.cyan500,
+                            foregroundColor: const Color(0xFF0a1628),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -294,5 +346,117 @@ class EvaluationDetailPage extends StatelessWidget {
     if (score >= 70) return AppColors.statusAccepted;
     if (score >= 40) return AppColors.statusPending;
     return AppColors.statusRejected;
+  }
+}
+
+/// Tente d’abord `POST /interviews/send-invite-email` (envoi serveur), puis repli `mailto:`.
+class _SendGuestInterviewEmailButton extends StatefulWidget {
+  const _SendGuestInterviewEmailButton({required this.evaluation});
+
+  final Evaluation evaluation;
+
+  @override
+  State<_SendGuestInterviewEmailButton> createState() =>
+      _SendGuestInterviewEmailButtonState();
+}
+
+class _SendGuestInterviewEmailButtonState
+    extends State<_SendGuestInterviewEmailButton> {
+  final _api = InterviewInviteEmailApiService();
+  bool _sending = false;
+
+  Future<void> _send() async {
+    if (_sending) return;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _sending = true);
+    final res = await _api.sendGuestInterviewInvite(widget.evaluation);
+    if (!mounted) return;
+    setState(() => _sending = false);
+    final link = guestInterviewLinkString(widget.evaluation);
+    final localhost =
+        link.contains('localhost') || link.contains('127.0.0.1');
+
+    void openMailto() {
+      final mailto = guestInterviewMailtoUri(widget.evaluation);
+      if (mailto != null) {
+        launchUrl(mailto, mode: LaunchMode.externalApplication);
+      }
+    }
+
+    switch (res.kind) {
+      case InviteEmailSendKind.success:
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              localhost
+                  ? 'E-mail envoyé. Le lien contient encore localhost : le candidat ne pourra pas l’ouvrir depuis chez lui. '
+                      'Passez APP_PUBLIC_ORIGIN (build web) ou un domaine public.'
+                  : 'E-mail envoyé au candidat avec le lien d’entretien.',
+            ),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.primaryDarker.withValues(alpha: 0.95),
+          ),
+        );
+        break;
+      case InviteEmailSendKind.notImplemented:
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              res.message ??
+                  'Le backend n’expose pas encore POST /interviews/send-invite-email — ouverture de Mail en secours possible.',
+            ),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 10),
+            action: SnackBarAction(
+              label: 'Ouvrir Mail',
+              textColor: AppColors.cyan400,
+              onPressed: openMailto,
+            ),
+            backgroundColor: AppColors.primaryDarker.withValues(alpha: 0.95),
+          ),
+        );
+        break;
+      default:
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(res.message ?? 'Envoi impossible.'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.statusRejected.withValues(alpha: 0.95),
+            action: SnackBarAction(
+              label: 'Ouvrir Mail',
+              textColor: Colors.white70,
+              onPressed: openMailto,
+            ),
+          ),
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: _sending ? null : _send,
+        icon: _sending
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFF0a1628),
+                ),
+              )
+            : const Icon(LucideIcons.mail, size: 20),
+        label: Text(
+          _sending ? 'Envoi en cours…' : 'Envoyer le lien par e-mail au candidat',
+        ),
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.cyan500,
+          foregroundColor: const Color(0xFF0a1628),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+      ),
+    );
   }
 }

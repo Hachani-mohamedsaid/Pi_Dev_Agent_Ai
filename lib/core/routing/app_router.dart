@@ -8,6 +8,7 @@ import '../../presentation/pages/register_page.dart';
 import '../../presentation/pages/reset_password_page.dart';
 import '../../presentation/pages/reset_password_confirm_page.dart';
 import '../../presentation/pages/verify_email_confirm_page.dart';
+import '../../presentation/pages/guest_interview_page.dart';
 import '../../presentation/pages/home_screen.dart';
 import '../../presentation/pages/profile_screen.dart';
 import '../../presentation/pages/edit_profile_page.dart';
@@ -48,20 +49,20 @@ import '../../presentation/pages/trip_planner_page.dart';
 import '../../presentation/pages/actions_hub_page.dart';
 import '../../presentation/pages/automation_rules_page.dart';
 import '../../presentation/pages/finance_page.dart';
-import '../../presentation/pages/onboarding_page.dart';
-import '../../presentation/pages/intro/pre_onboarding_page.dart';
 import '../../presentation/pages/insights_page.dart';
 import '../../presentation/pages/connected_services_page.dart';
 import '../../presentation/pages/decision_support_page.dart';
 import '../../presentation/pages/goals_page.dart';
 import '../../presentation/pages/work_proposals_page.dart';
-import '../../presentation/pages/work_proposals_dashboard_page.dart';
+import '../../presentation/pages/project_personnel_management_page.dart';
+import '../../presentation/pages/team_dispatch_detail_page.dart';
 import '../../presentation/pages/project_analysis_page.dart';
 import '../../presentation/pages/how_to_work_page.dart';
 import '../../presentation/pages/create_job_page.dart';
 import '../../presentation/pages/evaluation_status_page.dart';
 import '../../presentation/pages/candidatures_page.dart';
 import '../../presentation/pages/evaluation_detail_page.dart';
+import '../../presentation/pages/candidate_interview_static_page.dart';
 import '../../data/models/evaluation.dart';
 import '../../presentation/pages/work_proposal_details_page.dart';
 import '../../presentation/widgets/premium_feature_gate.dart';
@@ -75,9 +76,12 @@ import '../../features/my_business/models/business_session.dart';
 import '../../features/my_business/screens/business_url_screen.dart';
 import '../../features/my_business/screens/dashboard_style_screen.dart';
 import '../../features/my_business/screens/business_dashboard_screen.dart';
-import '../../features/phone_agent/models/phone_call_model.dart';
 import '../../features/phone_agent/screens/phone_agent_screen.dart';
 import '../../features/phone_agent/screens/phone_agent_call_detail_screen.dart';
+import '../../features/phone_agent/services/phone_agent_service.dart';
+import '../../features/messaging/models/conversation_model.dart';
+import '../../features/messaging/screens/messaging_list_screen.dart';
+import '../../features/messaging/screens/messaging_chat_screen.dart';
 import '../../features/social_media/screens/social_media_brief_screen.dart';
 import '../../presentation/pages/google_connect_page.dart';
 import '../../features/wellbeing/models/wellbeing_models.dart';
@@ -139,20 +143,23 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/onboarding',
+      path: '/messaging',
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: const OnboardingPage(),
+        child: const MessagingListScreen(),
       ),
     ),
     GoRoute(
-      path: '/intro',
-      pageBuilder: (context, state) => _fadeScaleTransition(
-        context: context,
-        state: state,
-        child: const PreOnboardingPage(),
-      ),
+      path: '/messaging/:conversationId',
+      pageBuilder: (context, state) {
+        final conv = state.extra as ConversationModel;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: MessagingChatScreen(conversation: conv),
+        );
+      },
     ),
     GoRoute(
       path: '/login',
@@ -210,6 +217,35 @@ final appRouter = GoRouter(
           token: state.uri.queryParameters['token'],
         ),
       ),
+    ),
+    /// Entretien candidat sans compte (lien partagé par le recruteur).
+    GoRoute(
+      path: '/guest-interview',
+      pageBuilder: (context, state) {
+        final q = state.uri.queryParameters;
+        String? qp(String k) {
+          final v = q[k]?.trim();
+          return (v == null || v.isEmpty) ? null : v;
+        }
+
+        final evaluation = Evaluation(
+          evaluationId: qp('eid'),
+          candidateName: qp('name'),
+          jobTitle: qp('job'),
+          candidateEmail: qp('email'),
+          status: 'pending',
+        );
+
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: GuestInterviewPage(
+            evaluation: evaluation,
+            guestToken: qp('token'),
+            prefilledSessionId: qp('sid'),
+          ),
+        );
+      },
     ),
     GoRoute(
       path: '/home',
@@ -626,7 +662,10 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: const PremiumFeatureGate(child: MeetingHubScreen()),
+        child: const PremiumFeatureGate(
+          featureName: 'Meeting Hub',
+          child: MeetingHubScreen(),
+        ),
       ),
     ),
     GoRoute(
@@ -776,12 +815,27 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/work-proposals-dashboard',
+      path: '/team-dispatch',
+      redirect: (_, _) => '/project-management',
+    ),
+    GoRoute(
+      path: '/project-management',
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: const WorkProposalsDashboardPage(),
+        child: const ProjectPersonnelManagementPage(),
       ),
+    ),
+    GoRoute(
+      path: '/team-dispatch/:projectId',
+      pageBuilder: (context, state) {
+        final id = state.pathParameters['projectId'] ?? '';
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: TeamDispatchDetailPage(projectId: id),
+        );
+      },
     ),
     GoRoute(
       path: '/project-analysis',
@@ -850,6 +904,17 @@ final appRouter = GoRouter(
           context: context,
           state: state,
           child: EvaluationDetailPage(evaluation: evaluation),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/candidate-interview',
+      pageBuilder: (context, state) {
+        final evaluation = state.extra as Evaluation?;
+        return _fadeScaleTransition(
+          context: context,
+          state: state,
+          child: CandidateInterviewStaticPage(evaluation: evaluation),
         );
       },
     ),
@@ -968,7 +1033,10 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fadeScaleTransition(
         context: context,
         state: state,
-        child: const PremiumFeatureGate(child: PhoneAgentScreen()),
+        child: const PremiumFeatureGate(
+          featureName: 'Phone Agent',
+          child: PhoneAgentScreen(),
+        ),
       ),
     ),
     GoRoute(
@@ -982,18 +1050,22 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/phone-agent-call',
       pageBuilder: (context, state) {
-        final call = state.extra as PhoneCallModel?;
+        final call = state.extra as PhoneCallData?;
         if (call == null) {
           return _fadeScaleTransition(
             context: context,
             state: state,
-            child: const PremiumFeatureGate(child: PhoneAgentScreen()),
+            child: const PremiumFeatureGate(
+              featureName: 'Phone Agent',
+              child: PhoneAgentScreen(),
+            ),
           );
         }
         return _fadeScaleTransition(
           context: context,
           state: state,
           child: PremiumFeatureGate(
+            featureName: 'Phone Agent',
             child: PhoneAgentCallDetailScreen(call: call),
           ),
         );

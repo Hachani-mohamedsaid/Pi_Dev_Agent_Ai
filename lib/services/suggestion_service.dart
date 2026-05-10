@@ -76,17 +76,17 @@ class SuggestionService {
     final response = await http.post(
       Uri.parse('https://api.anthropic.com/v1/messages'),
       headers: buildJsonHeaders(
-        extra: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
+        extra: {'x-api-key': apiKey, 'anthropic-version': '2023-06-01'},
       ),
       body: jsonEncode(body),
     );
     print('Claude response: ${response.body}');
 
     if (response.statusCode != 200) {
-      reportHttpResponseError(feature: 'meeting.suggestions.claude', response: response);
+      reportHttpResponseError(
+        feature: 'meeting.suggestions.claude',
+        response: response,
+      );
       throw Exception('Claude API ${response.statusCode}');
     }
     final map = jsonDecode(response.body) as Map<String, dynamic>?;

@@ -8,11 +8,7 @@ import '../../core/config/open_weather_config.dart';
 
 /// Une suggestion de ville retournée par l'API Geocoding OpenWeather.
 class CitySuggestion {
-  const CitySuggestion({
-    required this.name,
-    required this.country,
-    this.state,
-  });
+  const CitySuggestion({required this.name, required this.country, this.state});
   final String name;
   final String country;
   final String? state;
@@ -42,7 +38,10 @@ class OpenWeatherService {
       );
       final res = await http.get(uri, headers: buildJsonHeaders());
       if (res.statusCode != 200) {
-        reportHttpResponseError(feature: 'openweather.city_suggestions', response: res);
+        reportHttpResponseError(
+          feature: 'openweather.city_suggestions',
+          response: res,
+        );
         return [];
       }
       final list = jsonDecode(res.body) as List<dynamic>?;
@@ -54,11 +53,13 @@ class OpenWeatherService {
         final name = map['name'] as String?;
         final country = map['country'] as String?;
         if (name == null || name.isEmpty || country == null) continue;
-        suggestions.add(CitySuggestion(
-          name: name,
-          country: country,
-          state: map['state'] as String?,
-        ));
+        suggestions.add(
+          CitySuggestion(
+            name: name,
+            country: country,
+            state: map['state'] as String?,
+          ),
+        );
       }
       return suggestions;
     } catch (error, stackTrace) {
@@ -125,7 +126,10 @@ class OpenWeatherService {
       );
       final res = await http.get(uri, headers: buildJsonHeaders());
       if (res.statusCode != 200) {
-        reportHttpResponseError(feature: 'openweather.temperature', response: res);
+        reportHttpResponseError(
+          feature: 'openweather.temperature',
+          response: res,
+        );
         return null;
       }
       final data = jsonDecode(res.body) as Map<String, dynamic>?;
@@ -156,7 +160,10 @@ class OpenWeatherService {
       );
       final res = await http.get(uri, headers: buildJsonHeaders());
       if (res.statusCode != 200) {
-        reportHttpResponseError(feature: 'openweather.condition', response: res);
+        reportHttpResponseError(
+          feature: 'openweather.condition',
+          response: res,
+        );
         return 'sunny';
       }
       final data = jsonDecode(res.body) as Map<String, dynamic>?;

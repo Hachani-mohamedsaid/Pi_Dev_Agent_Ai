@@ -8,6 +8,18 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../injection_container.dart';
 
+Color _primaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _secondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF5B7B92);
+}
+
 class SubscriptionSuccessPage extends StatefulWidget {
   const SubscriptionSuccessPage({super.key, required this.plan});
 
@@ -48,7 +60,9 @@ class _SubscriptionSuccessPageState extends State<SubscriptionSuccessPage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
-          backgroundColor: const Color(0xFF132A3D),
+          backgroundColor: Theme.of(dialogContext).brightness == Brightness.dark
+              ? const Color(0xFF132A3D)
+              : const Color(0xFFF9FCFF),
           title: Row(
             children: [
               Container(
@@ -67,8 +81,8 @@ class _SubscriptionSuccessPageState extends State<SubscriptionSuccessPage> {
               Expanded(
                 child: Text(
                   AppStrings.tr(context, 'subscriptionSuccessTitle'),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: _primaryText(dialogContext),
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -77,7 +91,7 @@ class _SubscriptionSuccessPageState extends State<SubscriptionSuccessPage> {
           ),
           content: Text(
             '$planLabel — ${AppStrings.tr(context, 'subscriptionActiveBadge')}',
-            style: TextStyle(color: AppColors.textCyan200, height: 1.4),
+            style: TextStyle(color: _secondaryText(dialogContext), height: 1.4),
           ),
           actions: [
             FilledButton(
@@ -111,21 +125,30 @@ class _SubscriptionSuccessPageState extends State<SubscriptionSuccessPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isYearly = widget.plan == 'yearly';
     final planLabel = AppStrings.tr(context, _planLabel);
     final description = isYearly
         ? AppStrings.tr(context, 'subscriptionSuccessDescriptionYearly')
         : AppStrings.tr(context, 'subscriptionSuccessDescriptionMonthly');
-
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
+    final pageGradient = isDark
+        ? const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
-          ),
-        ),
+          )
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
+          );
+
+    return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFF3F8FC),
+      body: Container(
+        decoration: BoxDecoration(gradient: pageGradient),
         child: SafeArea(
           bottom: false,
           child: Center(
@@ -158,10 +181,14 @@ class _SubscriptionSuccessPageState extends State<SubscriptionSuccessPage> {
                       ),
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryLight.withValues(alpha: 0.22),
+                      color: isDark
+                          ? AppColors.primaryLight.withValues(alpha: 0.22)
+                          : const Color(0xFFF9FCFF),
                       borderRadius: BorderRadius.circular(28),
                       border: Border.all(
-                        color: AppColors.cyan500.withValues(alpha: 0.25),
+                        color: isDark
+                            ? AppColors.cyan500.withValues(alpha: 0.25)
+                            : const Color(0xFFC7DDE9),
                         width: 1.2,
                       ),
                     ),
@@ -195,7 +222,7 @@ class _SubscriptionSuccessPageState extends State<SubscriptionSuccessPage> {
                               desktop: 28.0,
                             ),
                             fontWeight: FontWeight.w800,
-                            color: AppColors.textWhite,
+                            color: _primaryText(context),
                           ),
                         ),
                         SizedBox(height: 16),
@@ -210,7 +237,7 @@ class _SubscriptionSuccessPageState extends State<SubscriptionSuccessPage> {
                               desktop: 17.0,
                             ),
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textCyan300,
+                            color: _secondaryText(context),
                           ),
                         ),
                         SizedBox(height: 20),
@@ -225,9 +252,9 @@ class _SubscriptionSuccessPageState extends State<SubscriptionSuccessPage> {
                               desktop: 16.0,
                             ),
                             height: 1.6,
-                            color: AppColors.textCyan200.withValues(
-                              alpha: 0.92,
-                            ),
+                            color: _secondaryText(
+                              context,
+                            ).withValues(alpha: 0.92),
                           ),
                         ),
                         SizedBox(height: 30),
@@ -276,7 +303,7 @@ class _SubscriptionSuccessPageState extends State<SubscriptionSuccessPage> {
                                 'subscriptionSuccessBackToHome',
                               ),
                               style: TextStyle(
-                                color: AppColors.textCyan200,
+                                color: _secondaryText(context),
                                 fontWeight: FontWeight.w700,
                               ),
                             ),

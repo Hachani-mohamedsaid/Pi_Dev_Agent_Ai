@@ -19,6 +19,7 @@ class CustomButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final height = isMobile ? 52.0 : 56.0;
 
     if (isOutlined) {
@@ -29,10 +30,12 @@ class CustomButton extends StatelessWidget {
           onPressed: isLoading ? null : onPressed,
           style: OutlinedButton.styleFrom(
             side: BorderSide(
-              color: AppColors.borderCyan,
+              color: isDark ? AppColors.borderCyan : const Color(0xFFC7DDE9),
               width: 1,
             ),
-            backgroundColor: AppColors.backgroundDark,
+            backgroundColor: isDark
+                ? AppColors.backgroundDark
+                : const Color(0xFFFFFFFF).withOpacity(0.92),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
             ),
@@ -43,13 +46,17 @@ class CustomButton extends StatelessWidget {
                   width: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.textWhite),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.textWhite,
+                    ),
                   ),
                 )
               : Text(
                   text,
                   style: TextStyle(
-                    color: AppColors.textWhite,
+                    color: isDark
+                        ? AppColors.textWhite
+                        : const Color(0xFF12263A),
                     fontSize: isMobile ? 15 : 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -68,11 +75,13 @@ class CustomButton extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: isLoading ? null : () {
-            if (!isLoading) {
-              onPressed();
-            }
-          },
+          onTap: isLoading
+              ? null
+              : () {
+                  if (!isLoading) {
+                    onPressed();
+                  }
+                },
           borderRadius: BorderRadius.circular(isMobile ? 12 : 14),
           child: Container(
             alignment: Alignment.center,

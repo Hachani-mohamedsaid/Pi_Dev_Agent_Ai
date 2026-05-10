@@ -35,8 +35,8 @@ class MeetingService {
     String? endpointUrl,
     http.Client? httpClient,
     this.timeout = const Duration(seconds: 20),
-  })  : endpoint = Uri.parse(endpointUrl ?? _defaultEndpoint),
-        httpClient = httpClient ?? http.Client();
+  }) : endpoint = Uri.parse(endpointUrl ?? _defaultEndpoint),
+       httpClient = httpClient ?? http.Client();
 
   /// Récupère la liste des réunions (GET, async/await).
   /// Retourne une liste vide si le corps est vide ou si le JSON est `null`.
@@ -44,11 +44,14 @@ class MeetingService {
   /// Décode le corps avec [jsonDecode], traite le résultat comme [List],
   /// mappe chaque élément avec [Meeting.fromJson].
   /// Gestion des erreurs : try/catch, timeout, codes HTTP, format.
-  Future<List<Meeting>> fetchMeetings() async {
+  Future<List<Meeting>> fetchMeetings(String userId) async {
     try {
+      final uri = endpoint.replace(
+        queryParameters: <String, String>{'userId': userId},
+      );
       final response = await httpClient
           .get(
-            endpoint,
+            uri,
             headers: buildJsonHeaders(
               extra: const {'Accept': 'application/json'},
             ),
@@ -91,9 +94,7 @@ class MeetingService {
             'Élément à l\'index $i invalide : attendu un objet, reçu ${item.runtimeType}',
           );
         }
-        result.add(
-          Meeting.fromJson(Map<String, dynamic>.from(item)),
-        );
+        result.add(Meeting.fromJson(Map<String, dynamic>.from(item)));
       }
       return result;
     } on http.ClientException catch (e) {
@@ -103,31 +104,34 @@ class MeetingService {
     } on TimeoutException catch (e) {
       throw Exception(e.message ?? 'Délai de connexion dépassé.');
     } on FormatException catch (e) {
-      throw Exception(
-        'Données invalides : ${e.message}',
-      );
+      throw Exception('Données invalides : ${e.message}');
     } on Exception {
       rethrow;
     } catch (e, stackTrace) {
-      throw Exception('Erreur lors du chargement des réunions: $e\n$stackTrace');
+      throw Exception(
+        'Erreur lors du chargement des réunions: $e\n$stackTrace',
+      );
     }
   }
 
   /// Envoie une décision (accept / reject / suggest) au webhook meeting-decision.
   ///
-  /// Body : { meetingId, decision, suggestedAlternative }.
+  /// Body : { userId, meetingId, decision, suggestedAlternative }.
   /// [suggestedAlternative] utilisé uniquement si decision == 'suggest'.
-  Future<void> sendDecision(
+  Future<Map<String, dynamic>> sendDecision(
+    String userId,
     String meetingId,
     MeetingDecision decision, {
     Map<String, String>? suggestedAlternative,
   }) async {
     try {
       final body = <String, dynamic>{
+        'userId': userId,
         'meetingId': meetingId,
         'decision': decision,
-        'suggestedAlternative':
-            decision == MeetingDecisionType.suggest ? suggestedAlternative : null,
+        'suggestedAlternative': decision == MeetingDecisionType.suggest
+            ? suggestedAlternative
+            : null,
       };
 
       final response = await httpClient
@@ -152,6 +156,12 @@ class MeetingService {
           response.statusCode != 204) {
         _throwForStatus(response.statusCode);
       }
+
+      final String responseBody = response.body.trim();
+      if (responseBody.isEmpty) {
+        return <String, dynamic>{};
+      }
+      return jsonDecode(responseBody) as Map<String, dynamic>;
     } on http.ClientException catch (e) {
       throw Exception(
         'Problème réseau : ${e.message}. Vérifiez votre connexion.',

@@ -67,7 +67,7 @@
 	<key>GIDClientID</key>
 	<string>$(GOOGLE_IOS_CLIENT_ID)</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Camera access is required for video meetings</string>
+	<string>La caméra est utilisée pour les réunions vidéo et, lors des entretiens invités, pour une détection locale de visage (événements agrégés, pas d’envoi vidéo).</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Location access is required to set your pickup point from your current position.</string>
 	<key>NSMicrophoneUsageDescription</key>

@@ -19,10 +19,7 @@ class ImgBBUploadService {
       final res = await http.post(
         Uri.parse(_uploadUrl),
         headers: buildJsonHeaders(),
-        body: {
-          'key': imgbbApiKey,
-          'image': base64Image,
-        },
+        body: {'key': imgbbApiKey, 'image': base64Image},
       );
       if (res.statusCode != 200) {
         reportHttpResponseError(feature: 'imgbb.upload', response: res);

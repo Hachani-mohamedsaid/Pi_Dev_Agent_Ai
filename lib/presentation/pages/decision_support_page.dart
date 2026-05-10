@@ -7,6 +7,57 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../widgets/navigation_bar.dart';
 
+Color _primaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _secondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF5B7B92);
+}
+
+LinearGradient _pageGradient(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return isDark
+      ? const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF0f2940), Color(0xFF1a3a52), Color(0xFF0f2940)],
+        )
+      : const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
+        );
+}
+
+LinearGradient _cardGradient(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return isDark
+      ? LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF1e4a66).withOpacity(0.4),
+            const Color(0xFF16384d).withOpacity(0.4),
+          ],
+        )
+      : const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF9FCFF), Color(0xFFEAF4FB)],
+        );
+}
+
+Color _cardBorder(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.cyan500.withOpacity(0.1)
+      : const Color(0xFFC7DDE9);
+}
+
 class DecisionSupportPage extends StatelessWidget {
   const DecisionSupportPage({super.key});
 
@@ -24,9 +75,17 @@ class DecisionSupportPage extends StatelessWidget {
       {
         'id': 1,
         'title': 'Reschedule Friday 5 PM meeting?',
-        'description': 'Client wants to meet Friday at 5 PM, but you typically avoid late meetings.',
-        'pros': ['Client is flexible with time', 'Important project discussion'],
-        'cons': ['Outside preferred hours', 'Energy levels typically low', 'Weekend preparation time'],
+        'description':
+            'Client wants to meet Friday at 5 PM, but you typically avoid late meetings.',
+        'pros': [
+          'Client is flexible with time',
+          'Important project discussion',
+        ],
+        'cons': [
+          'Outside preferred hours',
+          'Energy levels typically low',
+          'Weekend preparation time',
+        ],
         'impact': 'medium',
         'recommendation': 'Suggest Monday 10 AM instead',
         'confidence': 85,
@@ -35,8 +94,16 @@ class DecisionSupportPage extends StatelessWidget {
         'id': 2,
         'title': 'Accept new project proposal?',
         'description': 'New project would add 10 hours/week to your schedule.',
-        'pros': ['Good for career growth', 'High budget', 'Interesting tech stack'],
-        'cons': ['Already at capacity', 'Would need to reduce focus time', 'Overlaps with Q2 goals'],
+        'pros': [
+          'Good for career growth',
+          'High budget',
+          'Interesting tech stack',
+        ],
+        'cons': [
+          'Already at capacity',
+          'Would need to reduce focus time',
+          'Overlaps with Q2 goals',
+        ],
         'impact': 'high',
         'recommendation': 'Decline or negotiate timeline',
         'confidence': 78,
@@ -45,17 +112,7 @@ class DecisionSupportPage extends StatelessWidget {
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
-          ),
-        ),
+        decoration: BoxDecoration(gradient: _pageGradient(context)),
         child: SafeArea(
           bottom: false,
           child: Stack(
@@ -76,38 +133,52 @@ class DecisionSupportPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                // Header
-                _buildHeader(context, isMobile)
-                    .animate()
-                    .fadeIn(duration: 500.ms)
-                    .slideY(begin: -0.2, end: 0, duration: 500.ms),
+                    // Header
+                    _buildHeader(context, isMobile)
+                        .animate()
+                        .fadeIn(duration: 500.ms)
+                        .slideY(begin: -0.2, end: 0, duration: 500.ms),
 
-                SizedBox(height: Responsive.getResponsiveValue(
-                  context,
-                  mobile: 20.0,
-                  tablet: 24.0,
-                  desktop: 28.0,
-                )),
-
-                // Decision Cards
-                ...pendingDecisions.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final decision = entry.value;
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      bottom: Responsive.getResponsiveValue(
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
                         context,
                         mobile: 20.0,
                         tablet: 24.0,
                         desktop: 28.0,
                       ),
                     ),
-                    child: _buildDecisionCard(context, isMobile, decision)
-                        .animate()
-                        .fadeIn(delay: Duration(milliseconds: 100 + (index * 100)), duration: 300.ms)
-                        .slideY(begin: 0.2, end: 0, delay: Duration(milliseconds: 100 + (index * 100)), duration: 300.ms),
-                  );
-                }),
+
+                    // Decision Cards
+                    ...pendingDecisions.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final decision = entry.value;
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 20.0,
+                            tablet: 24.0,
+                            desktop: 28.0,
+                          ),
+                        ),
+                        child: _buildDecisionCard(context, isMobile, decision)
+                            .animate()
+                            .fadeIn(
+                              delay: Duration(
+                                milliseconds: 100 + (index * 100),
+                              ),
+                              duration: 300.ms,
+                            )
+                            .slideY(
+                              begin: 0.2,
+                              end: 0,
+                              delay: Duration(
+                                milliseconds: 100 + (index * 100),
+                              ),
+                              duration: 300.ms,
+                            ),
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -140,15 +211,17 @@ class DecisionSupportPage extends StatelessWidget {
               desktop: 32.0,
             ),
             fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
+            color: _primaryText(context),
           ),
         ),
-        SizedBox(height: Responsive.getResponsiveValue(
-          context,
-          mobile: 6.0,
-          tablet: 8.0,
-          desktop: 10.0,
-        )),
+        SizedBox(
+          height: Responsive.getResponsiveValue(
+            context,
+            mobile: 6.0,
+            tablet: 8.0,
+            desktop: 10.0,
+          ),
+        ),
         Text(
           'AI-powered analysis for better decisions',
           style: TextStyle(
@@ -158,7 +231,7 @@ class DecisionSupportPage extends StatelessWidget {
               tablet: 14.0,
               desktop: 15.0,
             ),
-            color: AppColors.textCyan200.withOpacity(0.7),
+            color: _secondaryText(context),
           ),
         ),
       ],
@@ -206,46 +279,46 @@ class DecisionSupportPage extends StatelessWidget {
     }
   }
 
-  Widget _buildDecisionCard(BuildContext context, bool isMobile, Map<String, dynamic> decision) {
+  Widget _buildDecisionCard(
+    BuildContext context,
+    bool isMobile,
+    Map<String, dynamic> decision,
+  ) {
     final impactStyle = _getImpactStyle(decision['impact'] as String);
     final pros = decision['pros'] as List<String>;
     final cons = decision['cons'] as List<String>;
     final confidence = decision['confidence'] as int;
 
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 18.0,
-        tablet: 20.0,
-        desktop: 24.0,
-      )),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF1e4a66).withOpacity(0.4),
-            const Color(0xFF16384d).withOpacity(0.4),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
           context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
-        border: Border.all(
-          color: AppColors.cyan500.withOpacity(0.1),
-          width: 1,
+          mobile: 18.0,
+          tablet: 20.0,
+          desktop: 24.0,
         ),
       ),
+      decoration: BoxDecoration(
+        gradient: _cardGradient(context),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
+        border: Border.all(color: _cardBorder(context), width: 1),
+      ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Column(
@@ -269,17 +342,19 @@ class DecisionSupportPage extends StatelessWidget {
                               desktop: 18.0,
                             ),
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textWhite,
+                            color: _primaryText(context),
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        SizedBox(height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 6.0,
-                          tablet: 8.0,
-                          desktop: 10.0,
-                        )),
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 6.0,
+                            tablet: 8.0,
+                            desktop: 10.0,
+                          ),
+                        ),
                         Text(
                           decision['description'] as String,
                           style: TextStyle(
@@ -289,7 +364,7 @@ class DecisionSupportPage extends StatelessWidget {
                               tablet: 13.0,
                               desktop: 14.0,
                             ),
-                            color: AppColors.textCyan200.withOpacity(0.7),
+                            color: _secondaryText(context),
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -297,12 +372,14 @@ class DecisionSupportPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 10.0,
-                    tablet: 12.0,
-                    desktop: 14.0,
-                  )),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 10.0,
+                      tablet: 12.0,
+                      desktop: 14.0,
+                    ),
+                  ),
                   Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: Responsive.getResponsiveValue(
@@ -322,12 +399,14 @@ class DecisionSupportPage extends StatelessWidget {
                       gradient: LinearGradient(
                         colors: impactStyle['bg'] as List<Color>,
                       ),
-                      borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                        context,
-                        mobile: 8.0,
-                        tablet: 9.0,
-                        desktop: 10.0,
-                      )),
+                      borderRadius: BorderRadius.circular(
+                        Responsive.getResponsiveValue(
+                          context,
+                          mobile: 8.0,
+                          tablet: 9.0,
+                          desktop: 10.0,
+                        ),
+                      ),
                       border: Border.all(
                         color: impactStyle['border'] as Color,
                         width: 1,
@@ -350,12 +429,14 @@ class DecisionSupportPage extends StatelessWidget {
                 ],
               ),
 
-              SizedBox(height: Responsive.getResponsiveValue(
-                context,
-                mobile: 14.0,
-                tablet: 16.0,
-                desktop: 18.0,
-              )),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 14.0,
+                  tablet: 16.0,
+                  desktop: 18.0,
+                ),
+              ),
 
               // Pros and Cons Grid
               Row(
@@ -369,12 +450,14 @@ class DecisionSupportPage extends StatelessWidget {
                       isPros: true,
                     ),
                   ),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 10.0,
-                    tablet: 12.0,
-                    desktop: 14.0,
-                  )),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 10.0,
+                      tablet: 12.0,
+                      desktop: 14.0,
+                    ),
+                  ),
                   Expanded(
                     child: _buildProsConsSection(
                       context,
@@ -387,29 +470,35 @@ class DecisionSupportPage extends StatelessWidget {
                 ],
               ),
 
-              SizedBox(height: Responsive.getResponsiveValue(
-                context,
-                mobile: 14.0,
-                tablet: 16.0,
-                desktop: 18.0,
-              )),
-
-              // AVA's Recommendation
-              Container(
-                padding: EdgeInsets.all(Responsive.getResponsiveValue(
+              SizedBox(
+                height: Responsive.getResponsiveValue(
                   context,
                   mobile: 14.0,
                   tablet: 16.0,
-                  desktop: 20.0,
-                )),
+                  desktop: 18.0,
+                ),
+              ),
+
+              // AVA's Recommendation
+              Container(
+                padding: EdgeInsets.all(
+                  Responsive.getResponsiveValue(
+                    context,
+                    mobile: 14.0,
+                    tablet: 16.0,
+                    desktop: 20.0,
+                  ),
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF9333EA).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                    context,
-                    mobile: 12.0,
-                    tablet: 13.0,
-                    desktop: 14.0,
-                  )),
+                  borderRadius: BorderRadius.circular(
+                    Responsive.getResponsiveValue(
+                      context,
+                      mobile: 12.0,
+                      tablet: 13.0,
+                      desktop: 14.0,
+                    ),
+                  ),
                   border: Border.all(
                     color: const Color(0xFF9333EA).withOpacity(0.2),
                     width: 1,
@@ -433,12 +522,14 @@ class DecisionSupportPage extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF9333EA).withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                          context,
-                          mobile: 10.0,
-                          tablet: 11.0,
-                          desktop: 12.0,
-                        )),
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 10.0,
+                            tablet: 11.0,
+                            desktop: 12.0,
+                          ),
+                        ),
                       ),
                       child: Icon(
                         LucideIcons.brain,
@@ -451,12 +542,14 @@ class DecisionSupportPage extends StatelessWidget {
                         color: const Color(0xFFC084FC),
                       ),
                     ),
-                    SizedBox(width: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 10.0,
-                      tablet: 12.0,
-                      desktop: 14.0,
-                    )),
+                    SizedBox(
+                      width: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 10.0,
+                        tablet: 12.0,
+                        desktop: 14.0,
+                      ),
+                    ),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -482,12 +575,14 @@ class DecisionSupportPage extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              SizedBox(width: Responsive.getResponsiveValue(
-                                context,
-                                mobile: 8.0,
-                                tablet: 10.0,
-                                desktop: 12.0,
-                              )),
+                              SizedBox(
+                                width: Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 8.0,
+                                  tablet: 10.0,
+                                  desktop: 12.0,
+                                ),
+                              ),
                               Text(
                                 '$confidence% confident',
                                 style: TextStyle(
@@ -504,12 +599,14 @@ class DecisionSupportPage extends StatelessWidget {
                               ),
                             ],
                           ),
-                          SizedBox(height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 6.0,
-                            tablet: 8.0,
-                            desktop: 10.0,
-                          )),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 6.0,
+                              tablet: 8.0,
+                              desktop: 10.0,
+                            ),
+                          ),
                           Text(
                             decision['recommendation'] as String,
                             style: TextStyle(
@@ -531,12 +628,14 @@ class DecisionSupportPage extends StatelessWidget {
                 ),
               ),
 
-              SizedBox(height: Responsive.getResponsiveValue(
-                context,
-                mobile: 14.0,
-                tablet: 16.0,
-                desktop: 18.0,
-              )),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 14.0,
+                  tablet: 16.0,
+                  desktop: 18.0,
+                ),
+              ),
 
               // Action Buttons
               Row(
@@ -562,12 +661,14 @@ class DecisionSupportPage extends StatelessWidget {
                               AppColors.cyan500.withOpacity(0.3),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                            context,
-                            mobile: 12.0,
-                            tablet: 13.0,
-                            desktop: 14.0,
-                          )),
+                          borderRadius: BorderRadius.circular(
+                            Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 13.0,
+                              desktop: 14.0,
+                            ),
+                          ),
                           border: Border.all(
                             color: const Color(0xFF10B981).withOpacity(0.4),
                             width: 1,
@@ -586,12 +687,14 @@ class DecisionSupportPage extends StatelessWidget {
                               ),
                               color: const Color(0xFF6EE7B7),
                             ),
-                            SizedBox(width: Responsive.getResponsiveValue(
-                              context,
-                              mobile: 6.0,
-                              tablet: 8.0,
-                              desktop: 10.0,
-                            )),
+                            SizedBox(
+                              width: Responsive.getResponsiveValue(
+                                context,
+                                mobile: 6.0,
+                                tablet: 8.0,
+                                desktop: 10.0,
+                              ),
+                            ),
                             Flexible(
                               child: Text(
                                 'Follow Recommendation',
@@ -614,12 +717,14 @@ class DecisionSupportPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 6.0,
-                    tablet: 8.0,
-                    desktop: 10.0,
-                  )),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 6.0,
+                      tablet: 8.0,
+                      desktop: 10.0,
+                    ),
+                  ),
                   Expanded(
                     child: GestureDetector(
                       onTap: () {
@@ -635,15 +740,22 @@ class DecisionSupportPage extends StatelessWidget {
                           ),
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.textWhite.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                            context,
-                            mobile: 12.0,
-                            tablet: 13.0,
-                            desktop: 14.0,
-                          )),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.textWhite.withOpacity(0.05)
+                              : const Color(0xFFEAF4FB),
+                          borderRadius: BorderRadius.circular(
+                            Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 13.0,
+                              desktop: 14.0,
+                            ),
+                          ),
                           border: Border.all(
-                            color: AppColors.textWhite.withOpacity(0.1),
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.textWhite.withOpacity(0.1)
+                                : const Color(0xFFC7DDE9),
                             width: 1,
                           ),
                         ),
@@ -684,22 +796,26 @@ class DecisionSupportPage extends StatelessWidget {
     required bool isPros,
   }) {
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 14.0,
-        tablet: 16.0,
-        desktop: 20.0,
-      )),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 14.0,
+          tablet: 16.0,
+          desktop: 20.0,
+        ),
+      ),
       decoration: BoxDecoration(
         color: isPros
             ? const Color(0xFF10B981).withOpacity(0.1)
             : const Color(0xFFFF0000).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 12.0,
-          tablet: 13.0,
-          desktop: 14.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 13.0,
+            desktop: 14.0,
+          ),
+        ),
         border: Border.all(
           color: isPros
               ? const Color(0xFF10B981).withOpacity(0.2)
@@ -720,14 +836,18 @@ class DecisionSupportPage extends StatelessWidget {
                   tablet: 16.0,
                   desktop: 18.0,
                 ),
-                color: isPros ? const Color(0xFF10B981) : const Color(0xFFFF6B6B),
+                color: isPros
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFFFF6B6B),
               ),
-              SizedBox(width: Responsive.getResponsiveValue(
-                context,
-                mobile: 6.0,
-                tablet: 8.0,
-                desktop: 10.0,
-              )),
+              SizedBox(
+                width: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 6.0,
+                  tablet: 8.0,
+                  desktop: 10.0,
+                ),
+              ),
               Text(
                 title,
                 style: TextStyle(
@@ -738,17 +858,21 @@ class DecisionSupportPage extends StatelessWidget {
                     desktop: 15.0,
                   ),
                   fontWeight: FontWeight.w600,
-                  color: isPros ? const Color(0xFF10B981) : const Color(0xFFFF6B6B),
+                  color: isPros
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFFFF6B6B),
                 ),
               ),
             ],
           ),
-          SizedBox(height: Responsive.getResponsiveValue(
-            context,
-            mobile: 10.0,
-            tablet: 12.0,
-            desktop: 14.0,
-          )),
+          SizedBox(
+            height: Responsive.getResponsiveValue(
+              context,
+              mobile: 10.0,
+              tablet: 12.0,
+              desktop: 14.0,
+            ),
+          ),
           ...items.map((item) {
             return Padding(
               padding: EdgeInsets.only(
@@ -771,15 +895,19 @@ class DecisionSupportPage extends StatelessWidget {
                         tablet: 13.0,
                         desktop: 14.0,
                       ),
-                      color: isPros ? const Color(0xFF10B981) : const Color(0xFFFF6B6B),
+                      color: isPros
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFFF6B6B),
                     ),
                   ),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 6.0,
-                    tablet: 8.0,
-                    desktop: 10.0,
-                  )),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 6.0,
+                      tablet: 8.0,
+                      desktop: 10.0,
+                    ),
+                  ),
                   Expanded(
                     child: Text(
                       item,

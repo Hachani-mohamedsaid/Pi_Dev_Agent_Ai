@@ -91,10 +91,21 @@ class ReportResult {
     return int.tryParse(v?.toString() ?? '') ?? 0;
   }
 
-  String get overallLabel {
-    if (readinessScore >= 75) return '✓ Ready to Pitch';
-    if (readinessScore >= 55) return '◐ Almost Ready';
-    return '⚠ Needs Work';
+  String overallLabel(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    if (locale == 'ar') {
+      if (readinessScore >= 75) return '✓ جاهز للعرض';
+      if (readinessScore >= 55) return '◐ شبه جاهز';
+      return '⚠ يحتاج إلى عمل';
+    } else if (locale == 'fr') {
+      if (readinessScore >= 75) return '✓ Prêt à présenter';
+      if (readinessScore >= 55) return '◐ Presque prêt';
+      return '⚠ Besoin de travail';
+    } else {
+      if (readinessScore >= 75) return '✓ Ready to Pitch';
+      if (readinessScore >= 55) return '◐ Almost Ready';
+      return '⚠ Needs Work';
+    }
   }
 
   Color get overallColor {

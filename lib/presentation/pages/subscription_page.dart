@@ -13,6 +13,8 @@ import '../../data/services/stripe_checkout_service.dart';
 import '../../injection_container.dart';
 import '../widgets/navigation_bar.dart';
 
+import 'package:pi_dev_agentia/generated/l10n.dart';
+
 enum _BillingPlan { monthly, yearly }
 
 /// Premium subscription: monthly vs yearly (promo on yearly).
@@ -108,12 +110,50 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   void _showCheckoutSnackBar(String messageKey) {
     if (!mounted) return;
+    final s = S.of(context);
+    final message = _getSGetter(s, messageKey);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppStrings.tr(context, messageKey)),
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
+  }
+
+  String _getSGetter(S s, String key) {
+    switch (key) {
+      case 'subscriptionCheckoutFailed':
+        return s.subscriptionCheckoutFailed;
+      case 'subscriptionLoginRequired':
+        return s.subscriptionLoginRequired;
+      case 'subscriptionBackendMissing':
+        return s.subscriptionBackendMissing;
+      case 'subscriptionPlansIntro':
+        return s.subscriptionPlansIntro;
+      case 'subscriptionActiveBadge':
+        return s.subscriptionActiveBadge;
+      case 'subscriptionYearly':
+        return s.subscriptionYearly;
+      case 'subscriptionMonthly':
+        return s.subscriptionMonthly;
+      case 'subscriptionBilledMonthly':
+        return s.subscriptionBilledMonthly;
+      case 'subscriptionBilledYearly':
+        return s.subscriptionBilledYearly;
+      case 'subscriptionYearlyPromoLine':
+        return s.subscriptionYearlyPromoLine;
+      case 'subscriptionPaymentNote':
+        return s.subscriptionPaymentNote;
+      case 'premiumSubscription':
+        return s.premiumSubscription;
+      case 'subscriptionSubtitle':
+        return s.subscriptionSubtitle;
+      case 'subscriptionFeature1':
+        return s.subscriptionFeature1;
+      case 'subscriptionFeature2':
+        return s.subscriptionFeature2;
+      case 'subscriptionFeature3':
+        return s.subscriptionFeature3;
+      default:
+        return key;
+    }
   }
 
   Future<void> _openStripeCheckout(BuildContext context) async {
@@ -202,7 +242,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Coupon validation failed. Check backend coupon status.'),
+          content: Text(
+            'Coupon validation failed. Check backend coupon status.',
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -229,6 +271,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       desktop: 32.0,
     );
 
+    final s = S.of(context);
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -270,7 +313,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                       ),
                     ),
                     Text(
-                      AppStrings.tr(context, 'subscriptionPlansIntro'),
+                      s.subscriptionPlansIntro,
                       style: TextStyle(
                         fontSize: Responsive.getResponsiveValue(
                           context,
@@ -305,7 +348,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                             ),
                           ),
                           child: Text(
-                            '${AppStrings.tr(context, 'subscriptionActiveBadge')} : ${_activePlan == 'yearly' ? AppStrings.tr(context, 'subscriptionYearly') : AppStrings.tr(context, 'subscriptionMonthly')}',
+                            '${s.subscriptionActiveBadge} : ${_activePlan == 'yearly' ? s.subscriptionYearly : s.subscriptionMonthly}',
                             style: TextStyle(
                               fontSize: 13,
                               color: AppColors.textCyan200,
@@ -338,14 +381,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                   Expanded(
                                     child: _PlanCard(
                                       isMobile: isMobile,
-                                      title: AppStrings.tr(
-                                        context,
-                                        'subscriptionMonthly',
-                                      ),
-                                      subtitle: AppStrings.tr(
-                                        context,
-                                        'subscriptionBilledMonthly',
-                                      ),
+                                      title: s.subscriptionMonthly,
+                                      subtitle: s.subscriptionBilledMonthly,
                                       selected:
                                           _selected == _BillingPlan.monthly,
                                       isActive: _activePlan == 'monthly',
@@ -362,14 +399,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                   Expanded(
                                     child: _PlanCard(
                                       isMobile: isMobile,
-                                      title: AppStrings.tr(
-                                        context,
-                                        'subscriptionYearly',
-                                      ),
-                                      subtitle: AppStrings.tr(
-                                        context,
-                                        'subscriptionBilledYearly',
-                                      ),
+                                      title: s.subscriptionYearly,
+                                      subtitle: s.subscriptionBilledYearly,
                                       selected:
                                           _selected == _BillingPlan.yearly,
                                       isActive: _activePlan == 'yearly',
@@ -377,10 +408,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                       discountPercent: _discountPercent,
                                       couponApplied: _appliedCoupon != null,
                                       basePrice: _yearlyBasePriceValue,
-                                      promoLine: AppStrings.tr(
-                                        context,
-                                        'subscriptionYearlyPromoLine',
-                                      ),
+                                      promoLine: s.subscriptionYearlyPromoLine,
                                       onTap: () => setState(
                                         () => _selected = _BillingPlan.yearly,
                                       ),
@@ -393,14 +421,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                               children: [
                                 _PlanCard(
                                   isMobile: isMobile,
-                                  title: AppStrings.tr(
-                                    context,
-                                    'subscriptionMonthly',
-                                  ),
-                                  subtitle: AppStrings.tr(
-                                    context,
-                                    'subscriptionBilledMonthly',
-                                  ),
+                                  title: s.subscriptionMonthly,
+                                  subtitle: s.subscriptionBilledMonthly,
                                   selected: _selected == _BillingPlan.monthly,
                                   isActive: _activePlan == 'monthly',
                                   isYearly: false,
@@ -414,24 +436,15 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                 SizedBox(height: gap),
                                 _PlanCard(
                                   isMobile: isMobile,
-                                  title: AppStrings.tr(
-                                    context,
-                                    'subscriptionYearly',
-                                  ),
-                                  subtitle: AppStrings.tr(
-                                    context,
-                                    'subscriptionBilledYearly',
-                                  ),
+                                  title: s.subscriptionYearly,
+                                  subtitle: s.subscriptionBilledYearly,
                                   selected: _selected == _BillingPlan.yearly,
                                   isActive: _activePlan == 'yearly',
                                   isYearly: true,
                                   discountPercent: _discountPercent,
                                   couponApplied: _appliedCoupon != null,
                                   basePrice: _yearlyBasePriceValue,
-                                  promoLine: AppStrings.tr(
-                                    context,
-                                    'subscriptionYearlyPromoLine',
-                                  ),
+                                  promoLine: s.subscriptionYearlyPromoLine,
                                   onTap: () => setState(
                                     () => _selected = _BillingPlan.yearly,
                                   ),
@@ -497,7 +510,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     ),
                     Center(
                       child: Text(
-                        AppStrings.tr(context, 'subscriptionPaymentNote'),
+                        s.subscriptionPaymentNote,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: Responsive.getResponsiveValue(
@@ -528,6 +541,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   }
 
   Widget _buildHeader(BuildContext context, bool isMobile) {
+    final s = S.of(context);
     return Row(
       children: [
         GestureDetector(
@@ -618,7 +632,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   ),
                   Expanded(
                     child: Text(
-                      AppStrings.tr(context, 'premiumSubscription'),
+                      s.premiumSubscription,
                       style: TextStyle(
                         fontSize: Responsive.getResponsiveValue(
                           context,
@@ -638,7 +652,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 height: Responsive.getResponsiveValue(context, mobile: 8.0),
               ),
               Text(
-                AppStrings.tr(context, 'subscriptionSubtitle'),
+                s.subscriptionSubtitle,
                 style: TextStyle(
                   fontSize: Responsive.getResponsiveValue(
                     context,
@@ -657,10 +671,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   }
 
   Widget _buildFeaturesCard(BuildContext context, bool isMobile) {
+    final s = S.of(context);
     final features = [
-      AppStrings.tr(context, 'subscriptionFeature1'),
-      AppStrings.tr(context, 'subscriptionFeature2'),
-      AppStrings.tr(context, 'subscriptionFeature3'),
+      s.subscriptionFeature1,
+      s.subscriptionFeature2,
+      s.subscriptionFeature3,
     ];
     return Container(
       width: double.infinity,
@@ -1023,8 +1038,8 @@ class _PlanCard extends StatelessWidget {
     final yearWas = AppStrings.tr(context, 'subscriptionPriceYearWas');
     final hasCouponDiscount = couponApplied && discountPercent > 0;
     final effectivePrice = hasCouponDiscount
-      ? basePrice * (1 - (discountPercent / 100))
-      : basePrice;
+        ? basePrice * (1 - (discountPercent / 100))
+        : basePrice;
     final effectivePriceLabel = effectivePrice.toStringAsFixed(2);
     final basePriceLabel = basePrice.toStringAsFixed(2);
 

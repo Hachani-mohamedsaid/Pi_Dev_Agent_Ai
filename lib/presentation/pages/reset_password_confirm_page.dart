@@ -63,7 +63,9 @@ class _ResetPasswordConfirmPageState extends State<ResetPasswordConfirmPage> {
       } else if (mounted && widget.controller.error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(widget.controller.error ?? 'Failed to update password'),
+            content: Text(
+              widget.controller.error ?? 'Failed to update password',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -74,16 +76,38 @@ class _ResetPasswordConfirmPageState extends State<ResetPasswordConfirmPage> {
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final padding = isMobile ? 24.0 : 32.0;
     final screenWidth = Responsive.screenWidth(context);
+    final pageGradient = isDark
+        ? AppColors.primaryGradient
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8FCFF), Color(0xFFEAF4FB), Color(0xFFF3F8FC)],
+          );
+    final cardGradient = isDark
+        ? AppColors.cardGradient
+        : const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFFFFFFF), Color(0xFFF2F8FC)],
+          );
+    final borderColor = isDark ? AppColors.borderCyan : const Color(0xFFC7DDE9);
+    final titleColor = isDark ? AppColors.textWhite : const Color(0xFF12263A);
+    final subtitleColor = isDark
+        ? AppColors.textCyan200.withOpacity(0.7)
+        : const Color(0xFF4A728A);
 
     if (widget.token == null || widget.token!.isEmpty) {
       return Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: isDark
+            ? const Color(0xFF0f2940)
+            : const Color(0xFFF3F8FC),
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+          decoration: BoxDecoration(gradient: pageGradient),
           child: SafeArea(
             child: Center(
               child: Padding(
@@ -97,7 +121,7 @@ class _ResetPasswordConfirmPageState extends State<ResetPasswordConfirmPage> {
                       style: TextStyle(
                         fontSize: isMobile ? 22 : 26,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textWhite,
+                        color: titleColor,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -106,14 +130,15 @@ class _ResetPasswordConfirmPageState extends State<ResetPasswordConfirmPage> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: isMobile ? 14 : 16,
-                        color: AppColors.textCyan200.withOpacity(0.8),
+                        color: subtitleColor,
                       ),
                     ),
                     const SizedBox(height: 24),
                     CustomButton(
                       text: 'Back to Login',
-                      onPressed: () =>
-                          context.pushReplacement('/login?animate=${DateTime.now().millisecondsSinceEpoch}'),
+                      onPressed: () => context.pushReplacement(
+                        '/login?animate=${DateTime.now().millisecondsSinceEpoch}',
+                      ),
                     ),
                   ],
                 ),
@@ -126,11 +151,13 @@ class _ResetPasswordConfirmPageState extends State<ResetPasswordConfirmPage> {
 
     if (_isSubmitted) {
       return Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: isDark
+            ? const Color(0xFF0f2940)
+            : const Color(0xFFF3F8FC),
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+          decoration: BoxDecoration(gradient: pageGradient),
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -141,17 +168,12 @@ class _ResetPasswordConfirmPageState extends State<ResetPasswordConfirmPage> {
                   ),
                   child: Container(
                     decoration: BoxDecoration(
-                      gradient: AppColors.cardGradient,
-                      borderRadius:
-                          BorderRadius.circular(isMobile ? 24 : 28),
-                      border: Border.all(
-                        color: AppColors.borderCyan,
-                        width: 1,
-                      ),
+                      gradient: cardGradient,
+                      borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
+                      border: Border.all(color: borderColor, width: 1),
                     ),
                     child: ClipRRect(
-                      borderRadius:
-                          BorderRadius.circular(isMobile ? 24 : 28),
+                      borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
                       child: BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                         child: Padding(
@@ -179,7 +201,7 @@ class _ResetPasswordConfirmPageState extends State<ResetPasswordConfirmPage> {
                                 style: TextStyle(
                                   fontSize: isMobile ? 28 : 32,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.textWhite,
+                                  color: titleColor,
                                 ),
                               ),
                               SizedBox(height: isMobile ? 12 : 16),
@@ -188,14 +210,15 @@ class _ResetPasswordConfirmPageState extends State<ResetPasswordConfirmPage> {
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: isMobile ? 14 : 16,
-                                  color: AppColors.textCyan200.withOpacity(0.7),
+                                  color: subtitleColor,
                                 ),
                               ),
                               SizedBox(height: isMobile ? 32 : 40),
                               CustomButton(
                                 text: 'Back to Login',
                                 onPressed: () => context.pushReplacement(
-                                    '/login?animate=${DateTime.now().millisecondsSinceEpoch}'),
+                                  '/login?animate=${DateTime.now().millisecondsSinceEpoch}',
+                                ),
                               ),
                             ],
                           ),
@@ -212,11 +235,13 @@ class _ResetPasswordConfirmPageState extends State<ResetPasswordConfirmPage> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: isDark
+          ? const Color(0xFF0f2940)
+          : const Color(0xFFF3F8FC),
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        decoration: BoxDecoration(gradient: pageGradient),
         child: Stack(
           children: [
             Positioned(
@@ -279,17 +304,12 @@ class _ResetPasswordConfirmPageState extends State<ResetPasswordConfirmPage> {
                     ),
                     child: Container(
                       decoration: BoxDecoration(
-                        gradient: AppColors.cardGradient,
-                        borderRadius:
-                            BorderRadius.circular(isMobile ? 24 : 28),
-                        border: Border.all(
-                          color: AppColors.borderCyan,
-                          width: 1,
-                        ),
+                        gradient: cardGradient,
+                        borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
+                        border: Border.all(color: borderColor, width: 1),
                       ),
                       child: ClipRRect(
-                        borderRadius:
-                            BorderRadius.circular(isMobile ? 24 : 28),
+                        borderRadius: BorderRadius.circular(isMobile ? 24 : 28),
                         child: BackdropFilter(
                           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                           child: Padding(
@@ -302,7 +322,8 @@ class _ResetPasswordConfirmPageState extends State<ResetPasswordConfirmPage> {
                                 children: [
                                   TextButton.icon(
                                     onPressed: () => context.pushReplacement(
-                                        '/login?animate=${DateTime.now().millisecondsSinceEpoch}'),
+                                      '/login?animate=${DateTime.now().millisecondsSinceEpoch}',
+                                    ),
                                     icon: Icon(
                                       Icons.arrow_back,
                                       color: AppColors.cyan400,
@@ -323,9 +344,9 @@ class _ResetPasswordConfirmPageState extends State<ResetPasswordConfirmPage> {
                                       height: isMobile ? 64 : 72,
                                       decoration: BoxDecoration(
                                         gradient: AppColors.logoGradient,
-                                        borderRadius:
-                                            BorderRadius.circular(
-                                                isMobile ? 16 : 20),
+                                        borderRadius: BorderRadius.circular(
+                                          isMobile ? 16 : 20,
+                                        ),
                                       ),
                                       child: Icon(
                                         Icons.lock_reset,
@@ -341,7 +362,7 @@ class _ResetPasswordConfirmPageState extends State<ResetPasswordConfirmPage> {
                                     style: TextStyle(
                                       fontSize: isMobile ? 28 : 32,
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.textWhite,
+                                      color: titleColor,
                                     ),
                                   ),
                                   SizedBox(height: isMobile ? 8 : 12),
@@ -350,8 +371,7 @@ class _ResetPasswordConfirmPageState extends State<ResetPasswordConfirmPage> {
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: isMobile ? 14 : 16,
-                                      color:
-                                          AppColors.textCyan200.withOpacity(0.7),
+                                      color: subtitleColor,
                                     ),
                                   ),
                                   SizedBox(height: isMobile ? 32 : 40),
@@ -372,7 +392,9 @@ class _ResetPasswordConfirmPageState extends State<ResetPasswordConfirmPage> {
                                     obscureText: true,
                                     validator: (v) =>
                                         Validators.confirmPassword(
-                                            v, _newPasswordController.text.trim()),
+                                          v,
+                                          _newPasswordController.text.trim(),
+                                        ),
                                   ),
                                   SizedBox(height: isMobile ? 24 : 32),
                                   CustomButton(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../data/services/meeting_service.dart';
@@ -31,7 +32,13 @@ class _MeetingLoaderPageState extends State<MeetingLoaderPage> {
 
   Future<void> _loadAndNavigate() async {
     try {
-      final meetings = await _service.fetchMeetings();
+      final prefs = await SharedPreferences.getInstance();
+      final uid = prefs.getString('user_id');
+      if (uid == null || uid.isEmpty) {
+        if (mounted) setState(() => _error = 'User ID not found');
+        return;
+      }
+      final meetings = await _service.fetchMeetings(uid);
       if (!mounted) return;
       if (meetings.isNotEmpty) {
         context.go('/meeting/${meetings.first.meetingId}');

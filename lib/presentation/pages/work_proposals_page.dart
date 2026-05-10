@@ -11,6 +11,7 @@ import '../../data/services/project_service.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/theme/app_colors.dart';
 import '../widgets/navigation_bar.dart';
+import '../../core/l10n/app_strings.dart';
 
 class WorkProposalsPage extends StatefulWidget {
   const WorkProposalsPage({super.key});
@@ -24,7 +25,7 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
   final ProposalsApiService _apiService = ProposalsApiService();
   final ProjectService _projectService = ProjectService();
   late AnimationController _fadeController;
-  
+
   Set<String> _acceptedProposalIds = {};
   Set<String> _rejectedProposalIds = {};
   String? _sendingProposalId;
@@ -84,8 +85,8 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
       status: _decisionsMap[proposal.rowNumber.toString()] == 'accept'
           ? WorkProposalStatus.accepted
           : _decisionsMap[proposal.rowNumber.toString()] == 'reject'
-              ? WorkProposalStatus.rejected
-              : WorkProposalStatus.pending,
+          ? WorkProposalStatus.rejected
+          : WorkProposalStatus.pending,
       typeProjet: proposal.typeProjet,
       secteur: proposal.secteur,
       platforme: proposal.plateformes,
@@ -126,7 +127,7 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Proposition acceptée avec succès',
+            AppStrings.tr(context, 'proposalAccepted'),
             style: TextStyle(color: AppColors.textWhite),
           ),
           behavior: SnackBarBehavior.floating,
@@ -135,13 +136,19 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
           ),
           backgroundColor: AppColors.statusAccepted.withOpacity(0.9),
           margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(
+            label: AppStrings.tr(context, 'sprints'),
+            textColor: AppColors.cyan400,
+            onPressed: () => context.go('/project-management'),
+          ),
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Erreur lors de l\'acceptation',
+            AppStrings.tr(context, 'proposalAcceptError'),
             style: TextStyle(color: AppColors.textWhite),
           ),
           behavior: SnackBarBehavior.floating,
@@ -158,9 +165,8 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
   Future<void> _rejectProposal(WorkProposal proposal) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => _RejectConfirmationDialog(
-        proposalName: proposal.projectName,
-      ),
+      builder: (context) =>
+          _RejectConfirmationDialog(proposalName: proposal.projectName),
     );
 
     if (confirmed != true) return;
@@ -192,7 +198,7 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Proposition rejetée',
+            AppStrings.tr(context, 'proposalRejected'),
             style: TextStyle(color: AppColors.textWhite),
           ),
           behavior: SnackBarBehavior.floating,
@@ -207,7 +213,7 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Erreur lors du rejet',
+            AppStrings.tr(context, 'proposalRejectError'),
             style: TextStyle(color: AppColors.textWhite),
           ),
           behavior: SnackBarBehavior.floating,
@@ -238,11 +244,14 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
     final difference = now.difference(date);
 
     if (difference.inDays == 0) {
-      return 'Aujourd\'hui';
+      return AppStrings.tr(context, 'today');
     } else if (difference.inDays == 1) {
-      return 'Hier';
+      return AppStrings.tr(context, 'yesterday');
     } else if (difference.inDays < 7) {
-      return 'Il y a ${difference.inDays} jours';
+      return AppStrings.tr(
+        context,
+        'daysAgo',
+      ).replaceFirst('{days}', difference.inDays.toString());
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
@@ -269,11 +278,11 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
   String _getStatusText(WorkProposalStatus status) {
     switch (status) {
       case WorkProposalStatus.pending:
-        return 'En attente';
+        return AppStrings.tr(context, 'pending');
       case WorkProposalStatus.accepted:
-        return 'Acceptée';
+        return AppStrings.tr(context, 'accepted');
       case WorkProposalStatus.rejected:
-        return 'Rejetée';
+        return AppStrings.tr(context, 'rejected');
     }
   }
 
@@ -324,6 +333,7 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final padding = Responsive.getResponsiveValue(
       context,
       mobile: 24.0,
@@ -333,16 +343,26 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
-          ),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF0f2940),
+                    Color(0xFF1a3a52),
+                    Color(0xFF0f2940),
+                  ],
+                )
+              : const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFF7FBFF),
+                    Color(0xFFEAF4FB),
+                    Color(0xFFF7FBFF),
+                  ],
+                ),
         ),
         child: SafeArea(
           bottom: false,
@@ -352,90 +372,28 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
               FutureBuilder<List<Proposal>>(
                 future: _apiService.fetchProposals(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.cyan400,
-                        ),
-                      ),
-                    );
-                  }
+                  // Always render the header + stats (with 0 fallbacks) so
+                  // the page never feels empty: the user sees the layout
+                  // even while loading, on error, or when there are no
+                  // proposals yet.
+                  final isLoading =
+                      snapshot.connectionState == ConnectionState.waiting;
+                  final hasError = snapshot.hasError;
+                  final proposalsRaw = snapshot.data ?? const <Proposal>[];
 
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            LucideIcons.alertCircle,
-                            size: 48,
-                            color: AppColors.textCyan200,
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Erreur de chargement',
-                            style: TextStyle(
-                              color: AppColors.textWhite,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            snapshot.error.toString(),
-                            style: TextStyle(
-                              color: AppColors.textCyan200,
-                              fontSize: 14,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            LucideIcons.inbox,
-                            size: 64,
-                            color: AppColors.textCyan200.withOpacity(0.5),
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Aucune proposition',
-                            style: TextStyle(
-                              color: AppColors.textWhite,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Aucune proposition de travail disponible',
-                            style: TextStyle(
-                              color: AppColors.textCyan200,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  final proposals = snapshot.data!;
+                  final proposals = proposalsRaw;
                   final workProposals = proposals
                       .map((p) => _convertProposalToWorkProposal(p))
                       .map((p) {
                         if (_acceptedProposalIds.contains(p.id)) {
-                          return p.copyWith(status: WorkProposalStatus.accepted);
+                          return p.copyWith(
+                            status: WorkProposalStatus.accepted,
+                          );
                         }
                         if (_rejectedProposalIds.contains(p.id)) {
-                          return p.copyWith(status: WorkProposalStatus.rejected);
+                          return p.copyWith(
+                            status: WorkProposalStatus.rejected,
+                          );
                         }
                         return p;
                       })
@@ -468,9 +426,9 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                       top: padding,
                       bottom: Responsive.getResponsiveValue(
                         context,
-                        mobile: 100.0,
-                        tablet: 120.0,
-                        desktop: 140.0,
+                        mobile: 155.0,
+                        tablet: 175.0,
+                        desktop: 195.0,
                       ),
                     ),
                     child: Column(
@@ -482,21 +440,23 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                             .fadeIn(duration: 500.ms)
                             .slideY(begin: -0.2, end: 0, duration: 500.ms),
 
-                        SizedBox(height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 20.0,
-                          tablet: 24.0,
-                          desktop: 28.0,
-                        )),
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 20.0,
+                            tablet: 24.0,
+                            desktop: 28.0,
+                          ),
+                        ),
 
                         // Stats Cards
                         _buildStatsCards(
-                          context,
-                          isMobile,
-                          pendingCount,
-                          acceptedCount,
-                          rejectedCount,
-                        )
+                              context,
+                              isMobile,
+                              pendingCount,
+                              acceptedCount,
+                              rejectedCount,
+                            )
                             .animate()
                             .fadeIn(delay: 100.ms, duration: 300.ms)
                             .scale(
@@ -506,24 +466,67 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                               duration: 300.ms,
                             ),
 
-                        SizedBox(height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 20.0,
-                          tablet: 24.0,
-                          desktop: 28.0,
-                        )),
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 20.0,
+                            tablet: 24.0,
+                            desktop: 28.0,
+                          ),
+                        ),
+
+                        // Loading / Error / Empty placeholder. The header and
+                        // stats above are always visible (with 0 fallbacks)
+                        // so the page never feels blank.
+                        if (isLoading)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 32),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.cyan400,
+                                ),
+                              ),
+                            ),
+                          )
+                        else if (hasError)
+                          _buildInlineEmptyState(
+                            context,
+                            isDark: isDark,
+                            icon: LucideIcons.alertCircle,
+                            title: AppStrings.tr(context, 'loadingError'),
+                            subtitle: AppStrings.tr(
+                              context,
+                              'noWorkProposalsAvailable',
+                            ),
+                          )
+                        else if (workProposals.isEmpty)
+                          _buildInlineEmptyState(
+                            context,
+                            isDark: isDark,
+                            icon: LucideIcons.inbox,
+                            title: AppStrings.tr(context, 'noProposals'),
+                            subtitle: AppStrings.tr(
+                              context,
+                              'noWorkProposalsAvailable',
+                            ),
+                          ),
 
                         // Proposals List
                         if (pendingProposals.isNotEmpty) ...[
-                          _buildSectionTitle(context, 'En attente', isMobile)
-                              .animate()
-                              .fadeIn(delay: 200.ms, duration: 300.ms),
-                          SizedBox(height: Responsive.getResponsiveValue(
+                          _buildSectionTitle(
                             context,
-                            mobile: 12.0,
-                            tablet: 14.0,
-                            desktop: 16.0,
-                          )),
+                            AppStrings.tr(context, 'pending'),
+                            isMobile,
+                          ).animate().fadeIn(delay: 200.ms, duration: 300.ms),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 14.0,
+                              desktop: 16.0,
+                            ),
+                          ),
                           ...pendingProposals.asMap().entries.map((entry) {
                             final index = entry.key;
                             final proposal = entry.value;
@@ -536,43 +539,54 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                                   desktop: 16.0,
                                 ),
                               ),
-                              child: _buildProposalCard(
-                                context,
-                                isMobile,
-                                proposal,
-                                index,
-                              )
-                                  .animate()
-                                  .fadeIn(
-                                    delay: Duration(milliseconds: 300 + (index * 100)),
-                                    duration: 300.ms,
-                                  )
-                                  .slideY(
-                                    begin: 0.2,
-                                    end: 0,
-                                    delay: Duration(milliseconds: 300 + (index * 100)),
-                                    duration: 300.ms,
-                                  ),
+                              child:
+                                  _buildProposalCard(
+                                        context,
+                                        isMobile,
+                                        proposal,
+                                        index,
+                                      )
+                                      .animate()
+                                      .fadeIn(
+                                        delay: Duration(
+                                          milliseconds: 300 + (index * 100),
+                                        ),
+                                        duration: 300.ms,
+                                      )
+                                      .slideY(
+                                        begin: 0.2,
+                                        end: 0,
+                                        delay: Duration(
+                                          milliseconds: 300 + (index * 100),
+                                        ),
+                                        duration: 300.ms,
+                                      ),
                             );
                           }),
                         ],
 
                         if (acceptedProposals.isNotEmpty) ...[
-                          SizedBox(height: Responsive.getResponsiveValue(
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 20.0,
+                              tablet: 24.0,
+                              desktop: 28.0,
+                            ),
+                          ),
+                          _buildSectionTitle(
                             context,
-                            mobile: 20.0,
-                            tablet: 24.0,
-                            desktop: 28.0,
-                          )),
-                          _buildSectionTitle(context, 'Acceptées', isMobile)
-                              .animate()
-                              .fadeIn(delay: 400.ms, duration: 300.ms),
-                          SizedBox(height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 12.0,
-                            tablet: 14.0,
-                            desktop: 16.0,
-                          )),
+                            AppStrings.tr(context, 'accepted'),
+                            isMobile,
+                          ).animate().fadeIn(delay: 400.ms, duration: 300.ms),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 14.0,
+                              desktop: 16.0,
+                            ),
+                          ),
                           ...acceptedProposals.asMap().entries.map((entry) {
                             final index = entry.key;
                             final proposal = entry.value;
@@ -585,43 +599,54 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                                   desktop: 16.0,
                                 ),
                               ),
-                              child: _buildProposalCard(
-                                context,
-                                isMobile,
-                                proposal,
-                                index,
-                              )
-                                  .animate()
-                                  .fadeIn(
-                                    delay: Duration(milliseconds: 500 + (index * 100)),
-                                    duration: 300.ms,
-                                  )
-                                  .slideY(
-                                    begin: 0.2,
-                                    end: 0,
-                                    delay: Duration(milliseconds: 500 + (index * 100)),
-                                    duration: 300.ms,
-                                  ),
+                              child:
+                                  _buildProposalCard(
+                                        context,
+                                        isMobile,
+                                        proposal,
+                                        index,
+                                      )
+                                      .animate()
+                                      .fadeIn(
+                                        delay: Duration(
+                                          milliseconds: 500 + (index * 100),
+                                        ),
+                                        duration: 300.ms,
+                                      )
+                                      .slideY(
+                                        begin: 0.2,
+                                        end: 0,
+                                        delay: Duration(
+                                          milliseconds: 500 + (index * 100),
+                                        ),
+                                        duration: 300.ms,
+                                      ),
                             );
                           }),
                         ],
 
                         if (rejectedProposals.isNotEmpty) ...[
-                          SizedBox(height: Responsive.getResponsiveValue(
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 20.0,
+                              tablet: 24.0,
+                              desktop: 28.0,
+                            ),
+                          ),
+                          _buildSectionTitle(
                             context,
-                            mobile: 20.0,
-                            tablet: 24.0,
-                            desktop: 28.0,
-                          )),
-                          _buildSectionTitle(context, 'Rejetées', isMobile)
-                              .animate()
-                              .fadeIn(delay: 600.ms, duration: 300.ms),
-                          SizedBox(height: Responsive.getResponsiveValue(
-                            context,
-                            mobile: 12.0,
-                            tablet: 14.0,
-                            desktop: 16.0,
-                          )),
+                            AppStrings.tr(context, 'rejected'),
+                            isMobile,
+                          ).animate().fadeIn(delay: 600.ms, duration: 300.ms),
+                          SizedBox(
+                            height: Responsive.getResponsiveValue(
+                              context,
+                              mobile: 12.0,
+                              tablet: 14.0,
+                              desktop: 16.0,
+                            ),
+                          ),
                           ...rejectedProposals.asMap().entries.map((entry) {
                             final index = entry.key;
                             final proposal = entry.value;
@@ -634,23 +659,28 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                                   desktop: 16.0,
                                 ),
                               ),
-                              child: _buildProposalCard(
-                                context,
-                                isMobile,
-                                proposal,
-                                index,
-                              )
-                                  .animate()
-                                  .fadeIn(
-                                    delay: Duration(milliseconds: 700 + (index * 100)),
-                                    duration: 300.ms,
-                                  )
-                                  .slideY(
-                                    begin: 0.2,
-                                    end: 0,
-                                    delay: Duration(milliseconds: 700 + (index * 100)),
-                                    duration: 300.ms,
-                                  ),
+                              child:
+                                  _buildProposalCard(
+                                        context,
+                                        isMobile,
+                                        proposal,
+                                        index,
+                                      )
+                                      .animate()
+                                      .fadeIn(
+                                        delay: Duration(
+                                          milliseconds: 700 + (index * 100),
+                                        ),
+                                        duration: 300.ms,
+                                      )
+                                      .slideY(
+                                        begin: 0.2,
+                                        end: 0,
+                                        delay: Duration(
+                                          milliseconds: 700 + (index * 100),
+                                        ),
+                                        duration: 300.ms,
+                                      ),
                             );
                           }),
                         ],
@@ -665,9 +695,7 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: NavigationBarWidget(
-                  currentPath: '/work-proposals',
-                ),
+                child: NavigationBarWidget(currentPath: '/work-proposals'),
               ),
             ],
           ),
@@ -676,7 +704,67 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
     );
   }
 
+  Widget _buildInlineEmptyState(
+    BuildContext context, {
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.cyan500.withOpacity(0.06)
+            : const Color(0xFFF3F8FC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? AppColors.cyan500.withOpacity(0.18)
+              : const Color(0xFFD8E6F0),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 48,
+            color: isDark
+                ? AppColors.textCyan200.withOpacity(0.6)
+                : const Color(0xFF9AB3C3),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isDark
+                  ? AppColors.textWhite
+                  : const Color(0xFF12263A),
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isDark
+                  ? AppColors.textCyan200
+                  : const Color(0xFF5B7B92),
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeader(BuildContext context, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -713,18 +801,20 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                 ),
               ),
             ),
-            SizedBox(width: Responsive.getResponsiveValue(
-              context,
-              mobile: 12.0,
-              tablet: 14.0,
-              desktop: 16.0,
-            )),
+            SizedBox(
+              width: Responsive.getResponsiveValue(
+                context,
+                mobile: 12.0,
+                tablet: 14.0,
+                desktop: 16.0,
+              ),
+            ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Propositions de travail',
+                    AppStrings.tr(context, 'workProposalsTitle'),
                     style: TextStyle(
                       fontSize: Responsive.getResponsiveValue(
                         context,
@@ -733,17 +823,21 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                         desktop: 32.0,
                       ),
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textWhite,
+                      color: isDark
+                          ? AppColors.textWhite
+                          : const Color(0xFF12263A),
                     ),
                   ),
-                  SizedBox(height: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 6.0,
-                    tablet: 8.0,
-                    desktop: 10.0,
-                  )),
+                  SizedBox(
+                    height: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 6.0,
+                      tablet: 8.0,
+                      desktop: 10.0,
+                    ),
+                  ),
                   Text(
-                    'Gérez vos opportunités professionnelles',
+                    AppStrings.tr(context, 'manageOpportunities'),
                     style: TextStyle(
                       fontSize: Responsive.getResponsiveValue(
                         context,
@@ -751,10 +845,20 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                         tablet: 14.0,
                         desktop: 15.0,
                       ),
-                      color: AppColors.textCyan200.withOpacity(0.7),
+                      color: isDark
+                          ? AppColors.textCyan200.withOpacity(0.7)
+                          : const Color(0xFF5B7B92),
                     ),
                   ),
                 ],
+              ),
+            ),
+            IconButton(
+              tooltip: AppStrings.tr(context, 'sprintsAndEmailsByEmployee'),
+              onPressed: () => context.push('/project-management'),
+              icon: Icon(
+                LucideIcons.mails,
+                color: isDark ? AppColors.cyan400 : const Color(0xFF0B6A88),
               ),
             ),
           ],
@@ -781,12 +885,14 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
             isMobile: isMobile,
           ),
         ),
-        SizedBox(width: Responsive.getResponsiveValue(
-          context,
-          mobile: 12.0,
-          tablet: 14.0,
-          desktop: 16.0,
-        )),
+        SizedBox(
+          width: Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 14.0,
+            desktop: 16.0,
+          ),
+        ),
         Expanded(
           child: _StatCard(
             value: acceptedCount.toString(),
@@ -796,12 +902,14 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
             isMobile: isMobile,
           ),
         ),
-        SizedBox(width: Responsive.getResponsiveValue(
-          context,
-          mobile: 12.0,
-          tablet: 14.0,
-          desktop: 16.0,
-        )),
+        SizedBox(
+          width: Responsive.getResponsiveValue(
+            context,
+            mobile: 12.0,
+            tablet: 14.0,
+            desktop: 16.0,
+          ),
+        ),
         Expanded(
           child: _StatCard(
             value: rejectedCount.toString(),
@@ -816,6 +924,7 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
   }
 
   Widget _buildSectionTitle(BuildContext context, String title, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: EdgeInsets.only(
         bottom: Responsive.getResponsiveValue(
@@ -830,7 +939,7 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
           Icon(
             LucideIcons.star,
             size: 16,
-            color: AppColors.cyan400,
+            color: isDark ? AppColors.cyan400 : const Color(0xFF0B6A88),
           ),
           SizedBox(width: 8),
           Text(
@@ -843,7 +952,7 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                 desktop: 22.0,
               ),
               fontWeight: FontWeight.bold,
-              color: AppColors.textWhite,
+              color: isDark ? AppColors.textWhite : const Color(0xFF12263A),
             ),
           ),
         ],
@@ -857,6 +966,7 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
     WorkProposal proposal,
     int index,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final statusColor = _getStatusColor(proposal.status);
     final projectColors = _getProjectTypeColors(proposal.typeProjet);
     final isAccepted = proposal.status == WorkProposalStatus.accepted;
@@ -864,31 +974,36 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
     final isSending = _sendingProposalId == proposal.id;
 
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 16.0,
-        tablet: 18.0,
-        desktop: 20.0,
-      )),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 16.0,
+          tablet: 18.0,
+          desktop: 20.0,
+        ),
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF1e4a66).withOpacity(0.4),
-            const Color(0xFF16384d).withOpacity(0.4),
+            isDark
+                ? const Color(0xFF1e4a66).withOpacity(0.4)
+                : const Color(0xFFF9FCFF),
+            isDark
+                ? const Color(0xFF16384d).withOpacity(0.4)
+                : const Color(0xFFEAF4FB),
           ],
         ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
-        border: Border.all(
-          color: statusColor.withOpacity(0.2),
-          width: 1,
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
         ),
+        border: Border.all(color: statusColor.withOpacity(0.2), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: BackdropFilter(
@@ -929,12 +1044,14 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                         end: Alignment.bottomRight,
                         colors: projectColors['bg'] as List<Color>,
                       ),
-                      borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                        context,
-                        mobile: 12.0,
-                        tablet: 13.0,
-                        desktop: 14.0,
-                      )),
+                      borderRadius: BorderRadius.circular(
+                        Responsive.getResponsiveValue(
+                          context,
+                          mobile: 12.0,
+                          tablet: 13.0,
+                          desktop: 14.0,
+                        ),
+                      ),
                       border: Border.all(
                         color: projectColors['border'] as Color,
                         width: 1,
@@ -951,12 +1068,14 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                       color: projectColors['text'] as Color,
                     ),
                   ),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 12.0,
-                    tablet: 14.0,
-                    desktop: 16.0,
-                  )),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 12.0,
+                      tablet: 14.0,
+                      desktop: 16.0,
+                    ),
+                  ),
                   // Title and Category
                   Expanded(
                     child: Column(
@@ -972,15 +1091,19 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                               desktop: 18.0,
                             ),
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textWhite,
+                            color: isDark
+                                ? AppColors.textWhite
+                                : const Color(0xFF12263A),
                           ),
                         ),
-                        SizedBox(height: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 6.0,
-                          tablet: 7.0,
-                          desktop: 8.0,
-                        )),
+                        SizedBox(
+                          height: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 6.0,
+                            tablet: 7.0,
+                            desktop: 8.0,
+                          ),
+                        ),
                         if (proposal.secteur.isNotEmpty)
                           Container(
                             padding: EdgeInsets.symmetric(
@@ -1001,12 +1124,14 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                               gradient: LinearGradient(
                                 colors: projectColors['bg'] as List<Color>,
                               ),
-                              borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                                context,
-                                mobile: 6.0,
-                                tablet: 7.0,
-                                desktop: 8.0,
-                              )),
+                              borderRadius: BorderRadius.circular(
+                                Responsive.getResponsiveValue(
+                                  context,
+                                  mobile: 6.0,
+                                  tablet: 7.0,
+                                  desktop: 8.0,
+                                ),
+                              ),
                               border: Border.all(
                                 color: projectColors['border'] as Color,
                                 width: 1,
@@ -1047,12 +1172,14 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                     ),
                     decoration: BoxDecoration(
                       color: statusColor,
-                      borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-                        context,
-                        mobile: 8.0,
-                        tablet: 9.0,
-                        desktop: 10.0,
-                      )),
+                      borderRadius: BorderRadius.circular(
+                        Responsive.getResponsiveValue(
+                          context,
+                          mobile: 8.0,
+                          tablet: 9.0,
+                          desktop: 10.0,
+                        ),
+                      ),
                     ),
                     child: Text(
                       _getStatusText(proposal.status),
@@ -1070,19 +1197,23 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                   ),
                 ],
               ),
-              SizedBox(height: Responsive.getResponsiveValue(
-                context,
-                mobile: 16.0,
-                tablet: 18.0,
-                desktop: 20.0,
-              )),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 16.0,
+                  tablet: 18.0,
+                  desktop: 20.0,
+                ),
+              ),
               // Client Info
               Row(
                 children: [
                   Icon(
                     LucideIcons.user,
                     size: 16,
-                    color: AppColors.textCyan200.withOpacity(0.7),
+                    color: isDark
+                        ? AppColors.textCyan200.withOpacity(0.7)
+                        : const Color(0xFF5B7B92),
                   ),
                   SizedBox(width: 8),
                   Expanded(
@@ -1095,24 +1226,30 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                           tablet: 14.0,
                           desktop: 15.0,
                         ),
-                        color: AppColors.textCyan200.withOpacity(0.7),
+                        color: isDark
+                            ? AppColors.textCyan200.withOpacity(0.7)
+                            : const Color(0xFF5B7B92),
                       ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: Responsive.getResponsiveValue(
-                context,
-                mobile: 8.0,
-                tablet: 10.0,
-                desktop: 12.0,
-              )),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 8.0,
+                  tablet: 10.0,
+                  desktop: 12.0,
+                ),
+              ),
               Row(
                 children: [
                   Icon(
                     LucideIcons.mail,
                     size: 16,
-                    color: AppColors.textCyan200.withOpacity(0.7),
+                    color: isDark
+                        ? AppColors.textCyan200.withOpacity(0.7)
+                        : const Color(0xFF5B7B92),
                   ),
                   SizedBox(width: 8),
                   Expanded(
@@ -1125,39 +1262,51 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                           tablet: 14.0,
                           desktop: 15.0,
                         ),
-                        color: AppColors.textCyan200.withOpacity(0.7),
+                        color: isDark
+                            ? AppColors.textCyan200.withOpacity(0.7)
+                            : const Color(0xFF5B7B92),
                       ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: Responsive.getResponsiveValue(
-                context,
-                mobile: 16.0,
-                tablet: 18.0,
-                desktop: 20.0,
-              )),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 16.0,
+                  tablet: 18.0,
+                  desktop: 20.0,
+                ),
+              ),
               // Budget and Deadline
               Row(
                 children: [
                   Expanded(
                     child: Container(
-                      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                        context,
-                        mobile: 12.0,
-                        tablet: 14.0,
-                        desktop: 16.0,
-                      )),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryMedium.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                      padding: EdgeInsets.all(
+                        Responsive.getResponsiveValue(
                           context,
-                          mobile: 10.0,
-                          tablet: 11.0,
-                          desktop: 12.0,
-                        )),
+                          mobile: 12.0,
+                          tablet: 14.0,
+                          desktop: 16.0,
+                        ),
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.primaryMedium.withOpacity(0.3)
+                            : Colors.white.withOpacity(0.75),
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 10.0,
+                            tablet: 11.0,
+                            desktop: 12.0,
+                          ),
+                        ),
                         border: Border.all(
-                          color: AppColors.cyan500.withOpacity(0.1),
+                          color: isDark
+                              ? AppColors.cyan500.withOpacity(0.1)
+                              : const Color(0xFFC7DDE9),
                           width: 1,
                         ),
                       ),
@@ -1182,7 +1331,9 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                                       tablet: 11.0,
                                       desktop: 12.0,
                                     ),
-                                    color: AppColors.textCyan200.withOpacity(0.6),
+                                    color: isDark
+                                        ? AppColors.textCyan200.withOpacity(0.6)
+                                        : const Color(0xFF6E8DA1),
                                   ),
                                 ),
                                 SizedBox(height: 4),
@@ -1196,7 +1347,9 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                                       desktop: 16.0,
                                     ),
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.textWhite,
+                                    color: isDark
+                                        ? AppColors.textWhite
+                                        : const Color(0xFF12263A),
                                   ),
                                 ),
                               ],
@@ -1206,30 +1359,40 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                       ),
                     ),
                   ),
-                  SizedBox(width: Responsive.getResponsiveValue(
-                    context,
-                    mobile: 12.0,
-                    tablet: 14.0,
-                    desktop: 16.0,
-                  )),
+                  SizedBox(
+                    width: Responsive.getResponsiveValue(
+                      context,
+                      mobile: 12.0,
+                      tablet: 14.0,
+                      desktop: 16.0,
+                    ),
+                  ),
                   Expanded(
                     child: Container(
-                      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-                        context,
-                        mobile: 12.0,
-                        tablet: 14.0,
-                        desktop: 16.0,
-                      )),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryMedium.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
+                      padding: EdgeInsets.all(
+                        Responsive.getResponsiveValue(
                           context,
-                          mobile: 10.0,
-                          tablet: 11.0,
-                          desktop: 12.0,
-                        )),
+                          mobile: 12.0,
+                          tablet: 14.0,
+                          desktop: 16.0,
+                        ),
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.primaryMedium.withOpacity(0.3)
+                            : Colors.white.withOpacity(0.75),
+                        borderRadius: BorderRadius.circular(
+                          Responsive.getResponsiveValue(
+                            context,
+                            mobile: 10.0,
+                            tablet: 11.0,
+                            desktop: 12.0,
+                          ),
+                        ),
                         border: Border.all(
-                          color: AppColors.cyan500.withOpacity(0.1),
+                          color: isDark
+                              ? AppColors.cyan500.withOpacity(0.1)
+                              : const Color(0xFFC7DDE9),
                           width: 1,
                         ),
                       ),
@@ -1254,7 +1417,9 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                                       tablet: 11.0,
                                       desktop: 12.0,
                                     ),
-                                    color: AppColors.textCyan200.withOpacity(0.6),
+                                    color: isDark
+                                        ? AppColors.textCyan200.withOpacity(0.6)
+                                        : const Color(0xFF6E8DA1),
                                   ),
                                 ),
                                 SizedBox(height: 4),
@@ -1268,7 +1433,9 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                                       desktop: 16.0,
                                     ),
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.textWhite,
+                                    color: isDark
+                                        ? AppColors.textWhite
+                                        : const Color(0xFF12263A),
                                   ),
                                 ),
                               ],
@@ -1280,19 +1447,23 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                   ),
                 ],
               ),
-              SizedBox(height: Responsive.getResponsiveValue(
-                context,
-                mobile: 16.0,
-                tablet: 18.0,
-                desktop: 20.0,
-              )),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 16.0,
+                  tablet: 18.0,
+                  desktop: 20.0,
+                ),
+              ),
               // Date
               Row(
                 children: [
                   Icon(
                     LucideIcons.clock,
                     size: 14,
-                    color: AppColors.textCyan200.withOpacity(0.5),
+                    color: isDark
+                        ? AppColors.textCyan200.withOpacity(0.5)
+                        : const Color(0xFF7A96AA),
                   ),
                   SizedBox(width: 6),
                   Text(
@@ -1304,17 +1475,21 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                         tablet: 13.0,
                         desktop: 14.0,
                       ),
-                      color: AppColors.textCyan200.withOpacity(0.5),
+                      color: isDark
+                          ? AppColors.textCyan200.withOpacity(0.5)
+                          : const Color(0xFF7A96AA),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: Responsive.getResponsiveValue(
-                context,
-                mobile: 16.0,
-                tablet: 18.0,
-                desktop: 20.0,
-              )),
+              SizedBox(
+                height: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 16.0,
+                  tablet: 18.0,
+                  desktop: 20.0,
+                ),
+              ),
               // Action Buttons: Détails full width, then the other 2 side-by-side (half each)
               if (isAccepted) ...[
                 Column(
@@ -1328,12 +1503,14 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                       isLoading: false,
                       isMobile: isMobile,
                     ),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 8.0,
-                      tablet: 10.0,
-                      desktop: 12.0,
-                    )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 8.0,
+                        tablet: 10.0,
+                        desktop: 12.0,
+                      ),
+                    ),
                     Row(
                       children: [
                         Expanded(
@@ -1346,12 +1523,14 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                             isMobile: isMobile,
                           ),
                         ),
-                        SizedBox(width: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 8.0,
-                          tablet: 10.0,
-                          desktop: 12.0,
-                        )),
+                        SizedBox(
+                          width: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 8.0,
+                            tablet: 10.0,
+                            desktop: 12.0,
+                          ),
+                        ),
                         Expanded(
                           child: _ActionButton(
                             label: 'Comment travailler',
@@ -1378,12 +1557,14 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                       isLoading: false,
                       isMobile: isMobile,
                     ),
-                    SizedBox(height: Responsive.getResponsiveValue(
-                      context,
-                      mobile: 8.0,
-                      tablet: 10.0,
-                      desktop: 12.0,
-                    )),
+                    SizedBox(
+                      height: Responsive.getResponsiveValue(
+                        context,
+                        mobile: 8.0,
+                        tablet: 10.0,
+                        desktop: 12.0,
+                      ),
+                    ),
                     Row(
                       children: [
                         Expanded(
@@ -1391,23 +1572,29 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                             label: 'Accepter',
                             icon: LucideIcons.check,
                             color: AppColors.statusAccepted,
-                            onTap: isSending ? null : () => _acceptProposal(proposal),
+                            onTap: isSending
+                                ? null
+                                : () => _acceptProposal(proposal),
                             isLoading: isSending,
                             isMobile: isMobile,
                           ),
                         ),
-                        SizedBox(width: Responsive.getResponsiveValue(
-                          context,
-                          mobile: 8.0,
-                          tablet: 10.0,
-                          desktop: 12.0,
-                        )),
+                        SizedBox(
+                          width: Responsive.getResponsiveValue(
+                            context,
+                            mobile: 8.0,
+                            tablet: 10.0,
+                            desktop: 12.0,
+                          ),
+                        ),
                         Expanded(
                           child: _ActionButton(
                             label: 'Rejeter',
                             icon: LucideIcons.x,
                             color: AppColors.statusRejected,
-                            onTap: isSending ? null : () => _rejectProposal(proposal),
+                            onTap: isSending
+                                ? null
+                                : () => _rejectProposal(proposal),
                             isLoading: isSending,
                             isMobile: isMobile,
                           ),
@@ -1442,40 +1629,48 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(
-        context,
-        mobile: 16.0,
-        tablet: 18.0,
-        desktop: 20.0,
-      )),
+      padding: EdgeInsets.all(
+        Responsive.getResponsiveValue(
+          context,
+          mobile: 16.0,
+          tablet: 18.0,
+          desktop: 20.0,
+        ),
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.primaryLight.withOpacity(0.4),
-            AppColors.primaryDarker.withOpacity(0.4),
+            isDark
+                ? AppColors.primaryLight.withOpacity(0.4)
+                : const Color(0xFFF9FCFF),
+            isDark
+                ? AppColors.primaryDarker.withOpacity(0.4)
+                : const Color(0xFFEAF4FB),
           ],
         ),
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1.5,
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
         ),
+        border: Border.all(color: color.withOpacity(0.2), width: 1.5),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-          context,
-          mobile: 16.0,
-          tablet: 18.0,
-          desktop: 20.0,
-        )),
+        borderRadius: BorderRadius.circular(
+          Responsive.getResponsiveValue(
+            context,
+            mobile: 16.0,
+            tablet: 18.0,
+            desktop: 20.0,
+          ),
+        ),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Column(
@@ -1501,12 +1696,12 @@ class _StatCard extends StatelessWidget {
                     desktop: 32.0,
                   ),
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textWhite,
+                  color: isDark ? AppColors.textWhite : const Color(0xFF12263A),
                 ),
               ),
               SizedBox(height: 4),
               Text(
-                label,
+                AppStrings.tr(context, label),
                 style: TextStyle(
                   fontSize: Responsive.getResponsiveValue(
                     context,
@@ -1514,7 +1709,7 @@ class _StatCard extends StatelessWidget {
                     tablet: 13.0,
                     desktop: 14.0,
                   ),
-                  color: AppColors.textWhite,
+                  color: isDark ? AppColors.textWhite : const Color(0xFF5B7B92),
                 ),
               ),
             ],
@@ -1563,16 +1758,15 @@ class _ActionButton extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(Responsive.getResponsiveValue(
-            context,
-            mobile: 10.0,
-            tablet: 11.0,
-            desktop: 12.0,
-          )),
-          border: Border.all(
-            color: color.withOpacity(0.3),
-            width: 1,
+          borderRadius: BorderRadius.circular(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 10.0,
+              tablet: 11.0,
+              desktop: 12.0,
+            ),
           ),
+          border: Border.all(color: color.withOpacity(0.3), width: 1),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1608,15 +1802,17 @@ class _ActionButton extends StatelessWidget {
                 ),
                 color: color,
               ),
-            SizedBox(width: Responsive.getResponsiveValue(
-              context,
-              mobile: 6.0,
-              tablet: 8.0,
-              desktop: 10.0,
-            )),
+            SizedBox(
+              width: Responsive.getResponsiveValue(
+                context,
+                mobile: 6.0,
+                tablet: 8.0,
+                desktop: 10.0,
+              ),
+            ),
             Flexible(
               child: Text(
-                label,
+                AppStrings.tr(context, label),
                 style: TextStyle(
                   fontSize: Responsive.getResponsiveValue(
                     context,
@@ -1644,11 +1840,10 @@ class _RejectConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
-      backgroundColor: AppColors.primaryDark,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      backgroundColor: isDark ? AppColors.primaryDark : const Color(0xFFF7FBFF),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
           Icon(
@@ -1659,9 +1854,9 @@ class _RejectConfirmationDialog extends StatelessWidget {
           SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Confirmer le rejet',
+              AppStrings.tr(context, 'confirmRejection'),
               style: TextStyle(
-                color: AppColors.textWhite,
+                color: isDark ? AppColors.textWhite : const Color(0xFF12263A),
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -1669,21 +1864,25 @@ class _RejectConfirmationDialog extends StatelessWidget {
         ],
       ),
       content: Text(
-        'Êtes-vous sûr de vouloir rejeter cette proposition ?',
-        style: TextStyle(color: AppColors.textCyan200),
+        AppStrings.tr(context, 'areYouSureReject'),
+        style: TextStyle(
+          color: isDark ? AppColors.textCyan200 : const Color(0xFF5B7B92),
+        ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
           child: Text(
-            'Annuler',
-            style: TextStyle(color: AppColors.textCyan200),
+            AppStrings.tr(context, 'cancel'),
+            style: TextStyle(
+              color: isDark ? AppColors.textCyan200 : const Color(0xFF5B7B92),
+            ),
           ),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(true),
           child: Text(
-            'Rejeter',
+            AppStrings.tr(context, 'reject'),
             style: TextStyle(color: AppColors.statusRejected),
           ),
         ),

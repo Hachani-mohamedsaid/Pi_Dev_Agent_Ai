@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pi_dev_agentia/core/l10n/app_strings.dart';
+import 'package:pi_dev_agentia/generated/l10n.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../state/auth_controller.dart';
@@ -13,21 +13,33 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
     final user = controller.currentUser;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final background = isDark
+        ? AppColors.primaryGradient
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF7FBFF), Color(0xFFE7F2FA), Color(0xFFF7FBFF)],
+          );
+    final titleColor = isDark ? AppColors.textWhite : const Color(0xFF11263A);
+    final subtitleColor = isDark
+        ? AppColors.textCyan200
+        : const Color(0xFF4B6780);
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        decoration: BoxDecoration(gradient: background),
         child: SafeArea(
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  AppStrings.tr(context, 'welcome'),
+                  S.of(context).welcome,
                   style: TextStyle(
                     fontSize: isMobile ? 32 : 40,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textWhite,
+                    color: titleColor,
                   ),
                 ),
                 if (user != null) ...[
@@ -36,7 +48,7 @@ class HomePage extends StatelessWidget {
                     user.name,
                     style: TextStyle(
                       fontSize: isMobile ? 24 : 28,
-                      color: AppColors.textCyan200,
+                      color: subtitleColor,
                     ),
                   ),
                   SizedBox(height: isMobile ? 8 : 12),
@@ -44,7 +56,7 @@ class HomePage extends StatelessWidget {
                     user.email,
                     style: TextStyle(
                       fontSize: isMobile ? 16 : 18,
-                      color: AppColors.textCyan200.withOpacity(0.7),
+                      color: subtitleColor.withOpacity(isDark ? 0.7 : 0.9),
                     ),
                   ),
                 ],

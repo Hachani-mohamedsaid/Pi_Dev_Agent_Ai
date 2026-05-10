@@ -28,7 +28,10 @@ class AssistantFeedbackService {
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      reportHttpResponseError(feature: 'assistant.feedback.legacy', response: response);
+      reportHttpResponseError(
+        feature: 'assistant.feedback.legacy',
+        response: response,
+      );
       throw Exception('Failed to send feedback (${response.statusCode})');
     }
   }

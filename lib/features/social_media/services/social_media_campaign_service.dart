@@ -41,7 +41,10 @@ class SocialMediaCampaignService {
       }),
     );
     if (res.statusCode != 200 && res.statusCode != 201) {
-      reportHttpResponseError(feature: 'social_campaign.generate', response: res);
+      reportHttpResponseError(
+        feature: 'social_campaign.generate',
+        response: res,
+      );
       throw SocialMediaCampaignException(
         'generateCampaign failed: ${res.statusCode}',
         res.body,
@@ -90,10 +93,7 @@ class SocialMediaCampaignService {
     final res = await http.post(
       Uri.parse('$_base/social-campaign/$campaignId/send'),
       headers: buildJsonHeaders(),
-      body: jsonEncode({
-        'recipients': recipients,
-        'notes': notes,
-      }),
+      body: jsonEncode({'recipients': recipients, 'notes': notes}),
     );
     if (res.statusCode != 200 && res.statusCode != 201) {
       reportHttpResponseError(feature: 'social_campaign.send', response: res);

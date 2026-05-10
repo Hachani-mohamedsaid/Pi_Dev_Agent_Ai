@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -16,6 +17,8 @@ import '../../core/theme/app_colors.dart';
 import '../../data/services/mobility_api_service.dart';
 import 'travel_schedule_page.dart';
 import '../widgets/navigation_bar.dart';
+
+// ignore_for_file: unused_field, unused_element
 
 class TravelPage extends StatefulWidget {
   const TravelPage({super.key});
@@ -110,8 +113,12 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadLocation();
     _loadDailyRule();
+    // Defer location/permission request to post-frame so the iOS view hierarchy
+    // is fully ready — otherwise the system permission dialog is silently skipped.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadLocation();
+    });
   }
 
   @override
@@ -391,7 +398,10 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
       final response = await http.get(uri, headers: buildJsonHeaders());
 
       if (response.statusCode != 200) {
-        reportHttpResponseError(feature: 'travel.route.osrm', response: response);
+        reportHttpResponseError(
+          feature: 'travel.route.osrm',
+          response: response,
+        );
         throw Exception('Routing failed: ${response.statusCode}');
       }
 
@@ -903,14 +913,17 @@ class _TravelPageState extends State<TravelPage> with WidgetsBindingObserver {
           return StatefulBuilder(
             builder: (context, setModalState) {
               return Scaffold(
-                backgroundColor: const Color(0xFF0f2940),
+                backgroundColor: const Color(0xFFF8FCFF),
                 appBar: AppBar(
                   title: const Text('Full Map Selection (A -> B)'),
-                  backgroundColor: const Color(0xFF16384d),
+                  backgroundColor: const Color(0xFFF7FBFF),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Done'),
+                      child: const Text(
+                        'Done',
+                        style: TextStyle(color: Color(0xFF0B6A88)),
+                      ),
                     ),
                   ],
                 ),
@@ -1765,7 +1778,10 @@ out center 30;
               )
               .timeout(const Duration(seconds: 18));
           if (candidate.statusCode != 200) {
-            reportHttpResponseError(feature: 'travel.nearby_taxis.overpass', response: candidate);
+            reportHttpResponseError(
+              feature: 'travel.nearby_taxis.overpass',
+              response: candidate,
+            );
             candidate = await http
                 .post(
                   Uri.parse(endpoint),
@@ -1783,7 +1799,10 @@ out center 30;
             response = candidate;
             break;
           }
-          reportHttpResponseError(feature: 'travel.nearby_taxis.overpass', response: candidate);
+          reportHttpResponseError(
+            feature: 'travel.nearby_taxis.overpass',
+            response: candidate,
+          );
           lastError = 'OSM query failed: ${candidate.statusCode}';
         } catch (e) {
           reportApiException(feature: 'travel.nearby_taxis.overpass', error: e);
@@ -3480,8 +3499,10 @@ out center 30;
           children: [
             GestureDetector(
               onTap: () {
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/home');
                 }
               },
               child: Container(

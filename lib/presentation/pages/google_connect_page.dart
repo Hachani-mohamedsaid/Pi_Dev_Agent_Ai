@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uni_links/uni_links.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -45,6 +46,10 @@ class _GoogleConnectPageState extends State<GoogleConnectPage>
             final token = await _getToken();
             if (token == null || token.isEmpty) return;
             await _checkStatus(token);
+            if (!mounted) return;
+            if (_state == _GoogleConnectState.connected) {
+              context.go('/services');
+            }
           }());
           return;
         }
@@ -80,7 +85,12 @@ class _GoogleConnectPageState extends State<GoogleConnectPage>
     final token = await _getToken();
     if (token == null || token.isEmpty) return;
     await _checkStatus(token);
-    if (!mounted || _state != _GoogleConnectState.waiting) return;
+    if (!mounted) return;
+    if (_state == _GoogleConnectState.connected) {
+      context.go('/services');
+      return;
+    }
+    if (_state != _GoogleConnectState.waiting) return;
     _startPolling(
       token,
       interval: _pollIntervalFast,
@@ -121,10 +131,17 @@ class _GoogleConnectPageState extends State<GoogleConnectPage>
     String authUrl;
     try {
       authUrl = await _service.getAuthUrl(token);
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() => _state = _GoogleConnectState.idle);
-      _showSnackBar('Could not reach AVA server. Try again.');
+      final msg = e.toString();
+      if (msg.contains('401')) {
+        _showSnackBar('Session expired. Please sign in again.');
+      } else if (msg.contains('5')) {
+        _showSnackBar('AVA server is busy. Try again in a moment.');
+      } else {
+        _showSnackBar('Could not start Google connection. Try again.');
+      }
       return;
     }
 

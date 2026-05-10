@@ -14,6 +14,30 @@ import '../models/advisor_history_item.dart';
 import '../models/advisor_report_model.dart';
 import '../providers/advisor_provider.dart';
 
+Color _primaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textWhite
+      : const Color(0xFF12263A);
+}
+
+Color _secondaryText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.textCyan200
+      : const Color(0xFF5B7B92);
+}
+
+Color _surfaceColor(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.primaryDarker.withOpacity(0.95)
+      : const Color(0xFFF8FCFF);
+}
+
+Color _surfaceBorder(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.cyan500.withOpacity(0.22)
+      : const Color(0xFFC7DDE9);
+}
+
 /// AI Financial Simulation Advisor: professional design + history from backend.
 class AdvisorPage extends StatefulWidget {
   const AdvisorPage({super.key});
@@ -78,29 +102,39 @@ class _AdvisorPageState extends State<AdvisorPage> {
       desktop: 26.0,
     );
     final isMobile = Responsive.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0f2940),
-              Color(0xFF1a3a52),
-              Color(0xFF0f2940),
-            ],
+            colors: isDark
+                ? const [
+                    Color(0xFF0f2940),
+                    Color(0xFF1a3a52),
+                    Color(0xFF0f2940),
+                  ]
+                : const [
+                    Color(0xFFF8FCFF),
+                    Color(0xFFEAF4FB),
+                    Color(0xFFF3F8FC),
+                  ],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
               AppBar(
-                title: const Text('Simulation financière'),
+                title: Text(
+                  'Simulation financière',
+                  style: TextStyle(color: _primaryText(context)),
+                ),
                 centerTitle: true,
                 backgroundColor: Colors.transparent,
                 elevation: 0,
                 leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
+                  icon: Icon(Icons.arrow_back, color: _primaryText(context)),
                   onPressed: () {
                     if (context.canPop()) {
                       context.pop();
@@ -143,58 +177,81 @@ class _AdvisorPageState extends State<AdvisorPage> {
 
   Widget _buildHeroSection(BuildContext context, bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0)),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.cyan500.withOpacity(0.12),
-            AppColors.blue500.withOpacity(0.08),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          padding: EdgeInsets.all(
+            Responsive.getResponsiveValue(
+              context,
+              mobile: 16.0,
+              tablet: 18.0,
+              desktop: 20.0,
+            ),
+          ),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: Theme.of(context).brightness == Brightness.dark
+                  ? [
+                      AppColors.cyan500.withOpacity(0.12),
+                      AppColors.blue500.withOpacity(0.08),
+                    ]
+                  : [const Color(0xFFF9FCFF), const Color(0xFFEAF4FB)],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _surfaceBorder(context)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.cyan500.withOpacity(0.25),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(LucideIcons.calculator, color: AppColors.cyan400, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Simulation financière IA',
-                  style: TextStyle(
-                    fontSize: Responsive.getResponsiveValue(context, mobile: 20.0, tablet: 22.0, desktop: 24.0),
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textWhite,
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.cyan500.withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      LucideIcons.calculator,
+                      color: AppColors.cyan400,
+                      size: 24,
+                    ),
                   ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Simulation financière IA',
+                      style: TextStyle(
+                        fontSize: Responsive.getResponsiveValue(
+                          context,
+                          mobile: 20.0,
+                          tablet: 22.0,
+                          desktop: 24.0,
+                        ),
+                        fontWeight: FontWeight.bold,
+                        color: _primaryText(context),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Décrivez votre projet en langage naturel (budget, coûts, revenus). L’IA génère une analyse de faisabilité.',
+                style: TextStyle(
+                  fontSize: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 13.0,
+                    tablet: 14.0,
+                    desktop: 15.0,
+                  ),
+                  color: _secondaryText(context),
+                  height: 1.4,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            'Décrivez votre projet en langage naturel (budget, coûts, revenus). L’IA génère une analyse de faisabilité.',
-            style: TextStyle(
-              fontSize: Responsive.getResponsiveValue(context, mobile: 13.0, tablet: 14.0, desktop: 15.0),
-              color: AppColors.textCyan200.withOpacity(0.9),
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
-    )
+        )
         .animate()
         .fadeIn(duration: 400.ms)
         .slideY(begin: 0.04, end: 0, curve: Curves.easeOutCubic);
@@ -202,44 +259,57 @@ class _AdvisorPageState extends State<AdvisorPage> {
 
   Widget _buildInputCard(BuildContext context, bool isMobile) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cyan500.withOpacity(0.22), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-          child: TextField(
-            controller: _controller,
-            maxLines: 6,
-            style: TextStyle(
-              color: AppColors.textWhite,
-              fontSize: Responsive.getResponsiveValue(context, mobile: 15.0, tablet: 16.0, desktop: 17.0),
-            ),
-            decoration: InputDecoration(
-              hintText: 'Ex. J’ai 7000 TND, mon café coûte 3800 TND/mois et génèrera 4200 TND de revenus.',
-              hintStyle: TextStyle(
-                color: AppColors.textCyan200.withOpacity(0.5),
-                fontSize: 14,
+          decoration: BoxDecoration(
+            color: _surfaceColor(context),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _surfaceBorder(context), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(
+                  Theme.of(context).brightness == Brightness.dark ? 0.15 : 0.06,
+                ),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.all(
-                Responsive.getResponsiveValue(context, mobile: 18.0, tablet: 20.0, desktop: 22.0),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              child: TextField(
+                controller: _controller,
+                maxLines: 6,
+                style: TextStyle(
+                  color: _primaryText(context),
+                  fontSize: Responsive.getResponsiveValue(
+                    context,
+                    mobile: 15.0,
+                    tablet: 16.0,
+                    desktop: 17.0,
+                  ),
+                ),
+                decoration: InputDecoration(
+                  hintText:
+                      'Ex. J’ai 7000 TND, mon café coûte 3800 TND/mois et génèrera 4200 TND de revenus.',
+                  hintStyle: TextStyle(
+                    color: _secondaryText(context),
+                    fontSize: 14,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(
+                    Responsive.getResponsiveValue(
+                      context,
+                      mobile: 18.0,
+                      tablet: 20.0,
+                      desktop: 22.0,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ),
-    )
+        )
         .animate()
         .fadeIn(delay: 120.ms, duration: 400.ms)
         .slideY(begin: 0.03, end: 0, curve: Curves.easeOutCubic);
@@ -248,7 +318,8 @@ class _AdvisorPageState extends State<AdvisorPage> {
   Widget _buildErrorIfAny(BuildContext context) {
     return Consumer<AdvisorProvider>(
       builder: (context, provider, _) {
-        if (provider.status != AdvisorStatus.error) return const SizedBox.shrink();
+        if (provider.status != AdvisorStatus.error)
+          return const SizedBox.shrink();
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Container(
@@ -256,16 +327,25 @@ class _AdvisorPageState extends State<AdvisorPage> {
             decoration: BoxDecoration(
               color: AppColors.statusRejected.withOpacity(0.15),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.statusRejected.withOpacity(0.4)),
+              border: Border.all(
+                color: AppColors.statusRejected.withOpacity(0.4),
+              ),
             ),
             child: Row(
               children: [
-                Icon(LucideIcons.alertCircle, size: 20, color: AppColors.statusRejected),
+                Icon(
+                  LucideIcons.alertCircle,
+                  size: 20,
+                  color: AppColors.statusRejected,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     provider.errorMessage,
-                    style: TextStyle(color: AppColors.statusRejected, fontSize: 13),
+                    style: TextStyle(
+                      color: AppColors.statusRejected,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ],
@@ -288,7 +368,10 @@ class _AdvisorPageState extends State<AdvisorPage> {
                 ? SizedBox(
                     width: 22,
                     height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cyan400),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.cyan400,
+                    ),
                   )
                 : Icon(LucideIcons.sparkles, size: 22, color: Colors.white),
             label: Text(
@@ -303,15 +386,20 @@ class _AdvisorPageState extends State<AdvisorPage> {
               backgroundColor: AppColors.cyan500,
               foregroundColor: Colors.white,
               padding: EdgeInsets.symmetric(
-                vertical: Responsive.getResponsiveValue(context, mobile: 16.0, tablet: 18.0, desktop: 20.0),
+                vertical: Responsive.getResponsiveValue(
+                  context,
+                  mobile: 16.0,
+                  tablet: 18.0,
+                  desktop: 20.0,
+                ),
               ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               elevation: 0,
             ),
           ),
-        )
-            .animate()
-            .fadeIn(delay: 180.ms, duration: 400.ms);
+        ).animate().fadeIn(delay: 180.ms, duration: 400.ms);
       },
     );
   }
@@ -338,43 +426,50 @@ class _AdvisorPageState extends State<AdvisorPage> {
         const SizedBox(height: 10),
         Text(
           'Simulations enregistrées sur le backend. Appuyez pour revoir le résultat.',
-          style: TextStyle(
-            fontSize: 12,
-            color: AppColors.textCyan200.withOpacity(0.75),
-          ),
+          style: TextStyle(fontSize: 12, color: _secondaryText(context)),
         ),
         const SizedBox(height: 14),
         if (_historyLoading)
           Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
-              child: CircularProgressIndicator(color: AppColors.cyan400, strokeWidth: 2),
+              child: CircularProgressIndicator(
+                color: AppColors.cyan400,
+                strokeWidth: 2,
+              ),
             ),
           )
         else if (_history.isEmpty)
           Container(
             padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.04),
+              color: _surfaceColor(context),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.cyan500.withOpacity(0.15)),
+              border: Border.all(color: _surfaceBorder(context)),
             ),
             child: Column(
               children: [
-                Icon(LucideIcons.inbox, size: 40, color: AppColors.textCyan200.withOpacity(0.5)),
+                Icon(
+                  LucideIcons.inbox,
+                  size: 40,
+                  color: AppColors.textCyan200.withOpacity(0.5),
+                ),
                 const SizedBox(height: 12),
                 Text(
                   'Aucune simulation enregistrée',
                   style: TextStyle(
                     fontSize: 14,
-                    color: AppColors.textCyan200.withOpacity(0.8),
+                    color: _secondaryText(context),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Les analyses seront listées ici après enregistrement par le backend.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: AppColors.textCyan200.withOpacity(0.6)),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _secondaryText(context),
+                  ),
                 ),
               ],
             ),
@@ -385,12 +480,14 @@ class _AdvisorPageState extends State<AdvisorPage> {
             return _buildHistoryCard(context, item, i);
           }),
       ],
-    )
-        .animate()
-        .fadeIn(delay: 250.ms, duration: 400.ms);
+    ).animate().fadeIn(delay: 250.ms, duration: 400.ms);
   }
 
-  Widget _buildHistoryCard(BuildContext context, AdvisorHistoryItem item, int index) {
+  Widget _buildHistoryCard(
+    BuildContext context,
+    AdvisorHistoryItem item,
+    int index,
+  ) {
     final excerpt = item.projectText.length > 60
         ? '${item.projectText.substring(0, 60)}...'
         : item.projectText;
@@ -407,11 +504,18 @@ class _AdvisorPageState extends State<AdvisorPage> {
           onTap: () => _openHistoryItem(item),
           borderRadius: BorderRadius.circular(14),
           child: Container(
-            padding: EdgeInsets.all(Responsive.getResponsiveValue(context, mobile: 14.0, tablet: 16.0, desktop: 18.0)),
+            padding: EdgeInsets.all(
+              Responsive.getResponsiveValue(
+                context,
+                mobile: 14.0,
+                tablet: 16.0,
+                desktop: 18.0,
+              ),
+            ),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.06),
+              color: _surfaceColor(context),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.cyan500.withOpacity(0.2)),
+              border: Border.all(color: _surfaceBorder(context)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,7 +527,11 @@ class _AdvisorPageState extends State<AdvisorPage> {
                     color: AppColors.cyan500.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(LucideIcons.fileText, color: AppColors.cyan400, size: 20),
+                  child: Icon(
+                    LucideIcons.fileText,
+                    color: AppColors.cyan400,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -435,7 +543,7 @@ class _AdvisorPageState extends State<AdvisorPage> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textWhite,
+                          color: _primaryText(context),
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -446,14 +554,18 @@ class _AdvisorPageState extends State<AdvisorPage> {
                           dateStr,
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textCyan200.withOpacity(0.7),
+                            color: _secondaryText(context),
                           ),
                         ),
                       ],
                     ],
                   ),
                 ),
-                Icon(LucideIcons.chevronRight, size: 20, color: AppColors.cyan400.withOpacity(0.8)),
+                Icon(
+                  LucideIcons.chevronRight,
+                  size: 20,
+                  color: AppColors.cyan400.withOpacity(0.8),
+                ),
               ],
             ),
           ),

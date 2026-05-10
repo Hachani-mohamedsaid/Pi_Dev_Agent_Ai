@@ -11,6 +11,13 @@ class MarketIntelCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const r = 18.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBackground = isDark
+        ? AppColors.primaryDarker
+        : const Color(0xFFF8FDFF);
+    final secondaryColor = isDark
+        ? AppColors.textCyan200.withValues(alpha: 0.85)
+        : const Color(0xFF5B778E);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -19,20 +26,26 @@ class MarketIntelCard extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.all(r),
           decoration: BoxDecoration(
-            color: AppColors.primaryDarker,
+            color: cardBackground,
             borderRadius: BorderRadius.circular(r),
             border: Border.all(
-              color: AppColors.cyan500.withValues(alpha: 0.35),
+              color: isDark
+                  ? AppColors.cyan500.withValues(alpha: 0.35)
+                  : const Color(0xFFC1DAE8),
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.cyan500.withValues(alpha: 0.08),
+                color: isDark
+                    ? AppColors.cyan500.withValues(alpha: 0.08)
+                    : const Color(0xFFB2CAD8).withValues(alpha: 0.18),
                 blurRadius: 18,
                 offset: const Offset(0, 6),
               ),
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.3)
+                    : const Color(0xFF9DB4C1).withValues(alpha: 0.15),
                 blurRadius: 14,
                 offset: const Offset(0, 6),
               ),
@@ -44,10 +57,14 @@ class MarketIntelCard extends StatelessWidget {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: AppColors.cyan500.withValues(alpha: 0.15),
+                  color: isDark
+                      ? AppColors.cyan500.withValues(alpha: 0.15)
+                      : const Color(0xFFE5F3FA),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: AppColors.cyan400.withValues(alpha: 0.35),
+                    color: isDark
+                        ? AppColors.cyan400.withValues(alpha: 0.35)
+                        : const Color(0xFFA7CFE0),
                   ),
                 ),
                 child: Icon(
@@ -61,21 +78,20 @@ class MarketIntelCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Market Intelligence',
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textWhite,
+                        color: isDark
+                            ? AppColors.textWhite
+                            : const Color(0xFF102437),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'European deal comparables',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textCyan200.withValues(alpha: 0.85),
-                      ),
+                      style: TextStyle(fontSize: 13, color: secondaryColor),
                     ),
                   ],
                 ),
