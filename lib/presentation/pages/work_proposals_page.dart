@@ -367,11 +367,13 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
         child: SafeArea(
           bottom: false,
           child: Stack(
+            fit: StackFit.expand,
             children: [
               // Main Content
-              FutureBuilder<List<Proposal>>(
-                future: _apiService.fetchProposals(),
-                builder: (context, snapshot) {
+              Positioned.fill(
+                child: FutureBuilder<List<Proposal>>(
+                  future: _apiService.fetchProposals(),
+                  builder: (context, snapshot) {
                   // Always render the header + stats (with 0 fallbacks) so
                   // the page never feels empty: the user sees the layout
                   // even while loading, on error, or when there are no
@@ -687,7 +689,8 @@ class _WorkProposalsPageState extends State<WorkProposalsPage>
                       ],
                     ),
                   );
-                },
+                  },
+                ),
               ),
 
               // Navigation Bar
