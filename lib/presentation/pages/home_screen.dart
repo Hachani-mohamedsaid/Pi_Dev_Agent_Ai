@@ -1765,6 +1765,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'colorLight': const Color(0xFFFFC107),
       },
       {
+        'title': 'Trip Planner',
+        'icon': LucideIcons.plane,
+        'route': '/trip-planner',
+        'color': const Color(0xFF20b2aa),
+        'colorLight': const Color(0xFF48D1CC),
+      },
+      {
         'title': S.of(context).postOnLinkedIn,
         'icon': LucideIcons.linkedin,
         'route': '/create-job',
@@ -1791,13 +1798,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'route': '/wellbeing',
         'color': const Color(0xFF14B8A6),
         'colorLight': const Color(0xFF2DD4BF),
-      },
-      {
-        'title': 'Trip Planner',
-        'icon': LucideIcons.plane,
-        'route': '/trip-planner',
-        'color': const Color(0xFF20b2aa),
-        'colorLight': const Color(0xFF48D1CC),
       },
     ];
 
@@ -1873,8 +1873,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           if (entry.key == 1) return const SizedBox.shrink();
           if (entry.key == 0 ||
               entry.key == 5 ||
-              entry.key == 6 ||
-              entry.key == 7) {
+              entry.key == 8) {
             return const SizedBox.shrink();
           }
           final index = entry.key;
